@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include ('./head') %>
+
+  <body class=" <%= active_path === routes.application_chat && 'main-chat-blk' || active_path === routes.layout_rtl && 'layout-mode-rtl' ||
+  active_path === routes.layout_mini && 'mini-sidebar' || active_path === routes.layout_box && 'layout-box-mode mini-sidebar' %>">
+    <% if(active_path === routes.admin_dashboard || active_path === routes.teacher_dashboard || active_path === routes.student_dashboard || active_path === routes.parent_dashboard) { %>
+      <div id="global-loader">
+        <div class="page-loader"></div>
+      </div>
+      <% } %>
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+
+      <!-- Header -->
+      <%- include ('./header') %>
+      <!-- /Header -->
+
+      <!-- Sidebar -->
+      <%- include ('./sidebar') %>
+      <!-- /Sidebar -->
+
+      <!-- Page Wrapper -->
+      <div class="page-wrapper <%= active_path === routes.application_chat && 'chat-page-wrapper' %> " >
+        <%- include('../pages/'+page_path) %>
+      </div>
+      <!-- /Page Wrapper -->
+    </div>
+    <!-- /Main Wrapper -->
+
+    <% if( active_path != routes.layout_default &&
+          active_path != routes.layout_mini &&
+          active_path != routes.layout_box &&
+          active_path != routes.layout_rtl &&
+          active_path != routes.layout_dark 
+    ) { %>
+    <%- include ('./theme-setting') %> 
+
+    <% } %>
+    <%- include ('./script') %>
+  </body>
+</html>
