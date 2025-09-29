@@ -11,8 +11,6 @@ type Props = {
 
 const StudentSidebar: React.FC<Props> = ({ student, loading }) => {
 
-  console.log(student.lanknown)
-  
   return (
     <div className="col-xxl-3 col-xl-4 theiaStickySidebar">
      {

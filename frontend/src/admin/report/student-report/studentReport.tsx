@@ -1,7 +1,7 @@
 /* eslint-disable */
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
-import { studentreport } from "../../../core/data/json/student_report";
+// import { studentreport } from "../../../core/data/json/student_report";
 import Table from "../../../core/common/dataTable/index";
 import { Link } from "react-router-dom";
 import type { TableData } from "../../../core/data/interface";
@@ -15,19 +15,90 @@ import {
   status,
   studentName,
 } from "../../../core/common/selectoption/selectoption";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+
+import { studentReport } from "../../../service/reports";
+import dayjs from 'dayjs'
+import { Spinner } from "../../../spinner";
+import { Imageurl } from "../../../service/api";
+
+export interface StudentData {
+  student_id: number;
+  stu_id: number;
+  dateOfJoin: string;
+  admissiondate: string;
+  admissionnum: string;
+  rollnum: number;
+  class: string;
+  section: string;
+  gender: string;
+  dob: string;
+  stu_img: string;
+  firstname: string;
+  lastname: string;
+  status: "0" | "1";
+  father_name: string;
+  father_img: string;
+}
+
 
 const StudentReport = () => {
-  const data = studentreport;
+  // const data = studentreport;
   const routes = all_routes;
+
+
+  const [students, setStudents] = useState<StudentData[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchStudents = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 500))
+    try {
+
+      const { data } = await studentReport()
+      if (data.success) {
+        setStudents(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStudents()
+  }, [])
+
+
+  const tableData = students.map((student) => ({
+    key: student.student_id, 
+    stu_id:student.stu_id,
+    admissionNo: student.admissionnum, 
+    rollNo: String(student.rollnum), 
+    name: `${student.firstname} ${student.lastname}`, 
+    stuImg: student.stu_img, 
+    class: student.class,
+    section: student.section, 
+    gender: student.gender, 
+    parent: student.father_name, 
+    parentImg: student.father_img, 
+    dateOfJoin: dayjs(student.admissiondate).format("DD MMM YYYY"),
+    dob: dayjs(student.dob).format("DD MMM YYYY"), 
+    status: student.status, 
+  }));
+
+
+
+
   const columns = [
     {
       title: "Admission No",
       dataIndex: "admissionNo",
-      render: ( record: any) => (
+      render: (text: string) => (
         <>
           <Link to="#" className="link-primary">
-            {record.admissionNo}
+            {text}
           </Link>
         </>
       ),
@@ -43,19 +114,19 @@ const StudentReport = () => {
     {
       title: "Name",
       dataIndex: "name",
-      render: (_text:any, record: any) => (
+      render: (text: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to="#" className="avatar avatar-md">
-              <ImageWithBasePath
-                src={record.img}
+            <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+              <img
+                src={`${Imageurl}/${record.stuImg}`}
                 className="img-fluid rounded-circle"
                 alt="img"
               />
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to="#">{record.name}</Link>
+                <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
               </p>
             </div>
           </div>
@@ -82,19 +153,19 @@ const StudentReport = () => {
     {
       title: "Parent",
       dataIndex: "parent",
-      render: (_text:any, record: any) => (
+      render: (text: string, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <Link to="#" className="avatar avatar-md">
-              <ImageWithBasePath
-                src={record.parentimg}
+              <img
+                src={`${Imageurl}/${record.parentImg}`}
                 className="img-fluid rounded-circle"
                 alt="img"
               />
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to="#">{record.parent}</Link>
+                <Link to="#">{text}</Link>
               </p>
             </div>
           </div>
@@ -118,15 +189,15 @@ const StudentReport = () => {
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Active" ? (
+          {text === "1" ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Active
             </span>
           ) : (
             <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Inactive
             </span>
           )}
         </>
@@ -134,6 +205,7 @@ const StudentReport = () => {
       sorter: (a: TableData, b: TableData) => a.status.length - b.status.length,
     },
   ];
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -303,7 +375,9 @@ const StudentReport = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Student List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+                {
+                  loading ? <Spinner /> : (<Table columns={columns} dataSource={tableData} Selection={true} />)
+                }
                 {/* /Student List */}
               </div>
             </div>

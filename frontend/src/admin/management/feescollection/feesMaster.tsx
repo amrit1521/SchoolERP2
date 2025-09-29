@@ -19,6 +19,7 @@ import FeesModal from "./feesModal";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { allFeesMaster } from "../../../service/api";
 import { toast } from "react-toastify";
+import dayjs from 'dayjs'
 
 const FeesMaster = () => {
   const routes = all_routes;
@@ -43,6 +44,7 @@ const FeesMaster = () => {
 
   const [feesMasterdata, setFeesMasterdata] = useState<FeesMaster[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [deleteId ,setDeleteId] = useState<number|null>(null)
 
   const fetchAllMaterFees = async () => {
     setLoading(true);
@@ -66,14 +68,10 @@ const FeesMaster = () => {
 
   const onSubmitMasterFees = () => {
     fetchAllMaterFees()
+    setDeleteId(null)
   }
 
-  function formatDate(dateStr: string) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const [year, month, day] = dateStr.split("-");
-    return `${day} ${months[parseInt(month) - 1]} ${year}`;
-  }
+
 
   // Map for table
   const tabledata = feesMasterdata.map((item) => ({
@@ -81,7 +79,7 @@ const FeesMaster = () => {
     id: item.id,
     feesGroup: item.feesGroup,
     feesType: item.feesType,
-    dueDate: formatDate(item.dueDate),
+    dueDate: dayjs(item.dueDate).format('DD MMM YYYY'),
     amount: item.amount,
     fineType: item.fineType,
     fineAmount: item.fineAmount || "0",
@@ -163,8 +161,8 @@ const FeesMaster = () => {
     },
     {
       title: "Action",
-      dataIndex: "action",
-      render: () => (
+      dataIndex: "id",
+      render: (id:number) => (
         <div className="d-flex align-items-center">
           <div className="dropdown">
             <Link
@@ -188,15 +186,15 @@ const FeesMaster = () => {
                 </Link>
               </li>
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                   onClick={()=>setDeleteId(id)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
@@ -402,7 +400,7 @@ const FeesMaster = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitMasterFees} />
+      <FeesModal onAction={onSubmitMasterFees}  editId={null} deleteId={deleteId} type="feesmaster" />
     </>
   );
 };

@@ -13,7 +13,7 @@ import Table from "../../../core/common/dataTable/index";
 // import { feesData } from "../../../core/data/json/feesData";
 import FeesModal from "./feesModal";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { allFeesGroupName } from "../../../service/api";
+import { allFeesGroup} from "../../../service/api";
 import { toast } from "react-toastify";
 
 const FeesGroup = () => {
@@ -39,13 +39,14 @@ const FeesGroup = () => {
     description: "",
     status: "",
   }])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [deleteId ,setDeleteId] = useState<number|null>(null)
 
   const fetchGroupName = async () => {
     setLoading(true)
     try {
 
-      const { data } = await allFeesGroupName()
+      const { data } = await allFeesGroup()
       if (data.success) {
         setFeesGroupName(data.feesGroups)
       }
@@ -60,6 +61,7 @@ const FeesGroup = () => {
 
   const onSubmitGroupName = () => {
     fetchGroupName()
+    setDeleteId(null)
   }
 
   useEffect(() => {
@@ -121,8 +123,8 @@ const FeesGroup = () => {
     },
     {
       title: "Action",
-      dataIndex: "action",
-      render: () => (
+      dataIndex: "id",
+      render: (id:number) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -147,15 +149,15 @@ const FeesGroup = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                     onClick={()=>setDeleteId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -315,13 +317,13 @@ const FeesGroup = () => {
             <div className="card-body p-0 py-3">
               {/* Student List */}
               {
-                loading ? <>(
+                loading ? (
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
-                  ) </> : <>(<Table dataSource={tableData} columns={columns} Selection={true} />)</>
+                  ) : <>(<Table dataSource={tableData} columns={columns} Selection={true} />)</>
               }
               {/* /Student List */}
             </div>
@@ -330,7 +332,7 @@ const FeesGroup = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitGroupName} />
+      <FeesModal onAction={onSubmitGroupName} editId={null} deleteId={deleteId} type="feesgroup" />
     </>
   );
 };

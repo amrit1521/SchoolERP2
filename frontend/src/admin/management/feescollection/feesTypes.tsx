@@ -16,7 +16,7 @@ import FeesModal from "./feesModal";
 // import { feesType } from "../../../core/data/json/feesType";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
-import { allFeesTypeName } from "../../../service/api";
+import { allFeesType } from "../../../service/api";
 
 const FeesTypes = () => {
   const routes = all_routes;
@@ -44,13 +44,14 @@ interface FessTypeName {
     description: "",
     status: "",
   }])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [deleteId ,setDeleteId] = useState<number|null>(null)
 
   const fetchTypeName = async () => {
     setLoading(true)
     try {
 
-      const { data } = await allFeesTypeName()
+      const { data } = await allFeesType()
       if (data.success) {
         setFeesTypeName(data.feesTypes)
       }
@@ -65,6 +66,7 @@ interface FessTypeName {
 
   const onSubmitTypeName = () => {
     fetchTypeName()
+    setDeleteId(null)
   }
 
   useEffect(() => {
@@ -141,8 +143,8 @@ interface FessTypeName {
     },
     {
       title: "Action",
-      dataIndex: "action",
-      render: () => (
+      dataIndex: "id",
+      render: (id:number) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -167,15 +169,15 @@ interface FessTypeName {
                   </Link>
                 </li>
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                     onClick={()=>setDeleteId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -355,13 +357,13 @@ interface FessTypeName {
             <div className="card-body p-0 py-3">
               {/* Student List */}
               {
-                loading ? <>(
+                loading ?(
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
-                  ) </> :<>( <Table dataSource={tableData} columns={columns} Selection={true} />)</>
+                  ):<>( <Table dataSource={tableData} columns={columns} Selection={true} />)</>
 }
              
               {/* /Student List */}
@@ -371,7 +373,7 @@ interface FessTypeName {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitTypeName} />
+      <FeesModal onAction={onSubmitTypeName} editId={null} deleteId={deleteId} type="feestype" />
     </>
   );
 };

@@ -24,29 +24,15 @@ const StudentResult = () => {
       await new Promise((res) => setTimeout(res, 500))
       try {
         const res = await specificStudentData1(Number(id))
-        console.log(res)
         setStudent(res.data.student)
-
       } catch (error) {
         console.log(error)
-
       } finally {
         setLoading(false)
       }
     }
     fetchStudent();
-
   }, [id])
-
-  // if (loading) {
-  //   return (
-  //     <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-  //       <div className="spinner-border text-primary" role="status">
-  //         <span className="visually-hidden">Loading...</span>
-  //       </div>
-  //     </div>
-  //   )
-  // }
 
 
   return (
@@ -56,7 +42,7 @@ const StudentResult = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-             {token&&( <StudentBreadcrumb token={token} id={Number(id)} />)}
+            {token && (<StudentBreadcrumb token={token} id={Number(id)} />)}
             {/* /Page Header */}
           </div>
           <div className="row">

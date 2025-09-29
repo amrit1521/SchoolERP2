@@ -25,7 +25,7 @@ exports.addStudent = async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    
+
     const [existingUser] = await connection.query(
       "SELECT id FROM users WHERE email = ? LIMIT 1",
       [data.email]
@@ -35,7 +35,7 @@ exports.addStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-   
+
     const genPassword = generateRandomPassword();
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
@@ -46,7 +46,7 @@ exports.addStudent = async (req, res) => {
     );
     const userId = userRes.insertId;
 
-    
+
     await connection.query(
       `INSERT INTO students (
         stu_id, academicyear, admissionnum, admissiondate, rollnum, class, section,
@@ -84,7 +84,7 @@ exports.addStudent = async (req, res) => {
       ]
     );
 
-    
+
     const imageFiles = [data.stuimg, data.fatimg, data.motimg, data.guaimg, data.medicalcert, data.transfercert];
     await Promise.all(
       imageFiles.filter(Boolean).map(file =>
@@ -92,7 +92,7 @@ exports.addStudent = async (req, res) => {
       )
     );
 
-    
+
     const parentsData = [
       { relation: "Father", name: data.fat_name, email: data.fat_email, phone_num: data.fat_phone, occuption: data.fat_occu, img_src: data.fatimg },
       { relation: "Mother", name: data.mot_name, email: data.mot_email, phone_num: data.mot_phone, occuption: data.mot_occu, img_src: data.motimg },
@@ -121,7 +121,7 @@ exports.addStudent = async (req, res) => {
       )
     );
 
-    
+
     await Promise.all([
       (data.hostel || data.room_num) &&
       connection.query(
@@ -140,10 +140,10 @@ exports.addStudent = async (req, res) => {
       )
     ]);
 
-  
+
     await connection.commit();
 
-    
+
     transporter.sendMail({
       from: process.env.SMTP_USER,
       to: data.email,
@@ -832,7 +832,7 @@ exports.studentLeaveReport = async (req, res) => {
     `;
 
     const [rows] = await db.query(sql);
-   
+
 
     // Transform rows into student-wise structure
     const studentMap = {};
@@ -844,7 +844,7 @@ exports.studentLeaveReport = async (req, res) => {
           rollNo: row.rollNo,
           studentName: row.firstname + " " + row.lastname,
           stu_img: row.stu_img,
-          stu_id:row.stu_id,
+          stu_id: row.stu_id,
           leaves: {},
         };
       }
@@ -871,6 +871,45 @@ exports.studentLeaveReport = async (req, res) => {
     });
   }
 };
+
+exports.studentReport = async (req, res) => {
+
+  try {
+    const sql = `
+           SELECT 
+    s.id AS student_id,
+    s.stu_id,     
+    s.admissiondate ,     
+    s.admissionnum ,
+    s.rollnum ,
+    s.class ,
+    s.section,
+    s.gender,
+    s.dob,
+    s.stu_img ,   
+    u.firstname,
+    u.lastname,     
+    u.status,
+    father.name AS father_name,
+    father.img_src AS father_img 
+FROM students s
+LEFT JOIN users u 
+    ON s.stu_id = u.id 
+LEFT JOIN parents_info father 
+    ON s.stu_id = father.user_id AND father.relation = 'Father'
+WHERE u.type_id = 3
+
+        `;
+
+    const [rows] = await db.query(sql)
+    return res.status(200).json({ message: "All students for report data", data: rows , success:true })
+
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
+}
 
 
 

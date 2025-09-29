@@ -53,7 +53,7 @@ exports.stuDetForFees = async (req, res) => {
 
 // add groupname----------------------------------
 
-exports.AddFeesGroupName = async (req, res) => {
+exports.AddFeesGroup = async (req, res) => {
 
   const { description, feesGroup, status } = req.body;
 
@@ -74,7 +74,7 @@ exports.AddFeesGroupName = async (req, res) => {
   }
 }
 
-exports.AllFeesFormGroup = async (req, res) => {
+exports.AllFeesGroup = async (req, res) => {
   try {
     const [feesGroups] = await db.query(`SELECT * FROM fees_group`);
     return res.status(200).json({
@@ -89,8 +89,6 @@ exports.AllFeesFormGroup = async (req, res) => {
       .json({ message: "Internal server error!", success: false });
   }
 };
-
-
 
 exports.UpdateFeesGroup = async (req, res) => {
   const { id } = req.params;
@@ -148,8 +146,6 @@ exports.UpdateFeesGroup = async (req, res) => {
   }
 };
 
-
-
 exports.DeleteFeesGroup = async (req, res) => {
   const { id } = req.params;
 
@@ -173,7 +169,6 @@ exports.DeleteFeesGroup = async (req, res) => {
       .json({ message: "Internal server error!", success: false });
   }
 };
-
 
 exports.GetFeesGroupById = async (req, res) => {
   const { id } = req.params;
@@ -204,7 +199,7 @@ exports.GetFeesGroupById = async (req, res) => {
 };
 
 // add fees type--------------------------------------
-exports.AddFeesTypeName = async (req, res) => {
+exports.AddFeesType = async (req, res) => {
   const { description, feesGroup, name, status } = req.body;
 
   if (!description || !feesGroup || !name) {
@@ -438,8 +433,33 @@ exports.AllFeesMaster = async (req, res) => {
   }
 };
 
+exports.DeleteFeesMaster = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.query(`DELETE FROM fees_master WHERE id = ?`, [id]);
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "Fees master not found!", success: false });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Fees master deleted successfully!", success: true });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
 
 
+
+
+// assigen
 exports.feesAssignToStudent = async (req, res) => {
   try {
     const payload = req.body;

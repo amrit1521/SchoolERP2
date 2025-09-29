@@ -5,14 +5,18 @@ import { feeGroup, feesTypes } from "../../../core/common/selectoption/selectopt
 import { DatePicker } from 'antd'
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { addFeesGroupName, addFeesMaster, addFeesTypeName, allFeesGroupName, allFeesTypeName } from "../../../service/api";
+import { addFeesGroup, addFeesMaster, addFeesType,  allFeesGroup,  allFeesType, deleteFeesGroup, deleteFeesMaster, deleteFeesType} from "../../../service/api";
+import { handleModalPopUp } from "../../../handlePopUpmodal";
 
 type Props = {
-  onAction: Function;
+  onAction: () => void;
+  editId?: number | null;
+  deleteId?: number | null;
+  type?:string;
 }
 
 
-const FeesModal: React.FC<Props> = ({ onAction }) => {
+const FeesModal: React.FC<Props> = ({ onAction ,deleteId , type }) => {
   const [activeContent, setActiveContent] = useState('');
   const handleContentChange = (event: any) => {
     setActiveContent(event.target.value);
@@ -33,7 +37,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
   // };
 
 
-  //  add fees group 
+  //  add fees group -----------------------------------------------------------------------------------------------------
   interface FeesGroupForm {
     feesGroup: string;
     description: string;
@@ -46,7 +50,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     status: "0", // default unchecked
   });
 
-  // 🔹 Input handler
+
   const handleInput = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -58,8 +62,6 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     }));
   };
 
-  // cancel handler
-
   const handelCancelFees = () => {
     setFeesFormData({
       feesGroup: "",
@@ -68,7 +70,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     })
   }
 
-  // 🔹 Submit handler
+
   const handleFeesGroupSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -78,7 +80,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     }
     try {
 
-      const { data } = await addFeesGroupName(feesFormData)
+      const { data } = await addFeesGroup(feesFormData)
       console.log(data)
       if (data.success) {
         toast.success(data.message)
@@ -100,6 +102,38 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
       toast.error(error.response.data.message)
     }
   };
+  // delete
+const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  e.preventDefault();
+  if (!deleteId) return;
+
+  try {
+    let data: any;
+
+    if (type === "feesgroup") {
+      data = await deleteFeesGroup(deleteId);
+    } else if (type === "feestype") {
+      data = await deleteFeesType(deleteId);
+    } else if (type === "feesmaster") {
+      data = await deleteFeesMaster(deleteId); 
+    } else {
+      throw new Error("Invalid type");
+    }
+
+    if (data?.data?.success) {
+      toast.success(data.data.message || "Action completed successfully");
+      onAction(); 
+      handleModalPopUp("delete-modal"); 
+    } else {
+      toast.error(data?.data?.message || "Something went wrong");
+    }
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error?.response?.data?.message || error.message);
+  }
+};
+
+
 
 
   // add fees type------------------------------------------------------------------
@@ -115,7 +149,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     console.log(loading);
     try {
 
-      const [feesGroup, feesType] = await Promise.all([allFeesGroupName(), allFeesTypeName()])
+      const [feesGroup, feesType] = await Promise.all([allFeesGroup(), allFeesType()])
       // console.log(feesGroup, 'and', feesType)
       if (feesGroup?.data?.success) {
         setFeesGroupOption(feesGroup.data.feesGroups
@@ -195,7 +229,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
 
     try {
 
-      const { data } = await addFeesTypeName(feesTypeFormData)
+      const { data } = await addFeesType(feesTypeFormData)
       if (data.success) {
         onAction()
         toast.success(data.message)
@@ -229,9 +263,8 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
   }
 
 
-
   // fees master--------------------------------------------------------------
-  // ✅ Interface
+
   interface FeesMasterForm {
     feesGroup: string;
     feesType: string;
@@ -246,7 +279,6 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     fineAmount: string;
   }
 
-  // ✅ State
   const [feesMasterForm, setFeesMasterForm] = useState<FeesMasterForm>({
     feesGroup: "",
     feesType: "",
@@ -261,7 +293,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     fineAmount: ""
   });
 
-  // ✅ Handle select
+
   const handleFeesMasterSelectChange = (
     name: keyof FeesMasterForm,
     value: string | number
@@ -269,7 +301,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     setFeesMasterForm((prev) => ({ ...prev, [name]: value.toString() }));
   };
 
-  // ✅ Handle input
+
   const handleFeesMasterInputChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -281,13 +313,10 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     }));
   };
 
-
-  // ✅ Handle date
   const handleFeesMasterDateChange = (date: string) => {
     setFeesMasterForm((prev) => ({ ...prev, dueDate: date }));
   };
 
-  // ✅ Handle radio
   const handleFeesMasterFineTypeChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -297,16 +326,13 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     }));
   };
 
-  // ✅ Error state
   const [errors, setErrors] = useState<Partial<Record<keyof FeesMasterForm, string>>>({});
-
-  // ✅ Validation function
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FeesMasterForm, string>> = {};
 
     if (!feesMasterForm.feesGroup.trim()) newErrors.feesGroup = "Fees Group is required";
     if (!feesMasterForm.feesType.trim()) newErrors.feesType = "Fees Type is required";
-    if (!feesMasterForm.dueDate.trim()) newErrors.dueDate = "Due Date is required";
+    if (!feesMasterForm.dueDate) newErrors.dueDate = "Due Date is required";
 
     if (!feesMasterForm.amount || Number(feesMasterForm.amount) <= 0) {
       newErrors.amount = "Amount must be greater than 0";
@@ -328,9 +354,6 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     return Object.keys(newErrors).length === 0; // ✅ return true if no errors
   };
 
-
-
-  // ✅ Handle submit
   const handleFeesMasterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -374,7 +397,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
       if (data.success) {
         toast.success(data.message)
         onAction()
-         const modalElement = document.getElementById("add_fees_master");
+        const modalElement = document.getElementById("add_fees_master");
         if (modalElement) {
           const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
           modalInstance?.hide();
@@ -1192,7 +1215,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone
+                  You want to delete this item, this cant be undone
                   once you delete.
                 </p>
                 <div className="d-flex justify-content-center">
@@ -1203,13 +1226,14 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                      type="button"
+                     onClick={(e)=>handleDelete(e)}
                     className="btn btn-danger"
-                    data-bs-dismiss="modal"
+                  
                   >
                     Yes, Delete
-                  </Link>
+                  </button>
                 </div>
               </div>
             </form>

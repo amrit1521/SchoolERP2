@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { SidebarData, TeacherSidebarData, StudentSidebarData ,ParentSidebarData } from "../../core/data/json/sidebarData";
-import ImageWithBasePath from "../imageWithBasePath";
+import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import "../../../style/icon/tabler-icons/webfont/tabler-icons.css";
-import { setExpandMenu } from "../../data/redux/sidebarSlice";
+import { setExpandMenu } from "../../core/data/redux/sidebarSlice";
 import { useDispatch } from "react-redux";
 import {
   resetAllMode,

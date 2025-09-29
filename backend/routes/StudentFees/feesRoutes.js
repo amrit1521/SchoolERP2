@@ -6,16 +6,19 @@ const router= express.Router()
 router.get('/studetforfees/:id' ,feesController.stuDetForFees)
 
 // fees group name routes ----------------------------
-router.post('/addfeesformgroup' , feesController.AddFeesGroupName)
-router.get('/allfeesformgroup' , feesController.AllFeesFormGroup)
+router.post('/addfeesgroup' , feesController.AddFeesGroup)
+router.get('/allfeesgroup' , feesController.AllFeesGroup)
+router.delete(`/deletefeesgroup/:id`  ,feesController.DeleteFeesGroup)
 
 // fees group type name
-router.post('/addfeesformtype' , feesController.AddFeesTypeName)
-router.get('/allfeesformtype' , feesController.AllFeesTypes)
+router.post('/addfeestype' , feesController.AddFeesType)
+router.get('/allfeestype' , feesController.AllFeesTypes)
+router.delete('/deletefeestype/:id' , feesController.DeleteFeesType)
 
 // fees master routes
 router.post('/addfeesmaster' , feesController.AddFeesMaster)
 router.get('/allfeesmaster' , feesController.AllFeesMaster)
+router.delete('/deletefeesmaster/:id' , feesController.DeleteFeesMaster)
 
 // fees assign to students---------------
 router.post('/feesassign' , feesController.feesAssignToStudent)

@@ -12,47 +12,50 @@ import { Modal } from "react-bootstrap";
 import GuardianModal from "../guardianModal";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
-import { allGuardians, deleteGuardian, Imageurl, speGuardian } from "../../../../service/api";
+import { allGuardians, deleteGuardian, deleteFile, guardianForEdit, Imageurl, uploadStudentFile, speGuardian, editGuardian } from "../../../../service/api";
 import { Skeleton } from "antd";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
 
- export interface GuaData {
-    id: number;
-    user_id: number;
-    img_src: string;
-    name: string;
-    Gua_Add: string;
-    email: string;
-    phone_num: string;
-    stu_img: string;
-    stu_id: string;
-    firstname: string;
-    lastname: string;
-  }
 
-  export  interface SpeGuardianData {
-    id: number;
-    name: string;
-    email: string;
-    phone_num: string;
-    img_src: string;
-    Guardian_Add: string; 
-    stu_img: string;
-    stu_id: number;
-    class: string;
-    section: string;
-    gender: string;
-    rollnum: string;
-    admissiondate: string;
-    admissionnum: string;
-    Student_Add: string;
-    firstname: string;
-    lastname: string;
-    status: string;
-  }
+
+
+
+export interface GuaData {
+  id: number;
+  user_id: number;
+  img_src: string;
+  name: string;
+  Gua_Add: string;
+  email: string;
+  phone_num: string;
+  stu_img: string;
+  stu_id: string;
+  firstname: string;
+  lastname: string;
+}
+
+export interface SpeGuardianData {
+  id: number;
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+  Guardian_Add: string;
+  stu_img: string;
+  stu_id: number;
+  class: string;
+  section: string;
+  gender: string;
+  rollnum: string;
+  admissiondate: string;
+  admissionnum: string;
+  Student_Add: string;
+  firstname: string;
+  lastname: string;
+  status: string;
+}
 
 export interface GuardianDataForEdit {
-  id:number;
   name: string;
   email: string;
   phone_num: string;
@@ -123,7 +126,7 @@ const GuardianGrid = () => {
     // await new Promise((res)=>setTimeout(res,500))
     try {
       const { data } = await speGuardian(guardianId);
- 
+
       if (data.success) {
         setSpeGuardianData(data.data);
       }
@@ -186,7 +189,169 @@ const GuardianGrid = () => {
 
 
   // edit guardian-------------------------------------
-  
+  const [formData, setFormData] = useState<GuardianDataForEdit>({
+    name: "",
+    phone_num: "",
+    email: "",
+    img_src: "",
+  });
+  const [guaImg, setGuaImg] = useState<File | null>(null)
+  const [guaImgId, setGuaImgId] = useState<number | null>(null)
+  const [orginalImgPath, setOriginalImgPath] = useState<string>("")
+  const [editId, setEditId] = useState<number | null>(null)
+  const [errors, setErrors] = useState<{
+    name?: string;
+    phone_num?: string;
+    email?: string;
+  }>({});
+
+
+  const fetchGuardianDataForEdit = async (id: number) => {
+    try {
+      const { data } = await guardianForEdit(id)
+      if (data.success) {
+        setFormData({
+          name: data.data.name,
+          phone_num: data.data.phone_num,
+          email: data.data.email,
+          img_src: data.data.img_src,
+        })
+        setEditId(id)
+        setOriginalImgPath(data.data.img_src)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+
+
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        toast.error("Only JPG, PNG files are allowed.");
+        return;
+      }
+
+      setGuaImg(file);
+      const imgformData = new FormData();
+      imgformData.append("stufile", file);
+
+      try {
+
+        const res = await uploadStudentFile(imgformData)
+        const uploadedPath = res.data.file;
+        const id = res.data.insertId;
+        setFormData((prev) => ({ ...prev, img_src: uploadedPath }))
+        setGuaImgId(id)
+
+
+      } catch (error) {
+        console.error("Upload failed:", error);
+      }
+    }
+  };
+  const deleteImage = async (id: Number) => {
+    if (!id) return;
+
+    try {
+      const deletefile = await deleteFile(id)
+
+      if (deletefile.data.success) {
+        setGuaImgId(null);
+        setGuaImg(null);
+        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }))
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+    }
+  };
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+
+    if (!formData.phone_num.trim()) {
+      newErrors.phone_num = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phone_num)) {
+      newErrors.phone_num = "Phone number must be 10 digits";
+    }
+
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+    ) {
+      newErrors.email = "Email is invalid";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      if (editId) {
+        const { data } = await editGuardian(formData, editId);
+        if (data.success) {
+          toast.success(data.message);
+          fetchGuardians()
+          handleModalPopUp("edit_guardian");
+          setFormData({ name: "", phone_num: "", email: "", img_src: "" });
+          setErrors({});
+          setEditId(null);
+          setOriginalImgPath("");
+          setGuaImgId(null);
+          setGuaImg(null);
+        }
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Something went wrong!");
+    }
+  };
+  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault
+
+    handleModalPopUp('edit_guardian')
+    setFormData({
+      name: "",
+      phone_num: "",
+      email: "",
+      img_src: "",
+    })
+    setEditId(null)
+    setOriginalImgPath('')
+    setGuaImgId(null)
+    setGuaImg(null)
+    setErrors({})
+  }
+
   return (
     <>
       {/* Page Wrapper */}
@@ -412,15 +577,15 @@ const GuardianGrid = () => {
                             </Link>
                             <ul className="dropdown-menu dropdown-menu-right p-3">
                               <li>
-                                <Link
+                                <button
                                   className="dropdown-item rounded-1"
-                                  to="#"
+                                  onClick={() => fetchGuardianDataForEdit(gua.id)}
                                   data-bs-toggle="modal"
                                   data-bs-target="#edit_guardian"
                                 >
                                   <i className="ti ti-edit-circle me-2" />
                                   Edit
-                                </Link>
+                                </button>
                               </li>
                               <li>
                                 <button
@@ -518,7 +683,7 @@ const GuardianGrid = () => {
       </div>
       {/* /Page Wrapper */}
 
-       {
+      {
         loading2 ? (
           <div
             className="d-flex justify-content-center align-items-center"
@@ -685,10 +850,12 @@ const GuardianGrid = () => {
       </div>
       {/* /Delete Modal */}
 
+
       {/* Edit Parent */}
-      {/* <div className="modal fade" id="edit_guardian">
+      <div className="modal fade" id="edit_guardian">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
+            {/* Header */}
             <div className="modal-header">
               <h4 className="modal-title">Edit Guardian</h4>
               <button
@@ -700,14 +867,31 @@ const GuardianGrid = () => {
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
-              <div id="modal-tag" className="modal-body ">
+
+            {/* Form */}
+            <form onSubmit={handleSubmit}>
+              <div id="modal-tag" className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="d-flex align-items-center upload-pic flex-wrap row-gap-3 mb-3">
                       <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                        <i className="ti ti-photo-plus fs-16" />
+
+                        {
+                          guaImgId && guaImg ? (<img
+                            src={URL.createObjectURL(guaImg)}
+                            alt="guardian"
+                            className=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />) : (<img
+                            src={`${Imageurl}/${orginalImgPath}`}
+                            alt="guardian"
+                            className=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />)
+                        }
                       </div>
+
                       <div className="profile-upload">
                         <div className="profile-uploader d-flex align-items-center">
                           <div className="drag-upload-btn mb-3">
@@ -715,73 +899,90 @@ const GuardianGrid = () => {
                             <input
                               type="file"
                               className="form-control image-sign"
-                              multiple
+                              onChange={handleFileChange}
                             />
                           </div>
-                          <Link
-                            to="#"
-                            className="btn btn-primary mb-3"
-                          >
-                            Remove
-                          </Link>
+                          {guaImgId && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm mb-3"
+                              onClick={() => deleteImage(guaImgId)}
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
                         <p>Upload image size 4MB, Format JPG, PNG, SVG</p>
                       </div>
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Name</label>
                       <input
                         type="text"
-                        className="form-control"
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
                         placeholder="Enter Name"
-                        defaultValue="Thomas"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
                       />
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
+
+
                     <div className="mb-3">
                       <label className="form-label">Phone Number</label>
                       <input
                         type="text"
-                        className="form-control"
+                        className={`form-control ${errors.phone_num ? "is-invalid" : ""}`}
                         placeholder="Enter Phone Number"
-                        defaultValue="+1 65738 58937"
+                        name="phone_num"
+                        value={formData.phone_num}
+                        onChange={handleChange}
                       />
+                      {errors.phone_num && (
+                        <div className="invalid-feedback">{errors.phone_num}</div>
+                      )}
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Email Address</label>
                       <input
-                        type="text"
-                        className="form-control"
+                        type="email"
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
                         placeholder="Enter Email Address"
-                        defaultValue="thomas@example.com"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
                       />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                     </div>
+
 
                   </div>
                 </div>
               </div>
+
+
               <div className="modal-footer">
-                <Link
-                  to="#"
+                <button
+                  type="button"
+                  onClick={(e) => cancelEdit(e)}
                   className="btn btn-light me-2"
-                  data-bs-dismiss="modal"
+
                 >
                   Cancel
-                </Link>
-                <Link to="#" className="btn btn-primary">
+                </button>
+                <button type="submit" className="btn btn-primary">
                   Save Changes
-                </Link>
+                </button>
               </div>
             </form>
           </div>
         </div>
-      </div> */}
+      </div>
       {/* /Edit Parent */}
-
       <GuardianModal />
-
-     
-
-
     </>
   );
 };

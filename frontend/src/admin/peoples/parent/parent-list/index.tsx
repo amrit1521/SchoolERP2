@@ -16,9 +16,54 @@ import {
 import type { TableData } from "../../../../core/data/interface";
 import Table from "../../../../core/common/dataTable/index";
 import TooltipOption from "../../../../core/common/tooltipOption";
-import { allParents, deleteParent, Imageurl, speParent } from "../../../../service/api";
+import { allParents, deleteFile, deleteParent, editParent, Imageurl, parentForEdit, speParent, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+
+export interface ParentData {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+  Parent_Add: string;   // ISO date string
+  stu_img: string;
+  stu_id: number;
+  section: string;
+  class: string;
+  Student_Add: string;  // ISO date string
+  firstname: string;
+  lastname: string;
+}
+
+export interface SpeParentData {
+  id: number;
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+  Parent_Add: string;
+  stu_img: string;
+  stu_id: number;
+  class: string;
+  section: string;
+  gender: string;
+  rollnum: string;
+  admissiondate: string;
+  admissionnum: string;
+  Student_Add: string;
+  firstname: string;
+  lastname: string;
+  status: string;
+}
+
+export interface ParentDataForEdit {
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+}
 
 const ParentList = () => {
   const [show, setShow] = useState(false);
@@ -33,22 +78,7 @@ const ParentList = () => {
     setShow(false);
   };
 
-  interface ParentData {
-    id: number;
-    user_id: number;
-    name: string;
-    email: string;
-    phone_num: string;
-    img_src: string;
-    Parent_Add: string;   // ISO date string
-    stu_img: string;
-    stu_id: number;
-    section: string;
-    class: string;
-    Student_Add: string;  // ISO date string
-    firstname: string;
-    lastname: string;
-  }
+
 
   const [parents, setParents] = useState<ParentData[]>([]);
   const [loading, setLoading] = useState<boolean>(false)
@@ -105,27 +135,6 @@ const ParentList = () => {
 
   // speparentdta ======================================================================
 
-  // Interface define kijiye
-  interface SpeParentData {
-    id: number;
-    name: string;
-    email: string;
-    phone_num: string;
-    img_src: string;
-    Parent_Add: string;
-    stu_img: string;
-    stu_id: number;
-    class: string;
-    section: string;
-    gender: string;
-    rollnum: string;
-    admissiondate: string;
-    admissionnum: string;
-    Student_Add: string;
-    firstname: string;
-    lastname: string;
-    status: string;
-  }
 
   // useState ka sahi tareeka
   const [speParentData, setSpeParentData] = useState<SpeParentData | null>(null);
@@ -188,6 +197,171 @@ const ParentList = () => {
     e.preventDefault()
     setParentId(null)
     setUserId(null)
+  }
+
+  // edit parent-------------------------------------
+  const [formData, setFormData] = useState<ParentDataForEdit>({
+    name: "",
+    phone_num: "",
+    email: "",
+    img_src: "",
+  });
+  const [fatImg, setFatImg] = useState<File | null>(null)
+  const [fatImgId, setFatImgId] = useState<number | null>(null)
+  const [orginalImgPath, setOriginalImgPath] = useState<string>("")
+  const [editId, setEditId] = useState<number | null>(null)
+  const [errors, setErrors] = useState<{
+    name?: string;
+    phone_num?: string;
+    email?: string;
+  }>({});
+
+
+  const fetchParentDataForEdit = async (id: number) => {
+    try {
+      const { data } = await parentForEdit(id)
+      if (data.success) {
+        setFormData({
+          name: data.data.name,
+          phone_num: data.data.phone_num,
+          email: data.data.email,
+          img_src: data.data.img_src,
+        })
+        setEditId(id)
+        setOriginalImgPath(data.data.img_src)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+
+
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        toast.error("Only JPG, PNG files are allowed.");
+        return;
+      }
+
+      setFatImg(file);
+      const imgformData = new FormData();
+      imgformData.append("stufile", file);
+
+      try {
+
+        const res = await uploadStudentFile(imgformData)
+        const uploadedPath = res.data.file;
+        const id = res.data.insertId;
+        setFormData((prev) => ({ ...prev, img_src: uploadedPath }))
+        setFatImgId(id)
+
+
+      } catch (error) {
+        console.error("Upload failed:", error);
+      }
+    }
+  };
+  const deleteImage = async (id: Number) => {
+    if (!id) return;
+
+    try {
+      const deletefile = await deleteFile(id)
+
+      if (deletefile.data.success) {
+        setFatImgId(null);
+        setFatImg(null);
+        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }))
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+    }
+  };
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+
+    if (!formData.phone_num.trim()) {
+      newErrors.phone_num = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phone_num)) {
+      newErrors.phone_num = "Phone number must be 10 digits";
+    }
+
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (
+      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)
+    ) {
+      newErrors.email = "Email is invalid";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      if (editId) {
+        const { data } = await editParent(formData, editId);
+        if (data.success) {
+          toast.success(data.message);
+          fetchParentsData()
+          handleModalPopUp("edit_parent");
+          setFormData({ name: "", phone_num: "", email: "", img_src: "" });
+          setErrors({});
+          setEditId(null);
+          setOriginalImgPath("");
+          setFatImgId(null);
+          setFatImg(null);
+        }
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Something went wrong!");
+    }
+  };
+  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault
+
+    handleModalPopUp('edit_parent')
+    setFormData({
+      name: "",
+      phone_num: "",
+      email: "",
+      img_src: "",
+    })
+    setEditId(null)
+    setOriginalImgPath('')
+    setFatImgId(null)
+    setFatImg(null)
+    setErrors({})
+
   }
 
 
@@ -288,15 +462,15 @@ const ParentList = () => {
                   </button>
                 </li>
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => fetchParentDataForEdit(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_parent"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button
@@ -543,6 +717,139 @@ const ParentList = () => {
         </div>
       </div>
       {/* /Delete Modal */}
+
+      {/* Edit Parent */}
+      <div className="modal fade" id="edit_parent">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            {/* Header */}
+            <div className="modal-header">
+              <h4 className="modal-title">Edit Parent</h4>
+              <button
+                type="button"
+                className="btn-close custom-btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              >
+                <i className="ti ti-x" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit}>
+              <div id="modal-tag" className="modal-body">
+                <div className="row">
+                  <div className="col-md-12">
+
+                    <div className="d-flex align-items-center upload-pic flex-wrap row-gap-3 mb-3">
+                      <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+
+                        {
+                          fatImgId && fatImg ? (<img
+                            src={URL.createObjectURL(fatImg)}
+                            alt="Parent"
+                            className=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />) : (<img
+                            src={`${Imageurl}/${orginalImgPath}`}
+                            alt="Parent"
+                            className=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />)
+                        }
+                      </div>
+
+                      <div className="profile-upload">
+                        <div className="profile-uploader d-flex align-items-center">
+                          <div className="drag-upload-btn mb-3">
+                            Upload
+                            <input
+                              type="file"
+                              className="form-control image-sign"
+                              onChange={handleFileChange}
+                            />
+                          </div>
+                          {fatImgId && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm mb-3"
+                              onClick={() => deleteImage(fatImgId)}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <p>Upload image size 4MB, Format JPG, PNG, SVG</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                        placeholder="Enter Name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                      />
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                    </div>
+
+
+                    <div className="mb-3">
+                      <label className="form-label">Phone Number</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.phone_num ? "is-invalid" : ""}`}
+                        placeholder="Enter Phone Number"
+                        name="phone_num"
+                        value={formData.phone_num}
+                        onChange={handleChange}
+                      />
+                      {errors.phone_num && (
+                        <div className="invalid-feedback">{errors.phone_num}</div>
+                      )}
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Email Address</label>
+                      <input
+                        type="email"
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                        placeholder="Enter Email Address"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                      />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    </div>
+
+
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  onClick={(e) => cancelEdit(e)}
+                  className="btn btn-light me-2"
+
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Edit Parent */}
+
       <ParentModal />
 
 

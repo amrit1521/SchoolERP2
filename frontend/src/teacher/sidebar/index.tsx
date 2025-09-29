@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { SidebarData, TeacherSidebarData, StudentSidebarData ,ParentSidebarData } from "../../data/json/sidebarData";
-import ImageWithBasePath from "../imageWithBasePath";
+import { SidebarData, TeacherSidebarData, StudentSidebarData ,ParentSidebarData } from "../../core/data/json/sidebarData";
+import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import "../../../style/icon/tabler-icons/webfont/tabler-icons.css";
-import { setExpandMenu } from "../../data/redux/sidebarSlice";
+import { setExpandMenu } from "../../core/data/redux/sidebarSlice";
 import { useDispatch } from "react-redux";
 import {
   resetAllMode,
   setDataLayout,
-} from "../../data/redux/themeSettingSlice";
+} from "../../core/data/redux/themeSettingSlice";
 import usePreviousRoute from "./usePreviousRoute";
 
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
-import { all_routes } from "../../../feature-module/router/all_routes";
+import { all_routes } from "../../router/all_routes";
 const routes = all_routes;
 
 

@@ -19,6 +19,8 @@ router.post('/filterstudents', studentController.filterStudents)
 router.put('/disable/:id', studentController.disableStudent)
 // enable student
 router.put('/enable/:id', studentController.enableStudent)
+// student report
+router.get('/stureport', studentController.studentReport)
 // students leave report
 router.get('/stuleavereport', studentController.studentLeaveReport)
 
