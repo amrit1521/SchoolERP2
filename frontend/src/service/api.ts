@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseUrl: string = '/api'
+const baseUrl: string = `${import.meta.env.VITE_SERVERURL}/api`
 export const Imageurl = `http://localhost:3004/api/stu/uploads/image/`
 export const Documenturl = `http://localhost:3004/api/stu/uploads/document/`
 
