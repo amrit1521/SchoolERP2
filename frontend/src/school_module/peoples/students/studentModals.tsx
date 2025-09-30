@@ -7,7 +7,7 @@ import { DatePicker} from 'antd'
 import dayjs from "dayjs";
 import CommonSelect from '../../../core/common/commonSelect'
 import React, { useEffect, useState } from 'react'
-import { addLeave, allFeesGroupName, allFeesTypeName, stuFeesSubmit } from '../../../service/api'
+import { addLeave, allFeesGroup, allFeesType, stuFeesSubmit } from '../../../service/api'
 import { toast } from 'react-toastify'
 
 type Props = {
@@ -217,7 +217,7 @@ const handleFeesInputChange = (
       console.log(loading?"":"")
       try {
   
-        const [feesGroup, feesType] = await Promise.all([allFeesGroupName(), allFeesTypeName()])
+        const [feesGroup, feesType] = await Promise.all([allFeesGroup(), allFeesType()])
         // console.log(feesGroup, 'and', feesType)
         if (feesGroup?.data?.success) {
           setFeesGroupOption(feesGroup.data.feesGroups

@@ -5,7 +5,7 @@ import { feeGroup, feesTypes } from "../../../core/common/selectoption/selectopt
 import { DatePicker } from 'antd'
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { addFeesGroupName, addFeesMaster, addFeesTypeName, allFeesGroupName, allFeesTypeName } from "../../../service/api";
+import { addFeesGroup, addFeesMaster, addFeesType, allFeesGroup, allFeesType } from "../../../service/api";
 
 type Props = {
   onAction: Function;
@@ -78,7 +78,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     }
     try {
 
-      const { data } = await addFeesGroupName(feesFormData)
+      const { data } = await addFeesGroup(feesFormData)
       console.log(data)
       if (data.success) {
         toast.success(data.message)
@@ -115,7 +115,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
     console.log(loading);
     try {
 
-      const [feesGroup, feesType] = await Promise.all([allFeesGroupName(), allFeesTypeName()])
+      const [feesGroup, feesType] = await Promise.all([allFeesGroup(), allFeesType()])
       // console.log(feesGroup, 'and', feesType)
       if (feesGroup?.data?.success) {
         setFeesGroupOption(feesGroup.data.feesGroups
@@ -195,7 +195,7 @@ const FeesModal: React.FC<Props> = ({ onAction }) => {
 
     try {
 
-      const { data } = await addFeesTypeName(feesTypeFormData)
+      const { data } = await addFeesType(feesTypeFormData)
       if (data.success) {
         onAction()
         toast.success(data.message)

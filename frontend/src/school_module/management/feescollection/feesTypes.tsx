@@ -16,7 +16,7 @@ import FeesModal from "./feesModal";
 // import { feesType } from "../../../core/data/json/feesType";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
-import { allFeesTypeName } from "../../../service/api";
+import { allFeesType } from "../../../service/api";
 
 const FeesTypes = () => {
   const routes = all_routes;
@@ -50,7 +50,7 @@ interface FessTypeName {
     setLoading(true)
     try {
 
-      const { data } = await allFeesTypeName()
+      const { data } = await allFeesType()
       if (data.success) {
         setFeesTypeName(data.feesTypes)
       }

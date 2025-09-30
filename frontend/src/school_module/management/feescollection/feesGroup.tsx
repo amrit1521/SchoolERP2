@@ -13,7 +13,7 @@ import Table from "../../../core/common/dataTable/index";
 // import { feesData } from "../../../core/data/json/feesData";
 import FeesModal from "./feesModal";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { allFeesGroupName } from "../../../service/api";
+import { allFeesGroup } from "../../../service/api";
 import { toast } from "react-toastify";
 
 const FeesGroup = () => {
@@ -45,7 +45,7 @@ const FeesGroup = () => {
     setLoading(true)
     try {
 
-      const { data } = await allFeesGroupName()
+      const { data } = await allFeesGroup()
       if (data.success) {
         setFeesGroupName(data.feesGroups)
       }
