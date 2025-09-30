@@ -591,7 +591,7 @@ const AddStudent = () => {
     }
   };
 
-  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const cancelAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setStudentData({
       academicyear: '',
@@ -2047,7 +2047,7 @@ const AddStudent = () => {
                 </div>
                 {/* /Other Details */}
                 <div className="text-end">
-                  <button type="button" onClick={(e) => cancelEdit(e)} className="btn btn-light me-3">
+                  <button type="button" onClick={(e) => cancelAdd(e)} className="btn btn-light me-3">
                     Cancel
                   </button>
                   <button className="btn btn-primary">Add Student</button>

@@ -4,3 +4,6 @@ import { api } from "./api"
 export const studentLeaveReport = ()=>api.get('/stu/stuleavereport')
 // all student report
 export const studentReport = ()=>api.get('/stu/stureport')
+
+// fees report
+export const feesReportData = ()=>api.get('/fees/feesreport')

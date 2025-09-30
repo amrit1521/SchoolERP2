@@ -1,7 +1,7 @@
 import  { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+import ImageWithBasePath from "../../core/common/imageWithBasePath";
 type PasswordField = "password";
 
 const Login3 = () => {

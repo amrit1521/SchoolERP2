@@ -1,4 +1,5 @@
 const db = require('../../config/db')
+const dayjs = require('dayjs')
 
 exports.stuDetForFees = async (req, res) => {
   const { id } = req.params;
@@ -344,7 +345,6 @@ exports.DeleteFeesType = async (req, res) => {
 };
 
 
-
 // add master types -----------------------------------------------
 
 exports.AddFeesMaster = async (req, res) => {
@@ -362,7 +362,7 @@ exports.AddFeesMaster = async (req, res) => {
       totalAmount,
       fineAmount,
     } = req.body;
-    console.log(req.body)
+ 
 
  
     if (!amount || !dueDate || !feesGroup || !feesType) {
@@ -377,7 +377,7 @@ exports.AddFeesMaster = async (req, res) => {
 
     const values = [
       amount,
-      dueDate,
+      dayjs(dueDate).format('YYYY-MM-DD'),
       feesGroup,
       feesType,
       fineType || "",
@@ -457,8 +457,6 @@ exports.DeleteFeesMaster = async (req, res) => {
 };
 
 
-
-
 // assigen
 exports.feesAssignToStudent = async (req, res) => {
   try {
@@ -518,10 +516,9 @@ exports.getFeesDeatilsSpecStudent = async (req, res) => {
     const [rows] = await db.query(sql, [rollnum]);
 
     if (rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `No fee records found for student_rollnum: ${rollnum}`,
-        feesdata: []
+      return res.status(200).json({
+        success: true,
+        message: `Fees already paid : ${rollnum}`,
       });
     }
 
@@ -579,7 +576,6 @@ exports.allAssignDetails = async (req, res) => {
 };
 
 
-
 exports.feesSubmit = async (req, res) => {
   const data = req.body;
 
@@ -594,6 +590,7 @@ exports.feesSubmit = async (req, res) => {
       paymentRef,
       notes
     } = data;
+    console.log(collectionDate)
 
     const [rows] = await db.query(`SELECT * FROM fees_assign WHERE student_rollnum=? AND status='0' `,[student_rollnum] )
     if(rows.length===0){
@@ -621,7 +618,7 @@ exports.feesSubmit = async (req, res) => {
       feesGroup,
       feesType,
       amount,
-      collectionDate,
+      dayjs(collectionDate).format('YYYY-MM-DD'),
       paymentType,
       paymentRef,
       notes,
@@ -687,6 +684,53 @@ exports.getFeesCollection = async (req, res) => {
 
   } catch (error) {
     console.error(" Error fetching fee details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// fees report ---------------
+exports.feesReport = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        sfa.id,
+        sfa.collectionDate,
+        sfa.PayementType AS mode,
+        sfa.paymentRefno,
+        sfa.status,
+        sfa.discount,
+         sfa.AmountPay,
+        fm.fineAmount AS fine,
+        fm.dueDate,
+       
+        fg.feesGroup,
+        ft.name AS feesType,
+        st.class,
+        st.section
+        FROM fees_assign sfa
+        LEFT JOIN fees_master fm ON fm.id = sfa.fees_masterId
+        LEFT JOIN fees_group fg ON fm.feesGroup = fg.id
+        LEFT JOIN fees_type ft ON fm.feesType = ft.id
+        LEFT JOIN students st ON sfa.student_rollnum = st.rollnum       
+        WHERE sfa.status="1"    
+    `;
+
+    const [rows] = await db.query(sql);
+
+    
+
+    return res.status(200).json({
+      success: true,
+      message: "Data for Fee-report fetched successfully",
+      feesdata: rows
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching fee details:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

@@ -28,5 +28,6 @@ router.get('/allassigndetails' , feesController.allAssignDetails)
 router.post('/feessubmit' , feesController.feesSubmit)
 router.get('/getfeesdetailsspestu/:rollnum' , feesController.getFeesDeatilsSpecStudent)
 router.get('/getfeescollection' , feesController.getFeesCollection)
+router.get('/feesreport' , feesController.feesReport)
 
 module.exports =router;

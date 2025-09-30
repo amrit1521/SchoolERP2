@@ -12,14 +12,16 @@ import {
   ids,
   status,
 } from "../../../core/common/selectoption/selectoption";
-// import type { TableData } from "../../../core/data/interface";
+
 import Table from "../../../core/common/dataTable/index";
 import FeesModal from "./feesModal";
-// import { feesMasterData } from "../../../core/data/json/feesMaster";
+
 import TooltipOption from "../../../core/common/tooltipOption";
 import { allFeesMaster } from "../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
+
+
 
 const FeesMaster = () => {
   const routes = all_routes;
@@ -86,7 +88,7 @@ const FeesMaster = () => {
     status: item.status === "1" ? "Active" : "Inactive",
   }));
 
-  // Columns
+ 
   const columns = [
     {
       title: "ID",

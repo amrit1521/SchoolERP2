@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+import ImageWithBasePath from "../../core/common/imageWithBasePath";
 
 const ResetPasswordSuccess3 = () => {
   const routes = all_routes;

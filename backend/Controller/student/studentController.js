@@ -320,8 +320,6 @@ exports.enableStudent = async (req, res) => {
 
 
 
-
-
 exports.getStudentByIdForEdit = async (req, res) => {
   const { id } = req.params;
 

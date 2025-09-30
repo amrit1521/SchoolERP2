@@ -20,7 +20,7 @@ const StudentFees = () => {
   const [token , setToken] = useState<string|null>(null)
 
 
-  // ✅ Student API function
+  
   const fetchStudent = async (studentId: number) => {
     try {
       const res = await specificStudentData1(studentId);
@@ -38,7 +38,6 @@ const StudentFees = () => {
     }
   };
 
-  // ✅ Leave API function
   const fetchFees = async (rollnum: number) => {
     try {
       const res = await getFeesDetailsSpecStudent(rollnum);
@@ -51,7 +50,7 @@ const StudentFees = () => {
         setFeesInfo([]);
       }
     } catch (error) {
-      console.error("❌ Error fetching leave data:", error);
+      console.error("Error fetching leave data:", error);
       setFeesInfo([]);
     }
   };
@@ -75,13 +74,15 @@ const StudentFees = () => {
     }
   };
 
-  // ✅ Example: useEffect me call
+
   useEffect(() => {
     setToken(localStorage.getItem('token'))
     if (id) {
       fetchStudentAndFees();
     }
   }, [id]);
+
+
 
 
   return (
@@ -232,7 +233,7 @@ const StudentFees = () => {
                                   </td>
                                   <td>{fee.feesType}</td>
                                   {/* <td>{new Date(fee.assigned_date).toLocaleDateString()}</td> */}
-                                  <td>{dayjs(fee.assigned_date).format('DD MMM YYYY')}</td>
+                                  <td>{dayjs(fee.dueDate).format('DD MMM YYYY')}</td>
                                   <td>{fee.totalAmount || "-"}</td>
                                   <td>{fee.AmountPay || "-"}</td>
                                   <td>
@@ -276,7 +277,7 @@ const StudentFees = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {student.rollnum && (<StudentModals onAdd={() => { }} rollnum={Number(student.rollnum)} />)}
+      {student.rollnum && (<StudentModals onAdd={fetchStudentAndFees} rollnum={Number(student.rollnum)} />)}
     </>
   );
 };

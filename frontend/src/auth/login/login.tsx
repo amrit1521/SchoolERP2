@@ -44,6 +44,8 @@ const Login = () => {
     password: ''
   })
   const [error, setError] = useState<Errors>({})
+  const [resError ,setResError] = useState<string>("")
+  const [loading ,setLoading] = useState<boolean>(false)
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,9 +88,7 @@ const Login = () => {
   // ✅ Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // console.log("Form Submitted:", loginForm);
-
+    setLoading(true)
     if (!validateLoginForm(loginForm)) {
       return
     }
@@ -96,6 +96,8 @@ const Login = () => {
       const { data } = await login(loginForm)
       if (data.success) {
         toast.success(data.message)
+        setError({})
+        setResError("")
 
         const decoded = jwtDecode<CustomJwtPayload>(data.token)
         localStorage.setItem('token' , JSON.stringify(decoded))
@@ -112,13 +114,11 @@ const Login = () => {
 
     } catch (error: any) {
       console.log(error)
-      toast.error(error.response.data.message)
+      setResError(error.response.data.message)
+      // toast.error()
+    }finally{
+      setLoading(false)
     }
-
-    //  navigate(`${routes.adminDashboard}`)
-
-
-
   };
 
   return (
@@ -262,6 +262,7 @@ const Login = () => {
                         <div className="login-or">
                           <span className="span-or">Or</span>
                         </div>
+                        {resError&&(<p className="text-danger fw-semi text-capitalize text-center">{resError}</p>)}
                         <div className="mb-3 ">
                           <label className="form-label">Email Address</label>
                           <div className="input-icon mb-3 position-relative">
@@ -319,12 +320,14 @@ const Login = () => {
                       </div>
                       <div className="p-4 pt-0">
                         <div className="mb-3">
+                          
                           <button
+                          disabled={loading}
                             type="submit"
-                            // to={routes.adminDashboard}
                             className="btn btn-primary w-100"
                           >
-                            Sign In
+                           {loading?"Signing":" Sign In"}
+                          
                           </button>
                         </div>
                         {/* <div className="text-center">

@@ -7,6 +7,20 @@ import { toast } from "react-toastify";
 // import { Toast } from "react-bootstrap";
 
 type PasswordField = "otp" | "newPassword" | "confirmPassword";
+export interface FormData {
+  email: string;
+  otp: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ErrorState {
+  email?: string;
+  otp?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+};
+
 
 const ResetPassword = () => {
   const routes = all_routes;
@@ -28,11 +42,13 @@ const ResetPassword = () => {
 
   // ✅ Form state
   const [formData, setFormData] = useState({
-    email: "sa@gmail.com",
+    email: "",
     otp: "",
     newPassword: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<ErrorState>({});
+  const [resError, setResError] = useState<string>("")
 
   useEffect(() => {
     if (location.state?.email) {
@@ -40,31 +56,74 @@ const ResetPassword = () => {
     }
   }, [location.state]);
 
-  // ✅ Handle input change
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle form submit
+  const validate = () => {
+    const newErrors: ErrorState = {};
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email";
+    }
+
+    // OTP validation (exactly 6 characters, only digits)
+    if (!formData.otp.trim()) {
+      newErrors.otp = "OTP is required";
+    } else if (!/^\d{6}$/.test(formData.otp)) {
+      newErrors.otp = "OTP must be exactly 6 digits";
+    }
+
+    // New password validation
+    if (!formData.newPassword.trim()) {
+      newErrors.newPassword = "New password is required";
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+    }
+
+    // Confirm password validation
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // ✅ Update error state
+    setErrors(newErrors);
+
+    // return true if valid
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    console.log(formData)
+    if (!validate()) return;
     try {
       const { data } = await resetPassword(formData)
       if (data.success) {
         toast.success(data.message)
         navigate(routes.resetPasswordSuccess);
-      } else {
-        alert(data.message || "Something went wrong");
+        setErrors({})
+        setResError("")
+        setFormData({
+          email: "",
+          otp: "",
+          newPassword: "",
+          confirmPassword: "",
+        })
+
       }
     } catch (error: any) {
       console.error("Reset password error:", error);
-      toast.error(error.response.data.message)
+      setResError(error.response.data.message)
+      // toast.error(error.response.data.message)
     }
   };
 
@@ -168,7 +227,8 @@ const ResetPassword = () => {
                           </p>
                         </div>
 
-                        {/* ✅ OTP */}
+                        {resError && (<p className="text-danger my-2 text-center fw-semibold" style={{ fontSize: "0.85rem" }}>{resError}</p>)}
+
                         <div className="mb-3">
                           <label className="form-label">Enter Otp</label>
                           <div className="pass-group">
@@ -178,8 +238,9 @@ const ResetPassword = () => {
                               value={formData.otp}
                               onChange={handleChange}
                               className="pass-input form-control"
-                              required
+
                             />
+                            {errors.otp && <p className="text-danger ">{errors.otp}</p>}
                           </div>
                         </div>
 
@@ -197,18 +258,20 @@ const ResetPassword = () => {
                               value={formData.newPassword}
                               onChange={handleChange}
                               className="pass-input form-control"
-                              required
+
                             />
                             <span
                               className={`ti toggle-passwords ${passwordVisibility.newPassword
-                                  ? "ti-eye"
-                                  : "ti-eye-off"
+                                ? "ti-eye"
+                                : "ti-eye-off"
                                 }`}
                               onClick={() =>
                                 togglePasswordVisibility("newPassword")
                               }
                             ></span>
+
                           </div>
+                          {errors.newPassword && <p className="text-danger text-sm">{errors.newPassword}</p>}
                         </div>
 
                         {/* ✅ Confirm Password */}
@@ -227,18 +290,20 @@ const ResetPassword = () => {
                               value={formData.confirmPassword}
                               onChange={handleChange}
                               className="pass-input form-control"
-                              required
+
                             />
                             <span
                               className={`ti toggle-passwords ${passwordVisibility.confirmPassword
-                                  ? "ti-eye"
-                                  : "ti-eye-off"
+                                ? "ti-eye"
+                                : "ti-eye-off"
                                 }`}
                               onClick={() =>
                                 togglePasswordVisibility("confirmPassword")
                               }
                             ></span>
+
                           </div>
+                          {errors.confirmPassword && <p className="text-danger text-sm">{errors.confirmPassword}</p>}
                         </div>
 
                         <div className="mb-3">

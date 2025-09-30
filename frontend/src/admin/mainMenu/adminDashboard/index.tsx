@@ -13,7 +13,6 @@ import "slick-carousel/slick/slick-theme.css";
 import AdminDashboardModal from "./adminDashboardModal";
 
 const AdminDashboard = () => {
-  console.log("hello index")
   const routes = all_routes;
   const [date, setDate] = useState<Nullable<Date>>(null);
   function SampleNextArrow(props: any) {

@@ -104,7 +104,6 @@ export interface TeacherData {
 const EditTeacher = () => {
 
     const { userId } = useParams()
-    console.log(userId)
     const routes = all_routes;
     const navigate = useNavigate()
 
@@ -342,7 +341,6 @@ const EditTeacher = () => {
     };
 
 
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setTeacherData((prev) => ({
@@ -350,7 +348,6 @@ const EditTeacher = () => {
             [name]: value,
         }));
     };
-
 
     const handleDateChange = (
         name: keyof TeacherData,
@@ -361,13 +358,10 @@ const EditTeacher = () => {
         setTeacherData((prev) => ({ ...prev, [name]: dateString }));
     };
 
-    // Handle for CommonSelect
     const handleSelectChange = (name: keyof TeacherData, value: string | number) => {
         setTeacherData((prev) => ({ ...prev, [name]: value }));
     };
 
-
-    // Generic tag handler
     const handleTagsChange = (field: keyof typeof teacherData, tags: string[]) => {
         setTeacherData((prev) => ({
             ...prev,
@@ -375,7 +369,6 @@ const EditTeacher = () => {
         }));
     };
 
-    // ✅ Validation function
     const validateTeacherData = (data: TeacherData) => {
         const errors: Partial<Record<keyof TeacherData, string>> = {};
 
@@ -427,18 +420,14 @@ const EditTeacher = () => {
         return Object.keys(errors).length === 0
     };
 
-
-
-
-
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         if (!validateTeacherData(teacherData)) {
             return
         }
-        console.log(teacherResume?"":"")
-        console.log(teacherJoinLetter?"":"")
+        console.log(teacherResume ? "" : "")
+        console.log(teacherJoinLetter ? "" : "")
 
         try {
 

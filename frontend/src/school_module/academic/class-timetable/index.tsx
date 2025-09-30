@@ -3,7 +3,7 @@ import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
   // classduration,
   classSection,
-  classSylabus,
+  // classSylabus,
   language,
   // period,
   // routinename,

@@ -7,14 +7,15 @@ import { DatePicker, Skeleton } from 'antd'
 import dayjs from "dayjs";
 import CommonSelect from '../../../core/common/commonSelect'
 import React, { useEffect, useState } from 'react'
-import { addLeave, allFeesGroupName, allFeesTypeName, getAllLeaveTypeData, stuFeesSubmit } from '../../../service/api'
+import { addLeave, allFeesGroup, allFeesType, getAllLeaveTypeData, stuFeesSubmit } from '../../../service/api'
 import { toast } from 'react-toastify'
 import { handleModalPopUp } from '../../../handlePopUpmodal';
 
 type Props = {
-  rollnum: number;
-  onAdd: Function;
+  rollnum: number ;
+  onAdd: () => void;
 }
+
 export interface ApplyLeave {
   student_rollnum: number | null;
   leave_type_id: number | null;
@@ -38,6 +39,7 @@ export interface FeesFormData {
 }
 
 const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
+ 
 
   const [applayLeaveForm, setApplayLeaveForm] = useState<ApplyLeave>({
     student_rollnum: rollnum,
@@ -170,7 +172,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
 
   const handeFeesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+      console.log(formData)
     if (!validateForm()) {
       toast.error("Please fix the errors before submitting");
       return;
@@ -181,6 +183,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       if (data.success) {
         toast.success(data.message)
         handleModalPopUp('add_fees_collect')
+        onAdd()
         setFormData({
           student_rollnum: 0,
           feesGroup: "",
@@ -248,7 +251,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   const fetchFeesOptions = async () => {
     setLoadingOptions(true);
     try {
-      const [groupRes, typeRes] = await Promise.all([allFeesGroupName(), allFeesTypeName()]);
+      const [groupRes, typeRes] = await Promise.all([allFeesGroup(), allFeesType()]);
       if (groupRes.data.success) {
         setFeesGroupOptions(groupRes.data.feesGroups.map((g: any) => ({ value: g.id, label: g.feesGroup })));
       }

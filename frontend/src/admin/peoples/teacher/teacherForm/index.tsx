@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
@@ -31,6 +31,7 @@ import { addTeacher, deleteTeacherFile, uploadTeacherFile } from "../../../../se
 
 const TeacherForm = () => {
   const routes = all_routes;
+  const navigate = useNavigate()
 
   // const [isEdit, setIsEdit] = useState<boolean>(false);
 
@@ -140,7 +141,7 @@ const TeacherForm = () => {
     primarycont: "",
     email: "",
     password: "",
-    conpassword:"",
+    conpassword: "",
     status: "",
     teacher_id: "",
     fromclass: "",
@@ -351,13 +352,13 @@ const TeacherForm = () => {
     if (!data.bank_name.trim()) errors.bank_name = "Bank name is required";
     if (!data.branch_name.trim()) errors.branch_name = "Branch name is required";
 
-    if(!teacherImg){
+    if (!teacherImg) {
       toast.error("Teacher Image is Required !")
     }
-    if(!teacherResume){
+    if (!teacherResume) {
       toast.error("Teacher Resume is Required !")
     }
-    if(!teacherJoinLetter){
+    if (!teacherJoinLetter) {
       toast.error("Teacher Join Letter is Required !")
     }
 
@@ -410,87 +411,163 @@ const TeacherForm = () => {
       // })
 
       const res = await addTeacher(formData)
-        if (res.data.success) {
-          toast.success(res.data.message);
+      if (res.data.success) {
+        toast.success(res.data.message);
 
-          // Teacher data reset
-          setTeacherData({
-            first_name: "",
-            last_name: "",
-            primarycont: "",
-            email: "",
-            password: "",
-            conpassword: "",
-            status: "",
-            teacher_id: "",
-            fromclass: "",
-            toclass: "",
-            section: "",
-            class: "",
-            subject: "",
-            gender: "",
-            blood_gp: "",
-            date_of_join: "",
-            fat_name: "",
-            mot_name: "",
-            dob: "",
-            mari_status: "",
-            lan_known: [],
-            qualification: "",
-            work_exp: "",
-            prev_school: "",
-            prev_school_addr: "",
-            prev_school_num: "",
-            address: "",
-            perm_address: "",
-            pan_or_id: "",
-            other_info: "",
-            epf_no: "",
-            basic_salary: "",
-            contract_type: "",
-            work_sift: "",
-            work_location: "",
-            date_of_leave: "",
-            medical_leaves: "",
-            casual_leaves: "",
-            maternity_leaves: "",
-            sick_leaves: "",
-            account_name: "",
-            account_num: "",
-            bank_name: "",
-            ifsc_code: "",
-            branch_name: "",
-            route: "",
-            vehicle_num: "",
-            pickup_point: "",
-            hostel: "",
-            room_num: "",
-            facebook_link: "",
-            instagram_link: "",
-            linked_link: "",
-            twitter_link: "",
-          });
+        // Teacher data reset
+        setTeacherData({
+          first_name: "",
+          last_name: "",
+          primarycont: "",
+          email: "",
+          password: "",
+          conpassword: "",
+          status: "",
+          teacher_id: "",
+          fromclass: "",
+          toclass: "",
+          section: "",
+          class: "",
+          subject: "",
+          gender: "",
+          blood_gp: "",
+          date_of_join: "",
+          fat_name: "",
+          mot_name: "",
+          dob: "",
+          mari_status: "",
+          lan_known: [],
+          qualification: "",
+          work_exp: "",
+          prev_school: "",
+          prev_school_addr: "",
+          prev_school_num: "",
+          address: "",
+          perm_address: "",
+          pan_or_id: "",
+          other_info: "",
+          epf_no: "",
+          basic_salary: "",
+          contract_type: "",
+          work_sift: "",
+          work_location: "",
+          date_of_leave: "",
+          medical_leaves: "",
+          casual_leaves: "",
+          maternity_leaves: "",
+          sick_leaves: "",
+          account_name: "",
+          account_num: "",
+          bank_name: "",
+          ifsc_code: "",
+          branch_name: "",
+          route: "",
+          vehicle_num: "",
+          pickup_point: "",
+          hostel: "",
+          room_num: "",
+          facebook_link: "",
+          instagram_link: "",
+          linked_link: "",
+          twitter_link: "",
+        });
 
-          // File states reset
-          setTeacherImg(null);
-          setTeacherResume(null);
-          setTeacherJoinLetter(null);
+        // File states reset
+        setTeacherImg(null);
+        setTeacherResume(null);
+        setTeacherJoinLetter(null);
 
-          setTeacherImgpath("");
-          setTeacherResumepath("");
-          setTeacherJoinLetterpath("");
+        setTeacherImgpath("");
+        setTeacherResumepath("");
+        setTeacherJoinLetterpath("");
 
-          setTeacherImgid(null);
-          setTeacherResumeid(null);
-          setTeacherJoinLetterid(null);
-        
-        }
+        setTeacherImgid(null);
+        setTeacherResumeid(null);
+        setTeacherJoinLetterid(null);
+        navigate(-1)
+
+      }
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
     }
   }
 
+
+  const handleCancel = (e:React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setTeacherData({
+      first_name: "",
+      last_name: "",
+      primarycont: "",
+      email: "",
+      password: "",
+      conpassword: "",
+      status: "",
+      teacher_id: "",
+      fromclass: "",
+      toclass: "",
+      section: "",
+      class: "",
+      subject: "",
+      gender: "",
+      blood_gp: "",
+      date_of_join: "",
+      fat_name: "",
+      mot_name: "",
+      dob: "",
+      mari_status: "",
+      lan_known: [],
+      qualification: "",
+      work_exp: "",
+      prev_school: "",
+      prev_school_addr: "",
+      prev_school_num: "",
+      address: "",
+      perm_address: "",
+      pan_or_id: "",
+      other_info: "",
+      epf_no: "",
+      basic_salary: "",
+      contract_type: "",
+      work_sift: "",
+      work_location: "",
+      date_of_leave: "",
+      medical_leaves: "",
+      casual_leaves: "",
+      maternity_leaves: "",
+      sick_leaves: "",
+      account_name: "",
+      account_num: "",
+      bank_name: "",
+      ifsc_code: "",
+      branch_name: "",
+      route: "",
+      vehicle_num: "",
+      pickup_point: "",
+      hostel: "",
+      room_num: "",
+      facebook_link: "",
+      instagram_link: "",
+      linked_link: "",
+      twitter_link: "",
+    });
+
+    // File states reset
+    setTeacherImg(null);
+    setTeacherResume(null);
+    setTeacherJoinLetter(null);
+
+    setTeacherImgpath("");
+    setTeacherResumepath("");
+    setTeacherJoinLetterpath("");
+
+    setTeacherImgid(null);
+    setTeacherResumeid(null);
+    setTeacherJoinLetterid(null);
+    navigate(-1)
+
+  }
 
   return (
     <>
@@ -737,7 +814,7 @@ const TeacherForm = () => {
                             <CommonSelect
                               className="select"
                               options={bloodGroup}
-                               value={teacherData.blood_gp}
+                              value={teacherData.blood_gp}
                               onChange={(option) => handleSelectChange("blood_gp", option ? option.value : "")}
                             />
                           </div>
@@ -839,7 +916,7 @@ const TeacherForm = () => {
                             <CommonSelect
                               className="select"
                               options={Marital}
-                             value={teacherData.mari_status}
+                              value={teacherData.mari_status}
                               onChange={(option) => handleSelectChange("mari_status", option ? option.value : "")}
                             />
                           </div>
@@ -1063,7 +1140,7 @@ const TeacherForm = () => {
                             <CommonSelect
                               className="select"
                               options={Shift}
-                                  value={teacherData.work_sift}
+                              value={teacherData.work_sift}
                               onChange={(option) => handleSelectChange("work_sift", option ? option.value : "")}
                             />
                           </div>
@@ -1320,7 +1397,7 @@ const TeacherForm = () => {
                           <CommonSelect
                             className="select"
                             options={PickupPoint}
-                           value={teacherData.pickup_point}
+                            value={teacherData.pickup_point}
                             onChange={(option) => handleSelectChange("pickup_point", option ? option.value : "")}
                           />
                         </div>
@@ -1354,7 +1431,7 @@ const TeacherForm = () => {
                           <CommonSelect
                             className="select"
                             options={Hostel}
-                          value={teacherData.hostel}
+                            value={teacherData.hostel}
                             onChange={(option) => handleSelectChange("hostel", option ? option.value : "")}
                           />
                         </div>
@@ -1365,7 +1442,7 @@ const TeacherForm = () => {
                           <CommonSelect
                             className="select"
                             options={roomNO}
-                           value={teacherData.room_num}
+                            value={teacherData.room_num}
                             onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
                           />
                         </div>
@@ -1556,7 +1633,7 @@ const TeacherForm = () => {
                 </>
 
                 <div className="text-end">
-                  <button type="button" className="btn btn-light me-3">
+                  <button type="button" onClick={(e)=>handleCancel(e)} className="btn btn-light me-3">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

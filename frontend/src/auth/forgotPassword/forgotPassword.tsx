@@ -5,6 +5,7 @@ import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { forgotPassword } from "../../service/api";
+import { Spinner } from "react-bootstrap";
 
 const ForgotPassword = () => {
   const routes = all_routes;
@@ -157,7 +158,7 @@ const ForgotPassword = () => {
                               type="submit"
                               className="btn btn-primary w-100"
                             >
-                              {loading?"Sending":"Send Otp"}
+                              {loading? <Spinner/>:"Send Otp"}
                             </button>
                           </div>
                           <div className="text-center">

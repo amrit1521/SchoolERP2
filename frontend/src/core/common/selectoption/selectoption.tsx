@@ -481,6 +481,8 @@ export const allClass = [
   { value: "VIII", label: "VIII" },
   { value: "IX", label: "IX" },
   { value: "X", label: "X" },
+  { value: "XI", label: "XI" },
+  { value: "XII", label: "XII" },
 ];
 
 export const allSubject = [

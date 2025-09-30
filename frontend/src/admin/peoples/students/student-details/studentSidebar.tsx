@@ -149,14 +149,14 @@ const StudentSidebar: React.FC<Props> = ({ student, loading }) => {
                 {/* <span className="badge badge-light text-dark">Spanish</span> */}
               </dd>
             </dl>
-            <Link
-              to="#"
+            <button
+              
               data-bs-toggle="modal"
               data-bs-target="#add_fees_collect"
               className="btn btn-primary btn-sm w-100"
             >
               Add Fees
-            </Link>
+            </button>
           </div>
           {/* /Basic Information */}
         </div>

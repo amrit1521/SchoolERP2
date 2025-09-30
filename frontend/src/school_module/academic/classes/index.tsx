@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import {
-  activeList,
+  // activeList,
   allClass,
-  classSection,
+  // classSection,
   classSylabus,
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";

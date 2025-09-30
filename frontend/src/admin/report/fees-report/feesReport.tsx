@@ -9,13 +9,78 @@ import {
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import Table from "../../../core/common/dataTable/index";
-import { fees_report_data } from "../../../core/data/json/fees_report_data";
+// import { fees_report_data } from "../../../core/data/json/fees_report_data";
 import type { TableData } from "../../../core/data/interface";
 import { all_routes } from "../../router/all_routes";
+import { useEffect, useState } from "react";
+import { feesReportData } from "../../../service/reports";
+import { Spinner } from "../../../spinner";
+import dayjs from 'dayjs'
+
+export interface FeeReport {
+  id: number;
+  collectionDate: string; 
+  mode: string;          
+  paymentRefno: string;
+  status: "0" | "1";     
+  discount: string;     
+  fine: string;         
+  dueDate: string;    
+  AmountPay: string;  
+  feesGroup: string;
+  feesType: string;
+  class: string;
+  section: string;
+}
+
 
 const FeesReport = () => {
-  const data = fees_report_data;
+  // const data = fees_report_data;
   const routes = all_routes; 
+
+
+
+  const [feesReport , setFeesReport] = useState<FeeReport[]>([])
+  const [loading ,setLoading] = useState<boolean>(false)
+
+
+  const fetchFeesReportData = async()=>{
+       setLoading(true)
+       await new Promise((res)=>setTimeout(res,500))
+    try {
+       const {data} = await feesReportData()
+       if(data.success){
+        setFeesReport(data.feesdata)
+       }
+    } catch (error) {
+      console.log(error)
+    }finally{
+      setLoading(false)
+    }
+  }
+
+ useEffect(()=>{
+      fetchFeesReportData()
+
+ } ,[])
+
+ const tableData = feesReport.map((fee:any)=>({
+  key:fee.id,
+  feesGroup:`${fee.class}-${fee.section}`,
+  feesDescription:fee.feesGroup,
+  feesCode:fee.feesType,
+  dueDate:dayjs(fee.dueDate).format('DD MMM YYYY'),
+  amount:fee.AmountPay,
+  status:fee.status,
+  refId:fee.paymentRefno,
+  mode:fee.mode,
+  datePaid:dayjs(fee.collectionDate).format('DD MMM YYYY'),
+  discount:fee.discount,
+  fine:fee.fine
+
+  
+
+ }))
 
   const columns = [
     {
@@ -46,7 +111,7 @@ const FeesReport = () => {
         a.dueDate.length - b.dueDate.length,
     },
     {
-      title: "Amount $",
+      title: "Amount ",
       dataIndex: "amount",
       key: "amount",
       sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
@@ -60,7 +125,7 @@ const FeesReport = () => {
         status ? (
           <span className="badge badge-soft-success d-inline-flex align-items-center">
             <i className="ti ti-circle-filled fs-5 me-1" />
-            {status}
+            Paid
           </span>
         ) : (
           <></>
@@ -86,25 +151,25 @@ const FeesReport = () => {
         a.datePaid.length - b.datePaid.length,
     },
     {
-      title: "Discount ($)",
+      title: "Discount",
       dataIndex: "discount",
       key: "discount",
       sorter: (a: TableData, b: TableData) =>
         a.discount.length - b.discount.length,
     },
     {
-      title: "Fine ($)",
+      title: "Fine",
       dataIndex: "fine",
       key: "fine",
       sorter: (a: TableData, b: TableData) => a.fine.length - b.fine.length,
     },
-    {
-      title: "Balance ($)",
-      dataIndex: "balance",
-      key: "balance",
-      sorter: (a: TableData, b: TableData) =>
-        a.balance.length - b.balance.length,
-    },
+    // {
+    //   title: "Balance ($)",
+    //   dataIndex: "balance",
+    //   key: "balance",
+    //   sorter: (a: TableData, b: TableData) =>
+    //     a.balance.length - b.balance.length,
+    // },
   ];
 
   return (
@@ -239,7 +304,9 @@ const FeesReport = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+             {
+              loading?<Spinner/>:( <Table dataSource={tableData} columns={columns} Selection={true} />)
+             }
               {/* /Student List */}
             </div>
           </div>
