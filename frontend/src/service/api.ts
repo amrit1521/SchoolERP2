@@ -1,22 +1,30 @@
 import axios from 'axios'
 
-const baseUrl: string = `${import.meta.env.VITE_SERVERURL}/api`
-export const Imageurl = `http://localhost:3004/api/stu/uploads/image/`
-export const Documenturl = `http://localhost:3004/api/stu/uploads/document/`
+
+const BASE_URL: string = import.meta.env.VITE_SERVERURL;
+export const API_URL = `${BASE_URL}/api`;
+
+export const Imageurl = `${API_URL}/stu/uploads/image/`;
+export const Documenturl = `${API_URL}/stu/uploads/document/`;
+
 
 export const api = axios.create({
-    baseURL: baseUrl,
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    withCredentials: true
-})
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true,
+});
+
 
 export const api2 = axios.create({
-    baseURL: baseUrl,
-    headers: { "Content-Type": "multipart/form-data" },
-    withCredentials: true
-})
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+  withCredentials: true,
+});
+
 
 
 
