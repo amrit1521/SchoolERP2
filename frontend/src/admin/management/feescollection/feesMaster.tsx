@@ -46,13 +46,14 @@ const FeesMaster = () => {
 
   const [feesMasterdata, setFeesMasterdata] = useState<FeesMaster[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [deleteId ,setDeleteId] = useState<number|null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null)
 
   const fetchAllMaterFees = async () => {
     setLoading(true);
+    await new Promise((res) => setTimeout(res, 500))
     try {
       const { data } = await allFeesMaster();
-      console.log(data);
       if (data.success) {
         setFeesMasterdata(data.fees_master);
       }
@@ -71,6 +72,7 @@ const FeesMaster = () => {
   const onSubmitMasterFees = () => {
     fetchAllMaterFees()
     setDeleteId(null)
+    setEditId(null)
   }
 
 
@@ -88,7 +90,7 @@ const FeesMaster = () => {
     status: item.status === "1" ? "Active" : "Inactive",
   }));
 
- 
+
   const columns = [
     {
       title: "ID",
@@ -164,7 +166,7 @@ const FeesMaster = () => {
     {
       title: "Action",
       dataIndex: "id",
-      render: (id:number) => (
+      render: (id: number) => (
         <div className="d-flex align-items-center">
           <div className="dropdown">
             <Link
@@ -177,20 +179,20 @@ const FeesMaster = () => {
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => setEditId(id)}
                   data-bs-toggle="modal"
                   data-bs-target="#edit_fees_master"
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
-                </Link>
+                </button>
               </li>
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                   onClick={()=>setDeleteId(id)}
+                  onClick={() => setDeleteId(id)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
@@ -278,7 +280,7 @@ const FeesMaster = () => {
                               <CommonSelect
                                 className="select"
                                 options={ids}
-                                // defaultValue={ids[0]}
+                              // defaultValue={ids[0]}
                               />
                             </div>
                           </div>
@@ -288,7 +290,7 @@ const FeesMaster = () => {
                               <CommonSelect
                                 className="select"
                                 options={feeGroup}
-                                // defaultValue={feeGroup[0]}
+                              // defaultValue={feeGroup[0]}
                               />
                             </div>
                           </div>
@@ -299,7 +301,7 @@ const FeesMaster = () => {
                               <CommonSelect
                                 className="select"
                                 options={feesTypes}
-                                // defaultValue={feesTypes[0]}
+                              // defaultValue={feesTypes[0]}
                               />
                             </div>
                           </div>
@@ -329,7 +331,7 @@ const FeesMaster = () => {
                               <CommonSelect
                                 className="select"
                                 options={status}
-                                // defaultValue={status[0]}
+                              // defaultValue={status[0]}
                               />
                             </div>
                           </div>
@@ -387,13 +389,13 @@ const FeesMaster = () => {
             <div className="card-body p-0 py-3">
               {/* Student List */}
               {
-                loading ? <>(
+                loading ? (
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
-                  )</> : (<> <Table dataSource={tabledata} columns={columns} Selection={true} /></>)
+                ) : (<> <Table dataSource={tabledata} columns={columns} Selection={true} /></>)
               }
               {/* /Student List */}
             </div>
@@ -402,7 +404,7 @@ const FeesMaster = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitMasterFees}  editId={null} deleteId={deleteId} type="feesmaster" />
+      <FeesModal onAction={onSubmitMasterFees} editId={editId} deleteId={deleteId} type="feesmaster" />
     </>
   );
 };

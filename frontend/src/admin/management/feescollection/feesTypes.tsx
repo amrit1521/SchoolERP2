@@ -29,9 +29,9 @@ const FeesTypes = () => {
   };
 
 
-interface FessTypeName {
+  interface FessTypeName {
     id: number;
-    name:string;
+    name: string;
     feesGroup: string;
     description: string;
     status: string;
@@ -39,16 +39,18 @@ interface FessTypeName {
 
   const [feesTypeName, setFeesTypeName] = useState<FessTypeName[]>([{
     id: 0,
-    name:"",
+    name: "",
     feesGroup: "",
     description: "",
     status: "",
   }])
   const [loading, setLoading] = useState<boolean>(false)
-  const [deleteId ,setDeleteId] = useState<number|null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [editId ,setEditId] = useState<number|null>(null)
 
   const fetchTypeName = async () => {
     setLoading(true)
+    await new Promise((res) => setTimeout(res, 500))
     try {
 
       const { data } = await allFeesType()
@@ -67,6 +69,7 @@ interface FessTypeName {
   const onSubmitTypeName = () => {
     fetchTypeName()
     setDeleteId(null)
+    setEditId(null)
   }
 
   useEffect(() => {
@@ -77,12 +80,12 @@ interface FessTypeName {
   const tableData = feesTypeName.map((item) => ({
     key: item.id,
     id: item.id,
-    feesType:item.name,
-    feesCode:item.name,
+    feesType: item.name,
+    feesCode: item.name,
     feesGroup: item.feesGroup,
     description: item.description,
     status: item.status === '1' ? 'Active' : 'Inactive'
-  }))  
+  }))
 
 
 
@@ -144,7 +147,7 @@ interface FessTypeName {
     {
       title: "Action",
       dataIndex: "id",
-      render: (id:number) => (
+      render: (id: number) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -158,20 +161,20 @@ interface FessTypeName {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={()=>setEditId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_fees_Type"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                     onClick={()=>setDeleteId(id)}
+                    onClick={() => setDeleteId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
@@ -186,6 +189,7 @@ interface FessTypeName {
       ),
     },
   ];
+
   return (
     <>
       {/* Page Wrapper */}
@@ -210,7 +214,7 @@ interface FessTypeName {
               </nav>
             </div>
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-            <TooltipOption />
+              <TooltipOption />
               <div className="mb-2">
                 <Link
                   to="#"
@@ -357,15 +361,15 @@ interface FessTypeName {
             <div className="card-body p-0 py-3">
               {/* Student List */}
               {
-                loading ?(
+                loading ? (
                   <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
-                  ):<>( <Table dataSource={tableData} columns={columns} Selection={true} />)</>
-}
-             
+                ) : <>( <Table dataSource={tableData} columns={columns} Selection={true} />)</>
+              }
+
               {/* /Student List */}
             </div>
           </div>
@@ -373,7 +377,7 @@ interface FessTypeName {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitTypeName} editId={null} deleteId={deleteId} type="feestype" />
+      <FeesModal onAction={onSubmitTypeName} editId={editId} deleteId={deleteId} type="feestype" />
     </>
   );
 };

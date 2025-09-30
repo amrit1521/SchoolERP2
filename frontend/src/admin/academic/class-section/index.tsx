@@ -103,9 +103,9 @@ const ClassSection: React.FC = () => {
       setSectionData({ section: "", status: "0" });
       fetchSection();
 
-    } catch (error) {
+    } catch (error:any) {
       console.error(error);
-      toast.error("Failed to add section");
+      toast.error(error.response.data.message);
     }
   };
 

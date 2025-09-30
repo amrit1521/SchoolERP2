@@ -175,7 +175,7 @@ exports.GetFeesGroupById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const sql = `SELECT * FROM fees_group WHERE id = ?`;
+    const sql = `SELECT feesGroup , description , status FROM fees_group WHERE id = ?`;
     const [rows] = await db.query(sql, [id]);
 
     if (rows.length === 0) {
@@ -250,7 +250,7 @@ exports.GetFeesTypeById = async (req, res) => {
 
   try {
     const [feesType] = await db.query(
-      `SELECT * FROM fees_type WHERE id = ?`,
+      `SELECT name, feesGroupId, description, status FROM fees_type WHERE id = ?`,
       [id]
     );
 
@@ -457,6 +457,110 @@ exports.DeleteFeesMaster = async (req, res) => {
 };
 
 
+// Get Fees Master by ID
+exports.GetFeesMasterById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const sql = `
+      SELECT  amount, dueDate, feesGroup, feesType, fineType, fixedAmount, percentage, percentageAmount, status, totalAmount, fineAmount FROM fees_master  
+      WHERE id = ?
+    `;
+
+    const [rows] = await db.query(sql, [id]);
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Fees master not found!", success: false });
+    }
+
+    return res.status(200).json({
+      message: "Fees master details",
+      success: true,
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error("DB Error:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+// Update Fees Master
+exports.UpdateFeesMaster = async (req, res) => {
+  const { id } = req.params;
+  const {
+    amount,
+    dueDate,
+    feesGroup,
+    feesType,
+    fineType,
+    fixedAmount,
+    percentage,
+    percentageAmount,
+    status,
+    totalAmount,
+    fineAmount,
+  } = req.body;
+
+  try {
+    if (!amount || !dueDate || !feesGroup || !feesType) {
+      return res.status(400).json({ error: "Required fields are missing", success: false });
+    }
+
+    const sql = `
+      UPDATE fees_master SET
+        amount = ?,
+        dueDate = ?,
+        feesGroup = ?,
+        feesType = ?,
+        fineType = ?,
+        fixedAmount = ?,
+        percentage = ?,
+        percentageAmount = ?,
+        status = ?,
+        totalAmount = ?,
+        fineAmount = ?
+      WHERE id = ?
+    `;
+
+    const values = [
+      amount,
+      dayjs(dueDate).format('YYYY-MM-DD'),
+      feesGroup,
+      feesType,
+      fineType || "",
+      fixedAmount || "0",
+      percentage || "0",
+      percentageAmount || "0",
+      status || "0",
+      totalAmount || amount,
+      fineAmount || 0,
+      id,
+    ];
+
+    const [result] = await db.query(sql, values);
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "Fees master not found!", success: false });
+    }
+
+    return res.status(200).json({
+      message: "Fees master updated successfully!",
+      success: true,
+    });
+  } catch (error) {
+    console.error("❌ Controller Error:", error);
+    return res.status(500).json({ message: "Internal server error!", success: false });
+  }
+};
+
+
 // assigen
 exports.feesAssignToStudent = async (req, res) => {
   try {
@@ -515,12 +619,12 @@ exports.getFeesDeatilsSpecStudent = async (req, res) => {
 
     const [rows] = await db.query(sql, [rollnum]);
 
-    if (rows.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: `Fees already paid : ${rollnum}`,
-      });
-    }
+    // if (rows.length === 0) {
+    //   return res.status(200).json({
+    //     success: true,
+    //     message: `Fees already paid : ${rollnum}`,
+    //   });
+    // }
 
     return res.status(200).json({
       success: true,

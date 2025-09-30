@@ -1,36 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import CommonSelect from "../../../core/common/commonSelect";
-import { feeGroup, feesTypes } from "../../../core/common/selectoption/selectoption";
+// import { feeGroup, feesTypes } from "../../../core/common/selectoption/selectoption";
 import { DatePicker } from 'antd'
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { addFeesGroup, addFeesMaster, addFeesType,  allFeesGroup,  allFeesType, deleteFeesGroup, deleteFeesMaster, deleteFeesType} from "../../../service/api";
+import { addFeesGroup, addFeesMaster, addFeesType, allFeesGroup, allFeesType, deleteFeesGroup, deleteFeesMaster, deleteFeesType, editFeesGroup, editFeesType, speFeesGroup, speFeesMaster, speFeesType } from "../../../service/api";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+// import { feesReportData } from "../../../service/reports";
 
 type Props = {
   onAction: () => void;
   editId?: number | null;
   deleteId?: number | null;
-  type?:string;
+  type?: string;
 }
 
 
-const FeesModal: React.FC<Props> = ({ onAction ,deleteId , type }) => {
-  const [activeContent, setActiveContent] = useState('');
-  const handleContentChange = (event: any) => {
-    setActiveContent(event.target.value);
-  };
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0') // Month is zero-based, so we add 1
-  const day = String(today.getDate()).padStart(2, '0')
-  const formattedDate = `${month}-${day}-${year}`
-  const defaultValue = dayjs(formattedDate);
-  const getModalContainer = () => {
-    const modalElement = document.getElementById('modal-datepicker');
-    return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-  };
+const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
+  // const [activeContent, setActiveContent] = useState('');
+  // const handleContentChange = (event: any) => {
+  //   setActiveContent(event.target.value);
+  // };
+  // const today = new Date()
+  // const year = today.getFullYear()
+  // const month = String(today.getMonth() + 1).padStart(2, '0') // Month is zero-based, so we add 1
+  // const day = String(today.getDate()).padStart(2, '0')
+  // const formattedDate = `${month}-${day}-${year}`
+  // const defaultValue = dayjs(formattedDate);
+  // const getModalContainer = () => {
+  //   const modalElement = document.getElementById('modal-datepicker');
+  //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
+  // };
   // const getModalContainer2 = () => {
   //   const modalElement = document.getElementById('modal-datepicker2');
   //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
@@ -62,76 +63,51 @@ const FeesModal: React.FC<Props> = ({ onAction ,deleteId , type }) => {
     }));
   };
 
-  const handelCancelFees = () => {
+  const handelCancelFees = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     setFeesFormData({
       feesGroup: "",
       description: "",
       status: "0",
     })
+    editId = null
   }
 
 
   const handleFeesGroupSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!feesFormData.feesGroup.trim() || !feesFormData.description.trim()) {
-      toast.error('Required fields are mandotry !')
-      return
+    const { feesGroup, description } = feesFormData;
+
+    if (!feesGroup.trim() || !description.trim()) {
+      toast.error('Required fields are mandatory!');
+      return;
     }
+
     try {
+      // Decide API call based on editId
+      const { data } = editId
+        ? await editFeesGroup(feesFormData, editId)
+        : await addFeesGroup(feesFormData);
 
-      const { data } = await addFeesGroup(feesFormData)
-      console.log(data)
       if (data.success) {
-        toast.success(data.message)
-        onAction();  //PROPS FUNCTION
-        const modalElement = document.getElementById("add_fees_group");
-        if (modalElement) {
-          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
-          modalInstance?.hide();
-        }
-        setFeesFormData({
-          feesGroup: "",
-          description: "",
-          status: "0",
-        })
-      }
+        toast.success(data.message || 'Action successful!');
+        handleModalPopUp(editId ? 'edit_fees_group' : 'add_fees_group');
 
+        // Reset form and state
+        setFeesFormData({
+          feesGroup: '',
+          description: '',
+          status: '0',
+        });
+        editId = null;
+        onAction();
+      }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.error(error);
+      toast.error(error?.response?.data?.message || 'Something went wrong!');
     }
   };
-  // delete
-const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
-  e.preventDefault();
-  if (!deleteId) return;
-
-  try {
-    let data: any;
-
-    if (type === "feesgroup") {
-      data = await deleteFeesGroup(deleteId);
-    } else if (type === "feestype") {
-      data = await deleteFeesType(deleteId);
-    } else if (type === "feesmaster") {
-      data = await deleteFeesMaster(deleteId); 
-    } else {
-      throw new Error("Invalid type");
-    }
-
-    if (data?.data?.success) {
-      toast.success(data.data.message || "Action completed successfully");
-      onAction(); 
-      handleModalPopUp("delete-modal"); 
-    } else {
-      toast.error(data?.data?.message || "Something went wrong");
-    }
-  } catch (error: any) {
-    console.error(error);
-    toast.error(error?.response?.data?.message || error.message);
-  }
-};
 
 
 
@@ -140,17 +116,11 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
 
   const [feesGroupOption, setFeesGroupOption] = useState<any>([])
   const [feesTypeOption, setFeesTypeOption] = useState<any>([])
-  const [loading, setLoading] = useState<boolean>(false)
-
-
 
   const fetchBoathOptions = async () => {
-    setLoading(true)
-    console.log(loading);
     try {
-
       const [feesGroup, feesType] = await Promise.all([allFeesGroup(), allFeesType()])
-      // console.log(feesGroup, 'and', feesType)
+
       if (feesGroup?.data?.success) {
         setFeesGroupOption(feesGroup.data.feesGroups
         )
@@ -166,8 +136,6 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
-    } finally {
-      setLoading(false)
     }
 
   }
@@ -220,54 +188,60 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
 
 
   const handleFeesTypeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!feesTypeFormData.feesGroup || !feesTypeFormData.description || !feesTypeFormData.name) {
-      toast.warning('Required fields are mandatory !')
+    const { name, feesGroup, description } = feesTypeFormData;
+
+    if (!name || !feesGroup || !description) {
+      toast.warning('Required fields are mandatory!');
       return;
     }
 
     try {
 
-      const { data } = await addFeesType(feesTypeFormData)
+      const { data } = editId
+        ? await editFeesType(feesTypeFormData, editId)
+        : await addFeesType(feesTypeFormData);
+
       if (data.success) {
-        onAction()
-        toast.success(data.message)
-        const modalElement = document.getElementById("add_fees_Type");
-        if (modalElement) {
-          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
-          modalInstance?.hide();
-        }
+        toast.success(data.message);
+        handleModalPopUp(editId ? 'edit_fees_Type' : 'add_fees_Type');
+
+        // Reset form and state
         setFeesTypeFormData({
           name: '',
           feesGroup: 0,
           description: '',
           status: '',
-        })
+        });
+        onAction();
+        editId = null;
       }
-
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.error(error);
+      toast.error(error?.response?.data?.message || 'Something went wrong!');
     }
+  };
 
-  }
 
-  const handleFeesTypeCancel = () => {
+  const handleFeesTypeCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     setFeesTypeFormData({
       name: '',
       feesGroup: 0,
       description: '',
       status: '',
     })
+    editId = null
   }
+
 
 
   // fees master--------------------------------------------------------------
 
   interface FeesMasterForm {
-    feesGroup: string;
-    feesType: string;
+    feesGroup: number|null;
+    feesType: number|null;
     dueDate: string;
     amount: string;
     fineType: "" | "percentage" | "fixed";
@@ -280,8 +254,8 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
   }
 
   const [feesMasterForm, setFeesMasterForm] = useState<FeesMasterForm>({
-    feesGroup: "",
-    feesType: "",
+    feesGroup: null,
+    feesType: null,
     dueDate: "",
     amount: "",
     fineType: "",
@@ -330,8 +304,8 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FeesMasterForm, string>> = {};
 
-    if (!feesMasterForm.feesGroup.trim()) newErrors.feesGroup = "Fees Group is required";
-    if (!feesMasterForm.feesType.trim()) newErrors.feesType = "Fees Type is required";
+    if (!feesMasterForm.feesGroup) newErrors.feesGroup = "Fees Group is required";
+    if (!feesMasterForm.feesType) newErrors.feesType = "Fees Type is required";
     if (!feesMasterForm.dueDate) newErrors.dueDate = "Due Date is required";
 
     if (!feesMasterForm.amount || Number(feesMasterForm.amount) <= 0) {
@@ -391,20 +365,16 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
       fineAmount: percentageAmount || fixedAmount || '0',
       totalAmount: Math.ceil(total).toString(),
     };
-
+     console.log(updatedForm)
     try {
       const { data } = await addFeesMaster(updatedForm)
       if (data.success) {
         toast.success(data.message)
         onAction()
-        const modalElement = document.getElementById("add_fees_master");
-        if (modalElement) {
-          const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
-          modalInstance?.hide();
-        }
+        handleModalPopUp("add_fees_master")
         setFeesMasterForm({
-          feesGroup: "",
-          feesType: "",
+          feesGroup: null,
+          feesType: null,
           dueDate: "",
           amount: "",
           fineType: "",
@@ -419,6 +389,126 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // edit fees group
+  const fetchGroupById = async (id: number) => {
+
+    try {
+      const { data } = await speFeesGroup(id)
+      if (data.success) {
+        setFeesFormData({
+          feesGroup: data.data.feesGroup,
+          description: data.data.description,
+          status: data.data.status,
+        })
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const fetchTypeById = async (id: number) => {
+    try {
+
+      const { data } = await speFeesType(id)
+    
+      if (data.success) {
+        setFeesTypeFormData({
+          name: data.data.name,
+          feesGroup: data.data.feesGroupId,
+          description: data.data.description,
+          status: data.data.status,
+        })
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const fetchFeesMasterById = async (id: number) => {
+    try {
+      const { data } = await speFeesMaster(id)
+      console.log(data ,"gdsfjkg")
+      if (data.success) {
+        setFeesMasterForm({
+          feesGroup:Number(data.data.feesGroup),
+          feesType: data.data.feesType,
+          dueDate: data.data.dueDate,
+          amount: data.data.amount,
+          fineType: data.data.fineType || "",
+          fixedAmount: data.data.fixedAmount || "0",
+          percentage: data.data.percentage || "0",
+          percentageAmount: (data.data.percentageAmount ?? data.data.percentageamount) || "0",
+          status: data.data.status || "0",
+          totalAmount: (data.data.totalAmount ?? data.data.totalamount) || "0",
+          fineAmount: (data.data.fineAmount ?? data.data.fineamount) || "0",
+        });
+
+
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    if (editId) {
+      if (type === "feesgroup") {
+        fetchGroupById(editId)
+      } else if (type === "feestype") {
+        fetchTypeById(editId)
+      } else if (type === "feesmaster") {
+        fetchFeesMasterById(editId)
+      } else {
+        throw new Error("Invalid type");
+      }
+    }
+  }, [editId, type])
+
+  // common delete 
+  const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!deleteId) return;
+
+    try {
+      let data: any;
+
+      if (type === "feesgroup") {
+        data = await deleteFeesGroup(deleteId);
+      } else if (type === "feestype") {
+        data = await deleteFeesType(deleteId);
+      } else if (type === "feesmaster") {
+        data = await deleteFeesMaster(deleteId);
+      } else {
+        throw new Error("Invalid type");
+      }
+
+      if (data?.data?.success) {
+        toast.success(data.data.message || "Action completed successfully");
+        onAction();
+        handleModalPopUp("delete-modal");
+      } else {
+        toast.error(data?.data?.message || "Something went wrong");
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || error.message);
     }
   };
 
@@ -669,16 +759,10 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                   </button>
                 </div>
               </form>
-
-
-
-
-
             </div>
           </div>
         </div>
         {/* Add Fees Master*/}
-
 
         {/* Edit Fees Master */}
         <div className="modal fade" id="edit_fees_master">
@@ -698,27 +782,42 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
-                <div className="modal-body" id="modal-datepicker">
+              <form onSubmit={handleFeesMasterSubmit}>
+                <div className="modal-body" id="modal-datepicker2">
                   <div className="row">
                     <div className="col-md-12">
+                      {/* Fees Group */}
                       <div className="mb-3">
                         <label className="form-label">Fees Group</label>
                         <CommonSelect
                           className="select"
-                          options={feeGroup}
-                          defaultValue={feeGroup[1].value}
+                          options={option1}
+                          onChange={(opt) =>
+                            handleFeesMasterSelectChange("feesGroup", opt ? opt.value : "")
+                          }
                         />
+                        {errors.feesGroup && (
+                          <span className="text-danger">{errors.feesGroup}</span>
+                        )}
                       </div>
+
+                      {/* Fees Type */}
                       <div className="mb-3">
                         <label className="form-label">Fees Type</label>
                         <CommonSelect
                           className="select"
-                          options={feesTypes}
-                          defaultValue={feesTypes[1].value}
+                          options={option2}
+                          onChange={(opt) =>
+                            handleFeesMasterSelectChange("feesType", opt ? opt.value : "")
+                          }
                         />
+                        {errors.feesType && (
+                          <span className="text-danger">{errors.feesType}</span>
+                        )}
                       </div>
                     </div>
+
+                    {/* Due Date + Amount */}
                     <div className="col-md-12">
                       <div className="row">
                         <div className="col-md-6">
@@ -727,115 +826,185 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                             <div className="date-pic">
                               <DatePicker
                                 className="form-control datetimepicker"
-                                format={{
-                                  format: "DD-MM-YYYY",
-                                  type: "mask",
-                                }}
-                                getPopupContainer={getModalContainer}
-                                defaultValue={defaultValue}
-                                placeholder="16 May 2024"
+                                format="YYYY-MM-DD"
+                                value={
+                                  feesMasterForm.dueDate
+                                    ? dayjs(feesMasterForm.dueDate, "YYYY-MM-DD")
+                                    : null
+                                }
+                                placeholder="Select Date"
+                                onChange={(dateString) =>
+                                  handleFeesMasterDateChange(
+                                    Array.isArray(dateString) ? dateString[0] : dateString
+                                  )
+                                }
                               />
                               <span className="cal-icon">
                                 <i className="ti ti-calendar" />
                               </span>
                             </div>
+                            {errors.dueDate && (
+                              <span className="text-danger">{errors.dueDate}</span>
+                            )}
                           </div>
                         </div>
+
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Amount</label>
                             <input
-                              type="text"
+                              type="number"
                               className="form-control"
-                              placeholder="Enter Amout"
-                              defaultValue="$500"
+                              name="amount"
+                              value={feesMasterForm.amount}
+                              onChange={handleFeesMasterInputChange}
                             />
+                            {errors.amount && (
+                              <span className="text-danger">{errors.amount}</span>
+                            )}
                           </div>
                         </div>
                       </div>
+
+                      {/* Fine Type */}
                       <div className="mb-3">
                         <label className="form-label">Fine Type</label>
                         <div className="d-flex align-items-center check-radio-group">
                           <label className="custom-radio">
-                            <input type="radio" name="radio" value="" checked={activeContent === ''}
-                              onChange={handleContentChange} />
-                            <span className="checkmark" />
-                            None
+                            <input
+                              type="radio"
+                              name="fineType"
+                              value=""
+                              checked={feesMasterForm.fineType === ""}
+                              onChange={handleFeesMasterFineTypeChange}
+                            />
+                            <span className="checkmark" /> None
                           </label>
+
                           <label className="custom-radio percentage-radio">
-                            <input type="radio" name="radio" value="percentage" onChange={handleContentChange} />
-                            <span className="checkmark" />
-                            Percentage
+                            <input
+                              type="radio"
+                              name="fineType"
+                              value="percentage"
+                              checked={feesMasterForm.fineType === "percentage"}
+                              onChange={handleFeesMasterFineTypeChange}
+                            />
+                            <span className="checkmark" /> Percentage
                           </label>
+
                           <label className="custom-radio fixed-radio">
-                            <input type="radio" name="radio" value="fixed" onChange={handleContentChange} />
-                            <span className="checkmark" />
-                            Fixed
+                            <input
+                              type="radio"
+                              name="fineType"
+                              value="fixed"
+                              checked={feesMasterForm.fineType === "fixed"}
+                              onChange={handleFeesMasterFineTypeChange}
+                            />
+                            <span className="checkmark" /> Fixed
                           </label>
                         </div>
+                        {errors.fineType && (
+                          <span className="text-danger">{errors.fineType}</span>
+                        )}
                       </div>
-                      <div className={`percentage-field ${activeContent === 'percentage' ? 'percentage-field-show' : ''} `}>
-                        <div className="row">
-                          <div className="col-lg-6">
-                            <div className="mb-3">
-                              <label className="form-label">Percentage</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="%"
-                              />
+
+                      {/* Percentage Fine Fields */}
+                      {feesMasterForm.fineType === "percentage" && (
+                        <div className="percentage-field percentage-field-show">
+                          <div className="row">
+                            <div className="col-lg-6">
+                              <div className="mb-3">
+                                <label className="form-label">Percentage</label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="%"
+                                  name="percentage"
+                                  value={feesMasterForm.percentage}
+                                  onChange={handleFeesMasterInputChange}
+                                />
+                                {errors.percentage && (
+                                  <span className="text-danger">{errors.percentage}</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <div className="col-lg-6">
-                            <div className="mb-3">
-                              <label className="form-label">Amount ($)</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="$"
-                              />
+                            <div className="col-lg-6">
+                              <div className="mb-3">
+                                <label className="form-label">Amount ($)</label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="$"
+                                  name="percentageAmount"
+                                  value={
+                                    Number(feesMasterForm.amount || 0) +
+                                    (Number(feesMasterForm.amount || 0) *
+                                      Number(feesMasterForm.percentage || 0)) /
+                                    100
+                                  }
+                                  readOnly
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className={`fixed-field ${activeContent === 'fixed' ? 'fixed-field-show' : ''} `}>
-                        <div className="row">
-                          <div className="col-lg-12">
-                            <div className="mb-3">
-                              <label className="form-label">Amount ($)</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                placeholder="$"
-                              />
+                      )}
+
+                      {/* Fixed Fine Fields */}
+                      {feesMasterForm.fineType === "fixed" && (
+                        <div className="fixed-field fixed-field-show">
+                          <div className="row">
+                            <div className="col-lg-12">
+                              <div className="mb-3">
+                                <label className="form-label">Amount ($)</label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="$"
+                                  name="fixedAmount"
+                                  value={feesMasterForm.fixedAmount}
+                                  onChange={handleFeesMasterInputChange}
+                                />
+                                {errors.fixedAmount && (
+                                  <span className="text-danger">{errors.fixedAmount}</span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
+
+                    {/* Status */}
                     <div className="d-flex align-items-center justify-content-between">
                       <div className="status-title">
                         <h5>Status</h5>
-                        <p>Change the Status by toggle </p>
+                        <p>Change the Status by toggle</p>
                       </div>
                       <div className="form-check form-switch">
                         <input
                           className="form-check-input"
                           type="checkbox"
                           role="switch"
-                          id="switch-sm2"
+                          id="switch-sm"
+                          name="status"
+                          checked={feesMasterForm.status === "1"}
+                          onChange={handleFeesMasterInputChange}
                         />
                       </div>
                     </div>
+                    {errors.status && <span className="text-danger">{errors.status}</span>}
                   </div>
                 </div>
+
+                {/* Footer */}
                 <div className="modal-footer">
                   <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
                   </Link>
-                  <Link to="#" data-bs-dismiss="modal" className="btn btn-primary">
-                    Save Changes
-                  </Link>
+                  <button type="submit" className="btn btn-primary">
+                    Edit Fees Master
+                  </button>
                 </div>
               </form>
             </div>
@@ -843,6 +1012,8 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
         </div>
         {/* Edit Fees Master*/}
       </>
+
+
 
       {/* add fees type */}
       <>
@@ -886,7 +1057,7 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                         <CommonSelect
                           className="select"
                           options={option1}
-                          // defaultValue={optionsss[0]}
+                          value={feesTypeFormData.feesGroup}
                           onChange={(opt) => handleFeesSelectChange('feesGroup', opt ? opt.value : '')}
                         />
                       </div>
@@ -926,7 +1097,8 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
 
                 <div className="modal-footer">
                   <button
-                    onClick={handleFeesTypeCancel}
+                    type="button"
+                    onClick={(e) => handleFeesTypeCancel(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
@@ -956,50 +1128,51 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleFeesTypeSubmit}>
                 <div className="modal-body">
                   <div className="row">
+                    {/* Name */}
                     <div className="col-md-12">
                       <div className="mb-3">
                         <label className="form-label">Name</label>
                         <input
                           type="text"
+                          name="name"
+                          value={feesTypeFormData.name}
+                          onChange={handleFeesTypeInput}
                           className="form-control"
-                          placeholder="Enter Name"
-                          defaultValue=""
+                          placeholder="Enter Fees Type Name"
                         />
                       </div>
+
+
                       <div className="mb-3">
                         <div className="d-flex justify-content-between">
                           <label className="form-label">Fees Group</label>
-                          <Link
-                            to="#"
-                            className="text-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#add_new_fees_group"
-                          >
-                            <span>
-                              <i className="ti ti-square-rounded-plus-filled" />
-                            </span>{" "}
-                            Add New
-                          </Link>
                         </div>
                         <CommonSelect
                           className="select"
-                          options={feeGroup}
-                          defaultValue={feeGroup[1].value}
+                          options={option1}
+                          value={feesTypeFormData.feesGroup}
+                          onChange={(opt) => handleFeesSelectChange('feesGroup', opt ? opt.value : '')}
                         />
                       </div>
                     </div>
+
+                    {/* Description */}
                     <div className="mb-3">
                       <label className="form-label">Description</label>
                       <textarea
+                        name="description"
                         className="form-control"
                         rows={4}
-                        placeholder="Add Comment"
-                        defaultValue={""}
+                        value={feesTypeFormData.description}
+                        onChange={handleFeesTypeInput}
+                        placeholder="Enter description"
                       />
                     </div>
+
+                    {/* Status */}
                     <div className="d-flex align-items-center justify-content-between">
                       <div className="status-title">
                         <h5>Status</h5>
@@ -1009,28 +1182,27 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          role="switch"
-                          id="switch-sm2"
+                          name="status"
+                          checked={feesTypeFormData.status === '1'}
+                          onChange={handleFeesTypeInput}
                         />
                       </div>
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
+                    onClick={(e) => handleFeesTypeCancel(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
-                  </Link>
-                  <Link
-                    to="#"
-                    data-bs-dismiss="modal"
-                    className="btn btn-primary"
-                  >
-                    Save Changes
-                  </Link>
+                  </button>
+                  <button type="submit" className="btn btn-primary ">
+                    Edit Fees Type
+                  </button>
                 </div>
               </form>
             </div>
@@ -1107,7 +1279,8 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
 
                 <div className="modal-footer">
                   <button
-                    onClick={handelCancelFees}
+                    type="button"
+                    onClick={(e) => handelCancelFees(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
@@ -1142,7 +1315,7 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleFeesGroupSubmit}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
@@ -1151,51 +1324,60 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Enter Fees Group"
-                          defaultValue="Tuition Fees"
+                          name="feesGroup"
+                          value={feesFormData.feesGroup}
+                          onChange={handleInput}
                         />
                       </div>
+
                       <div className="mb-3">
                         <label className="form-label">Description</label>
                         <textarea
                           className="form-control"
                           rows={4}
-                          placeholder="Add Comment"
-                          defaultValue={"The money that you pay to be taught"}
+                          name="description"
+                          value={feesFormData.description}
+                          onChange={handleInput}
                         />
                       </div>
+
                       <div className="d-flex align-items-center justify-content-between">
                         <div className="status-title">
                           <h5>Status</h5>
-                          <p>Change the Status by toggle </p>
+                          <p>Change the Status by toggle</p>
                         </div>
                         <div className="form-check form-switch">
                           <input
                             className="form-check-input"
                             type="checkbox"
                             role="switch"
-                            id="switch-sm2"
+                            id="switch-sm"
+                            name="status"
+                            checked={feesFormData.status === '1'}
+                            onChange={handleInput}
                           />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
+                    onClick={(e) => handelCancelFees(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
-                  </Link>
-                  <Link
-                    to="#"
-                    data-bs-dismiss="modal"
+                  </button>
+                  <button
+                    type="submit"
+                    // data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
-                    Save Changes
-                  </Link>
+                    Edit Fees Group
+                  </button>
                 </div>
               </form>
             </div>
@@ -1227,10 +1409,10 @@ const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
                     Cancel
                   </Link>
                   <button
-                      type="button"
-                     onClick={(e)=>handleDelete(e)}
+                    type="button"
+                    onClick={(e) => handleDelete(e)}
                     className="btn btn-danger"
-                  
+
                   >
                     Yes, Delete
                   </button>

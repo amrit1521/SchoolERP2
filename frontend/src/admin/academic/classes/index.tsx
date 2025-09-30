@@ -125,7 +125,6 @@ const Classes = () => {
     console.log(id)
     try {
       const { data } = await speClass(id)
-      console.log(data)
       setFormData({
         className: data.data.className,
         section: data.data.section,

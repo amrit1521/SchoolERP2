@@ -570,7 +570,7 @@ const AcademicReason = () => {
                   <button
                     onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                    // data-bs-dismiss="modal"
                   >
                     Cancel
                   </button>

@@ -107,16 +107,22 @@ export const studentDetForFees = (id: any) => api.get(`/fees/studetforfees/${id}
 export const allFeesGroup = () => api.get('/fees/allfeesgroup')
 export const addFeesGroup = (data: object) => api.post('/fees/addfeesgroup', data)
 export const deleteFeesGroup = (id:number)=>api.delete(`/fees/deletefeesgroup/${id}`)
+export const speFeesGroup = (id:number)=>api.get(`/fees/spefeesgroup/${id}`)
+export const editFeesGroup = (data:object,id:number)=>api.put(`/fees/editfeesgroup/${id}` , data)
 
 // feestypename
 export const allFeesType = () => api.get('/fees/allfeestype')
 export const addFeesType = (data: object) => api.post('/fees/addfeestype', data)
 export const deleteFeesType= (id:number)=>api.delete(`/fees/deletefeestype/${id}`)
+export const speFeesType = (id:number)=>api.get(`/fees/spefeestype/${id}`)
+export const editFeesType = (data:object,id:number)=>api.put(`/fees/editfeestype/${id}` , data)
 
 // master fees
 export const allFeesMaster = () => api.get('/fees/allfeesmaster')
 export const addFeesMaster = (data: object) => api.post('/fees/addfeesmaster', data)
 export const deleteFeesMaster = (id:number)=>api.delete(`/fees/deletefeesmaster/${id}`)
+export const speFeesMaster = (id:number)=>api.get(`/fees/spefeesmaster/${id}`)
+export const editFeesMaster = (data:object,id:number)=>api.put(`/fees/editfeesmaster/${id}` , data)
 
 export const feesAssignToStudents = (data: object) => api.post('/fees/feesassign', data)
 export const getAllFeeAssignDetails = () => api.get('/fees/allassigndetails')
@@ -146,7 +152,7 @@ export const deleteGrade = (id: number) => api.delete(`/exam/deletegrade/${id}`)
 export const speGrade = (id: number) => api.get(`/exam/spegrade/${id}`)
 export const editGrade = (data: object, id: number) => api.put(`/exam/editgrade/${id}`, data)
 
-// academic reasons==========================================================
+// academic reasons==================================================
 export const addAcademicReason = (data: object) => api.post('/reason/addreason', data)
 export const allAcademicReason = () => api.get('/reason/allreason')
 export const deleteReason = (id: number) => api.delete(`/reason/deletereason/${id}`)

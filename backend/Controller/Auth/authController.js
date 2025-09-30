@@ -8,7 +8,7 @@ require('dotenv').config()
 
 // ===================== LOGIN =====================
 exports.login = async (req, res) => {
-  console.log("hit me")
+
   try {
     const { email, password } = req.body;
 

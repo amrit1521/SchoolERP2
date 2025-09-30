@@ -39,11 +39,15 @@ const FeesGroup = () => {
     description: "",
     status: "",
   }])
+
   const [loading, setLoading] = useState<boolean>(false)
   const [deleteId ,setDeleteId] = useState<number|null>(null)
+  const [editId , setEditId] = useState<number|null>(null)
+
 
   const fetchGroupName = async () => {
     setLoading(true)
+    await new Promise((res)=>setTimeout(res,500))
     try {
 
       const { data } = await allFeesGroup()
@@ -138,15 +142,15 @@ const FeesGroup = () => {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={()=>setEditId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_fees_group"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button
@@ -166,6 +170,8 @@ const FeesGroup = () => {
       ),
     },
   ];
+
+
   return (
     <>
       {/* Page Wrapper */}
@@ -332,7 +338,7 @@ const FeesGroup = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <FeesModal onAction={onSubmitGroupName} editId={null} deleteId={deleteId} type="feesgroup" />
+      <FeesModal onAction={onSubmitGroupName} editId={editId} deleteId={deleteId} type="feesgroup" />
     </>
   );
 };
