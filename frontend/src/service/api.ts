@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 
-const BASE_URL: string = import.meta.env.VITE_SERVERURL;
-export const API_URL = `${BASE_URL}/api`;
+// const BASE_URL: string = import.meta.env.VITE_SERVERURL;
+export const API_URL = `/api`;
 
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;

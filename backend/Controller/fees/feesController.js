@@ -659,7 +659,7 @@ exports.allAssignDetails = async (req, res) => {
       JOIN fees_master fm ON fm.id = fa.fees_masterId
       JOIN fees_group fg ON fg.id = fm.feesGroup
       JOIN fees_type ft ON ft.id = fm.feesType
-      GROUP BY fg.feesGroup, ft.name, st.class, st.section, st.gender, st.category
+      GROUP BY fg.feesGroup, ft.name, st.class, st.section, st.category
       ORDER BY fg.feesGroup, ft.name, st.class, st.section
     `;
 

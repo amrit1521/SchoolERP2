@@ -1,4 +1,4 @@
-const subjectroupController = require('../../Controller/Subect/subjectGroupController')
+const subjectroupController = require('../../Controller/Subject/subjectGroupController')
 const express = require('express')
 
 const router = express.Router()

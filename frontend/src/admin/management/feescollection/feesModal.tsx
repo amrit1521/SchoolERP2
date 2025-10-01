@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CommonSelect from "../../../core/common/commonSelect";
 // import { feeGroup, feesTypes } from "../../../core/common/selectoption/selectoption";
 import { DatePicker } from 'antd'
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { addFeesGroup, addFeesMaster, addFeesType, allFeesGroup, allFeesType, deleteFeesGroup, deleteFeesMaster, deleteFeesType, editFeesGroup, editFeesType, speFeesGroup, speFeesMaster, speFeesType } from "../../../service/api";
+import { addFeesGroup, addFeesMaster, addFeesType, allFeesGroup, allFeesType, deleteFeesGroup, deleteFeesMaster, deleteFeesType, editFeesGroup, editFeesMaster, editFeesType, speFeesGroup, speFeesMaster, speFeesType } from "../../../service/api";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { Spinner } from "../../../spinner";
 // import { feesReportData } from "../../../service/reports";
 
 type Props = {
@@ -15,6 +16,16 @@ type Props = {
   deleteId?: number | null;
   type?: string;
 }
+interface FeesGroup {
+  id: number;
+  feesGroup: string;
+}
+
+interface FeesType {
+  id: number;
+  name: string;
+}
+
 
 
 const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
@@ -114,51 +125,59 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
 
   // add fees type------------------------------------------------------------------
 
-  const [feesGroupOption, setFeesGroupOption] = useState<any>([])
-  const [feesTypeOption, setFeesTypeOption] = useState<any>([])
+  const [feesGroupOption, setFeesGroupOption] = useState<FeesGroup[]>([]);
+  const [feesTypeOption, setFeesTypeOption] = useState<FeesType[]>([]);
+  // const [loading, setLoading] = useState(false);
 
-  const fetchBoathOptions = async () => {
+  const fetchBothOptions = useCallback(async () => {
+    // setLoading(true);
     try {
-      const [feesGroup, feesType] = await Promise.all([allFeesGroup(), allFeesType()])
+      const [feesGroupRes, feesTypeRes] = await Promise.all([
+        allFeesGroup(),
+        allFeesType(),
+      ]);
 
-      if (feesGroup?.data?.success) {
-        setFeesGroupOption(feesGroup.data.feesGroups
-        )
+      if (feesGroupRes?.data?.success) {
+        setFeesGroupOption(feesGroupRes.data.feesGroups);
       } else {
-        toast.error('Failed to load FeesGroup Option !')
+        toast.error("Failed to load Fees Group options!");
       }
 
-      if (feesType?.data?.success) {
-        setFeesTypeOption(feesType.data.feesTypes)
+      if (feesTypeRes?.data?.success) {
+        setFeesTypeOption(feesTypeRes.data.feesTypes);
       } else {
-        toast.error('Failed to load FeesType Option !')
+        toast.error("Failed to load Fees Type options!");
       }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.error("Error fetching options:", error);
+      const message =
+        error?.response?.data?.message || "Something went wrong. Please try again.";
+      toast.error(message);
     }
-
-  }
-
+  }, []);
 
   useEffect(() => {
-    fetchBoathOptions()
-  }, [])
+    fetchBothOptions();
+  }, [fetchBothOptions]);
 
-  const option1 = [
-    ...(feesGroupOption || []).map((item: any) => ({
-      value: item.id,
-      label: item.feesGroup
-    }))
-  ]
+  // Memoize options to avoid recalculation on every render
+  const option1 = useMemo(
+    () =>
+      feesGroupOption.map((item) => ({
+        value: item.id,
+        label: item.feesGroup,
+      })),
+    [feesGroupOption]
+  );
 
-  const option2 = [
-    ...(feesTypeOption || []).map((item: any) => ({
-      value: item.id,
-      label: item.name
-    }))
-  ]
-
+  const option2 = useMemo(
+    () =>
+      feesTypeOption.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })),
+    [feesTypeOption]
+  );
 
   // add fees type form----------------------------------------------------------------
 
@@ -240,8 +259,8 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
   // fees master--------------------------------------------------------------
 
   interface FeesMasterForm {
-    feesGroup: number|null;
-    feesType: number|null;
+    feesGroup: number | null;
+    feesType: number | null;
     dueDate: string;
     amount: string;
     fineType: "" | "percentage" | "fixed";
@@ -272,7 +291,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
     name: keyof FeesMasterForm,
     value: string | number
   ) => {
-    setFeesMasterForm((prev) => ({ ...prev, [name]: value.toString() }));
+    setFeesMasterForm((prev) => ({ ...prev, [name]: value }));
   };
 
 
@@ -301,6 +320,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
   };
 
   const [errors, setErrors] = useState<Partial<Record<keyof FeesMasterForm, string>>>({});
+  const [loading ,setLoading] = useState<boolean>(false)
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FeesMasterForm, string>> = {};
 
@@ -344,12 +364,12 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
       const fine = (baseAmount * Number(feesMasterForm.percentage || 0)) / 100;
       percentageAmount = fine.toString();
       total += fine;
-      fixedAmount = ""; // clear fixed if percentage chosen
+      fixedAmount = "";
     } else if (feesMasterForm.fineType === "fixed") {
       const fine = Number(feesMasterForm.fixedAmount || 0);
       fixedAmount = fine.toString();
       total += fine;
-      percentageAmount = ""; // clear percentage if fixed chosen
+      percentageAmount = "";
     } else {
       // No fine
       fixedAmount = "";
@@ -365,40 +385,62 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
       fineAmount: percentageAmount || fixedAmount || '0',
       totalAmount: Math.ceil(total).toString(),
     };
-     console.log(updatedForm)
+    console.log(updatedForm)
     try {
-      const { data } = await addFeesMaster(updatedForm)
-      if (data.success) {
-        toast.success(data.message)
-        onAction()
-        handleModalPopUp("add_fees_master")
-        setFeesMasterForm({
-          feesGroup: null,
-          feesType: null,
-          dueDate: "",
-          amount: "",
-          fineType: "",
-          percentage: "",
-          percentageAmount: "",
-          fixedAmount: "",
-          status: "0",
-          totalAmount: "",
-          fineAmount: ""
-        })
+      if (editId) {
+        const { data } = await editFeesMaster(updatedForm, editId)
+        if (data.success) {
+          handleModalPopUp('edit_fees_master')
+        }
+
+      } else {
+        const { data } = await addFeesMaster(updatedForm)
+        if (data.success) {
+          toast.success(data.message)
+
+          handleModalPopUp("add_fees_master")
+
+        }
       }
+      onAction()
+      setFeesMasterForm({
+        feesGroup: null,
+        feesType: null,
+        dueDate: "",
+        amount: "",
+        fineType: "",
+        percentage: "",
+        percentageAmount: "",
+        fixedAmount: "",
+        status: "0",
+        totalAmount: "",
+        fineAmount: ""
+      })
+
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
     }
   };
 
+  const handleFeesMasterCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    editId = null
+    setFeesMasterForm({
+      feesGroup: null,
+      feesType: null,
+      dueDate: "",
+      amount: "",
+      fineType: "",
+      percentage: "",
+      percentageAmount: "",
+      fixedAmount: "",
+      status: "0",
+      totalAmount: "",
+      fineAmount: ""
+    })
 
-
-
-
-
-
-
+  }
 
 
 
@@ -425,7 +467,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
     try {
 
       const { data } = await speFeesType(id)
-    
+
       if (data.success) {
         setFeesTypeFormData({
           name: data.data.name,
@@ -441,14 +483,15 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
   }
 
   const fetchFeesMasterById = async (id: number) => {
+    setLoading(true)
     try {
       const { data } = await speFeesMaster(id)
-      console.log(data ,"gdsfjkg")
+      console.log(data)
       if (data.success) {
         setFeesMasterForm({
-          feesGroup:Number(data.data.feesGroup),
+          feesGroup: data.data.feesGroup,
           feesType: data.data.feesType,
-          dueDate: data.data.dueDate,
+          dueDate: dayjs(data.data.dueDate).format('DD MMM YYYY'),
           amount: data.data.amount,
           fineType: data.data.fineType || "",
           fixedAmount: data.data.fixedAmount || "0",
@@ -464,6 +507,8 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
 
     } catch (error) {
       console.log(error)
+    }finally{
+      setLoading(false)
     }
   }
 
@@ -511,6 +556,8 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
       toast.error(error?.response?.data?.message || error.message);
     }
   };
+
+
 
   return (
     <>
@@ -578,10 +625,10 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                             <div className="date-pic">
                               <DatePicker
                                 className="form-control datetimepicker"
-                                format="YYYY-MM-DD"
+                                format="DD MMM YYYY"
                                 value={
                                   feesMasterForm.dueDate
-                                    ? dayjs(feesMasterForm.dueDate, "YYYY-MM-DD")
+                                    ? dayjs(feesMasterForm.dueDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -682,7 +729,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                             </div>
                             <div className="col-lg-6">
                               <div className="mb-3">
-                                <label className="form-label">Amount ($)</label>
+                                <label className="form-label">Amount </label>
                                 <input
                                   type="number"
                                   className="form-control"
@@ -708,7 +755,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                           <div className="row">
                             <div className="col-lg-12">
                               <div className="mb-3">
-                                <label className="form-label">Amount ($)</label>
+                                <label className="form-label">Amount </label>
                                 <input
                                   type="number"
                                   className="form-control"
@@ -751,9 +798,9 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button onClick={(e) => handleFeesMasterCancel(e)} type="button" className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Add Fees Master
                   </button>
@@ -782,7 +829,8 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form onSubmit={handleFeesMasterSubmit}>
+               {
+                loading&&loading?<Spinner/>:( <form onSubmit={handleFeesMasterSubmit}>
                 <div className="modal-body" id="modal-datepicker2">
                   <div className="row">
                     <div className="col-md-12">
@@ -826,10 +874,10 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                             <div className="date-pic">
                               <DatePicker
                                 className="form-control datetimepicker"
-                                format="YYYY-MM-DD"
+                                format="DD MMM YYYY"
                                 value={
                                   feesMasterForm.dueDate
-                                    ? dayjs(feesMasterForm.dueDate, "YYYY-MM-DD")
+                                    ? dayjs(feesMasterForm.dueDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -930,7 +978,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                             </div>
                             <div className="col-lg-6">
                               <div className="mb-3">
-                                <label className="form-label">Amount ($)</label>
+                                <label className="form-label">Amount</label>
                                 <input
                                   type="number"
                                   className="form-control"
@@ -956,7 +1004,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                           <div className="row">
                             <div className="col-lg-12">
                               <div className="mb-3">
-                                <label className="form-label">Amount ($)</label>
+                                <label className="form-label">Amount </label>
                                 <input
                                   type="number"
                                   className="form-control"
@@ -999,14 +1047,15 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button onClick={(e) => handleFeesMasterCancel(e)} type="button" className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Edit Fees Master
                   </button>
                 </div>
-              </form>
+              </form>)
+               }
             </div>
           </div>
         </div>
