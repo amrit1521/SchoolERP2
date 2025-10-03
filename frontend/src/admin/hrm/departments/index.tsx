@@ -1,37 +1,193 @@
-import  { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Table from "../../../core/common/dataTable/index";
 import { activeList, departmentSelect } from '../../../core/common/selectoption/selectoption';
 import type { TableData } from '../../../core/data/interface';
-import { departments } from '../../../core/data/json/departments';
+// import { departments } from '../../../core/data/json/departments';
 import PredefinedDateRanges from '../../../core/common/datePicker';
 import CommonSelect from '../../../core/common/commonSelect';
 import { all_routes } from '../../router/all_routes';
 import TooltipOption from '../../../core/common/tooltipOption';
+import { toast } from 'react-toastify';
+import { addDepartment, allDepartment, deleteDepartment, editDeprtment, speDepartment } from '../../../service/department';
+import { handleModalPopUp } from '../../../handlePopUpmodal';
+import { Spinner } from '../../../spinner';
+
+export interface Department {
+  id: number;
+  name: string;
+  status: string;
+}
+
+export interface DepartmentFormData {
+  name: string;
+  status: string;
+}
+
+
 
 const Departments = () => {
   const routes = all_routes;
-  const data = departments;
+  // const data = departments;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const [departmentData, setDepartmentData] = useState<Department[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchDepartment = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 500))
+    try {
+      const { data } = await allDepartment()
+      console.log(data.data)
+      if (data.success) {
+        setDepartmentData(data.data)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDepartment()
+  }, [])
+
+  const [formData, setFormData] = useState<DepartmentFormData>({
+    name: "",
+    status: "1",
+  });
+  const [editId, setEditId] = useState<number | null>(null)
+
+
+  // handle input changes
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const { name, type, checked, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox" ? (checked ? "1" : "0") : value,
+    }));
+  };
+
+
+  // edit
+  const fetchById = async (id: number) => {
+
+    try {
+
+      const { data } = await speDepartment(id)
+      if (data.success) {
+        setFormData({
+          name: data.data.name,
+          status: data.data.status
+        })
+        setEditId(id)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+
+    e.preventDefault()
+
+    setFormData({
+      name: "",
+      status: "1"
+    })
+    setEditId(null)
+
+  }
+
+  // handle form submit
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      return toast.warning("Department name is required!");
+    }
+
+    try {
+      const apiCall = editId
+        ? () => editDeprtment(formData, editId)
+        : () => addDepartment(formData);
+
+      const { data } = await apiCall();
+
+      if (data.success) {
+        toast.success(data.message);
+        handleModalPopUp(editId ? "edit_department" : "add_department");
+        setEditId(null);
+        setFormData({ name: "", status: "1" });
+        fetchDepartment();
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
+    }
+  };
+
+
+  // delete holiday------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    console.log(id)
+    e.preventDefault()
+    try {
+
+      const { data } = await deleteDepartment(id)
+      if (data.success) {
+        setDeleteId(null)
+        toast.success(data.message)
+        fetchDepartment()
+
+        handleModalPopUp('delete-modal')
+
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
+
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: ( record: any) => (
+      render: (id: number) => (
         <>
-          <Link to="#" className="link-primary">{record.id}</Link>
+          <Link to="#" className="link-primary">{id}</Link>
         </>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
     },
     {
       title: "Department",
-      dataIndex: "department",
+      dataIndex: "name",
       sorter: (a: TableData, b: TableData) =>
         a.department.length - b.department.length,
     },
@@ -40,20 +196,20 @@ const Departments = () => {
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Active" ? (
+          {text == "1" ? (
             <span
               className="badge badge-soft-success d-inline-flex align-items-center"
             >
-              <i className='ti ti-circle-filled fs-5 me-1'></i>{text}
+              <i className='ti ti-circle-filled fs-5 me-1'></i>Active
             </span>
-          ):
-          (
-            <span
-              className="badge badge-soft-danger d-inline-flex align-items-center"
-            >
-              <i className='ti ti-circle-filled fs-5 me-1'></i>{text}
-            </span>
-          )}
+          ) :
+            (
+              <span
+                className="badge badge-soft-danger d-inline-flex align-items-center"
+              >
+                <i className='ti ti-circle-filled fs-5 me-1'></i>Inactive
+              </span>
+            )}
         </>
       ),
       sorter: (a: TableData, b: TableData) =>
@@ -61,8 +217,8 @@ const Departments = () => {
     },
     {
       title: "Action",
-      dataIndex: "action",
-      render: () => (
+      dataIndex: "id",
+      render: (id: number) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -76,26 +232,26 @@ const Departments = () => {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => fetchById(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_department"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => setDeleteId(id)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -130,7 +286,7 @@ const Departments = () => {
               </nav>
             </div>
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-            <TooltipOption />
+              <TooltipOption />
               <div className="mb-2">
                 <Link
                   to="#"
@@ -151,7 +307,7 @@ const Departments = () => {
               <h4 className="mb-3">Department List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                <PredefinedDateRanges />
+                  <PredefinedDateRanges />
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -176,18 +332,18 @@ const Departments = () => {
                               <CommonSelect
                                 className="select"
                                 options={departmentSelect}
-                               
+
                               />
                             </div>
                           </div>
                           <div className="col-md-12">
                             <div className="mb-0">
                               <label className="form-label">Status</label>
-                            
+
                               <CommonSelect
                                 className="select"
                                 options={activeList}
-                               
+
                               />
                             </div>
                           </div>
@@ -198,12 +354,12 @@ const Departments = () => {
                           Reset
                         </Link>
                         <Link
-                            to="#"
-                            className="btn btn-primary"
-                            onClick={handleApplyClick}
-                          >
-                            Apply
-                          </Link>
+                          to="#"
+                          className="btn btn-primary"
+                          onClick={handleApplyClick}
+                        >
+                          Apply
+                        </Link>
                       </div>
                     </form>
                   </div>
@@ -256,7 +412,9 @@ const Departments = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+              {
+                loading ? <Spinner /> : (<Table columns={columns} dataSource={departmentData} Selection={true} />)
+              }
               {/* /Student List */}
             </div>
           </div>
@@ -264,150 +422,194 @@ const Departments = () => {
         </div>
       </div>
       <>
-  {/* Add Department */}
-  <div className="modal fade" id="add_department">
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h4 className="modal-title">Add Department</h4>
-          <button
-            type="button"
-            className="btn-close custom-btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          >
-            <i className="ti ti-x" />
-          </button>
+        {/* Add Department */}
+        <div className="modal fade" id="add_department">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              {/* Header */}
+              <div className="modal-header">
+                <h4 className="modal-title">Add Department</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    {/* Department Name */}
+                    <div className="col-md-12">
+                      <div className="mb-3">
+                        <label className="form-label">Department Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="form-control"
+                          placeholder="Enter department name"
+                        
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Toggle */}
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div className="status-title">
+                        <h5>Status</h5>
+                        <p>Change the Status by toggle </p>
+                      </div>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="switch-sm"
+                          checked={formData.status === "1"}
+                          onChange={handleInputChange}
+                          name="status"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Add Department
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <form >
-          <div className="modal-body">
-            <div className="row">
-              <div className="col-md-12">
-                <div className="mb-3">
-                  <label className="form-label">Department Name</label>
-                  <input type="text" className="form-control" />
-                </div>
+        {/* Add Department */}
+        {/* Edit Department */}
+        <div className="modal fade" id="edit_department">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Department</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
               </div>
-              <div className="d-flex align-items-center justify-content-between">
-                <div className="status-title">
-                  <h5>Status</h5>
-                  <p>Change the Status by toggle </p>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    {/* Department Name */}
+                    <div className="col-md-12">
+                      <div className="mb-3">
+                        <label className="form-label">Department Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="form-control"
+                          placeholder="Enter department name"
+                        
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Toggle */}
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div className="status-title">
+                        <h5>Status</h5>
+                        <p>Change the Status by toggle </p>
+                      </div>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="switch-sm"
+                          checked={formData.status === "1"}
+                          onChange={handleInputChange}
+                          name="status"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="switch-sm"
-                  />
+
+                {/* Footer */}
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Edit Department
+                  </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
-          <div className="modal-footer">
-            <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
-              Cancel
-            </Link>
-            <Link to="#" className="btn btn-primary" data-bs-dismiss="modal">
-              Add Department
-            </Link>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-  {/* Add Department */}
-  {/* Edit Department */}
-  <div className="modal fade" id="edit_department">
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h4 className="modal-title">Edit Department</h4>
-          <button
-            type="button"
-            className="btn-close custom-btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          >
-            <i className="ti ti-x" />
-          </button>
         </div>
-        <form >
-          <div className="modal-body">
-            <div className="row">
-              <div className="col-md-12">
-                <div className="mb-3">
-                  <label className="form-label">Department Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter Department Name"
-                    defaultValue="Admin"
-                  />
+        {/* Edit Department */}
+        {/* Delete Modal */}
+        <div className="modal fade" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form>
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete all the marked items, this cant be undone once
+                    you delete.
+                  </p>
+                  {
+                    deleteId && (
+                      <div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          data-bs-dismiss="modal"
+                        >
+                          Cancel
+                        </button>
+                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                          Yes, Delete
+                        </button>
+
+                      </div>
+                    )}
                 </div>
-              </div>
-              <div className="d-flex align-items-center justify-content-between">
-                <div className="status-title">
-                  <h5>Status</h5>
-                  <p>Change the Status by toggle </p>
-                </div>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="switch-sm2"
-                  />
-                </div>
-              </div>
+              </form>
             </div>
           </div>
-          <div className="modal-footer">
-            <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
-              Cancel
-            </Link>
-            <Link to="#"  className="btn btn-primary" data-bs-dismiss="modal">
-              Save Changes
-            </Link>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-  {/* Edit Department */}
-  {/* Delete Modal */}
-  <div className="modal fade" id="delete-modal">
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <form >
-          <div className="modal-body text-center">
-            <span className="delete-icon">
-              <i className="ti ti-trash-x" />
-            </span>
-            <h4>Confirm Deletion</h4>
-            <p>
-              You want to delete all the marked items, this cant be undone once
-              you delete.
-            </p>
-            <div className="d-flex justify-content-center">
-              <Link
-                to="#"
-                className="btn btn-light me-3"
-                data-bs-dismiss="modal"
-              >
-                Cancel
-              </Link>
-              <Link to="#" className="btn btn-danger" data-bs-dismiss="modal">
-                Yes, Delete
-              </Link>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-  {/* /Delete Modal */}
-</>
+        </div>
+        {/* /Delete Modal */}
+      </>
 
     </div>
   )

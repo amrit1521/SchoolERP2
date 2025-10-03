@@ -54,14 +54,7 @@ const AcademicReason = () => {
     fetchAllReason()
   }, [])
 
-  // const formatDate = (dateStr:string)=>{
-  //    const date  = new Date(dateStr)
-  //    return date.toLocaleDateString("en-gb" , {
-  //     day:'2-digit',
-  //     month:'short',
-  //     year:'numeric'
-  //    })
-  // }
+
 
   const tableData = allReason.map((item: any) => (
     {

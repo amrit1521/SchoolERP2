@@ -219,10 +219,6 @@ const Holiday = () => {
   }
 
 
-  // update specific holiday --------------------------------------------
-
-
-
   const columns = [
     {
       title: "ID",
