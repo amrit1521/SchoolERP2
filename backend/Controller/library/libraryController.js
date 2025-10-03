@@ -35,8 +35,8 @@ exports.addLibraryMember = async (req, res) => {
       data.name,
       data.cardno,
       data.email,
-       dayjs(data.date_of_join,"DD MMM YYYY").format("YYYY-MM-DD"),
-      
+      dayjs(data.date_of_join, "DD MMM YYYY").format("YYYY-MM-DD"),
+
       data.phone_no
     ]);
 
@@ -57,7 +57,7 @@ exports.addLibraryMember = async (req, res) => {
 
 exports.allLibraryMember = async (req, res) => {
   try {
-   
+
     const baseUrl = `${req.protocol}://${req.get("host")}/api/stu/uploads`;
 
     const sql = `SELECT id, img_src, folder, name, cardno, email, date_of_join, phone_no 
@@ -66,7 +66,7 @@ exports.allLibraryMember = async (req, res) => {
 
     const [rows] = await db.query(sql);
 
-   
+
     const members = rows.map(member => ({
       ...member,
       image_url: `${baseUrl}/${member.folder}/${member.img_src}`
@@ -414,7 +414,7 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
   }
 
   try {
-    // 🔹 Student ke saare "Taken" books with latest issue date
+
     const sql = `
       SELECT 
           b.id AS bookId,
@@ -427,7 +427,7 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
       ORDER BY lastIssuedDate DESC
     `;
 
-    // 🔹 Student ka overall last issue + return date with student details
+
     const sql2 = `
       SELECT 
           MAX(ib.takenOn) AS lastIssuedDate,

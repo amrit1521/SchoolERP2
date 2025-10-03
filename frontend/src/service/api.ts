@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 
-// const BASE_URL: string = import.meta.env.VITE_SERVERURL;
-export const API_URL = `/api`;
+const BASE_URL: string = import.meta.env.VITE_SERVERURL;
+export const API_URL = `${BASE_URL}/api`;
 
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;
@@ -106,23 +106,23 @@ export const studentDetForFees = (id: any) => api.get(`/fees/studetforfees/${id}
 // feesgroupname
 export const allFeesGroup = () => api.get('/fees/allfeesgroup')
 export const addFeesGroup = (data: object) => api.post('/fees/addfeesgroup', data)
-export const deleteFeesGroup = (id:number)=>api.delete(`/fees/deletefeesgroup/${id}`)
-export const speFeesGroup = (id:number)=>api.get(`/fees/spefeesgroup/${id}`)
-export const editFeesGroup = (data:object,id:number)=>api.put(`/fees/editfeesgroup/${id}` , data)
+export const deleteFeesGroup = (id: number) => api.delete(`/fees/deletefeesgroup/${id}`)
+export const speFeesGroup = (id: number) => api.get(`/fees/spefeesgroup/${id}`)
+export const editFeesGroup = (data: object, id: number) => api.put(`/fees/editfeesgroup/${id}`, data)
 
 // feestypename
 export const allFeesType = () => api.get('/fees/allfeestype')
 export const addFeesType = (data: object) => api.post('/fees/addfeestype', data)
-export const deleteFeesType= (id:number)=>api.delete(`/fees/deletefeestype/${id}`)
-export const speFeesType = (id:number)=>api.get(`/fees/spefeestype/${id}`)
-export const editFeesType = (data:object,id:number)=>api.put(`/fees/editfeestype/${id}` , data)
+export const deleteFeesType = (id: number) => api.delete(`/fees/deletefeestype/${id}`)
+export const speFeesType = (id: number) => api.get(`/fees/spefeestype/${id}`)
+export const editFeesType = (data: object, id: number) => api.put(`/fees/editfeestype/${id}`, data)
 
 // master fees
 export const allFeesMaster = () => api.get('/fees/allfeesmaster')
 export const addFeesMaster = (data: object) => api.post('/fees/addfeesmaster', data)
-export const deleteFeesMaster = (id:number)=>api.delete(`/fees/deletefeesmaster/${id}`)
-export const speFeesMaster = (id:number)=>api.get(`/fees/spefeesmaster/${id}`)
-export const editFeesMaster = (data:object,id:number)=>api.put(`/fees/editfeesmaster/${id}` , data)
+export const deleteFeesMaster = (id: number) => api.delete(`/fees/deletefeesmaster/${id}`)
+export const speFeesMaster = (id: number) => api.get(`/fees/spefeesmaster/${id}`)
+export const editFeesMaster = (data: object, id: number) => api.put(`/fees/editfeesmaster/${id}`, data)
 
 export const feesAssignToStudents = (data: object) => api.post('/fees/feesassign', data)
 export const getAllFeeAssignDetails = () => api.get('/fees/allassigndetails')
@@ -168,16 +168,16 @@ export const editReason = (data: object, id: number) => api.put(`/reason/editrea
 export const allParents = () => api.get('/parent/allparents')
 export const speParent = (parentId: number) => api.get(`/parent/speparent/${parentId}`)
 export const deleteParent = (id: number, userId: number) => api.delete(`/parent/deleteparent/${id}/${userId}`)
-export const parentForEdit = (id:number)=>api.get(`/parent/parentforedit/${id}`)
-export const editParent = (data:object , id:number)=>api.put(`/parent/editparent/${id}` , data)
+export const parentForEdit = (id: number) => api.get(`/parent/parentforedit/${id}`)
+export const editParent = (data: object, id: number) => api.put(`/parent/editparent/${id}`, data)
 
 
 // guardian routes
 export const allGuardians = () => api.get('/parent/allguardians')
 export const speGuardian = (guaId: number) => api.get(`/parent/speguardian/${guaId}`)
-export const deleteGuardian= (id: number, userId: number) => api.delete(`/parent/deleteguardian/${id}/${userId}`)
-export const guardianForEdit = (id:number)=>api.get(`/parent/guardianforedit/${id}`)
-export const editGuardian = (data:object , id:number)=>api.put(`/parent/editguardian/${id}` , data)
+export const deleteGuardian = (id: number, userId: number) => api.delete(`/parent/deleteguardian/${id}/${userId}`)
+export const guardianForEdit = (id: number) => api.get(`/parent/guardianforedit/${id}`)
+export const editGuardian = (data: object, id: number) => api.put(`/parent/editguardian/${id}`, data)
 
 
 // teacher=================================================================

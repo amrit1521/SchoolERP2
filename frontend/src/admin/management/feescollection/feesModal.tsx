@@ -96,7 +96,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
     }
 
     try {
-      // Decide API call based on editId
+    
       const { data } = editId
         ? await editFeesGroup(feesFormData, editId)
         : await addFeesGroup(feesFormData);
@@ -105,7 +105,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
         toast.success(data.message || 'Action successful!');
         handleModalPopUp(editId ? 'edit_fees_group' : 'add_fees_group');
 
-        // Reset form and state
+      
         setFeesFormData({
           feesGroup: '',
           description: '',
@@ -160,7 +160,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
     fetchBothOptions();
   }, [fetchBothOptions]);
 
-  // Memoize options to avoid recalculation on every render
+ 
   const option1 = useMemo(
     () =>
       feesGroupOption.map((item) => ({
@@ -385,7 +385,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
       fineAmount: percentageAmount || fixedAmount || '0',
       totalAmount: Math.ceil(total).toString(),
     };
-    console.log(updatedForm)
+
     try {
       if (editId) {
         const { data } = await editFeesMaster(updatedForm, editId)
@@ -524,7 +524,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
         throw new Error("Invalid type");
       }
     }
-  }, [editId, type])
+  }, [editId])
 
   // common delete 
   const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -590,6 +590,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                         <label className="form-label">Fees Group</label>
                         <CommonSelect
                           className="select"
+                            value={feesMasterForm.feesGroup}
                           options={option1}
                           onChange={(opt) =>
                             handleFeesMasterSelectChange("feesGroup", opt ? opt.value : "")
@@ -606,6 +607,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                         <CommonSelect
                           className="select"
                           options={option2}
+                            value={feesMasterForm.feesType}
                           onChange={(opt) =>
                             handleFeesMasterSelectChange("feesType", opt ? opt.value : "")
                           }
@@ -839,6 +841,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                         <label className="form-label">Fees Group</label>
                         <CommonSelect
                           className="select"
+                          value={feesMasterForm.feesGroup}
                           options={option1}
                           onChange={(opt) =>
                             handleFeesMasterSelectChange("feesGroup", opt ? opt.value : "")
@@ -855,6 +858,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
                         <CommonSelect
                           className="select"
                           options={option2}
+                          value={feesMasterForm.feesType}
                           onChange={(opt) =>
                             handleFeesMasterSelectChange("feesType", opt ? opt.value : "")
                           }

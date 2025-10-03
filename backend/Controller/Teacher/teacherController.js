@@ -122,7 +122,7 @@ exports.addTeacher = async (req, res) => {
 
     // transport data
     const sql5 = `
-      INSERT INTO teacher_transport_info 
+      INSERT INTO transport_info 
       (user_id , route , vehicle_num ,pickup_point) 
       VALUES(?,?,?,?)
     `;
@@ -132,7 +132,7 @@ exports.addTeacher = async (req, res) => {
 
     // hostel data
     const sql6 = `
-      INSERT INTO teacher_hostel_info 
+      INSERT INTO hostel_info 
       (user_id , hostel , room_num) 
       VALUES(?,?,?)
     `;
@@ -262,8 +262,8 @@ exports.speTeacher = async (req, res) => {
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id
       LEFT JOIN teacher_bank_info b ON t.user_id =b.user_id
-      LEFT JOIN teacher_hostel_info h ON t.user_id = h.user_id
-      LEFT JOIN teacher_transport_info tp ON t.user_id =tp.user_id  
+      LEFT JOIN hostel_info h ON t.user_id = h.user_id
+      LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
       LEFT JOIN teacher_payroll_info pi ON t.user_id = pi.user_id
       WHERE t.user_id=?
     `;
@@ -387,7 +387,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_transport_info 
+      `INSERT INTO transport_info 
         (user_id, route, vehicle_num, pickup_point)
         VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
@@ -402,7 +402,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_hostel_info 
+      `INSERT INTO hostel_info 
         (user_id, hostel, room_num)
         VALUES (?, ?, ?)
         ON DUPLICATE KEY UPDATE

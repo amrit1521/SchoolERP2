@@ -681,8 +681,6 @@ exports.allAssignDetails = async (req, res) => {
 
 
 exports.feesSubmit = async (req, res) => {
-  const data = req.body;
-
   try {
     const {
       student_rollnum,
@@ -692,16 +690,30 @@ exports.feesSubmit = async (req, res) => {
       collectionDate,
       paymentType,
       paymentRef,
-      notes
-    } = data;
-    console.log(collectionDate)
+      notes,
+      assignId 
+    } = req.body;
 
-    const [rows] = await db.query(`SELECT * FROM fees_assign WHERE student_rollnum=? AND status='0' `,[student_rollnum] )
-    if(rows.length===0){
-      return res.status(400).json({success:false , message:"Fees Already Paid !"})
+    // 1️⃣ Validate required fields
+    if (!student_rollnum || !feesGroup || !feesType || !amount || !collectionDate || !paymentType) {
+      return res.status(400).json({ success: false, message: "Missing required fields!" });
     }
 
- 
+    // 2️⃣ Check if fees record exists
+    const [rows] = await db.query(
+      `SELECT * FROM fees_assign WHERE id=? AND student_rollnum=? AND fees_typeId=?`,
+      [assignId, student_rollnum, feesType]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: "No fees record found!" });
+    }
+
+    if (rows[0].status === "1") {
+      return res.status(400).json({ success: false, message: "Fees Already Paid!" });
+    }
+
+    // 3️⃣ Update payment info
     const query = `
       UPDATE fees_assign
       SET 
@@ -709,24 +721,23 @@ exports.feesSubmit = async (req, res) => {
         fees_typeId = ?,
         AmountPay = ?,
         collectionDate = ?,
-        PayementType = ?,
+        PaymentType = ?,
         paymentRefno = ?, 
         Notes = ?,
         status = '1',
         updated_date = NOW()
-      WHERE student_rollnum = ?
+      WHERE id = ?
     `;
 
-  
     const values = [
       feesGroup,
       feesType,
       amount,
-      dayjs(collectionDate).format('YYYY-MM-DD'),
+      dayjs(collectionDate).format("YYYY-MM-DD"),
       paymentType,
-      paymentRef,
-      notes,
-      student_rollnum   
+      paymentRef || null,
+      notes || null,
+      assignId
     ];
 
     const [result] = await db.query(query, values);
@@ -737,8 +748,8 @@ exports.feesSubmit = async (req, res) => {
         success: true
       });
     } else {
-      return res.status(404).json({
-        message: "⚠️ No fees record found for this student_rollnum!",
+      return res.status(400).json({
+        message: "⚠️ Failed to update fee record!",
         success: false
       });
     }
@@ -750,6 +761,7 @@ exports.feesSubmit = async (req, res) => {
     });
   }
 };
+
 
 
 

@@ -12,7 +12,7 @@ import { toast } from 'react-toastify'
 import { handleModalPopUp } from '../../../handlePopUpmodal';
 
 type Props = {
-  rollnum: number ;
+  rollnum: number;
   onAdd: () => void;
 }
 
@@ -39,7 +39,7 @@ export interface FeesFormData {
 }
 
 const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
- 
+
 
   const [applayLeaveForm, setApplayLeaveForm] = useState<ApplyLeave>({
     student_rollnum: rollnum,
@@ -172,7 +172,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
 
   const handeFeesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-      console.log(formData)
+    console.log(formData)
     if (!validateForm()) {
       toast.error("Please fix the errors before submitting");
       return;
@@ -338,26 +338,26 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
           } */}
                     </div>
 
-                    {/* <div className="col-lg-3 col-md-6">
-          <div className="mb-3">
-            <span className="fs-12 mb-1">Total Outstanding</span>
-            <p className="text-dark">2000</p>
-          </div>
-        </div>
-        <div className="col-lg-3 col-md-6">
-          <div className="mb-3">
-            <span className="fs-12 mb-1">Last Date</span>
-            <p className="text-dark">25 May 2024</p>
-          </div>
-        </div>
-        <div className="col-lg-3 col-md-6">
-          <div className="mb-3">
-            <span className="badge badge-soft-danger">
-              <i className="ti ti-circle-filled me-2" />
-              Unpaid
-            </span>
-          </div>
-        </div> */}
+                    <div className="col-lg-3 col-md-6">
+                      <div className="mb-3">
+                        <span className="fs-12 mb-1">Total Outstanding</span>
+                        <p className="text-dark">2000</p>
+                      </div>
+                    </div>
+                    <div className="col-lg-3 col-md-6">
+                      <div className="mb-3">
+                        <span className="fs-12 mb-1">Last Date</span>
+                        <p className="text-dark">25 May 2024</p>
+                      </div>
+                    </div>
+                    <div className="col-lg-3 col-md-6">
+                      <div className="mb-3">
+                        <span className="badge badge-soft-danger">
+                          <i className="ti ti-circle-filled me-2" />
+                          Unpaid
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

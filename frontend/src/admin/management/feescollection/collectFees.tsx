@@ -89,7 +89,7 @@ const CollectFees = () => {
     lastname: "",
   }]);
   const [loading, setLoading] = useState<boolean>(false);
-
+  const [rollnum , setRollnum] = useState<number|null>(null)
 
 
 
@@ -135,7 +135,7 @@ const CollectFees = () => {
   }));
 
 
-
+console.log(rollnum)
   const columns = [
     {
       title: "Adm No",
@@ -232,14 +232,14 @@ const CollectFees = () => {
               View Details
             </Link>
           ) : (
-            <Link
-              to="#"
+            <button
+               onClick={()=>setRollnum(record.rollNo)}
               className="btn btn-light"
               data-bs-toggle="modal"
               data-bs-target="#add_fees_collect"
             >
               Collect Fees
-            </Link>
+            </button>
           )}
         </>
       ),
@@ -551,7 +551,7 @@ const CollectFees = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <StudentModals onAdd={() => { }} rollnum={0} />
+     {rollnum&&(<StudentModals onAdd={() => { }} rollnum={rollnum} />)} 
     </>
   );
 };

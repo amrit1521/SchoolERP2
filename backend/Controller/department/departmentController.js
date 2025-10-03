@@ -11,10 +11,7 @@ exports.addDepartment = async (req, res) => {
 
     name = name.trim().toLowerCase();
 
-    // convert status safely (string/number dono handle ho)
-    status = status === "1" || status === 1 ? 1 : 0;
 
-    // Check duplicate
     const [existing] = await db.query(
       "SELECT id FROM department WHERE LOWER(name) = ?",
       [name]

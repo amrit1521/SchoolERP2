@@ -188,6 +188,9 @@ const Departments = () => {
     {
       title: "Department",
       dataIndex: "name",
+      render: (text: string) => (
+        <span className='text-capitalize'>{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.department.length - b.department.length,
     },
@@ -454,7 +457,7 @@ const Departments = () => {
                           onChange={handleInputChange}
                           className="form-control"
                           placeholder="Enter department name"
-                        
+
                         />
                       </div>
                     </div>
@@ -528,7 +531,7 @@ const Departments = () => {
                           onChange={handleInputChange}
                           className="form-control"
                           placeholder="Enter department name"
-                        
+
                         />
                       </div>
                     </div>
