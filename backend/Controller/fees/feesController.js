@@ -29,7 +29,7 @@ exports.stuDetForFees = async (req, res) => {
 
     const userData = userRows[0];
 
- 
+
     const student = {
       class: studentData.class,
       section: studentData.section,
@@ -104,7 +104,7 @@ exports.UpdateFeesGroup = async (req, res) => {
   }
 
   try {
-   
+
     let fields = [];
     let values = [];
 
@@ -121,7 +121,7 @@ exports.UpdateFeesGroup = async (req, res) => {
       values.push(status);
     }
 
-    values.push(id); 
+    values.push(id);
 
     const sql = `UPDATE fees_group SET ${fields.join(", ")} WHERE id = ?`;
 
@@ -276,7 +276,7 @@ exports.UpdateFeesType = async (req, res) => {
   const { name, description, status, feesGroup } = req.body;
 
   try {
-    
+
     let fields = [];
     let values = [];
 
@@ -362,9 +362,9 @@ exports.AddFeesMaster = async (req, res) => {
       totalAmount,
       fineAmount,
     } = req.body;
- 
 
- 
+
+
     if (!amount || !dueDate || !feesGroup || !feesType) {
       return res.status(400).json({ error: "Required fields are missing" });
     }
@@ -566,7 +566,7 @@ exports.feesAssignToStudent = async (req, res) => {
   try {
     const payload = req.body;
     const studentLengts = payload.length;
-   
+
 
     for (const student of payload) {
       for (const feeId of student.fees) {
@@ -691,19 +691,19 @@ exports.feesSubmit = async (req, res) => {
       paymentType,
       paymentRef,
       notes,
-      assignId 
     } = req.body;
 
-    // 1️⃣ Validate required fields
+    // Validate required fields
     if (!student_rollnum || !feesGroup || !feesType || !amount || !collectionDate || !paymentType) {
       return res.status(400).json({ success: false, message: "Missing required fields!" });
     }
 
-    // 2️⃣ Check if fees record exists
-    const [rows] = await db.query(
-      `SELECT * FROM fees_assign WHERE id=? AND student_rollnum=? AND fees_typeId=?`,
-      [assignId, student_rollnum, feesType]
-    );
+    if (isNaN(amount) || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid amount!" });
+    }
+
+    // Check if fees record exists
+    const [rows] = await db.query("SELECT * FROM fees_assign WHERE student_rollnum=?", [student_rollnum]);
 
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: "No fees record found!" });
@@ -713,7 +713,7 @@ exports.feesSubmit = async (req, res) => {
       return res.status(400).json({ success: false, message: "Fees Already Paid!" });
     }
 
-    // 3️⃣ Update payment info
+    // Update payment info
     const query = `
       UPDATE fees_assign
       SET 
@@ -721,12 +721,12 @@ exports.feesSubmit = async (req, res) => {
         fees_typeId = ?,
         AmountPay = ?,
         collectionDate = ?,
-        PaymentType = ?,
+        payementType = ?,
         paymentRefno = ?, 
         Notes = ?,
         status = '1',
         updated_date = NOW()
-      WHERE id = ?
+      WHERE student_rollnum=?
     `;
 
     const values = [
@@ -737,7 +737,7 @@ exports.feesSubmit = async (req, res) => {
       paymentType,
       paymentRef || null,
       notes || null,
-      assignId
+      student_rollnum,
     ];
 
     const [result] = await db.query(query, values);
@@ -745,20 +745,15 @@ exports.feesSubmit = async (req, res) => {
     if (result.affectedRows > 0) {
       return res.status(200).json({
         message: "✅ Fees paid successfully!",
-        success: true
-      });
-    } else {
-      return res.status(400).json({
-        message: "⚠️ Failed to update fee record!",
-        success: false
+        success: true,
       });
     }
+
+    return res.status(400).json({ message: "⚠️ Failed to update fee record!", success: false });
+
   } catch (error) {
     console.error("❌ DB Error:", error);
-    return res.status(500).json({
-      message: "Internal server error!",
-      success: false
-    });
+    return res.status(500).json({ message: "Internal server error!", success: false });
   }
 };
 
@@ -837,7 +832,7 @@ exports.feesReport = async (req, res) => {
 
     const [rows] = await db.query(sql);
 
-    
+
 
     return res.status(200).json({
       success: true,
