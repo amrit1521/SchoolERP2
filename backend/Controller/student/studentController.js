@@ -584,6 +584,7 @@ exports.specificDetailsStu = async (req, res) => {
         u.status,
         u.mobile,
         u.email,
+       
         s.id AS student_id,
         s.academicyear,
         s.admissionnum,
@@ -617,12 +618,15 @@ exports.specificDetailsStu = async (req, res) => {
         o.bank_name,
         o.branch,
         o.ifsc_num,
-        o.other_det
+        o.other_det,
+         p.name,
+        p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
+      LEFT JOIN parents_info p ON s.stu_id = p.user_id
       WHERE s.rollnum = ?;
     `;
     const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`

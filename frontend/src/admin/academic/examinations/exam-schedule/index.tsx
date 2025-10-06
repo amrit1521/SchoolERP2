@@ -75,7 +75,6 @@ const ExamSchedule = () => {
   };
 
   const fetchSchedule = async () => {
-
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
 
@@ -84,7 +83,6 @@ const ExamSchedule = () => {
       if (data.success) {
         setScheduleData(data.data);
       }
-
 
     } catch (error: any) {
       console.error(error);

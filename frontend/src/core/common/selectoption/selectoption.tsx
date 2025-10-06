@@ -520,22 +520,29 @@ export const classSylabus = [
   { value: "III", label: "III" },
 ];
 export const classSection = [
-  { value: "", label: "Select" },
+
   { value: "A", label: "A" },
   { value: "B", label: "B" },
   { value: "C", label: "C" },
 ];
 export const language = [
-  { value: "", label: "Select" },
+
   { value: "English", label: "English" },
   { value: "Maths", label: "Maths" },
   { value: "Physics", label: "Physics" },
 ];
 export const count = [
-  { value: "", label: "Select" },
+
   { value: "101", label: "101" },
   { value: "102", label: "102" },
   { value: "103", label: "103" },
+  { value: "104", label: "104" },
+  { value: "105", label: "105" },
+  { value: "106", label: "106" },
+  { value: "107", label: "107" },
+  { value: "108", label: "108" },
+  { value: "109", label: "109" },
+  { value: "110", label: "110" },
 ];
 export const typetheory = [
 
