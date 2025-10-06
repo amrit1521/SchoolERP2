@@ -75,7 +75,7 @@ const StudentReport = () => {
     key: student.student_id, 
     stu_id:student.stu_id,
     admissionNo: student.admissionnum, 
-    rollNo: String(student.rollnum), 
+    rollNo: student.rollnum, 
     name: `${student.firstname} ${student.lastname}`, 
     stuImg: student.stu_img, 
     class: student.class,
@@ -109,7 +109,7 @@ const StudentReport = () => {
     {
       title: "Roll No",
       dataIndex: "rollNo",
-      sorter: (a: TableData, b: TableData) => a.rollNo.length - b.rollNo.length,
+      sorter: (a: TableData, b: TableData) => a.rollNo - b.rollNo,
     },
     {
       title: "Name",
@@ -117,7 +117,7 @@ const StudentReport = () => {
       render: (text: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+            <Link to={`${routes.studentDetail}/${record.rollNo}`} className="avatar avatar-md">
               <img
                 src={`${Imageurl}/${record.stuImg}`}
                 className="img-fluid rounded-circle"
@@ -126,7 +126,7 @@ const StudentReport = () => {
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+                <Link to={`${routes.studentDetail}/${record.rollNo}`}>{text}</Link>
               </p>
             </div>
           </div>

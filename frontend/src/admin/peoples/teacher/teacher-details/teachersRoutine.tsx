@@ -10,7 +10,7 @@ import { sepTeacher } from "../../../../service/api";
 const TeachersRoutine = () => {
   const routes = all_routes;
 
-    const { userId } = useParams()
+  const { teacher_id } = useParams()
   // console.log(typeof userId)
 
   const [teacher, setTeacher] = useState<any>({})
@@ -33,10 +33,10 @@ const TeachersRoutine = () => {
   }
 
   useEffect(() => {
-    if (userId) {
-      fetchTeacher(userId)
+    if (teacher_id) {
+      fetchTeacher(teacher_id)
     }
-  }, [userId])
+  }, [teacher_id])
   return (
     <>
       {/* Page Wrapper */}
@@ -44,7 +44,7 @@ const TeachersRoutine = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-              <TeacherBreadcrumb userId={Number(userId)} />
+            {teacher_id && (<TeacherBreadcrumb teacher_id={teacher_id} />)}
             {/* /Page Header */}
             {/* Student Information */}
             <TeacherSidebar teacher={teacher} loading={loading} />
@@ -53,33 +53,33 @@ const TeachersRoutine = () => {
               <div className="row">
                 <div className="col-md-12">
                   {/* List */}
-                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
+                  <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.teacherDetails}/${teacher.user_id}`} className="nav-link ">
+                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="nav-link ">
                         <i className="ti ti-school me-2" />
                         Teacher Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teachersRoutine}/${teacher.user_id}`} className="nav-link active">
+                      <Link to={`${routes.teachersRoutine}/${teacher.teacher_id}`} className="nav-link active">
                         <i className="ti ti-table-options me-2" />
                         Routine
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherLeaves}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teacherLeaves}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherSalary}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teacherSalary}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Salary
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherLibrary}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teacherLibrary}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-bookmark-edit me-2" />
                         Library
                       </Link>

@@ -75,7 +75,8 @@ const StudentList = () => {
     status: item.status === "1" ? "Active" : "Inactive",
     DateofJoin: item.admissiondate,
     DOB: item.dob,
-    action: item.stu_id
+    action: item.rollnum,
+    stu_id:item.stu_id
   }));
 
   const disableStu = async (id: number) => {
@@ -228,7 +229,7 @@ const StudentList = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: (text: number, record: any) => (
+      render: (rollnum: number, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <Link
@@ -270,7 +271,7 @@ const StudentList = () => {
                 <li>
                   <Link
                     className="dropdown-item rounded-1"
-                    to={`${routes.studentDetail}/${text}`}
+                    to={`${routes.studentDetail}/${rollnum}`}
                   >
                     <i className="ti ti-menu me-2" />
                     View Student
@@ -279,7 +280,7 @@ const StudentList = () => {
                 <li>
                   <Link
                     className="dropdown-item rounded-1"
-                    to={`${routes.editStudent}/${text}`}
+                    to={`${routes.editStudent}/${rollnum}`}
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -298,7 +299,7 @@ const StudentList = () => {
                 </li>
                 <li>
                   <button className="dropdown-item rounded-1"
-                    onClick={() => { `${record.status}` === 'Active' ? disableStu(text) : enableStu(text) }}
+                    onClick={() => { `${record.status}` === 'Active' ? disableStu(rollnum) : enableStu(rollnum) }}
                   >
                     <i className="ti ti-toggle-right me-2" />
                     {`${record.status}` === 'Active' ? "Disable" : "Enable"}
@@ -316,7 +317,7 @@ const StudentList = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(text)}
+                    onClick={() => setDeleteId(rollnum)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete_modal"
                   >

@@ -17,6 +17,13 @@ function safeJSON(value) {
   return value || null;
 }
 
+async function getUserId(rollnum) {
+
+  const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
+  return stu[0].stu_id
+
+}
+
 exports.addStudent = async (req, res) => {
   const data = req.body;
   let connection;
@@ -169,9 +176,6 @@ exports.addStudent = async (req, res) => {
   }
 };
 
-
-
-
 exports.allStudents = async (req, res) => {
   try {
     const sql = `
@@ -274,7 +278,8 @@ exports.filterStudents = async (req, res) => {
 };
 
 exports.disableStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
 
   try {
@@ -297,7 +302,8 @@ exports.disableStudent = async (req, res) => {
 
 
 exports.enableStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
 
   try {
@@ -320,13 +326,13 @@ exports.enableStudent = async (req, res) => {
 
 
 
-exports.getStudentByIdForEdit = async (req, res) => {
-  const { id } = req.params;
+exports.getStudentByRollnumForEdit = async (req, res) => {
+  const { rollnum } = req.params;
 
-  if (!id) {
-    return res.status(400).json({ success: false, message: "Student ID is required" });
+  if (!rollnum) {
+    return res.status(400).json({ success: false, message: "Student Roll Number is required" });
   }
-
+  const id = await getUserId(rollnum)
   try {
     const sql = `
       SELECT 
@@ -379,13 +385,16 @@ exports.getStudentByIdForEdit = async (req, res) => {
 
 
 exports.updateStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
   const data = req.body;
   let connection;
-
-  if (!id) {
-    return res.status(400).json({ success: false, message: "Student ID is required" });
+  if (!rollnum) {
+    return res.status(400).json({ success: false, message: "Student RollNumber is required" });
   }
+
+  const id = await getUserId(rollnum)
+
+
 
   try {
     connection = await db.getConnection();
@@ -562,7 +571,9 @@ exports.updateStudent = async (req, res) => {
 };
 
 exports.specificDetailsStu = async (req, res) => {
-  const id = req.params.id;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
+
   try {
 
     const sql = `
@@ -612,11 +623,11 @@ exports.specificDetailsStu = async (req, res) => {
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
-      WHERE u.id = ?;
+      WHERE s.rollnum = ?;
     `;
     const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`
 
-    const [student] = await db.query(sql, [id]);
+    const [student] = await db.query(sql, [rollnum]);
     const [parents] = await db.query(sql2, [id])
 
     return res.status(200).json({
@@ -636,7 +647,8 @@ exports.specificDetailsStu = async (req, res) => {
 
 
 exports.deleteStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
   try {
     const sql = `DELETE FROM users WHERE id = ?`;
@@ -657,7 +669,8 @@ exports.deleteStudent = async (req, res) => {
 
 // student time table --------------------
 exports.getTimeTable = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
   try {
 
@@ -722,12 +735,12 @@ exports.addStudentLeave = async (req, res) => {
     const [leaveres] = await db.query(sql, [
       data.student_rollnum,
       data.leave_type_id,
-      data.from_date,
-      data.to_date,
+      dayjs(data.from_date).format('YYYY-MM-DD'),
+      dayjs(data.to_date).format('YYYY-MM-DD'),
       data.leave_day_type,
       data.no_of_days,
       data.reason,
-      data.leave_date,
+      dayjs(data.leave_date).format('YYYY-MM-DD')
     ]);
 
     return res.status(201).json({
@@ -804,7 +817,7 @@ exports.getStuLeaveData = async (req, res) => {
 
 
 exports.studentLeaveReport = async (req, res) => {
-  console.log("fhdghdgfdh")
+
   try {
     const sql = `
       SELECT 
@@ -900,7 +913,7 @@ WHERE u.type_id = 3
         `;
 
     const [rows] = await db.query(sql)
-    return res.status(200).json({ message: "All students for report data", data: rows , success:true })
+    return res.status(200).json({ message: "All students for report data", data: rows, success: true })
 
 
   } catch (error) {

@@ -151,7 +151,7 @@ const ParentGrid = () => {
   const [parentId, setParentId] = useState<number | null>(null)
   const [userId, setUserId] = useState<number | null>(null)
 
-  const setDleteIds = (id: number, userId: number) => {
+  const setDeleteIds = (id: number, userId: number) => {
     setParentId(id)
     setUserId(userId)
   }
@@ -614,7 +614,7 @@ const ParentGrid = () => {
                               <li>
                                 <button
                                   className="dropdown-item rounded-1"
-                                  onClick={() => setDleteIds(parent.id, parent.user_id)}
+                                  onClick={() => setDeleteIds(parent.id, parent.user_id)}
                                   data-bs-toggle="modal"
                                   data-bs-target="#delete-modal"
                                 >
@@ -667,7 +667,7 @@ const ParentGrid = () => {
                         <div className="d-flex align-items-center">
                           <div className="d-flex align-items-center">
                             <Link
-                              to={`${routes.studentDetail}/${parent.stu_id}`}
+                              to={`${routes.studentDetail}/${parent.rollnum}`}
                               className="avatar avatar-md flex-shrink-0 p-0 me-2"
                             >
                               <img
@@ -675,7 +675,7 @@ const ParentGrid = () => {
                                 alt="img"
                                 className="img-fluid rounded-circle"
                               />
-                            </Link>
+                            </Link   >
                             <p className="text-dark">{`${parent.firstname} ${parent.lastname}`}</p>
                           </div>
                         </div>
@@ -937,7 +937,7 @@ const ParentGrid = () => {
               </div>
               <div className="d-flex align-items-center justify-content-between flex-wrap">
                 <div className="d-flex align-items-center mb-3">
-                  <Link to={`${routes.studentDetail}/${speParentData.stu_id}`} className="avatar">
+                  <Link to={`${routes.studentDetail}/${speParentData.rollnum}`} className="avatar">
                     <img
                       src={`${Imageurl}/${speParentData.stu_img}`}
                       className="img-fluid rounded-circle"
@@ -946,7 +946,7 @@ const ParentGrid = () => {
                   </Link>
                   <div className="ms-2">
                     <p className="mb-0">
-                      <Link to={`${routes.studentDetail}/${speParentData.stu_id}`}>{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
+                      <Link to={`${routes.studentDetail}/${speParentData.rollnum}`}>{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
                     </p>
                     <span>{speParentData.class}, {speParentData.section}</span>
                   </div>
@@ -967,7 +967,7 @@ const ParentGrid = () => {
                 </ul>
                 <div className="d-flex align-items-center">
                   <Link
-                    to={`${routes.studentDetail}/${speParentData.stu_id}`}
+                    to={`${routes.studentDetail}/${speParentData.rollnum}`}
                     className="btn btn-primary mb-3"
                   >
                     View Details

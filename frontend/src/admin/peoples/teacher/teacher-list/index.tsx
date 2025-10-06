@@ -46,9 +46,9 @@ const TeacherList = () => {
     fetchTeachers()
   }, [])
 
-  const disableTea = async(id:number)=>{
+  const disableTea = async(teacher_id:string)=>{
     try {
-      const {data} = await disableTeacher(id)
+      const {data} = await disableTeacher(teacher_id)
       if(data.success){
         toast.success(data.message)
         fetchTeachers()
@@ -59,9 +59,9 @@ const TeacherList = () => {
     }
   }
 
-    const enableTea = async(id:number)=>{
+    const enableTea = async(teacher_id:string)=>{
     try {
-      const {data} = await enableTeacher(id)
+      const {data} = await enableTeacher(teacher_id)
       if(data.success){
         toast.success(data.message)
         fetchTeachers()
@@ -83,7 +83,7 @@ const TeacherList = () => {
     phone: teacher.mobile,
     dateofJoin: teacher.date_of_join,
     status: teacher.status == "1" ? "Active" : "Inactive",
-    action: Number(teacher.user_id)
+   
   }))
 
 
@@ -91,19 +91,19 @@ const TeacherList = () => {
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: string,record:any) => (
-        <Link to={`${routes.teacherDetails}/${record.action}`} className="link-primary">
-          {text}
+      render: (id: string) => (
+        <Link to={`${routes.teacherDetails}/${id}`} className="link-primary">
+          {id}
         </Link>
       ),
-      sorter: (a: TableData, b: TableData) => a.id - b.id,
+      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
     },
     {
       title: "Name",
       dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.teacherDetails}/${record.action}`} className="avatar avatar-md">
+          <Link to={`${routes.teacherDetails}/${record.id}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
@@ -112,7 +112,7 @@ const TeacherList = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to={`${routes.teacherDetails}/${record.action}`}>{text}</Link>
+              <Link to={`${routes.teacherDetails}/${record.id}`}>{text}</Link>
             </p>
           </div>
         </div>
@@ -173,8 +173,8 @@ const TeacherList = () => {
 
     {
       title: "Action",
-      dataIndex: "action",
-      render: (id: any , record:any) => (
+      dataIndex: "id",
+      render: (id: string , record:any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">

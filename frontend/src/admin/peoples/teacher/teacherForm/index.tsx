@@ -386,7 +386,7 @@ const TeacherForm = () => {
         toast.error('Password and Confirm Password do not match !')
         return
       }
-      // console.log(teacherImg, teacherResume, teacherJoinLetter)
+    
 
       const formData = new FormData()
       if (teacherImg && teacherResume && teacherJoinLetter) {

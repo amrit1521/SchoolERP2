@@ -8,6 +8,11 @@ function safeJSON(value) {
   return value || null;
 }
 
+async function getUserId(teacher_id) {
+  const [res] = await db.query(`SELECT user_id FROM teachers WHERE teacher_id=?`, [teacher_id])
+  return res[0].user_id
+}
+
 exports.addTeacher = async (req, res) => {
   const data = req.body;
   const connection = await db.getConnection()
@@ -88,7 +93,7 @@ exports.addTeacher = async (req, res) => {
     ]);
 
     const sql3 = `
-      INSERT INTO teacher_payroll_info 
+      INSERT INTO payroll_info 
       (user_id ,epf_no , basic_salary , contract_type , work_sift , work_location , date_of_leave)   
       VALUES (?,?,?,?,?,?,?)
     `;
@@ -112,7 +117,7 @@ exports.addTeacher = async (req, res) => {
 
     // bank details
     const sqlb = `
-      INSERT INTO teacher_bank_info 
+      INSERT INTO bank_info 
       (user_id , account_name,account_num,bank_name,ifsc_code,branch_name) 
       VALUES (?,?,?,?,?,?)
     `;
@@ -202,7 +207,7 @@ exports.allTeachers = async (req, res) => {
 
 
 exports.speTeacher = async (req, res) => {
-  const { userId } = req.params;
+  const { teacher_id } = req.params;
   try {
     const sql = `
       SELECT  
@@ -261,14 +266,14 @@ exports.speTeacher = async (req, res) => {
         pi.date_of_leave
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id
-      LEFT JOIN teacher_bank_info b ON t.user_id =b.user_id
+      LEFT JOIN bank_info b ON t.user_id =b.user_id
       LEFT JOIN hostel_info h ON t.user_id = h.user_id
       LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
-      LEFT JOIN teacher_payroll_info pi ON t.user_id = pi.user_id
-      WHERE t.user_id=?
+      LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
+      WHERE t.teacher_id=?
     `;
 
-    const [rows] = await db.query(sql, [userId]);
+    const [rows] = await db.query(sql, [teacher_id]);
     return res.status(200).json({
       success: true,
       message: "All teachers fetched successfully",
@@ -286,11 +291,13 @@ exports.speTeacher = async (req, res) => {
 
 
 exports.updateTeacher = async (req, res) => {
-  const { id } = req.params;
+  const { teacher_id } = req.params;
   const data = req.body;
   let connection;
 
-  if (!id) return res.status(400).json({ success: false, message: "Teacher ID is required" });
+  if (!teacher_id) return res.status(400).json({ success: false, message: "Teacher ID is required" });
+
+  const id = await getUserId(teacher_id)
 
   try {
     connection = await db.getConnection();
@@ -348,7 +355,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_payroll_info 
+      `INSERT INTO payroll_info 
         (user_id, epf_no, basic_salary, contract_type, work_sift, work_location, date_of_leave) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
@@ -369,7 +376,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_bank_info 
+      `INSERT INTO bank_info 
         (user_id, account_name, account_num, bank_name, ifsc_code, branch_name)
         VALUES (?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
@@ -429,8 +436,8 @@ exports.updateTeacher = async (req, res) => {
 
 
 exports.disableTeacher = async (req, res) => {
-  const { id } = req.params;
-
+  const { teacher_id } = req.params;
+  const id = await getUserId(teacher_id)
 
   try {
     const [result] = await db.query(
@@ -450,8 +457,9 @@ exports.disableTeacher = async (req, res) => {
   }
 };
 
-exports.enaableTeacher = async (req, res) => {
-  const { id } = req.params;
+exports.enableTeacher = async (req, res) => {
+  const { teacher_id } = req.params;
+  const id = await getUserId(teacher_id)
 
 
   try {
@@ -474,11 +482,14 @@ exports.enaableTeacher = async (req, res) => {
 
 
 exports.deleteTeacher = async (req, res) => {
-  const { id } = req.params;
+  const { teacher_id } = req.params;
 
-  if (!id) {
+
+  if (!teacher_id) {
     return res.status(400).json({ message: "Id not provided!", success: false });
   }
+  const id = await getUserId(teacher_id)
+
 
   try {
     const [result] = await db.query(`DELETE FROM users WHERE id=?`, [id]);

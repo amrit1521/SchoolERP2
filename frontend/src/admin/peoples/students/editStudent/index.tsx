@@ -142,7 +142,7 @@ const fieldLabels: Record<keyof StudentData, string> = {
 
 const EditStudent = () => {
 
-    const { id } = useParams()
+    const { rollnum } = useParams()
     const navigate = useNavigate()
     const routes = all_routes;
 
@@ -154,9 +154,9 @@ const EditStudent = () => {
     const [originalTrasnferCert, setOriginalTransferCert] = useState<string>('');
 
 
-    const fetchStudentDataByUserId = async (id: number) => {
+    const fetchStudentDataByUserId = async (rollnum: number) => {
         try {
-            const { data } = await stuDataForEdit(id);
+            const { data } = await stuDataForEdit(rollnum);
 
             if (data.success && data.student) {
                 const student = data.student;
@@ -263,10 +263,10 @@ const EditStudent = () => {
     };
 
     useEffect(() => {
-        if (id) {
-            fetchStudentDataByUserId(Number(id))
+        if (rollnum) {
+            fetchStudentDataByUserId(Number(rollnum))
         }
-    }, [id])
+    }, [rollnum])
 
     const [studentData, setStudentData] = useState<StudentData>({
         academicyear: '',
@@ -586,7 +586,7 @@ const EditStudent = () => {
             // }
 
             // Send request
-            const res = await editStudent(formData, Number(id));
+            const res = await editStudent(formData, Number(rollnum));
 
             if (res.data.success) {
                 toast.success(res.data.message);

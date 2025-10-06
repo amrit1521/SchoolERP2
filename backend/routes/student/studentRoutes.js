@@ -8,24 +8,24 @@ const router = express.Router()
 
 router.post('/add', studentController.addStudent);
 router.get('/', studentController.allStudents)
-router.get('/spedetails/:id', studentController.specificDetailsStu)
-router.get('/studataforedit/:id', studentController.getStudentByIdForEdit)
-router.put('/editstu/:id', studentController.updateStudent)
-router.delete(`/deletestu/:id`, studentController.deleteStudent)
+router.get('/spedetails/:rollnum', studentController.specificDetailsStu)
+router.get('/studataforedit/:rollnum', studentController.getStudentByRollnumForEdit)
+router.put('/editstu/:rollnum', studentController.updateStudent)
+router.delete(`/deletestu/:rollnum`, studentController.deleteStudent)
 // filter students
 router.post('/filterstudents', studentController.filterStudents)
 
 // disable student 
-router.put('/disable/:id', studentController.disableStudent)
+router.put('/disable/:rollnum', studentController.disableStudent)
 // enable student
-router.put('/enable/:id', studentController.enableStudent)
+router.put('/enable/:rollnum', studentController.enableStudent)
 // student report
 router.get('/stureport', studentController.studentReport)
 // students leave report
 router.get('/stuleavereport', studentController.studentLeaveReport)
 
 // timetable
-router.get('/timetable/:id', studentController.getTimeTable)
+router.get('/timetable/:rollnum', studentController.getTimeTable)
 
 // leave
 router.post('/addleave', studentController.addStudentLeave)

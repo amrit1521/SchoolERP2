@@ -103,7 +103,7 @@ export interface TeacherData {
 
 const EditTeacher = () => {
 
-    const { userId } = useParams()
+    const { teacher_id } = useParams()
     const routes = all_routes;
     const navigate = useNavigate()
 
@@ -185,9 +185,9 @@ const EditTeacher = () => {
     const [originalJoinLetterPath, setOriginalJoinLetterPath] = useState<string>("");
 
 
-    const fetchSpecificTeacher = async (id: number) => {
+    const fetchSpecificTeacher = async (teacher_id: string) => {
         try {
-            const { data } = await sepTeacher(id);
+            const { data } = await sepTeacher(teacher_id);
 
             if (data.success && data.data) {
                 const teacher = data.data;
@@ -267,10 +267,10 @@ const EditTeacher = () => {
 
 
     useEffect(() => {
-        if (userId) {
-            fetchSpecificTeacher(Number(userId))
+        if (teacher_id) {
+            fetchSpecificTeacher(teacher_id)
         }
-    }, [userId])
+    }, [teacher_id])
 
     const handleFileChange = async (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -453,7 +453,7 @@ const EditTeacher = () => {
             //   console.log(key, value)
             // })
 
-            const res = await editTeacher(formData, userId)
+            const res = await editTeacher(formData, teacher_id)
 
             // console.log(res)
 

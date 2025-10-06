@@ -12,7 +12,7 @@ import { toast } from 'react-toastify'
 import { handleModalPopUp } from '../../../handlePopUpmodal';
 
 type Props = {
-  rollnum: number;
+  rollnum: number | null;
   onAdd: () => void;
 }
 
@@ -28,7 +28,7 @@ export interface ApplyLeave {
 }
 
 export interface FeesFormData {
-  student_rollnum: number;
+  student_rollnum: number | null;
   feesGroup: string;
   feesType: string;
   amount: string;
@@ -74,7 +74,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
         onAdd()
         toast.success(data.message)
         setApplayLeaveForm({
-          student_rollnum: rollnum,
+          student_rollnum: null,
           leave_type_id: null,
           from_date: "",
           to_date: "",
@@ -82,12 +82,29 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
           no_of_days: null,
           reason: "",
           leave_date: "",
+
         })
+        handleModalPopUp('apply_leave')
       }
 
     } catch (error) {
       console.log(error)
     }
+  }
+
+  const handleCancelLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setApplayLeaveForm({
+      student_rollnum: null,
+      leave_type_id: null,
+      from_date: "",
+      to_date: "",
+      leave_day_type: "",
+      no_of_days: null,
+      reason: "",
+      leave_date: "",
+
+    })
   }
 
 
@@ -693,7 +710,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                           <DatePicker
 
                             className="form-control datetimepicker"
-                            format="YYYY-MM-DD"
+                            format="DD MMM YYYY"
                             value={
                               applayLeaveForm.from_date
                                 ? dayjs(applayLeaveForm.from_date, "DD MMM YYYY")
@@ -796,10 +813,10 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button onClick={(e) => handleCancelLeave(e)} type='button' className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
-                  </Link>
-                  <button type='submit' data-bs-dismiss="modal" className="btn btn-primary">
+                  </button>
+                  <button type='submit' className="btn btn-primary">
                     Apply Leave
                   </button>
                 </div>

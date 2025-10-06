@@ -27,14 +27,15 @@ export interface ParentData {
   email: string;
   phone_num: string;
   img_src: string;
-  Parent_Add: string;   // ISO date string
+  Parent_Add: string;   
   stu_img: string;
   stu_id: number;
   section: string;
   class: string;
-  Student_Add: string;  // ISO date string
+  Student_Add: string;  
   firstname: string;
   lastname: string;
+  rollnum:number;
 }
 
 export interface SpeParentData {
@@ -117,7 +118,7 @@ const ParentList = () => {
     class: `${parent.class},${parent.section}`,
     phone: parent.phone_num,
     email: parent.email,
-    stu_id: parent.stu_id,
+   rollnum:parent.rollnum,
     stu_img: parent.stu_img,
     img: parent.img_src
 
@@ -369,12 +370,12 @@ const ParentList = () => {
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: string) => (
-        <Link to="#" onClick={() => setShow(true)} className="link-primary">
+      render: (text: number) => (
+        <div  onClick={() => setShow(true)} className="link-primary">
           {text}
-        </Link>
+        </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
     {
       title: "Parent Name",
@@ -409,7 +410,7 @@ const ParentList = () => {
       dataIndex: "child",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+          <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.stu_img}`}
               className="img-fluid rounded-circle"
@@ -418,7 +419,7 @@ const ParentList = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+              <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
             </p>
             <span className="fs-12">{record.class}</span>
           </div>

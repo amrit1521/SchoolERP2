@@ -16,6 +16,7 @@ exports.allParents = async (req, res) => {
         st.stu_id,
         st.section,
         st.class,
+        st.rollnum,
         st.created_at AS Student_Add,
         u.firstname,
         u.lastname
@@ -192,6 +193,7 @@ exports.allGuardian = async (req, res) => {
                 st.stu_id,
                 st.section,
                 st.class,
+                 st.rollnum,
                 st.created_at AS Student_Add,
                 u.firstname,
                 u.lastname

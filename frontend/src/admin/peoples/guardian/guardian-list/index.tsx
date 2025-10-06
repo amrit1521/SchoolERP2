@@ -27,12 +27,12 @@ export interface GuaData {
   email: string;
   phone_num: string;
   img_src: string;
-  Gua_Add: string;   // ISO date string
+  Gua_Add: string;   
   stu_img: string;
-  stu_id: number;
+ rollnum: number;
   section: string;
   class: string;
-  Student_Add: string;  // ISO date string
+  Student_Add: string; 
   firstname: string;
   lastname: string;
 }
@@ -159,7 +159,7 @@ const GuardianList = () => {
     class: `${guardian.class}, ${guardian.section}`,
     phone: guardian.phone_num,
     email: guardian.email,
-    stu_id: guardian.stu_id,
+    rollnum: guardian.rollnum,
     stu_img: guardian.stu_img,
     img: guardian.img_src,
     action: guardian.id
@@ -412,7 +412,7 @@ const GuardianList = () => {
       dataIndex: "child",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+          <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.stu_img}`}
               className="img-fluid rounded-circle"
@@ -421,7 +421,7 @@ const GuardianList = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+              <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
             </p>
             <span className="fs-12">{record.class}</span>
           </div>
@@ -939,7 +939,7 @@ const GuardianList = () => {
 
                     <div className="d-flex align-items-center justify-content-between flex-wrap">
                       <div className="d-flex align-items-center mb-3">
-                        <Link to={`${routes.studentDetail}/${speGuardianData.stu_id}`} className="avatar">
+                        <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`} className="avatar">
                           <img
                             src={`${Imageurl}/${speGuardianData.stu_img}`}
                             className="rounded-circle object-fit-cover"
@@ -949,7 +949,7 @@ const GuardianList = () => {
                         </Link>
                         <div className="ms-2">
                           <p className="mb-0">
-                            <Link to={`${routes.studentDetail}/${speGuardianData.stu_id}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
+                            <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
                           </p>
                           <span>
                             {speGuardianData.class}, {speGuardianData.section}
@@ -976,7 +976,7 @@ const GuardianList = () => {
 
                       <div className="d-flex align-items-center">
                         <Link
-                          to={`${routes.studentDetail}/${speGuardianData.stu_id}`}
+                          to={`${routes.studentDetail}/${speGuardianData.rollnum}`}
                           className="btn btn-primary mb-3"
                         >
                           View Details

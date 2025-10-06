@@ -130,7 +130,6 @@ const CollectFees = () => {
     section: item.section,
     amount: item.totalAmount,
     lastDate: item.dueDate,
-    stu_id: item.stu_id,
     status: item.status === "1" ? "Paid" : "Unpaid",
   }));
 
@@ -150,14 +149,14 @@ console.log(rollnum)
     {
       title: "Roll No",
       dataIndex: "rollNo",
-      sorter: (a: TableData, b: TableData) => a.rollNo.length - b.rollNo.length,
+      sorter: (a: TableData, b: TableData) => a.rollNo- b.rollNo,
     },
     {
       title: "Student",
       dataIndex: "student",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+          <Link to={`${routes.studentDetail}/${record.rollNo}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.studentImage}`}
               className="img-fluid rounded-circle"
@@ -166,7 +165,7 @@ console.log(rollnum)
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+              <Link to={`${routes.studentDetail}/${record.rollNo}`}>{text}</Link>
             </p>
             <span className="fs-12">{`${record.class}-${record.section}`}</span>
           </div>
@@ -228,7 +227,7 @@ console.log(rollnum)
       render: (text: string, record: any) => (
         <>
           {text === "Paid" ? (
-            <Link to={`${routes.studentFees}/${record.stu_id}`} className="btn btn-light">
+            <Link to={`${routes.studentFees}/${record.rollNo}`} className="btn btn-light">
               View Details
             </Link>
           ) : (

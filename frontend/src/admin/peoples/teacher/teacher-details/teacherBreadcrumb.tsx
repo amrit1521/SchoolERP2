@@ -4,10 +4,10 @@ import { all_routes } from '../../../router/all_routes'
 import type React from 'react';
 
 type Props = {
-  userId:number;
+  teacher_id:string;
 }
 
-const TeacherBreadcrumb:React.FC<Props> = ({userId}) => {
+const TeacherBreadcrumb:React.FC<Props> = ({teacher_id}) => {
     const routes = all_routes;
   return (
     <div className="col-md-12">
@@ -39,7 +39,7 @@ const TeacherBreadcrumb:React.FC<Props> = ({userId}) => {
                 Login Details
               </Link>
               <Link
-                to={`${routes.editTeacher}/${userId}`}
+                to={`${routes.editTeacher}/${teacher_id}`}
                 className="btn btn-primary d-flex align-items-center mb-2"
               >
                 <i className="ti ti-edit-circle me-2" />

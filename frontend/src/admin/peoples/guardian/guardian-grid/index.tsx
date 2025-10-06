@@ -32,6 +32,7 @@ export interface GuaData {
   stu_id: string;
   firstname: string;
   lastname: string;
+  rollnum:number;
 }
 
 export interface SpeGuardianData {
@@ -46,7 +47,7 @@ export interface SpeGuardianData {
   class: string;
   section: string;
   gender: string;
-  rollnum: string;
+  rollnum: number;
   admissiondate: string;
   admissionnum: string;
   Student_Add: string;
@@ -643,7 +644,7 @@ const GuardianGrid = () => {
                         <div className="d-flex align-items-center">
                           <div className="d-flex align-items-center">
                             <Link
-                              to={`${routes.studentDetail}/${gua.stu_id}`}
+                              to={`${routes.studentDetail}/${gua.rollnum}`}
                               className="avatar avatar-md flex-shrink-0 p-0 me-2"
                             >
                               <img
@@ -652,7 +653,8 @@ const GuardianGrid = () => {
                                 className="img-fluid rounded-circle"
                               />
                             </Link>
-                            <p className="text-dark">{`${gua.firstname} ${gua.lastname}`}</p>
+                             <Link
+                              to={`${routes.studentDetail}/${gua.rollnum}`} className="text-dark">{`${gua.firstname} ${gua.lastname}`}</Link>
                           </div>
                         </div>
                         <Link
@@ -773,7 +775,7 @@ const GuardianGrid = () => {
                         </Link>
                         <div className="ms-2">
                           <p className="mb-0">
-                            <Link to={`${routes.studentDetail}/${speGuardianData.stu_id}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
+                            <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
                           </p>
                           <span>
                             {speGuardianData.class}, {speGuardianData.section}
@@ -800,7 +802,7 @@ const GuardianGrid = () => {
 
                       <div className="d-flex align-items-center">
                         <Link
-                          to={`${routes.studentDetail}/${speGuardianData.stu_id}`}
+                          to={`${routes.studentDetail}/${speGuardianData.rollnum}`}
                           className="btn btn-primary mb-3"
                         >
                           View Details
