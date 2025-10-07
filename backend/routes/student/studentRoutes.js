@@ -14,6 +14,7 @@ router.put('/editstu/:rollnum', studentController.updateStudent)
 router.delete(`/deletestu/:rollnum`, studentController.deleteStudent)
 // filter students
 router.post('/filterstudents', studentController.filterStudents)
+router.post('/filterstudentsforoption', studentController.filterStudentsForOption)
 
 // disable student 
 router.put('/disable/:rollnum', studentController.disableStudent)

@@ -52,7 +52,7 @@
     "@vitejs/plugin-react": "^4.6.0",
     "antd": "^5.26.3",
     "apexcharts": "^4.7.0",
-    "bootstrap": "^5.3.7",
+    "bootstrap": "^5.3.8",
     "clipboard-copy": "^4.0.1",
     "docx": "^9.5.1",
     "dragula": "^3.7.3",

@@ -4,7 +4,7 @@ import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
 import { useEffect, useState } from "react";
-import { specificStudentData1 } from "../../../../service/api";
+import { getExamResult, specificStudentData1 } from "../../../../service/api";
 import html2pdf from "html2pdf.js";
 
 const StudentResult = () => {
@@ -12,32 +12,64 @@ const StudentResult = () => {
   const { rollnum } = useParams<{ rollnum: string }>();
 
   const [student, setStudent] = useState<any>({});
+  const [results, setResults] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
 
   // Ref for selected exam
   const [activeRef, setActiveRef] = useState<HTMLDivElement | HTMLElement | null>(null);
 
+  const fetchStudent = async () => {
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500));
+    try {
+      const res = await specificStudentData1(Number(rollnum));
+      setStudent(res.data.student);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchResult = async (rollnum: number) => {
+    if (!rollnum) return
+    try {
+
+      const { data } = await getExamResult(rollnum)
+      if (data.success) {
+        setResults(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   useEffect(() => {
     setToken(localStorage.getItem("token"));
-    const fetchStudent = async () => {
-      setLoading(true);
-      await new Promise((res) => setTimeout(res, 500));
-      try {
-        const res = await specificStudentData1(Number(rollnum));
-        setStudent(res.data.student);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudent();
+
+    if (rollnum) {
+      fetchStudent();
+      fetchResult(Number(rollnum))
+    }
+
   }, [rollnum]);
 
-  const downloadPDF = () => {
-    console.log("heelo", activeRef)
-    if (!activeRef) return;
+
+
+  const downloadPDF = async (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // Temporarily expand if collapsed
+    const wasCollapsed = element.classList.contains("collapse");
+    if (wasCollapsed) {
+      element.classList.add("show");
+    }
+
+    // Wait a tick for rendering
+    await new Promise((res) => setTimeout(res, 300));
 
     const opt = {
       margin: 0.2,
@@ -47,8 +79,16 @@ const StudentResult = () => {
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" as const },
     };
 
-    html2pdf().set(opt).from(activeRef).save();
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Collapse back if was collapsed
+      if (wasCollapsed) {
+        element.classList.remove("show");
+      }
+    });
   };
+
+
+  // console.log(results[0].exams)
 
 
   return (
@@ -153,184 +193,152 @@ const StudentResult = () => {
                         </div>
                       ) : (
                         <div className="accordions-items-seperate" id="accordionExample">
-                          {/* Each Exam Item */}
-                          {["May", "Apr", "Mar"].map((month, index) => (
-                            <div className="accordion-item" key={index}>
-                              <h2 className="accordion-header d-flex align-items-center justify-content-between">
-                                <button
-                                  className="accordion-button collapsed"
-                                  type="button"
-                                  data-bs-toggle="collapse"
-                                  data-bs-target={`#collapse${month}`}
-                                  aria-expanded="false"
-                                  aria-controls={`collapse${month}`}
-                                >
-                                  <span className="avatar avatar-sm bg-success me-2">
-                                    <i className="ti ti-checks" />
-                                  </span>
-                                  Monthly Test ({month})
-                                </button>
-                                {/* Download Button */}
-                                <button
-                                  className="btn btn-success btn-sm ms-2"
-                                  onClick={() => {
-                                    const element = document.getElementById(`collapse${month}`);
-                                    if (element) setActiveRef(element);
-                                    setTimeout(() => downloadPDF(), 1000);
-                                  }}
-                                >
-                                  Download PDF
-                                </button>
-                              </h2>
-                              <div
-                                id={`collapse${month}`}
-                                className="accordion-collapse collapse"
-                                data-bs-parent="#accordionExample"
-                              >
+                          {results && results.length > 0 ? results.map((studentItem: any) =>
+
+                            studentItem.exams.map((exam: any, index: number) =>
+                            (
+                              <div className="accordion-item" key={`${studentItem.rollnum}-${index}`}>
+                                <h2 className="accordion-header d-flex align-items-center justify-content-between">
+                                  <button
+                                    className="accordion-button collapsed"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target={`#collapse${studentItem.rollnum}-${index}`}
+                                    aria-expanded="false"
+                                    aria-controls={`collapse${studentItem.rollnum}-${index}`}
+                                  >
+                                    <span className="avatar avatar-sm bg-success me-2">
+                                      <i className="ti ti-checks" />
+                                    </span>
+                                    {exam.exam_name}
+                                  </button>
+                                  <button
+                                    className="btn btn-success btn-sm ms-2"
+                                    onClick={() =>
+                                      downloadPDF(`collapse${studentItem.rollnum}-${index}`)
+                                    }
+                                  >
+                                    Download PDF
+                                  </button>
+
+                                </h2>
                                 <div
-                                  className="accordion-body"
-                                  style={{ padding: "20px", backgroundColor: "white" }}
+                                  id={`collapse${studentItem.rollnum}-${index}`}
+                                  className="accordion-collapse collapse"
+                                  data-bs-parent="#accordionExample"
                                 >
-                                  {/* PDF Header */}
-                                  <div className="d-flex align-items-center justify-content-center mb-4">
-                                    <img
-                                      src="/assets/img/download-img.png"
-                                      alt="School Logo"
-                                      style={{ height: "80px", marginRight: "20px" }}
-                                    />
-                                    <div>
-                                      <h2>Whizlancer International School</h2>
-                                      <p className="text-center">Gorakhpur Uttar Pradesh</p>
-                                    </div>
-                                  </div>
-
-                                  {/* Student Info */}
-                                  <div className="d-flex align-items-center justify-content-between">
-                                    <div style={{ marginBottom: "20px" }}>
+                                  <div className="accordion-body" style={{ padding: "20px", backgroundColor: "white" }}>
+                                    {/* PDF Header */}
+                                    <div className="d-flex align-items-center justify-content-center mb-4">
+                                      <img
+                                        src="/assets/img/download-img.png"
+                                        alt="School Logo"
+                                        style={{ height: "80px", marginRight: "20px" }}
+                                      />
                                       <div>
-                                        <strong className="fw-bold">Student Name:</strong> {student.firstname} {student.lastname}
-                                      </div>
-                                      <div>
-                                        <strong className="fw-bold">Class & Section:</strong> {student.class} - {student.section}
-                                      </div>
-                                      <div>
-                                        <strong className="fw-bold">Roll Number:</strong> {student.rollnum}
+                                        <h2>Whizlancer International School</h2>
+                                        <p className="text-center">Gorakhpur Uttar Pradesh</p>
                                       </div>
                                     </div>
 
-                                    <div style={{ marginBottom: "20px" }}>
-                                      <div>
-                                        <strong>Father's Name:</strong> {student.name}
+                                    {/* Student Info */}
+                                    <div className="d-flex align-items-center justify-content-between">
+                                      <div style={{ marginBottom: "20px" }}>
+                                        <div>
+                                          <strong className="fw-bold">Student Name:</strong> {studentItem.firstname} {studentItem.lastname}
+                                        </div>
+                                        <div>
+                                          <strong className="fw-bold">Class & Section:</strong> {studentItem.class} - {studentItem.section}
+                                        </div>
+                                        <div>
+                                          <strong className="fw-bold">Roll Number:</strong> {studentItem.rollnum}
+                                        </div>
                                       </div>
                                       <div>
-                                        <strong>Father's Mobile:</strong> {student.phone_num}
-                                      </div>
+                                        <div>
+                                          <strong className="fw-bold">Father's Name:</strong> {studentItem.fat_name}
+                                        </div>
+                                        <div>
+                                          <strong className="fw-bold">Father's Mobile:</strong> {studentItem.phone_num}
+                                        </div>
+                                        <div>
 
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  <hr />
-                                  {/* Table */}
-                                  <div className="table-responsive">
-                                    <table className="table">
-                                      <thead className="thead-light">
-                                        <tr>
-                                          <th>Subject</th>
-                                          <th>Max Marks</th>
-                                          <th>Min Marks</th>
-                                          <th>Marks Obtained</th>
-                                          <th className="text-end">Result</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {/* Example Subjects */}
-                                        <tr>
-                                          <td>English (150)</td>
-                                          <td>100</td>
-                                          <td>35</td>
-                                          <td>59</td>
-                                          <td className="text-end">
-                                            <span className="badge badge-soft-success d-inline-flex align-items-center">
-                                              <i className="ti ti-circle-filled fs-5 me-1" />
-                                              Pass
-                                            </span>
-                                          </td>
-                                        </tr>
-                                        <tr>
-                                          <td>Mathematics (214)</td>
-                                          <td>100</td>
-                                          <td>35</td>
-                                          <td>69</td>
-                                          <td className="text-end">
-                                            <span className="badge badge-soft-success d-inline-flex align-items-center">
-                                              <i className="ti ti-circle-filled fs-5 me-1" />
-                                              Pass
-                                            </span>
-                                          </td>
-                                        </tr>
-                                        <tr>
-                                          <td>Physics (120)</td>
-                                          <td>100</td>
-                                          <td>35</td>
-                                          <td>79</td>
-                                          <td className="text-end">
-                                            <span className="badge badge-soft-success d-inline-flex align-items-center">
-                                              <i className="ti ti-circle-filled fs-5 me-1" />
-                                              Pass
-                                            </span>
-                                          </td>
-                                        </tr>
-                                        <tr>
-                                          <td>Chemistry (110)</td>
-                                          <td>100</td>
-                                          <td>35</td>
-                                          <td>89</td>
-                                          <td className="text-end">
-                                            <span className="badge badge-soft-success d-inline-flex align-items-center">
-                                              <i className="ti ti-circle-filled fs-5 me-1" />
-                                              Pass
-                                            </span>
-                                          </td>
-                                        </tr>
-                                        <tr>
-                                          <td>Spanish (140)</td>
-                                          <td>100</td>
-                                          <td>35</td>
-                                          <td>99</td>
-                                          <td className="text-end">
-                                            <span className="badge badge-soft-success d-inline-flex align-items-center">
-                                              <i className="ti ti-circle-filled fs-5 me-1" />
-                                              Pass
-                                            </span>
-                                          </td>
-                                        </tr>
-                                        {/* Add more subjects dynamically as needed */}
-                                        <tr>
-                                          <td className="bg-dark text-white">Rank : 30</td>
-                                          <td className="bg-dark text-white">Total : 500</td>
-                                          <td className="bg-dark text-white" colSpan={2}>
-                                            Marks Obtained : 395
-                                          </td>
-                                          <td className="bg-dark text-white text-end">
-                                            <div className="d-flex align-items-center justify-content-end">
-                                              {/* <span className="me-2">Percentage : 79.50</span> */}
-                                              <h6 className="fw-normal text-white">
-                                                Result : <span className="text-success">Pass</span>
-                                              </h6>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                  <div className="mt-3 p-3 border border-warning rounded" style={{ backgroundColor: "#fff8e1" }}>
-                                    <strong>Disclaimer:</strong> The results displayed above are **provisional** and generated based on the available data. The school reserves the right to make corrections or adjustments if discrepancies are found. This report is for **informational purposes only** and should not be considered as the final official document.
+                                    <hr />
+                                    {/* Table */}
+                                    {/* Table */}
+                                    <div className="table-responsive">
+                                      <table className="table">
+                                        <thead className="thead-light">
+                                          <tr>
+                                            <th>Subject</th>
+                                            <th>Max Marks</th>
+                                            <th>Min Marks</th>
+                                            <th>Marks Obtained</th>
+                                            <th>Grade</th>
+                                            <th className="text-end">Result</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {exam.subjects.map((subject: any, subIndex: number) => (
+                                            <tr key={subIndex}>
+                                              <td>{subject.subject_name}</td>
+                                              <td>{subject.max_mark}</td>
+                                              <td>{subject.min_mark}</td>
+                                              <td>{subject.mark_obtained}</td>
+                                              <td className="fw-semibold">{subject.grade}</td>
+                                              <td className="text-end">
+                                                <span
+                                                  className={`badge d-inline-flex align-items-center ${subject.result === "Pass" ? "badge-soft-success" : "badge-soft-danger"}`}
+                                                >
+                                                  <i className="ti ti-circle-filled fs-5 me-1" />
+                                                  {subject.result}
+                                                </span>
+                                              </td>
+                                            </tr>
+                                          ))}
+
+                                          {/* Totals Row */}
+                                          {(() => {
+                                            const totalMax = exam.subjects.reduce((sum: number, sub: any) => sum + Number(sub.max_mark), 0);
+                                            const totalObtained = exam.subjects.reduce((sum: number, sub: any) => sum + Number(sub.mark_obtained), 0);
+                                            const percentage = ((totalObtained / totalMax) * 100).toFixed(2);
+                                            const status = Number(percentage) > 33 ? "Pass" : "Fail"
+                                            return (
+                                              <tr className="fw-bold border border-5 ">
+                                                <td>Rank:30</td>
+                                                <td colSpan={2}>Total:{totalMax}</td>
+
+                                                <td>Toatal Obtained:{totalObtained}</td>
+                                                <td className="text-end">Per: {percentage}%</td>
+                                                <td className={`${status == "Pass" ? "text-success" : "text-danger"}`}>{status}</td>
+                                              </tr>
+                                            );
+                                          })()}
+                                        </tbody>
+                                      </table>
+                                    </div>
+
+
+                                    <div
+                                      className="mt-3 p-3 border border-warning rounded"
+                                      style={{ backgroundColor: "#fff8e1" }}
+                                    >
+                                      <strong>Disclaimer:</strong> The results displayed above are **provisional** and generated
+                                      based on the available data. The school reserves the right to make corrections or
+                                      adjustments if discrepancies are found. This report is for **informational purposes
+                                      only** and should not be considered as the final official document.
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))
+                          ) : <div className="my-5 text-center fw-semibold">Exam Not Schedule..</div>}
                         </div>
+
                       )}
                     </div>
                   </div>

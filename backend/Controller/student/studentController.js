@@ -276,6 +276,37 @@ exports.filterStudents = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error!', success: false });
   }
 };
+exports.filterStudentsForOption = async (req, res) => {
+
+  const data = req.body;
+  try {
+    const sql = `
+          SELECT 
+            u.firstname,
+            u.lastname,
+            s.rollnum
+            FROM users u
+            RIGHT JOIN students s
+            ON u.id = s.stu_id
+            WHERE u.type_id = 3 
+            AND s.class = ? 
+            AND s.section = ?;
+
+        `;
+
+    const [students] = await db.query(sql, [data.class, data.section]);
+
+    res.status(200).json({
+      message: "Students fetched successfully",
+      success: true,
+      students
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error!', success: false });
+  }
+};
 
 exports.disableStudent = async (req, res) => {
   const { rollnum } = req.params;
@@ -626,7 +657,7 @@ exports.specificDetailsStu = async (req, res) => {
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
-      LEFT JOIN parents_info p ON s.stu_id = p.user_id
+      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
       WHERE s.rollnum = ?;
     `;
     const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`
@@ -724,6 +755,7 @@ exports.getTimeTable = async (req, res) => {
     });
   }
 };
+
 // leave for students ----------------------
 exports.addStudentLeave = async (req, res) => {
   const data = req.body;
@@ -758,7 +790,7 @@ exports.addStudentLeave = async (req, res) => {
   }
 };
 
-// get leave name  , total , used and avilable
+// get leave name , total , used and avilable
 
 exports.getStuLeaveData = async (req, res) => {
   const { rollnum } = req.params;

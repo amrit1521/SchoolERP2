@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
 import { examresult } from '../../../../core/data/json/exam-result';
 import type { TableData } from '../../../../core/data/interface';
@@ -6,9 +6,11 @@ import Table from "../../../../core/common/dataTable/index";
 import { Link } from 'react-router-dom';
 import PredefinedDateRanges from '../../../../core/common/datePicker';
 import CommonSelect from '../../../../core/common/commonSelect';
-import { allClass, allSubject, classSection, weeklytest } from '../../../../core/common/selectoption/selectoption';
+import { allClass, classSection, weeklytest } from '../../../../core/common/selectoption/selectoption';
 import { all_routes } from '../../../router/all_routes';
 import TooltipOption from '../../../../core/common/tooltipOption';
+import { addExamResult, examNameForOption, examSubjectForOption, filterStudentsForOption, getAllSection } from '../../../../service/api';
+import { toast } from 'react-toastify';
 
 export interface AddResult {
   roll_num: number | null;
@@ -18,6 +20,25 @@ export interface AddResult {
   min_mark: number | null;
   mark_obtained: number | null;
 }
+
+export interface Section {
+  id: string;
+  section: string;
+}
+
+export interface StudetnOption {
+  value: number;
+  label: string;
+}
+const initialFormData: AddResult = {
+  roll_num: null,
+  exam_name_id: null,
+  subject_id: null,
+  max_mark: null,
+  min_mark: null,
+  mark_obtained: null,
+};
+
 
 
 const ExamResult = () => {
@@ -30,19 +51,188 @@ const ExamResult = () => {
     }
   };
 
-  const [formData, setformdata] = useState<AddResult>({
-    roll_num: null,
-    exam_name_id: null,
-    subject_id: null,
-    max_mark: null,
-    min_mark: null,
-    mark_obtained: null,
-  })
+  const [formData, setformdata] = useState<AddResult>(initialFormData)
   const [errors, setErrors] = useState<any>({})
 
-  const handleSelectChange= (name:keyof AddResult , value:string|number)=>{
-     setformdata((prev)=>({...prev , [name]:value}))
+
+
+  const [sections, setSections] = useState<Section[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // for fetching students  , examname , subjectname  etc
+  const [section, setSection] = useState<string>("")
+  const [cls, setCls] = useState<string>("")
+  const [students, setStudets] = useState<StudetnOption[]>([])
+  const [examOpt, setExamOpt] = useState<{ value: number, label: string }[]>([])
+  // subjectdata
+  const [subjectData, setSubjectData] = useState<any>([])
+  const [subjectOpt, setSubejctOpt] = useState<{ value: number, label: string }[]>([])
+
+  const fetchStudents = async () => {
+    try {
+      const dataa = {
+        class: cls,
+        section: section
+      }
+      const { data } = await filterStudentsForOption(dataa)
+
+      if (data.success) {
+        setStudets(data.students.map((s: any) => ({ value: s.rollnum, label: `${s.firstname} ${s.lastname}` })));
+      }
+
+    } catch (error) {
+      console.log(error)
+      toast.error("Error to fetch studnets !")
+    }
   }
+
+  const fetchExamForOption = async () => {
+    try {
+      const dataa = {
+        class: cls,
+        section: section
+      }
+      const { data } = await examNameForOption(dataa)
+
+      if (data.success) {
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          setExamOpt(data.data.map((e: any) => ({ value: e.id, label: e.examName })));
+        } else {
+          setExamOpt([{ value: 0, label: 'No Exam' }]);
+        }
+      } else {
+        setExamOpt([{ value: 0, label: 'No Exam' }]);
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("Error to fetch examName !")
+    }
+  }
+
+  const fetchSubjectsRelatedToExam = async () => {
+    try {
+      const dataa = {
+        class: cls,
+        section: section,
+        exam_name_id: formData.exam_name_id
+      }
+
+      const { data } = await examSubjectForOption(dataa)
+      if (data.success) {
+        setSubjectData(data.data)
+        setSubejctOpt(data.data.map((s: any) => ({ value: s.id, label: `${s.name}(${s.code})` })));
+      }
+
+    } catch (error) {
+
+    }
+  }
+
+  useEffect(() => {
+    if (section && cls && formData.exam_name_id && formData.subject_id) {
+      const subject = subjectData.find((s: any) => s.id === formData.subject_id);
+
+      if (subject) {
+        setformdata((prev) => ({
+          ...prev,
+          max_mark: Number(subject.maxMarks),
+          min_mark: Number(subject.minMarks)
+        }));
+      }
+    }
+  }, [section, cls, formData.exam_name_id, formData.subject_id, subjectData]);
+
+
+  useEffect(() => {
+    if (section && cls) {
+      fetchStudents()
+      fetchExamForOption()
+    }
+    if (section && cls && formData.exam_name_id) {
+      fetchSubjectsRelatedToExam()
+    }
+  }, [section, cls, formData.exam_name_id])
+
+
+
+  const fetchData = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>,
+    setLoadingState: boolean = true
+  ) => {
+    try {
+      if (setLoadingState) setLoading(true);
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+
+
+
+  // Fetch Functions
+  const fetchSections = () => fetchData(getAllSection, setSections);
+
+  useEffect(() => {
+    fetchSections();
+  }, []);
+
+  const sectionOptions = useMemo(
+    () =>
+      sections.map((s) => ({
+        value: s.section,
+        label: s.section,
+      })),
+    [sections]
+  );
+
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors: any = {};
+
+    if (!cls) newErrors.cls = "Class is required";
+    if (!section) newErrors.section = "Section is required";
+    if (!formData.roll_num) newErrors.roll_num = "Student is required";
+    if (!formData.exam_name_id) newErrors.exam_name_id = "Exam is required";
+    if (!formData.subject_id) newErrors.subject_id = "Subject is required";
+
+    if (formData.max_mark === null || formData.max_mark < 0 || formData.max_mark === 0) {
+      newErrors.max_mark = "Max Marks must  be a required and Should be not Zero";
+    }
+
+    if (formData.min_mark === null || formData.min_mark < 0 || formData.min_mark === 0) {
+      newErrors.min_mark = "Min Marks must  be a required and Should be not Zero";
+    }
+
+
+
+    if (formData.mark_obtained === null || formData.mark_obtained < 0 || formData.mark_obtained === 0) {
+      newErrors.mark_obtained = "Marks Obtained must be a required and Should be not Zero";
+    }
+
+    if (formData.mark_obtained !== null && formData.max_mark !== null &&
+      formData.mark_obtained > formData.max_mark) {
+      newErrors.mark_obtained = "Marks Obtained cannot exceed Max Marks";
+    }
+
+    return newErrors;
+  };
+
+
+
+  const handleSelectChange = (name: keyof AddResult, value: string | number) => {
+    setformdata((prev) => ({ ...prev, [name]: value }))
+  }
+
+
+
+
+
+
 
   const columns = [
     {
@@ -190,12 +380,43 @@ const ExamResult = () => {
 
   ];
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setErrors({})
 
-    console.log("hello" , formData)
-  }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+    console.log(validationErrors)
+
+    if (Object.keys(validationErrors).length !== 0) {
+      return
+
+    }
+
+    try {
+
+      const { data } = await addExamResult(formData)
+      if (data.success) {
+        toast.success(data.message)
+        setformdata(initialFormData)
+        setCls("")
+        setSection("")
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  };
+
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    setformdata(initialFormData);
+    setCls("")
+    setSection("")
+    setErrors({});
+  };
+
 
   return (
     <div>
@@ -348,30 +569,23 @@ const ExamResult = () => {
                           Recently Added
                         </Link>
                       </li>
-
                     </ul>
-
                   </div>
                 </div>
               </div>
               <div className="card-body p-0 py-3">
                 {/* Guardians List */}
                 <Table columns={columns} dataSource={data} Selection={true} />
-
-                {/* /Guardians List */}
               </div>
             </div>
-            {/* /Guardians List */}
           </div>
         </div>
-        {/* /Page Wrapper */}
-
         {/* Add Home Work */}
         <div className="modal fade" id="add_result">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Add Home Work</h4>
+                <h4 className="modal-title">Add Result</h4>
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
@@ -384,126 +598,133 @@ const ExamResult = () => {
 
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
+                  <div className='text-danger fw-bold'>First choose class & section </div>
                   <div className="row">
                     <div className="col-md-12">
+
+                      {/* Class & Section */}
+                      <div className='row mb-3'>
+                        <div className="col col-6">
+                          <label className="form-label">Class <span className='text-danger'>*</span></label>
+                          <CommonSelect
+                            className={`select ${errors.cls ? "is-invalid" : ""}`}
+                            options={allClass}
+                            value={cls}
+                            onChange={(opt: any) => setCls(opt.value)}
+                          />
+                          {errors.cls && <div className="text-danger mt-1">{errors.cls}</div>}
+                        </div>
+                        <div className="col col-6">
+                          <label className="form-label">Section <span className='text-danger'>*</span></label>
+                          <CommonSelect
+                            className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
+                            options={sectionOptions}
+                            value={section}
+                            onChange={(opt: any) => setSection(opt.value)}
+                          />
+                          {errors.section && <div className="text-danger mt-1">{errors.section}</div>}
+                        </div>
+                      </div>
+
                       {/* Student */}
                       <div className="mb-3">
-                        <label className="form-label">Student</label>
+                        <label className="form-label">Student <span className='text-danger'>*</span></label>
                         <CommonSelect
                           className={`select ${errors.roll_num ? "is-invalid" : ""}`}
-                          options={allClass} 
-                          value={formData.roll_num || ""}
-                          onChange={(opt:any) =>
-                            handleSelectChange("roll_num", opt?.value || null)
-                          }
+                          options={students}
+                          value={formData.roll_num}
+                          onChange={(opt: any) => handleSelectChange("roll_num", opt?.value || null)}
                         />
-                        {errors.roll_num && (
-                          <div className="invalid-feedback">{errors.roll_num}</div>
-                        )}
+                        {errors.roll_num && <div className="text-danger mt-1">{errors.roll_num}</div>}
                       </div>
 
                       {/* Exam */}
                       <div className="mb-3">
-                        <label className="form-label">Exam</label>
+                        <label className="form-label">Exam <span className='text-danger'>*</span></label>
                         <CommonSelect
                           className={`select ${errors.exam_name_id ? "is-invalid" : ""}`}
-                          options={weeklytest} 
-                          value={formData.exam_name_id || ""}
-                          onChange={(opt:any) =>
-                            handleSelectChange("exam_name_id", opt?.value )
-                          }
+                          options={examOpt}
+                          value={formData.exam_name_id}
+                          onChange={(opt: any) => handleSelectChange("exam_name_id", opt?.value)}
                         />
-                        {errors.exam_name_id && (
-                          <div className="invalid-feedback">{errors.exam_name_id}</div>
-                        )}
+                        {errors.exam_name_id && <div className="text-danger mt-1">{errors.exam_name_id}</div>}
                       </div>
 
                       {/* Subject */}
                       <div className="mb-3">
-                        <label className="form-label">Subject</label>
+                        <label className="form-label">Subject <span className='text-danger'>*</span></label>
                         <CommonSelect
                           className={`select ${errors.subject_id ? "is-invalid" : ""}`}
-                          options={allSubject} 
+                          options={subjectOpt}
                           value={formData.subject_id || ""}
-                          onChange={(opt:any) =>
-                            handleSelectChange("subject_id", opt?.value)
-                          }
+                          onChange={(opt: any) => handleSelectChange("subject_id", opt?.value)}
                         />
-                        {errors.subject_id && (
-                          <div className="invalid-feedback">{errors.subject_id}</div>
-                        )}
+                        {errors.subject_id && <div className="text-danger mt-1">{errors.subject_id}</div>}
                       </div>
 
                       {/* Max Marks */}
                       <div className="mb-3">
-                        <label className="form-label">Max Marks</label>
+                        <label className="form-label">Max Marks <span className='text-danger'>*</span></label>
                         <input
                           type="number"
                           className={`form-control ${errors.max_mark ? "is-invalid" : ""}`}
                           value={formData.max_mark || ""}
-                          onChange={(e) =>
-                            handleSelectChange("max_mark", Number(e.target.value))
-                          }
+                          onChange={(e) => handleSelectChange("max_mark", Number(e.target.value))}
                         />
-                        {errors.max_mark && (
-                          <div className="invalid-feedback">{errors.max_mark}</div>
-                        )}
+                        {errors.max_mark && <div className="text-danger mt-1">{errors.max_mark}</div>}
                       </div>
 
                       {/* Min Marks */}
                       <div className="mb-3">
-                        <label className="form-label">Min Marks</label>
+                        <label className="form-label">Min Marks <span className='text-danger'>*</span></label>
                         <input
                           type="number"
                           className={`form-control ${errors.min_mark ? "is-invalid" : ""}`}
                           value={formData.min_mark || ""}
-                          onChange={(e) =>
-                            handleSelectChange("min_mark", Number(e.target.value))
-                          }
+                          onChange={(e) => handleSelectChange("min_mark", Number(e.target.value))}
                         />
-                        {errors.min_mark && (
-                          <div className="invalid-feedback">{errors.min_mark}</div>
-                        )}
+                        {errors.min_mark && <div className="text-danger mt-1">{errors.min_mark}</div>}
                       </div>
 
                       {/* Marks Obtained */}
                       <div className="mb-3">
-                        <label className="form-label">Marks Obtained</label>
+                        <label className="form-label">Marks Obtained <span className='text-danger'>*</span></label>
                         <input
                           type="number"
                           className={`form-control ${errors.mark_obtained ? "is-invalid" : ""}`}
                           value={formData.mark_obtained || ""}
-                          onChange={(e) =>
-                            handleSelectChange("mark_obtained", Number(e.target.value))
-                          }
+                          onChange={(e) => handleSelectChange("mark_obtained", Number(e.target.value))}
                         />
-                        {errors.mark_obtained && (
-                          <div className="invalid-feedback">{errors.mark_obtained}</div>
-                        )}
+                        {errors.mark_obtained && <div className="text-danger mt-1">{errors.mark_obtained}</div>}
                       </div>
+
                     </div>
                   </div>
                 </div>
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button
+                    type="button"
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                    onClick={handleCancel}
+                  >
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Add Result
                   </button>
                 </div>
+
               </form>
+
 
             </div>
           </div>
         </div>
         {/* /Add Home Work */}
       </>
-
-
-
     </div>
   )
 }

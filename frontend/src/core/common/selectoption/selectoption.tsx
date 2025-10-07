@@ -641,11 +641,13 @@ export const minMark = [
 
 export const gradeOne = [
 
-  { value: "O", label: "O" },
+  { value: "A+", label: "A+" },
   { value: "A", label: "A" },
+  { value: "B+", label: "B+" },
   { value: "B", label: "B" },
   { value: "C", label: "C" },
   { value: "D", label: "D" },
+  { value: "F", label: "F" },
 ];
 
 export const gradePercentage = [
@@ -661,6 +663,8 @@ export const marksFrom = [
   { value: "70", label: "70" },
   { value: "60", label: "60" },
   { value: "50", label: "50" },
+  { value: "40", label: "40" },
+  { value: "30", label: "30" },
 
 ];
 
@@ -671,6 +675,9 @@ export const marksUpto = [
   { value: "80", label: "80" },
   { value: "70", label: "70" },
   { value: "60", label: "60" },
+  { value: "50", label: "50" },
+  { value: "40", label: "40" },
+  { value: "30", label: "30" },
 
 ];
 

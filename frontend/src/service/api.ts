@@ -34,6 +34,7 @@ export const allStudents = () => api.get('/stu/')
 export const specificStudentData1 = (rollnum: number) => api.get(`/stu/spedetails/${rollnum}`)
 export const getStuTimeTable = (rollnum: number) => api.get(`/stu/timetable/${rollnum}`)
 export const filterStudents = (data: object) => api.post('/stu/filterstudents', data)
+export const filterStudentsForOption = (data: object) => api.post('/stu/filterstudentsforoption', data)
 export const disableStudent = (rollnum: number) => api.put(`/stu/disable/${rollnum}`)
 export const enableStudent = (rollnum: number) => api.put(`/stu/enable/${rollnum}`)
 export const stuDataForEdit = (rollnum: number) => api.get(`/stu/studataforedit/${rollnum}`)
@@ -146,6 +147,8 @@ export const allExamSchedule = () => api.get('/exam/allscheduledata')
 export const deleteExamSchedule = (id: number) => api.delete(`/exam/deletschedule/${id}`)
 export const speExamSchedule = (id: number) => api.get(`/exam/speschedule/${id}`)
 export const editExamSchedule = (data: object, id: number) => api.put(`/exam/editschedule/${id}`, data)
+export const examNameForOption = (data: object) => api.post('/exam/filterexamnameforoption', data)
+export const examSubjectForOption = (data: object) => api.post('/exam/filterexamsubjectforoption', data)
 
 // exam grade
 export const addExamGrade = (data: object) => api.post('/exam/addgrade', data)
@@ -153,6 +156,10 @@ export const allExamGrade = () => api.get('/exam/allgrade')
 export const deleteGrade = (id: number) => api.delete(`/exam/deletegrade/${id}`)
 export const speGrade = (id: number) => api.get(`/exam/spegrade/${id}`)
 export const editGrade = (data: object, id: number) => api.put(`/exam/editgrade/${id}`, data)
+
+// exam result
+export const addExamResult = (data: object) => api.post('/exam/addresult', data)
+export const getExamResult = (rollnum:number)=>api.get(`/exam/getresult/${rollnum}`)
 
 // academic reasons==================================================
 export const addAcademicReason = (data: object) => api.post('/reason/addreason', data)

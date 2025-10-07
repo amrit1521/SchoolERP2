@@ -27,7 +27,7 @@ import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { allClassRoom } from "../../../../service/classApi";
 import dayjs from 'dayjs'
 export interface Section {
-  id: number;
+  id:string;
   section: string;
 }
 
@@ -146,7 +146,7 @@ const ExamSchedule = () => {
 
   // Section, Subject, Room Options
   const sectionOptions = useMemo(
-    () => sections.map((s) => ({ value: s.id, label: s.section })),
+    () => sections.map((s) => ({ value: s.section, label: s.section })),
     [sections]
   );
 
