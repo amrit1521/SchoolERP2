@@ -17,7 +17,7 @@ const StudentResult = () => {
   const [token, setToken] = useState<string | null>(null);
 
   // Ref for selected exam
-  const [activeRef, setActiveRef] = useState<HTMLDivElement | HTMLElement | null>(null);
+  // const [activeRef, setActiveRef] = useState<HTMLDivElement | HTMLElement | null>(null);
 
   const fetchStudent = async () => {
     setLoading(true);

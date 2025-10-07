@@ -58,6 +58,7 @@ const ExamResult = () => {
 
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  console.log(loading?"":"")
 
   // for fetching students  , examname , subjectname  etc
   const [section, setSection] = useState<string>("")
