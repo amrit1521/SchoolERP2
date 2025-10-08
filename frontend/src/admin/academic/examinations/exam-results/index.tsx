@@ -34,7 +34,8 @@ export interface SubjectResult {
   id: number;
   mark_obtained: number;
   max_mark: number;
-  grade_marks:string;
+  grade_marks?: string | null;
+  marks_type?: string | null;
 }
 
 export interface StudentResult {
@@ -88,6 +89,8 @@ const initialFormData: AddResult = {
 export interface EditMark {
   max_mark: number | null;
   mark_obtained: number | null;
+  grade_marks?: string | null;
+  marks_type?: string | null;
 }
 
 const ExamResult = () => {
@@ -140,6 +143,8 @@ const ExamResult = () => {
         setEditMarkData({
           max_mark: data.data.max_mark,
           mark_obtained: data.data.mark_obtained,
+          grade_marks: data.data.grade_marks,
+          marks_type: data.data.marks_type,
         });
         setEditId(id);
       }
@@ -212,19 +217,29 @@ const ExamResult = () => {
       title: subject,
       dataIndex: ["subjects", subject],
       render: (value: SubjectResult | undefined) => (
-        <span
-          className={
-            value && value.mark_obtained < value.max_mark * 0.33
-              ? "text-danger"
-              : ""
-          }
-        >
-          {value ? value.mark_obtained : "-"} {/* show dash if no mark */}
+        <span>
+          {value ? (
+            value.grade_marks ? (
+              <span className="text-dark">{value.grade_marks}</span>
+            ) : (
+              <span
+                className={
+                  value.mark_obtained < value.max_mark * 0.33
+                    ? "text-danger"
+                    : ""
+                }
+              >
+                {value.mark_obtained}
+              </span>
+            )
+          ) : (
+            "-"
+          )}
           <span
             onClick={() => fetchMarkForEdit(value ? value.id : null)}
             data-bs-toggle="modal"
             data-bs-target="#edit_mark"
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", marginLeft: 8 }}
           >
             <CiEdit size={15} />
           </span>
@@ -378,17 +393,17 @@ const ExamResult = () => {
   //   { value: "F", label: "F"  },
   // ]);
 
-  const marksTypeOpt:{ value: string; label: string }[] = [
-    { value: 'marks', label: "Marks" },
-    { value: 'grade', label: "Grade" },
-  ]
-  const gradeMarksOpt:{ value: string; label: string }[] = [
-    { value: "A", label: "A"  },
-    { value: "B", label: "B"  },
-    { value: "C", label: "C"  },
-    { value: "D", label: "D"  },
-    { value: "E", label: "E"  },
-    { value: "F", label: "F"  },
+  const marksTypeOpt: { value: string; label: string }[] = [
+    { value: "marks", label: "Marks" },
+    { value: "grade", label: "Grade" },
+  ];
+  const gradeMarksOpt: { value: string; label: string }[] = [
+    { value: "A", label: "A" },
+    { value: "B", label: "B" },
+    { value: "C", label: "C" },
+    { value: "D", label: "D" },
+    { value: "E", label: "E" },
+    { value: "F", label: "F" },
   ];
 
   const fetchStudents = async () => {
@@ -460,7 +475,7 @@ const ExamResult = () => {
   };
 
   useEffect(() => {
-    if (formData.marks_type === 'marks') {
+    if (formData.marks_type === "marks") {
       const subject = subjectData.find(
         (s: any) => s.id === formData.subject_id
       );
@@ -468,12 +483,12 @@ const ExamResult = () => {
         setformdata((prev) => ({
           ...prev,
           max_mark: Number(subject.maxMarks),
-          min_mark: Number(subject.minMarks)
+          min_mark: Number(subject.minMarks),
         }));
       }
     }
   }, [formData.marks_type]);
-// section, cls, formData.exam_name_id, formData.subject_id, subjectData
+  // section, cls, formData.exam_name_id, formData.subject_id, subjectData
   useEffect(() => {
     if (section && cls) {
       fetchStudents();
@@ -520,41 +535,48 @@ const ExamResult = () => {
     if (!formData.subject_id) newErrors.subject_id = "Subject is required";
     if (!formData.marks_type) newErrors.marks_type = "Marks Type is required";
 
-    if (formData.marks_type === 'marks' &&
+    if (
+      formData.marks_type === "marks" &&
       (formData.max_mark === null ||
-      formData.max_mark < 0 ||
-      formData.max_mark === 0)
+        formData.max_mark < 0 ||
+        formData.max_mark === 0)
     ) {
       newErrors.max_mark =
         "Max Marks must  be a required and Should be not Zero";
     }
 
-    if (formData.marks_type === 'marks' &&
+    if (
+      formData.marks_type === "marks" &&
       (formData.min_mark === null ||
-      formData.min_mark < 0 ||
-      formData.min_mark === 0)
+        formData.min_mark < 0 ||
+        formData.min_mark === 0)
     ) {
       newErrors.min_mark =
         "Min Marks must  be a required and Should be not Zero";
     }
 
-    if (formData.marks_type === 'marks' &&
+    if (
+      formData.marks_type === "marks" &&
       (formData.mark_obtained === null ||
-      formData.mark_obtained < 0 ||
-      formData.mark_obtained === 0)
+        formData.mark_obtained < 0 ||
+        formData.mark_obtained === 0)
     ) {
       newErrors.mark_obtained =
         "Marks Obtained must be a required and Should be not Zero";
     }
 
-    if(formData.marks_type === 'grade' && (formData.grade_marks === null || formData.grade_marks === '')){
+    if (
+      formData.marks_type === "grade" &&
+      (formData.grade_marks === null || formData.grade_marks === "")
+    ) {
       newErrors.grade_marks = "Grade Marks cannot be null";
     }
-    
-    if (formData.marks_type === 'marks' &&
-      (formData.mark_obtained !== null &&
+
+    if (
+      formData.marks_type === "marks" &&
+      formData.mark_obtained !== null &&
       formData.max_mark !== null &&
-      formData.mark_obtained > formData.max_mark)
+      formData.mark_obtained > formData.max_mark
     ) {
       newErrors.mark_obtained = "Marks Obtained cannot exceed Max Marks";
     }
@@ -581,7 +603,7 @@ const ExamResult = () => {
       console.log(formData);
       const { data } = await addExamResult(formData);
       if (data.success) {
-      // if (true) {
+        // if (true) {
         toast.success(data.message);
         setformdata(initialFormData);
         setCls("");
@@ -865,251 +887,82 @@ const ExamResult = () => {
 
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
-                  <div className="text-danger fw-bold">
-                    First choose class & section{" "}
-                  </div>
                   <div className="row">
                     <div className="col-md-12">
-                      {/* Class & Section */}
-                      <div className="row mb-3">
-                        <div className="col col-6">
-                          <label className="form-label">
-                            Class <span className="text-danger">*</span>
-                          </label>
-                          <CommonSelect
-                            className={`select ${
-                              errors.cls ? "is-invalid" : ""
-                            }`}
-                            options={allClass}
-                            value={cls}
-                            onChange={(opt: any) => setCls(opt.value)}
-                          />
-                          {errors.cls && (
-                            <div className="text-danger mt-1">{errors.cls}</div>
-                          )}
-                        </div>
-                        <div className="col col-6">
-                          <label className="form-label">
-                            Section <span className="text-danger">*</span>
-                          </label>
-                          <CommonSelect
-                            className={`select text-capitalize ${
-                              errors.section ? "is-invalid" : ""
-                            }`}
-                            options={sectionOptions}
-                            value={section}
-                            onChange={(opt: any) => setSection(opt.value)}
-                          />
-                          {errors.section && (
-                            <div className="text-danger mt-1">
-                              {errors.section}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Student */}
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Student <span className="text-danger">*</span>
-                        </label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.roll_num ? "is-invalid" : ""
-                          }`}
-                          options={students}
-                          value={formData.roll_num}
-                          onChange={(opt: any) =>
-                            handleSelectChange("roll_num", opt?.value || null)
-                          }
-                        />
-                        {errors.roll_num && (
-                          <div className="text-danger mt-1">
-                            {errors.roll_num}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Exam */}
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Exam <span className="text-danger">*</span>
-                        </label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.exam_name_id ? "is-invalid" : ""
-                          }`}
-                          options={examOpt}
-                          value={formData.exam_name_id}
-                          onChange={(opt: any) =>
-                            handleSelectChange("exam_name_id", opt?.value)
-                          }
-                        />
-                        {errors.exam_name_id && (
-                          <div className="text-danger mt-1">
-                            {errors.exam_name_id}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Subject */}
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Subject <span className="text-danger">*</span>
-                        </label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.subject_id ? "is-invalid" : ""
-                          }`}
-                          options={subjectOpt}
-                          value={formData.subject_id || ""}
-                          onChange={(opt: any) =>
-                            handleSelectChange("subject_id", opt?.value)
-                          }
-                        />
-                        {errors.subject_id && (
-                          <div className="text-danger mt-1">
-                            {errors.subject_id}
-                          </div>
-                        )}
-                      </div>
-                      {/* Marks Type */}
-                      {formData.subject_id ? <div className="mb-3">
-                        <label className="form-label">
-                          Marks Type <span className="text-danger">*</span>
-                        </label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.marks_type ? "is-invalid" : ""
-                          }`}
-                          options={marksTypeOpt}
-                          value={formData.marks_type || ""}
-                          onChange={(opt: any) =>
-                            handleSelectChange("marks_type", opt?.value)
-                          }
-                        />
-                        {errors.marks_type && (
-                          <div className="text-danger mt-1">
-                            {errors.marks_type}
-                          </div>
-                        )}
-                      </div> : '' }
-
-                      {/* Grade Marks */}
-                      { formData.marks_type == 'grade' ? <div className="mb-3">
-                        <label className="form-label">
-                          Grade Marks<span className="text-danger">*</span>
-                        </label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.grade_marks ? "is-invalid" : ""
-                          }`}
-                          options={gradeMarksOpt}
-                          value={formData.grade_marks || ""}
-                          onChange={(opt: any) =>
-                            handleSelectChange("grade_marks", opt?.value)
-                          }
-                        />
-                        {errors.grade_marks && (
-                          <div className="text-danger mt-1">
-                            {errors.grade_marks}
-                          </div>
-                        )}
-                      </div>:''}
-
-                      {/* Max Marks */}
-                      { formData.marks_type == 'marks' ? (
+                      {editMarkData.grade_marks !== undefined &&
+                      editMarkData.grade_marks !== null &&
+                      editMarkData.grade_marks !== "" ? (
                         <div className="mb-3">
                           <label className="form-label">
-                            Max Marks <span className="text-danger">*</span>
+                            Grade Marks <span className="text-danger">*</span>
                           </label>
-                          <input
-                            disabled={true}
-                            type="number"
-                            className={`form-control ${
-                              errors.max_mark ? "is-invalid" : ""
-                            }`}
-                            value={formData.max_mark || ""}
+                          <select
+                            className="form-control"
+                            value={editMarkData.grade_marks || ""}
                             onChange={(e) =>
-                              handleSelectChange(
-                                "max_mark",
-                                Number(e.target.value)
-                              )
+                              setEditMarkData((prev) => ({
+                                ...prev,
+                                grade_marks: e.target.value,
+                              }))
                             }
-                          />
-                          {errors.max_mark && (
-                            <div className="text-danger mt-1">
-                              {errors.max_mark}
-                            </div>
-                          )}
+                          >
+                            <option value="">Select Grade</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                          </select>
                         </div>
                       ) : (
-                        ""
-                      ) }
-
-                      {/* Min Marks */}
-                      { formData.marks_type == 'marks' ?  (
-                        <div className="mb-3">
-                          <label className="form-label">
-                            Min Marks <span className="text-danger">*</span>
-                          </label>
-                          <input
-                            disabled={true}
-                            type="number"
-                            className={`form-control ${
-                              errors.min_mark ? "is-invalid" : ""
-                            }`}
-                            value={formData.min_mark || ""}
-                            onChange={(e) =>
-                              handleSelectChange(
-                                "min_mark",
-                                Number(e.target.value)
-                              )
-                            }
-                          />
-                          {errors.min_mark && (
-                            <div className="text-danger mt-1">
-                              {errors.min_mark}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        ""
-                      )}
-
-                      {/* Marks Obtained */}
-                      { formData.marks_type == 'marks' ? (
-                        <div className="mb-3">
-                          <label className="form-label">
-                            Marks Obtained{" "}
-                            <span className="text-danger">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            className={`form-control ${
-                              errors.mark_obtained ? "is-invalid" : ""
-                            }`}
-                            value={formData.mark_obtained || ""}
-                            onChange={(e) =>
-                              handleSelectChange(
-                                "mark_obtained",
-                                Number(e.target.value)
-                              )
-                            }
-                          />
-                          {errors.mark_obtained && (
-                            <div className="text-danger mt-1">
-                              {errors.mark_obtained}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        ""
+                        <>
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Max Marks <span className="text-danger">*</span>
+                            </label>
+                            <input
+                              disabled={true}
+                              type="number"
+                              className={"form-control"}
+                              value={editMarkData.max_mark || ""}
+                              onChange={(e) =>
+                                handleSelectChangeForEditMark(
+                                  "max_mark",
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Marks Obtained{" "}
+                              <span className="text-danger">*</span>
+                            </label>
+                            <input
+                              type="number"
+                              className={`form-control ${
+                                errors.mark_obtained ? "is-invalid" : ""
+                              }`}
+                              value={editMarkData.mark_obtained || ""}
+                              onChange={(e) =>
+                                handleSelectChangeForEditMark(
+                                  "mark_obtained",
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                            {errors.mark_obtained && (
+                              <div className="text-danger mt-1">
+                                {errors.mark_obtained}
+                              </div>
+                            )}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
                 </div>
-
                 {/* Footer */}
                 <div className="modal-footer">
                   <button
