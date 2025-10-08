@@ -597,22 +597,32 @@ const calculateResult = (mark_obtained, max_mark, min_mark) => {
   return { grade, result };
 };
 
+calculateGradeResult = (grade) =>{
+  if(grade === 'A') return 'Pass'; 
+  if(grade === 'B') return 'Pass'; 
+  if(grade === 'C') return 'Pass'; 
+  if(grade === 'D') return 'Pass with Grace'; 
+  if(grade === 'E') return 'Fail'; 
+  if(grade === 'F') return 'Fail'; 
+}
 
 exports.addExamResult = async (req, res) => {
   try {
-    const { roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained } = req.body;
+    const grade = null, result = null;
+    const { roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained,marks_type,grade_marks } = req.body;
 
-
-    if (!roll_num || !exam_name_id || !subject_id || max_mark == null || min_mark == null || mark_obtained == null) {
-      return res.status(400).json({ success: false, message: "All fields are required." });
-    }
-
-    if (min_mark > max_mark) {
-      return res.status(400).json({ success: false, message: "Minimum marks cannot be greater than maximum marks." });
-    }
-
-    if (mark_obtained > max_mark) {
-      return res.status(400).json({ success: false, message: "Marks obtained cannot exceed maximum marks." });
+    if(marks_type === 'marks'){
+      if (!roll_num || !exam_name_id || !subject_id || max_mark == null || min_mark == null || mark_obtained == null) {
+        return res.status(400).json({ success: false, message: "All fields are required." });
+      }
+      
+      if (min_mark > max_mark) {
+        return res.status(400).json({ success: false, message: "Minimum marks cannot be greater than maximum marks." });
+      }
+      
+      if (mark_obtained > max_mark) {
+        return res.status(400).json({ success: false, message: "Marks obtained cannot exceed maximum marks." });
+      }
     }
 
 
@@ -628,22 +638,36 @@ exports.addExamResult = async (req, res) => {
       });
     }
 
-
+    if(marks_type === 'marks'){
     const { grade, result } = calculateResult(mark_obtained, max_mark, min_mark);
+      grade = grade;
+      result =  result;
+      await db.execute(
+        `INSERT INTO exam_result (roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result]
+      );
+      return res.status(201).json({
+        success: true,
+        message: "Exam result added successfully.",
+        data: { roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result },
+      });
+    }
 
+    if (marks_type === 'grade') {
+      const result = calculateGradeResult(grade_marks);
+      const ans = await db.execute(
+        `INSERT INTO exam_result (roll_num, exam_name_id, subject_id, grade_marks,grade,result)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [roll_num, exam_name_id, subject_id, grade_marks,grade_marks,result]
+      );
+      return res.status(201).json({
+        success: true,
+        message: "Exam result added successfully with grade.",
+        data: { roll_num, exam_name_id, subject_id, grade_marks,grade,result },
+      });
+    }
 
-    await db.execute(
-      `INSERT INTO exam_result (roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result]
-    );
-
-
-    return res.status(201).json({
-      success: true,
-      message: "Exam result added successfully.",
-      data: { roll_num, exam_name_id, subject_id, max_mark, min_mark, mark_obtained, grade, result },
-    });
   } catch (error) {
     console.error("❌ Error adding exam result:", error);
     return res.status(500).json({ success: false, message: "Internal server error." });
@@ -749,6 +773,7 @@ exports.getExamResultAllStudents = async (req, res) => {
         er.id,
         er.mark_obtained,
         er.max_mark,
+        er.grade_marks,
         en.examName,
         cs.name AS subject_name,
         cs.code,
@@ -784,7 +809,7 @@ exports.getExamResultAllStudents = async (req, res) => {
 
     rows.forEach(row => {
       const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
-
+      console.log(key);
       if (!studentsMap[key]) {
         studentsMap[key] = {
           key: row.id,
@@ -801,11 +826,18 @@ exports.getExamResultAllStudents = async (req, res) => {
       }
 
       const subjKey = `${row.subject_name} (${row.code})`;
-      studentsMap[key].subjects[subjKey] = {
-        id: row.id,
-        mark_obtained: row.mark_obtained || 0,
-        max_mark: row.max_mark || 0,
-      };
+      if(!row.grade_marks){
+        studentsMap[key].subjects[subjKey] = {
+          id: row.id,
+          mark_obtained: row.mark_obtained || 0,
+          max_mark: row.max_mark || 0,
+        };
+      }else{
+        studentsMap[key].subjects[subjKey] = {
+          id: row.id,
+          grade_marks: row.grade_marks || '',
+        };
+      }
 
       // Increment total max marks for this exam
       studentsMap[key].totalMaxMarks += row.max_mark || 0;
@@ -833,7 +865,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       else if (percent >= 33) overallGrade = "D";
 
       const overallResult = percent < 33 ? "Fail" : "Pass";
-
+      console.log(student);
       return {
         ...student,
         total: totalObtained,
