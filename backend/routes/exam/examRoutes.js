@@ -26,7 +26,11 @@ router.put('/editgrade/:id' ,examController.updateGrade)
 
 // exam result 
 router.post('/addresult' , examController.addExamResult)
-router.get('/getresult/:rollnum' , examController.getExamResult)
+router.get('/getresult/:rollnum' , examController.getExamResultSpeStudents)
+router.get('/getstudentsexamresult' , examController.getExamResultAllStudents)
+router.post('/getspeexamresult' , examController.getSpeExamResult)
+router.get('/spemark/:id' , examController.speMarkForEdit)
+router.put('/editmark/:id' , examController.editMark)
 
 
 module.exports = router

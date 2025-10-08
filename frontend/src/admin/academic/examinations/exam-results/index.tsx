@@ -1,17 +1,45 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
-import { examresult } from '../../../../core/data/json/exam-result';
-import type { TableData } from '../../../../core/data/interface';
+// import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
+// import { examresult } from '../../../../core/data/json/exam-result';
+// import type { TableData } from '../../../../core/data/interface';
 import Table from "../../../../core/common/dataTable/index";
 import { Link } from 'react-router-dom';
 import PredefinedDateRanges from '../../../../core/common/datePicker';
 import CommonSelect from '../../../../core/common/commonSelect';
-import { allClass, classSection, weeklytest } from '../../../../core/common/selectoption/selectoption';
+import { allClass, classSection} from '../../../../core/common/selectoption/selectoption';
 import { all_routes } from '../../../router/all_routes';
 import TooltipOption from '../../../../core/common/tooltipOption';
-import { addExamResult, examNameForOption, examSubjectForOption, filterStudentsForOption, getAllSection } from '../../../../service/api';
+import { addExamResult, allExamData, editMark, examNameForOption, examSubjectForOption, filterStudentsForOption, getAllSection, getExamResultAllStudents, getSpeExamResult, Imageurl, speMark } from '../../../../service/api';
 import { toast } from 'react-toastify';
+import { CiEdit } from "react-icons/ci";
+import { handleModalPopUp } from '../../../../handlePopUpmodal';
+import { Spinner } from '../../../../spinner';
 
+export interface SubjectResult {
+  id: number;
+  mark_obtained: number;
+  max_mark: number;
+}
+
+export interface StudentResult {
+  key: number;
+  rollnum: number;
+  admissionNo: string;
+  studentName: string;
+  img: string;
+  subjects: Record<string, SubjectResult>;
+  examName: string;
+  totalMaxMarks: number;
+  total: number;
+  percent: number;
+  grade: string;
+  result: "Pass" | "Fail";
+}
+
+
+
+
+// add result interface
 export interface AddResult {
   roll_num: number | null;
   exam_name_id: number | null;
@@ -39,33 +67,261 @@ const initialFormData: AddResult = {
   mark_obtained: null,
 };
 
+// edit mark
+export interface EditMark {
+  max_mark: number | null;
+  mark_obtained: number | null
+}
+
 
 
 const ExamResult = () => {
   const routes = all_routes;
-  const data = examresult;
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
+
+  const [resultData, setResultData] = useState<StudentResult[]>([]);
+  const [originalResultData, setOriginalResultData] = useState<StudentResult[]>([])
+  const [loading , setLoading] = useState<boolean>(false)
+
+  const fetchResult = async () => {
+     setLoading(true)
+     await new Promise((res)=>setTimeout(res,300))
+    try {
+      const { data } = await getExamResultAllStudents();
+     
+      if (data.success) {
+        setResultData(data.data);
+        setOriginalResultData(data.data)
+      }
+    } catch (error) {
+      console.log(error);
+    }finally{
+      setLoading(false)
     }
   };
 
+  useEffect(() => {
+    fetchResult();
+  }, []);
+
+
+  const [editMarkData, setEditMarkData] = useState<EditMark>({
+    max_mark: null,
+    mark_obtained: null,
+  })
+
+  const [editId, setEditId] = useState<number | null>(null)
+
+  const fetchMarkForEdit = async (id: number | null) => {
+    console.log(id)
+    if (!id) {
+
+      toast.error('Id not provided or you want to edit blank mark!')
+      return
+    }
+    try {
+
+      const { data } = await speMark(id)
+      if (data.success) {
+        setEditMarkData(
+          {
+            max_mark: data.data.max_mark,
+            mark_obtained: data.data.mark_obtained
+          }
+        )
+        setEditId(id)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleSelectChangeForEditMark = (name: keyof EditMark, value: string | number) => {
+    setEditMarkData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (editMarkData.max_mark) {
+      if (!editMarkData.mark_obtained) {
+        toast.error('Mark is required !')
+        return
+      } else if (editMarkData.mark_obtained > editMarkData.max_mark) {
+        toast.warning('Obtained mark should not be greater than max mark')
+        return
+      }
+    }
+
+    try {
+      if (editId) {
+
+        const { data } = await editMark(editMarkData, editId)
+        if (data.success) {
+          toast.success(data.message)
+          fetchResult()
+          setEditId(null)
+          setEditMarkData({
+            mark_obtained: null,
+            max_mark: null
+          })
+          handleModalPopUp('edit_mark')
+        }
+      }
+
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleCancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setEditMarkData({
+      max_mark: null,
+      mark_obtained: null,
+    })
+    setEditId(null)
+  }
+
+
+
+  // table columns
+  let subjectColumns: any[] = [];
+  if (resultData.length > 0) {
+    const subjectKeys = new Set<string>();
+    resultData.forEach(student => {
+      Object.keys(student.subjects || {}).forEach(subject => {
+        subjectKeys.add(subject);
+      });
+    });
+
+    subjectColumns = Array.from(subjectKeys).map(subject => ({
+      title: subject,
+      dataIndex: ["subjects", subject],
+      render: (value: SubjectResult | undefined) => (
+        <span className={value && value.mark_obtained < (value.max_mark * 0.33) ? "text-danger" : ""}>
+          {value ? value.mark_obtained : "-"} {/* show dash if no mark */}
+          <span onClick={() => fetchMarkForEdit(value ? value.id : null)} data-bs-toggle="modal"
+            data-bs-target="#edit_mark" style={{ cursor: 'pointer' }}><CiEdit size={15} /></span>
+        </span>
+
+      ),
+      sorter: (a: StudentResult, b: StudentResult) =>
+        ((a.subjects[subject]?.mark_obtained || 0) - (b.subjects[subject]?.mark_obtained || 0)),
+    }));
+
+  }
+
+  const columns = [
+    {
+      title: "Admission No",
+      dataIndex: "admissionNo",
+      render: (text: any, record: any) => (
+        <Link to={`${routes.studentDetail}/${record.rollnum}`} className="link-primary">
+          {text}
+        </Link>
+      ),
+      sorter: (a: StudentResult, b: StudentResult) => a.admissionNo.length - b.admissionNo.length,
+    },
+    {
+      title: "Student Name",
+      dataIndex: "studentName",
+      render: (text: string, record: any) => (
+        <div className="d-flex align-items-center">
+          {/* Avatar */}
+          <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar me-2">
+            <img
+              src={`${Imageurl}/${record.img}`}
+              className="img-fluid rounded-circle"
+              alt="img"
+              style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+            />
+          </Link>
+
+          {/* Name and details */}
+          <div className="flex-grow-1">
+            <div>
+              <Link
+                to={`${routes.studentDetail}/${record.rollnum}`}
+                className="text-dark fw-semibold"
+                style={{ textDecoration: 'none' }}
+              >
+                {text}
+              </Link>
+            </div>
+            <div className="text-muted fs-12">
+              {record.class && record.section ? `${record.class}-${record.section}` : ""}
+              {record.roll ? ` | ${record.roll}` : ""}
+            </div>
+          </div>
+        </div>
+      ),
+      sorter: (a: StudentResult, b: StudentResult) => a.studentName.length - b.studentName.length,
+    },
+
+    // New field: Exam Name
+
+
+    // Dynamic subject columns
+    ...subjectColumns,
+    {
+      title: "Exam Name",
+      dataIndex: "examName",
+      sorter: (a: StudentResult, b: StudentResult) => a.examName.localeCompare(b.examName),
+    },
+
+    // New field: Total Max Marks
+    {
+      title: "Total",
+      dataIndex: "totalMaxMarks",
+      sorter: (a: StudentResult, b: StudentResult) => a.totalMaxMarks - b.totalMaxMarks,
+      render: (value: number) => <span>{value}</span>,
+    },
+
+    {
+      title: "Obtained",
+      dataIndex: "total",
+      sorter: (a: StudentResult, b: StudentResult) => a.total - b.total,
+    },
+    {
+      title: "Percent",
+      dataIndex: "percent",
+      sorter: (a: StudentResult, b: StudentResult) => a.percent - b.percent,
+    },
+    {
+      title: "Grade",
+      dataIndex: "grade",
+      sorter: (a: StudentResult, b: StudentResult) => a.grade.length - b.grade.length,
+    },
+    {
+      title: "Result",
+      dataIndex: "result",
+      render: (text: string) => (
+        <span className={`badge ${text === "Pass" ? "badge-soft-success" : "badge-soft-danger"} d-inline-flex align-items-center`}>
+          <i className="ti ti-circle-filled fs-5 me-1"></i>
+          {text}
+        </span>
+      ),
+      sorter: (a: StudentResult, b: StudentResult) => a.result.length - b.result.length,
+    },
+  ];
+
+
+  // add result
   const [formData, setformdata] = useState<AddResult>(initialFormData)
   const [errors, setErrors] = useState<any>({})
-
-
-
   const [sections, setSections] = useState<Section[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  console.log(loading?"":"")
 
-  // for fetching students  , examname , subjectname  etc
+
+  // for fetching students , examname , subjectname etc
   const [section, setSection] = useState<string>("")
   const [cls, setCls] = useState<string>("")
   const [students, setStudets] = useState<StudetnOption[]>([])
   const [examOpt, setExamOpt] = useState<{ value: number, label: string }[]>([])
-  // subjectdata
   const [subjectData, setSubjectData] = useState<any>([])
   const [subjectOpt, setSubejctOpt] = useState<{ value: number, label: string }[]>([])
 
@@ -154,27 +410,18 @@ const ExamResult = () => {
     }
   }, [section, cls, formData.exam_name_id])
 
-
-
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
-    setLoadingState: boolean = true
   ) => {
     try {
-      if (setLoadingState) setLoading(true);
+
       const { data } = await apiFn();
       if (data.success) setter(data.data);
     } catch (error) {
       console.error(error);
     }
   };
-
-
-
-
-
-  // Fetch Functions
   const fetchSections = () => fetchData(getAllSection, setSections);
 
   useEffect(() => {
@@ -190,8 +437,6 @@ const ExamResult = () => {
     [sections]
   );
 
-
-  // Validation function
   const validateForm = () => {
     const newErrors: any = {};
 
@@ -222,165 +467,9 @@ const ExamResult = () => {
 
     return newErrors;
   };
-
-
-
   const handleSelectChange = (name: keyof AddResult, value: string | number) => {
     setformdata((prev) => ({ ...prev, [name]: value }))
   }
-
-
-
-
-
-
-
-  const columns = [
-    {
-      title: "Admission No",
-      dataIndex: "admissionNo",
-      render: (record: any) => (
-        <>
-          <Link to="#" className="link-primary">
-            {record.admissionNo}
-          </Link>
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.admissionNo.length - b.admissionNo.length,
-    },
-
-    {
-      title: "Student Name",
-      dataIndex: "studentName",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link to={routes.studentDetail} className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-
-              <Link to={routes.studentDetail}>{text}</Link>
-            </p>
-            <span className="fs-12">{record.roll}</span>
-          </div>
-        </div>
-      ),
-      sorter: (a: TableData, b: TableData) => a.studentName.length - b.studentName.length,
-    },
-    {
-      title: "English",
-      dataIndex: "english",
-      render: (text: string) => (
-        <>
-          {text === "30" ? (
-            <span className="text-danger">{text}</span>
-          ) : (
-            <span className="attendance-range">{text}</span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.english.length - b.english.length,
-    },
-    {
-      title: "Spanish",
-      dataIndex: "spanish",
-      render: (text: string) => (
-        <>
-          {text === "30" ? (
-            <span className="text-danger">{text}</span>
-          ) : (
-            <span className="attendance-range">{text}</span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.spanish.length - b.spanish.length,
-    },
-    {
-      title: "Physics",
-      dataIndex: "physics",
-      sorter: (a: TableData, b: TableData) => a.physics.length - b.physics.length,
-    },
-    {
-      title: "Chemistry",
-      dataIndex: "chemistry",
-      render: (text: string) => (
-        <>
-          {text === "28" ? (
-            <span className="text-danger">{text}</span>
-          ) : (
-            <span className="attendance-range">{text}</span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.chemistry.length - b.chemistry.length,
-    },
-    {
-      title: "Maths",
-      dataIndex: "maths",
-      render: (text: string) => (
-        <>
-          {text === "32" ? (
-            <span className="text-danger">{text}</span>
-          ) : (
-            <span className="attendance-range">{text}</span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.maths.length - b.maths.length,
-    },
-    {
-      title: "Computer",
-      dataIndex: "computer",
-      sorter: (a: TableData, b: TableData) => a.computer.length - b.computer.length,
-    },
-    {
-      title: "Env Science",
-      dataIndex: "envScience",
-      sorter: (a: TableData, b: TableData) => a.envScience.length - b.envScience.length,
-    },
-    {
-      title: "Total",
-      dataIndex: "total",
-      sorter: (a: TableData, b: TableData) => a.total.length - b.total.length,
-    },
-    {
-      title: "Percent",
-      dataIndex: "percent",
-      sorter: (a: TableData, b: TableData) => a.percent.length - b.percent.length,
-    },
-    {
-      title: "Grade",
-      dataIndex: "grade",
-      sorter: (a: TableData, b: TableData) => a.grade.length - b.grade.length,
-    },
-    {
-      title: "Result",
-      dataIndex: "result",
-      render: (text: string) => (
-        <>
-          {text === "Pass" ? (
-            <span className="badge badge-soft-success d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          ) : (
-            <span className="badge badge-soft-danger d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.result.length - b.result.length,
-    }
-
-  ];
-
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -417,6 +506,81 @@ const ExamResult = () => {
     setSection("")
     setErrors({});
   };
+
+
+
+  //  filter students
+  const [allExam, setAllExam] = useState<any[]>([]);
+
+  const fetchDataa = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>
+  ) => {
+    try {
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchExams = () => fetchDataa(allExamData, setAllExam)
+
+  useEffect(() => {
+
+    fetchExams()
+  }, []);
+
+
+
+  const examNameOptions = useMemo(
+    () =>
+      allExam.map((e) => ({
+        value: e.id,
+        label: e.examName,
+      })),
+    [allExam]
+  );
+
+  interface FilterData {
+    class: string;
+    section: string;
+    exam_type: number | null;
+  }
+
+  const [filterData, setFilterData] = useState<FilterData>({ class: "", section: "", exam_type: null });
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleFilterSelectChange = (name: keyof FilterData, value: string | number) => {
+    setFilterData((prev) => ({ ...prev, [name]: value }));
+  };
+
+
+  const handleApplyClick = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(filterData)
+    try {
+      const { data } = await getSpeExamResult(filterData);
+      if (data.success) {
+        setResultData(data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  const handleResetFilter = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    setFilterData({ class: "", section: "", exam_type: null });
+    setResultData(originalResultData);
+
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
+
+
 
 
   return (
@@ -468,62 +632,50 @@ const ExamResult = () => {
                     <PredefinedDateRanges />
                   </div>
                   <div className="dropdown mb-3 me-2">
-                    <Link
-                      to="#"
-                      className="btn btn-outline-light bg-white dropdown-toggle"
-                      data-bs-toggle="dropdown"
-                      data-bs-auto-close="outside"
-                    >
+                    <Link to="#" className="btn btn-outline-light bg-white dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                       <i className="ti ti-filter me-2" />
                       Filter
                     </Link>
                     <div className="dropdown-menu drop-width" ref={dropdownMenuRef}>
-                      <form>
+                      <form onSubmit={handleApplyClick}>
                         <div className="d-flex align-items-center border-bottom p-3">
                           <h4>Filter</h4>
                         </div>
-                        <div className="p-3 border-bottom pb-0">
+                        <div className="p-3 border-bottom">
                           <div className="row">
-                            <div className="col-md-12">
-                              <div className="mb-3">
-                                <label className="form-label">Class</label>
-                                <CommonSelect
-                                  className="select"
-                                  options={allClass}
-                                />
-                              </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Class</label>
+                              <CommonSelect
+                                className="select"
+                                options={allClass}
+                                onChange={(option) => handleFilterSelectChange("class", option ? option.value : "")}
+                              />
                             </div>
-                            <div className="col-md-12">
-                              <div className="mb-3">
-                                <label className="form-label">Section</label>
-                                <CommonSelect
-                                  className="select"
-                                  options={classSection}
-                                />
-                              </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Section</label>
+                              <CommonSelect
+                                className="select"
+                                options={classSection}
+                                onChange={(option) => handleFilterSelectChange("section", option ? option.value : "")}
+                              />
                             </div>
-                            <div className="col-md-12">
-                              <div className="mb-3">
-                                <label className="form-label">Exam Type</label>
-                                <CommonSelect
-                                  className="select"
-                                  options={weeklytest}
-                                />
-                              </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Exam Type</label>
+                              <CommonSelect
+                                className="select"
+                                options={examNameOptions}
+                                onChange={(option) => handleFilterSelectChange("exam_type", option ? option.value : "")}
+                              />
                             </div>
                           </div>
                         </div>
                         <div className="p-3 d-flex align-items-center justify-content-end">
-                          <Link to="#" className="btn btn-light me-3">
+                          <button className="btn btn-light me-3" onClick={handleResetFilter}>
                             Reset
-                          </Link>
-                          <Link
-                            to="#"
-                            className="btn btn-primary"
-                            onClick={handleApplyClick}
-                          >
+                          </button>
+                          <button type="submit" className="btn btn-primary">
                             Apply
-                          </Link>
+                          </button>
                         </div>
                       </form>
                     </div>
@@ -576,7 +728,9 @@ const ExamResult = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Guardians List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+                  {
+                    loading?<Spinner/>:(<Table columns={columns} dataSource={resultData} Selection={true} />)
+                  }
               </div>
             </div>
           </div>
@@ -667,6 +821,7 @@ const ExamResult = () => {
                       <div className="mb-3">
                         <label className="form-label">Max Marks <span className='text-danger'>*</span></label>
                         <input
+                          disabled={true}
                           type="number"
                           className={`form-control ${errors.max_mark ? "is-invalid" : ""}`}
                           value={formData.max_mark || ""}
@@ -679,6 +834,7 @@ const ExamResult = () => {
                       <div className="mb-3">
                         <label className="form-label">Min Marks <span className='text-danger'>*</span></label>
                         <input
+                          disabled={true}
                           type="number"
                           className={`form-control ${errors.min_mark ? "is-invalid" : ""}`}
                           value={formData.min_mark || ""}
@@ -715,6 +871,79 @@ const ExamResult = () => {
                   </button>
                   <button type="submit" className="btn btn-primary">
                     Add Result
+                  </button>
+                </div>
+
+              </form>
+
+
+            </div>
+          </div>
+        </div>
+        <div className="modal fade" id="edit_mark">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Mark</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit}>
+                <div className="modal-body">
+
+                  <div className="row">
+                    <div className="col-md-12">
+
+
+                      {/* Max Marks */}
+                      <div className="mb-3">
+                        <label className="form-label">Max Marks <span className='text-danger'>*</span></label>
+                        <input
+                          disabled={true}
+                          type="number"
+                          className={"form-control"}
+                          value={editMarkData.max_mark || ""}
+                          onChange={(e) => handleSelectChangeForEditMark("max_mark", Number(e.target.value))}
+                        />
+
+                      </div>
+
+
+                      {/* Marks Obtained */}
+                      <div className="mb-3">
+                        <label className="form-label">Marks Obtained <span className='text-danger'>*</span></label>
+                        <input
+                          type="number"
+                          className={`form-control ${errors.mark_obtained ? "is-invalid" : ""}`}
+                          value={editMarkData.mark_obtained || ""}
+                          onChange={(e) => handleSelectChangeForEditMark("mark_obtained", Number(e.target.value))}
+                        />
+                        {errors.mark_obtained && <div className="text-danger mt-1">{errors.mark_obtained}</div>}
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
                   </button>
                 </div>
 

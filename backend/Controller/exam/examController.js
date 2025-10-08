@@ -651,8 +651,8 @@ exports.addExamResult = async (req, res) => {
 };
 
 // get exam result for specfic student
-exports.getExamResult = async (req, res) => {
-  const { rollnum } = req.params; // specific student
+exports.getExamResultSpeStudents = async (req, res) => {
+  const { rollnum } = req.params; 
   try {
     const sql = `
       SELECT 
@@ -700,8 +700,8 @@ exports.getExamResult = async (req, res) => {
           lastname: row.lastname,
           class: row.class,
           section: row.section,
-          fat_name:row.name,
-          phone_num:row.phone_num,
+          fat_name: row.name,
+          phone_num: row.phone_num,
           exams: {},
         };
       }
@@ -734,13 +734,328 @@ exports.getExamResult = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Results fetched successfully!",
-      data:students,
+      data: students,
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error!", success: false });
   }
 };
+
+exports.getExamResultAllStudents = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        en.examName,
+        cs.name AS subject_name,
+        cs.code,
+        s.admissionnum,
+        s.rollnum,
+        s.section,
+        s.class,
+        s.stu_img,
+        p.name AS father_name,
+        p.phone_num,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN class_subject cs ON er.subject_id = cs.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
+      LEFT JOIN users u ON s.stu_id = u.id
+      ORDER BY s.rollnum, en.examName, cs.name
+    `;
+
+    const [rows] = await db.query(sql);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No results found!",
+      });
+    }
+
+    // Group data per student per exam
+    const studentsMap = {};
+
+    rows.forEach(row => {
+      const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
+
+      if (!studentsMap[key]) {
+        studentsMap[key] = {
+          key: row.id,
+          rollnum: row.rollnum,
+          admissionNo: row.admissionnum,
+          studentName: `${row.firstname} ${row.lastname}`,
+          class: row.class,
+          section: row.section,
+          img: row.stu_img || "assets/img/students/default.jpg",
+          examName: row.examName,
+          subjects: {},
+          totalMaxMarks: 0, // <-- add max marks sum
+        };
+      }
+
+      const subjKey = `${row.subject_name} (${row.code})`;
+      studentsMap[key].subjects[subjKey] = {
+        id: row.id,
+        mark_obtained: row.mark_obtained || 0,
+        max_mark: row.max_mark || 0,
+      };
+
+      // Increment total max marks for this exam
+      studentsMap[key].totalMaxMarks += row.max_mark || 0;
+    });
+
+    // Calculate total, percent, grade, and result per exam
+    const students = Object.values(studentsMap).map(student => {
+      let totalObtained = 0;
+
+      Object.values(student.subjects).forEach(subj => {
+        totalObtained += subj.mark_obtained;
+      });
+
+      const percent = student.totalMaxMarks > 0
+        ? Number(((totalObtained / student.totalMaxMarks) * 100).toFixed(2))
+        : 0;
+
+      let overallGrade = "F";
+
+      if (percent >= 90) overallGrade = "A+";
+      else if (percent >= 80) overallGrade = "A";
+      else if (percent >= 70) overallGrade = "B+";
+      else if (percent >= 60) overallGrade = "B";
+      else if (percent >= 50) overallGrade = "C";
+      else if (percent >= 33) overallGrade = "D";
+
+      const overallResult = percent < 33 ? "Fail" : "Pass";
+
+      return {
+        ...student,
+        total: totalObtained,
+        totalMaxMarks: student.totalMaxMarks, // <-- send this in response
+        percent,
+        grade: overallGrade,
+        result: overallResult,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Results fetched successfully!",
+      data: students,
+    });
+
+  } catch (error) {
+    console.error("❌ Error in getExamResultAllStudents:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};
+
+
+exports.getSpeExamResult = async (req, res) => {
+
+  const { className, section, examName } = req.body
+
+  try {
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        en.examName,
+        cs.name AS subject_name,
+        cs.code,
+        s.admissionnum,
+        s.rollnum,
+        s.section,
+        s.class,
+        s.stu_img,
+        p.name AS father_name,
+        p.phone_num,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN class_subject cs ON er.subject_id = cs.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
+      LEFT JOIN users u ON s.stu_id = u.id
+      WHERE LOWER(s.class) = LOWER(?)
+      AND LOWER(s.section) = LOWER(?)
+      AND er.exam_name_id = ?
+      ORDER BY s.rollnum, en.examName, cs.name
+    `;
+
+    const [rows] = await db.query(sql, [className, section, examName]);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No results found!",
+      });
+    }
+
+    
+    const studentsMap = {};
+
+    rows.forEach(row => {
+      const key = `${row.rollnum}_${row.examName}`; 
+
+      if (!studentsMap[key]) {
+        studentsMap[key] = {
+          key: row.id,
+          rollnum: row.rollnum,
+          admissionNo: row.admissionnum,
+          studentName: `${row.firstname} ${row.lastname}`,
+          class: row.class,
+          section: row.section,
+          img: row.stu_img || "assets/img/students/default.jpg",
+          examName: row.examName,
+          subjects: {},
+          totalMaxMarks: 0, 
+        };
+      }
+
+      const subjKey = `${row.subject_name} (${row.code})`;
+      studentsMap[key].subjects[subjKey] = {
+        id: row.id,
+        mark_obtained: row.mark_obtained || 0,
+        max_mark: row.max_mark || 0,
+      };
+
+     
+      studentsMap[key].totalMaxMarks += row.max_mark || 0;
+    });
+
+    const students = Object.values(studentsMap).map(student => {
+      let totalObtained = 0;
+
+      Object.values(student.subjects).forEach(subj => {
+        totalObtained += subj.mark_obtained;
+      });
+
+      const percent = student.totalMaxMarks > 0
+        ? Number(((totalObtained / student.totalMaxMarks) * 100).toFixed(2))
+        : 0;
+
+      let overallGrade = "F";
+      if (percent >= 90) overallGrade = "O";
+      else if (percent >= 80) overallGrade = "A+";
+      else if (percent >= 70) overallGrade = "A";
+      else if (percent >= 60) overallGrade = "B+";
+      else if (percent >= 50) overallGrade = "B";
+      else if (percent >= 40) overallGrade = "C";
+
+      const overallResult = percent < 33 ? "Fail" : "Pass";
+
+      return {
+        ...student,
+        total: totalObtained,
+        totalMaxMarks: student.totalMaxMarks, 
+        percent,
+        grade: overallGrade,
+        result: overallResult,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Results fetched successfully!",
+      data: students,
+    });
+
+  } catch (error) {
+    console.error("❌ Error in getExamResultAllStudents:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};
+
+exports.speMarkForEdit = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ message: "Id not provided", success: false });
+  }
+
+  try {
+    const [rows] = await db.query(
+      `SELECT max_mark, mark_obtained FROM exam_result WHERE id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Data not found!", success: false });
+    }
+
+    // Return the fetched data
+    return res.status(200).json({ success: true, data: rows[0] });
+
+  } catch (error) {
+    console.error("❌ Error in markEdit:", error);
+    return res.status(500).json({ message: "Internal server error!", success: false });
+  }
+};
+
+exports.editMark = async (req, res) => {
+  const { id } = req.params;
+  const { mark_obtained } = req.body;
+
+
+  if (!id || mark_obtained === undefined) {
+    return res.status(400).json({
+      message: "Id and mark_obtained are required",
+      success: false,
+    });
+  }
+
+  try {
+
+    await db.query(
+      `UPDATE exam_result SET mark_obtained = ? WHERE id = ?`,
+      [mark_obtained, id]
+    );
+
+
+    return res.status(200).json({
+      message: "Mark updated successfully",
+      success: true,
+    });
+
+  } catch (error) {
+    console.error("❌ Error in editMark:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

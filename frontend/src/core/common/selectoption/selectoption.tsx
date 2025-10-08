@@ -524,6 +524,8 @@ export const classSection = [
   { value: "A", label: "A" },
   { value: "B", label: "B" },
   { value: "C", label: "C" },
+  { value: "D", label: "D" },
+  { value: "E", label: "E" },
 ];
 export const language = [
 

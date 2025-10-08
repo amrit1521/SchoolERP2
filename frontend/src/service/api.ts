@@ -159,7 +159,11 @@ export const editGrade = (data: object, id: number) => api.put(`/exam/editgrade/
 
 // exam result
 export const addExamResult = (data: object) => api.post('/exam/addresult', data)
-export const getExamResult = (rollnum:number)=>api.get(`/exam/getresult/${rollnum}`)
+export const getExamResult = (rollnum: number) => api.get(`/exam/getresult/${rollnum}`)
+export const getExamResultAllStudents = () => api.get('/exam/getstudentsexamresult')
+export const speMark = (id:number)=>api.get(`/exam/spemark/${id}`)
+export const editMark = (data:object , id:number)=>api.put(`/exam/editmark/${id}`,data)
+export const getSpeExamResult = (data:object)=>api.post('/exam/getspeexamresult' , data)
 
 // academic reasons==================================================
 export const addAcademicReason = (data: object) => api.post('/reason/addreason', data)
