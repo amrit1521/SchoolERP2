@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 // import { examresult } from '../../../../core/data/json/exam-result';
 // import type { TableData } from '../../../../core/data/interface';
 import Table from "../../../../core/common/dataTable/index";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
 import {
@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import { CiEdit } from "react-icons/ci";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
+import ExamMarkUpload from "./EditExamResult";
 
 export interface SubjectResult {
   id: number;
@@ -70,6 +71,11 @@ export interface Section {
   section: string;
 }
 
+export interface ExamName {
+  id: string;
+  examName: string;
+}
+
 export interface StudetnOption {
   value: number;
   label: string;
@@ -95,12 +101,38 @@ export interface EditMark {
 
 const ExamResult = () => {
   const routes = all_routes;
-
   const [resultData, setResultData] = useState<StudentResult[]>([]);
   const [originalResultData, setOriginalResultData] = useState<StudentResult[]>(
     []
   );
   const [loading, setLoading] = useState<boolean>(false);
+
+  // const [selectedClass, setSelectedClass] = useState("");
+  // const [selectedSection, setSelectedSection] = useState("");
+  const [examOptions, setExamOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [resultData2, setResultData2] = useState<any[]>([]);
+  const [examOptionsMap, setExamOptionsMap] = useState<
+    Record<number, { value: number; label: string }[]>
+  >({});
+  const [selectedExams, setSelectedExams] = useState<
+    Record<number, { value: number; label: string }>
+  >({});
+  const navigate = useNavigate();
+
+  // ...inside ExamResult component...
+  const [showExamMarkUpload, setShowExamMarkUpload] = useState(false);
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+  useEffect(() => {
+    const rows = allClass.map((cls, index) => ({
+      key: index,
+      class: cls.value,
+      section: "",
+      examName: "",
+    }));
+    setResultData2(rows);
+  }, []);
 
   const fetchResult = async () => {
     setLoading(true);
@@ -362,7 +394,71 @@ const ExamResult = () => {
     },
   ];
 
-  // add result
+  const columns2 = [
+    {
+      title: "Class",
+      dataIndex: "class",
+      render: (text: any) => <span>{text}</span>,
+    },
+    {
+      title: "Section",
+      dataIndex: "section",
+      render: (text: any, record: any, index: number) => (
+        <CommonSelect
+          className={`select text-capitalize ${
+            errors.section ? "is-invalid" : ""
+          }`}
+          options={sectionOptions}
+          value={record.section ? record.section.value : null}
+          onChange={(opt: any) => {
+            const newData = [...resultData2];
+            newData[index].section = opt.value;
+            setResultData2(newData);
+
+            // Fetch exams for this row based on class + section
+            fetchExamForOption2(record.class, opt.value, index);
+          }}
+        />
+      ),
+    },
+    {
+      title: "Exam Name",
+      dataIndex: "examName",
+      render: (__: any, _: any, index: number) => {
+        const options = examOptionsMap[index] || [];
+        const selectedExam = selectedExams[index] || null;
+
+        return (
+          <CommonSelect
+            options={options}
+            value={selectedExam?.value}
+            onChange={(opt: any) => {
+              const newData = [...resultData2];
+              console.log(opt);
+              newData[index].examName = opt.label;
+              setResultData2(newData);
+              return setSelectedExams((prev) => ({
+                ...prev,
+                [index]: { label: opt.label, value: opt.value },
+              }));
+            }}
+          />
+        );
+      },
+    },
+    {
+      title: "Add Result",
+      render: (text: any, record: any, index: number) => (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => handleAddResult2(index)}
+        >
+          Update Result
+        </button>
+      ),
+    },
+  ];
   const [formData, setformdata] = useState<AddResult>(initialFormData);
   const [errors, setErrors] = useState<any>({});
   const [sections, setSections] = useState<Section[]>([]);
@@ -378,20 +474,21 @@ const ExamResult = () => {
   const [subjectOpt, setSubejctOpt] = useState<
     { value: number; label: string }[]
   >([]);
-  // const [marksTypeOpt, setMarksTypeOpt] = useState<
-  //   { value: string; label: string }[]
-  // >([
-  //   { value: 'marks', label: "Marks" },
-  //   { value: 'grade', label: "Grade" },
-  // ]);
-  // const [gradeMarksOpt, setGradeMarksOpt] = useState<{ value: string; label: string }[]>([
-  //   { value: "A", label: "A"  },
-  //   { value: "B", label: "B"  },
-  //   { value: "C", label: "C"  },
-  //   { value: "D", label: "D"  },
-  //   { value: "E", label: "E"  },
-  //   { value: "F", label: "F"  },
-  // ]);
+
+  const handleAddResult2 = (index: number) => {
+    const selectedExam = selectedExams[index];
+    const rowData = resultData2[index];
+    console.log(
+      "Adding result for row:",
+      rowData,
+      "Selected Exam:",
+      selectedExam
+    );
+    // setShowExamMarkUpload(true);
+    navigate("/academic/update-exam-result", {
+      state: { name: "John", age: 30 },
+    });
+  };
 
   const marksTypeOpt: { value: string; label: string }[] = [
     { value: "marks", label: "Marks" },
@@ -425,6 +522,31 @@ const ExamResult = () => {
     } catch (error) {
       console.log(error);
       toast.error("Error to fetch studnets !");
+    }
+  };
+
+  const fetchExamForOption2 = async (
+    cls: string,
+    section: string,
+    rowIndex: number
+  ) => {
+    try {
+      const { data } = await examNameForOption({ class: cls, section });
+      let options: { value: number; label: string }[] = [];
+
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        options = data.data.map((e: any) => ({
+          value: e.id,
+          label: e.examName,
+        }));
+      } else {
+        options = [{ value: 0, label: "No Exam" }];
+      }
+
+      setExamOptionsMap((prev) => ({ ...prev, [rowIndex]: options }));
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch examName!");
     }
   };
 
@@ -859,12 +981,18 @@ const ExamResult = () => {
                 {loading ? (
                   <Spinner />
                 ) : (
-                  <Table
-                    columns={columns}
-                    dataSource={resultData}
-                    Selection={true}
-                  />
+                  // <Table
+                  //   columns={columns}
+                  //   dataSource={resultData}
+                  //   Selection={true}
+                  // />
+                  ""
                 )}
+                <Table
+                  columns={columns2}
+                  dataSource={resultData2}
+                  Selection={true}
+                />
               </div>
             </div>
           </div>
@@ -886,6 +1014,291 @@ const ExamResult = () => {
               </div>
 
               <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="text-danger fw-bold">
+                    First choose class & section{" "}
+                  </div>
+                  <div className="row">
+                    <div className="col-md-12">
+                      {/* Class & Section */}
+                      <div className="row mb-3">
+                        <div className="col col-6">
+                          <label className="form-label">
+                            Class <span className="text-danger">*</span>
+                          </label>
+                          <CommonSelect
+                            className={`select ${
+                              errors.cls ? "is-invalid" : ""
+                            }`}
+                            options={allClass}
+                            value={cls}
+                            onChange={(opt: any) => setCls(opt.value)}
+                          />
+                          {errors.cls && (
+                            <div className="text-danger mt-1">{errors.cls}</div>
+                          )}
+                        </div>
+                        <div className="col col-6">
+                          <label className="form-label">
+                            Section <span className="text-danger">*</span>
+                          </label>
+                          <CommonSelect
+                            className={`select text-capitalize ${
+                              errors.section ? "is-invalid" : ""
+                            }`}
+                            options={sectionOptions}
+                            value={section}
+                            onChange={(opt: any) => setSection(opt.value)}
+                          />
+                          {errors.section && (
+                            <div className="text-danger mt-1">
+                              {errors.section}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Student */}
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Student <span className="text-danger">*</span>
+                        </label>
+                        <CommonSelect
+                          className={`select ${
+                            errors.roll_num ? "is-invalid" : ""
+                          }`}
+                          options={students}
+                          value={formData.roll_num}
+                          onChange={(opt: any) =>
+                            handleSelectChange("roll_num", opt?.value || null)
+                          }
+                        />
+                        {errors.roll_num && (
+                          <div className="text-danger mt-1">
+                            {errors.roll_num}
+                          </div>
+                        )}
+                      </div>
+                      {/* Exam */}
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Exam <span className="text-danger">*</span>
+                        </label>
+                        <CommonSelect
+                          className={`select ${
+                            errors.exam_name_id ? "is-invalid" : ""
+                          }`}
+                          options={examOpt}
+                          value={formData.exam_name_id}
+                          onChange={(opt: any) =>
+                            handleSelectChange("exam_name_id", opt?.value)
+                          }
+                        />
+                        {errors.exam_name_id && (
+                          <div className="text-danger mt-1">
+                            {errors.exam_name_id}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Subject */}
+                      <div className="mb-3">
+                        <label className="form-label">
+                          Subject <span className="text-danger">*</span>
+                        </label>
+                        <CommonSelect
+                          className={`select ${
+                            errors.subject_id ? "is-invalid" : ""
+                          }`}
+                          options={subjectOpt}
+                          value={formData.subject_id || ""}
+                          onChange={(opt: any) =>
+                            handleSelectChange("subject_id", opt?.value)
+                          }
+                        />
+                        {errors.subject_id && (
+                          <div className="text-danger mt-1">
+                            {errors.subject_id}
+                          </div>
+                        )}
+                      </div>
+                      {/* Marks Type */}
+                      {formData.subject_id ? (
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Marks Type <span className="text-danger">*</span>
+                          </label>
+                          <CommonSelect
+                            className={`select ${
+                              errors.marks_type ? "is-invalid" : ""
+                            }`}
+                            options={marksTypeOpt}
+                            value={formData.marks_type || ""}
+                            onChange={(opt: any) =>
+                              handleSelectChange("marks_type", opt?.value)
+                            }
+                          />
+                          {errors.marks_type && (
+                            <div className="text-danger mt-1">
+                              {errors.marks_type}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        ""
+                      )}
+
+                      {/* Grade Marks */}
+                      {formData.marks_type == "grade" ? (
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Grade Marks<span className="text-danger">*</span>
+                          </label>
+                          <CommonSelect
+                            className={`select ${
+                              errors.grade_marks ? "is-invalid" : ""
+                            }`}
+                            options={gradeMarksOpt}
+                            value={formData.grade_marks || ""}
+                            onChange={(opt: any) =>
+                              handleSelectChange("grade_marks", opt?.value)
+                            }
+                          />
+                          {errors.grade_marks && (
+                            <div className="text-danger mt-1">
+                              {errors.grade_marks}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        ""
+                      )}
+                      {/* Max Marks */}
+                      {formData.marks_type == "marks" ? (
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Max Marks <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            disabled={true}
+                            type="number"
+                            className={`form-control ${
+                              errors.max_mark ? "is-invalid" : ""
+                            }`}
+                            value={formData.max_mark || ""}
+                            onChange={(e) =>
+                              handleSelectChange(
+                                "max_mark",
+                                Number(e.target.value)
+                              )
+                            }
+                          />
+                          {errors.max_mark && (
+                            <div className="text-danger mt-1">
+                              {errors.max_mark}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        ""
+                      )}
+
+                      {/* Min Marks */}
+                      {formData.marks_type == "marks" ? (
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Min Marks <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            disabled={true}
+                            type="number"
+                            className={`form-control ${
+                              errors.min_mark ? "is-invalid" : ""
+                            }`}
+                            value={formData.min_mark || ""}
+                            onChange={(e) =>
+                              handleSelectChange(
+                                "min_mark",
+                                Number(e.target.value)
+                              )
+                            }
+                          />
+                          {errors.min_mark && (
+                            <div className="text-danger mt-1">
+                              {errors.min_mark}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        ""
+                      )}
+
+                      {/* Marks Obtained */}
+                      {formData.marks_type == "marks" ? (
+                        <div className="mb-3">
+                          <label className="form-label">
+                            Marks Obtained{" "}
+                            <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            className={`form-control ${
+                              errors.mark_obtained ? "is-invalid" : ""
+                            }`}
+                            value={formData.mark_obtained || ""}
+                            onChange={(e) =>
+                              handleSelectChange(
+                                "mark_obtained",
+                                Number(e.target.value)
+                              )
+                            }
+                          />
+                          {errors.mark_obtained && (
+                            <div className="text-danger mt-1">
+                              {errors.mark_obtained}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        ""
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Footer */}
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Add Result
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div className="modal fade" id="edit_mark">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Mark</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
@@ -963,89 +1376,6 @@ const ExamResult = () => {
                     </div>
                   </div>
                 </div>
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                    onClick={handleCancel}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Add Result
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        <div className="modal fade" id="edit_mark">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Mark</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-
-              <form onSubmit={handleEditSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Max Marks */}
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Max Marks <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          disabled={true}
-                          type="number"
-                          className={"form-control"}
-                          value={editMarkData.max_mark || ""}
-                          onChange={(e) =>
-                            handleSelectChangeForEditMark(
-                              "max_mark",
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                      </div>
-
-                      {/* Marks Obtained */}
-                      <div className="mb-3">
-                        <label className="form-label">
-                          Marks Obtained <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          className={`form-control ${
-                            errors.mark_obtained ? "is-invalid" : ""
-                          }`}
-                          value={editMarkData.mark_obtained || ""}
-                          onChange={(e) =>
-                            handleSelectChangeForEditMark(
-                              "mark_obtained",
-                              Number(e.target.value)
-                            )
-                          }
-                        />
-                        {errors.mark_obtained && (
-                          <div className="text-danger mt-1">
-                            {errors.mark_obtained}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Footer */}
                 <div className="modal-footer">
@@ -1067,6 +1397,40 @@ const ExamResult = () => {
         </div>
         {/* /Add Home Work */}
       </>
+      {/* // ...in your JSX, just before the closing </div> of your main return: */}
+      {showExamMarkUpload && (
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Update Result</h4>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowExamMarkUpload(false)}
+                />
+              </div>
+              <div className="modal-body">
+                <ExamMarkUpload
+                  rowIndex={selectedRowIndex}
+                  rowData={resultData2[selectedRowIndex]}
+                  onClose={() => setShowExamMarkUpload(false)}
+                />
+              </div>
+            </div>
+          </div>
+          {/* Modal backdrop */}
+          <div
+            className="modal-backdrop fade show"
+            style={{ zIndex: 1040 }}
+            onClick={() => setShowExamMarkUpload(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

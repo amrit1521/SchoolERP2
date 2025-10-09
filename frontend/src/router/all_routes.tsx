@@ -260,6 +260,7 @@ export const all_routes = {
   examSchedule: "/academic/exam-schedule",
   grade: "/academic/grade",
   examResult: "/academic/exam-result",
+  updateExamResult: "/academic/update-exam-result",
   examAttendance: "/academic/exam-attendance",
   classTimetable: "/academic/class-time-table",
 

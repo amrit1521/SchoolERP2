@@ -246,7 +246,7 @@ import Video from "../admin/uiInterface/base-ui/video";
 import StudentGrid from "../admin/peoples/students/student-grid/index.tsx";
 import Storage from "../admin/settings/otherSettings/storage.tsx";
 import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
-
+import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
 const routes = all_routes;
 
 export const publicRoutes = [
@@ -879,6 +879,11 @@ export const publicRoutes = [
   {
     path: routes.examResult,
     element: <ExamResult />,
+    route: Route,
+  },
+  {
+    path: routes.updateExamResult,
+    element: <ExamMarkUpload />,
     route: Route,
   },
   {

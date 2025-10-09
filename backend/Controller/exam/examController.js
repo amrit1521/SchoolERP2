@@ -597,7 +597,7 @@ const calculateResult = (mark_obtained, max_mark, min_mark) => {
   return { grade, result };
 };
 
-calculateGradeResult = (grade) =>{
+const calculateGradeResult = (grade) =>{
   if(grade === 'A') return 'Pass'; 
   if(grade === 'B') return 'Pass'; 
   if(grade === 'C') return 'Pass'; 
@@ -605,6 +605,17 @@ calculateGradeResult = (grade) =>{
   if(grade === 'E') return 'Fail'; 
   if(grade === 'F') return 'Fail'; 
 }
+
+const calculateObtainedMarksForGrades = (grade) =>{
+    if(grade === 'A') return 90;
+    if(grade === 'B') return 90;
+    if(grade === 'C') return 90;
+    if(grade === 'D') return 90;
+    if(grade === 'E') return 90;
+    if(grade === 'F') return 90;
+
+}
+
 
 exports.addExamResult = async (req, res) => {
   try {
@@ -848,7 +859,11 @@ exports.getExamResultAllStudents = async (req, res) => {
       let totalObtained = 0;
 
       Object.values(student.subjects).forEach(subj => {
-        totalObtained += subj.mark_obtained;
+        if(subj.mark_obtained){
+          totalObtained += subj.mark_obtained;
+        }else if(subj.grade_marks){
+          totalObtained += calculateObtainedMarksForGrades(subj.grade_marks);
+        }
       });
 
       const percent = student.totalMaxMarks > 0
