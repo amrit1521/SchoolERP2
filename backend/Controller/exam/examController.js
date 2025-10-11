@@ -837,6 +837,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       }
 
       const subjKey = `${row.subject_name} (${row.code})`;
+<<<<<<< Updated upstream
       if(!row.grade_marks){
         studentsMap[key].subjects[subjKey] = {
           id: row.id,
@@ -849,6 +850,14 @@ exports.getExamResultAllStudents = async (req, res) => {
           grade_marks: row.grade_marks || '',
         };
       }
+=======
+      studentsMap[key].subjects[subjKey] = {
+        id: row.id,
+        mark_obtained: row.mark_obtained || 0,
+        max_mark: row.max_mark || 0,
+        
+      };
+>>>>>>> Stashed changes
 
       // Increment total max marks for this exam
       studentsMap[key].totalMaxMarks += row.max_mark || 0;
@@ -884,7 +893,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       return {
         ...student,
         total: totalObtained,
-        totalMaxMarks: student.totalMaxMarks, // <-- send this in response
+        totalMaxMarks: student.totalMaxMarks, 
         percent,
         grade: overallGrade,
         result: overallResult,

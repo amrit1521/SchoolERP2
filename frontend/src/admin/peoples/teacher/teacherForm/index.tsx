@@ -225,6 +225,13 @@ const TeacherForm = () => {
         return;
       }
 
+      const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
+      if (file.size > maxSizeInBytes) {
+        toast.error("File size should not exceed 4MB.");
+        return;
+      }
+
+
       setFile(file);
 
       const formData = new FormData();
@@ -343,8 +350,13 @@ const TeacherForm = () => {
     if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
     if (!data.pan_or_id.trim()) errors.pan_or_id = "Pan Or Id is required";
 
+    if (!data.epf_no) errors.epf_no = "EPF number is required";
     if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
     if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
+
+
+    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required !"
+    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required !"
 
     if (!data.account_name.trim()) errors.account_name = "Account name is required";
     if (!data.account_num.trim()) errors.account_num = "Bank account number is required";
@@ -363,21 +375,16 @@ const TeacherForm = () => {
     }
 
     setErrors(errors)
-    Object.entries(errors).forEach(([_, error]) => {
-      toast.error(error)
-    })
 
     return Object.keys(errors).length === 0
   };
-
-
-
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!validateTeacherData(teacherData)) {
+      toast.error("Required fileds must be filled !")
       return
     }
 
@@ -386,7 +393,7 @@ const TeacherForm = () => {
         toast.error('Password and Confirm Password do not match !')
         return
       }
-    
+
 
       const formData = new FormData()
       if (teacherImg && teacherResume && teacherJoinLetter) {
@@ -494,7 +501,7 @@ const TeacherForm = () => {
   }
 
 
-  const handleCancel = (e:React.MouseEvent<HTMLButtonElement>) => {
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setTeacherData({
       first_name: "",
@@ -1095,7 +1102,7 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">EPF No</label>
+                            <label className="form-label">EPF No</label><span className="text-danger">*</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1103,6 +1110,9 @@ const TeacherForm = () => {
                               value={teacherData.epf_no}
                               onChange={handleInputChange}
                             />
+                            {errors.epf_no && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.epf_no}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
@@ -1195,14 +1205,14 @@ const TeacherForm = () => {
                         <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
                           <i className="ti ti-users fs-16" />
                         </span>
-                        <h4 className="text-dark">Leaves</h4>
+                        <h4 className="text-dark">Leavess </h4>
                       </div>
                     </div>
                     <div className="card-body pb-1">
                       <div className="row">
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Medical Leaves</label>
+                            <label className="form-label">Medical Leaves<span className="text-danger">*</span> </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1210,11 +1220,14 @@ const TeacherForm = () => {
                               value={teacherData.medical_leaves}
                               onChange={handleInputChange}
                             />
+                            {errors.medical_leaves && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.medical_leaves}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Casual Leaves</label>
+                            <label className="form-label">Casual Leaves <span className="text-danger">*</span></label>
                             <input
                               type="text"
                               className="form-control"
@@ -1222,6 +1235,9 @@ const TeacherForm = () => {
                               value={teacherData.casual_leaves}
                               onChange={handleInputChange}
                             />
+                            {errors.casual_leaves && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.casual_leaves}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
@@ -1254,6 +1270,8 @@ const TeacherForm = () => {
                     </div>
                   </div>
                   {/* /Leaves */}
+
+
                   {/* Bank Details */}
                   <div className="card">
                     <div className="card-header bg-light">
@@ -1406,6 +1424,8 @@ const TeacherForm = () => {
                   </div>
                 </div>
                 {/* /Transport Information */}
+
+
                 {/* Hostel Information */}
                 <div className="card">
                   <div className="card-header bg-light d-flex align-items-center justify-content-between">
@@ -1633,7 +1653,7 @@ const TeacherForm = () => {
                 </>
 
                 <div className="text-end">
-                  <button type="button" onClick={(e)=>handleCancel(e)} className="btn btn-light me-3">
+                  <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-3">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

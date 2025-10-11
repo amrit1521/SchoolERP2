@@ -385,7 +385,7 @@ const TeacherDetails = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TeacherModal />
+      {teacher_id&&( <TeacherModal onAdd={()=>{} }  teacherId={teacher_id} />)}
     </>
 
   )

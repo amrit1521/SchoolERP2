@@ -709,9 +709,9 @@ exports.feesSubmit = async (req, res) => {
       return res.status(404).json({ success: false, message: "No fees record found!" });
     }
 
-    if (rows[0].status === "1") {
-      return res.status(400).json({ success: false, message: "Fees Already Paid!" });
-    }
+    // if (rows[0].status === "1") {
+    //   return res.status(400).json({ success: false, message: "Fees Already Paid!" });
+    // }
 
     // Update payment info
     const query = `
@@ -756,8 +756,6 @@ exports.feesSubmit = async (req, res) => {
     return res.status(500).json({ message: "Internal server error!", success: false });
   }
 };
-
-
 
 
 exports.getFeesCollection = async (req, res) => {

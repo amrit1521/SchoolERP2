@@ -1,4 +1,5 @@
 const db = require('../../config/db');
+const dayjs  = require('dayjs')
 
 // ✅ CREATE - Add Leave Type
 exports.addLeaveType = async (req, res) => {
@@ -179,5 +180,40 @@ exports.deleteLeaveType = async (req, res) => {
       message: 'Something went wrong!',
       error: error.message,
     });
+  }
+};
+
+
+// add leave ----------------------
+exports.addLeave = async (req, res) => {
+  const data = req.body;
+
+  try {
+
+    const sql = `
+      INSERT INTO leave_application 
+      (id_or_rollnum, leave_type_id, from_date, to_date, leave_day_type, no_of_days, reason, leave_date) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [leaveres] = await db.query(sql, [
+      data.idOrRollNum,
+      data.leave_type_id,
+      dayjs(data.from_date).format('YYYY-MM-DD'),
+      dayjs(data.to_date).format('YYYY-MM-DD'),
+      data.leave_day_type,
+      data.no_of_days,
+      data.reason,
+      dayjs(data.leave_date).format('YYYY-MM-DD')
+    ]);
+
+    return res.status(201).json({
+      message: "Leave applied successfully!",
+      success: true,
+      insertId: leaveres.insertId,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ message: "Internal server error", success: false });
   }
 };

@@ -1,11 +1,14 @@
 const router = require('express').Router()
 const designationController = require('../../Controller/designation/designationController')
 
-router.post('/' ,designationController.addDesignation )
-router.get('/' , designationController.getDesignations)
-router.delete('/:id' ,designationController.deleteDesignation)
-router.get('/:id' , designationController.getDesignationById)
-router.put('/:id' , designationController.updateDesignation)
+
+
+router.post('/add' ,designationController.addDesignation )
+router.get('/alldesign' , designationController.getDesignations)
+router.delete('/delete/:id' ,designationController.deleteDesignation)
+router.get('/spe/:id' , designationController.getDesignationById)
+router.put('/edit/:id' , designationController.updateDesignation)
+router.get('/desginationoption' , designationController.desginationForOption)
 
 
 

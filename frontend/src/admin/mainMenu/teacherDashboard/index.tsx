@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
-import { Imageurl, sepTeacher } from "../../../service/api";
+import { getTeacherByToken, Imageurl } from "../../../service/api";
 
 const TeacherDashboard = () => {
   const routes = all_routes;
@@ -220,7 +220,7 @@ const TeacherDashboard = () => {
   });
   const today = new Date();
   const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based, so we add 1
+  const month = String(today.getMonth() + 1).padStart(2, "0"); 
   const day = String(today.getDate()).padStart(2, "0");
   const formattedDate = `${month}-${day}-${year}`;
   const defaultValue = dayjs(formattedDate);
@@ -230,9 +230,9 @@ const TeacherDashboard = () => {
   
     useEffect(() => {
   
-      const fetchStudent = async (id: string) => {
+      const fetchTeacher = async (UserId: number) => {
         try {
-          const { data } = await sepTeacher(id)
+          const { data } = await getTeacherByToken(UserId)
           setTeacher(data.data)
         } catch (error) {
           console.log(error)
@@ -242,7 +242,7 @@ const TeacherDashboard = () => {
       const token = localStorage.getItem('token')
       if (token) {
         const parsetoken = JSON.parse(token)
-        fetchStudent(parsetoken.id)
+        fetchTeacher(parsetoken.id)
       }
     }, [])
 
@@ -311,7 +311,7 @@ const TeacherDashboard = () => {
                              {`${teacher.firstname} ${teacher.lastname}`}{" "}
                             </h3>
                             <div className="d-flex align-items-center flex-wrap text-light row-gap-2">
-                              <span className="me-2">Classes : {teacher.class} , A</span>
+                              <span className="me-2">Class : {teacher.class} , {teacher.section}</span>
                               <span className="d-flex align-items-center">
                                 <i className="ti ti-circle-filled text-warning fs-7 me-1" />
                                 {teacher.Subject}
@@ -320,10 +320,10 @@ const TeacherDashboard = () => {
                           </div>
                         </div>
                         <Link
-                          to={routes.editTeacher}
+                          to={`${routes.editTeacher}/${teacher.teacher_id}`}
                           className="btn btn-primary flex-shrink-0 mb-3"
                         >
-                          Edit Profile
+                          Edit 
                         </Link>
                       </div>
                       <div className="student-card-bg">

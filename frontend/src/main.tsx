@@ -18,15 +18,18 @@ import "../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
 // import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { BrowserRouter } from 'react-router';
 import React from 'react';
+import { ReactQueryProvider } from './QuerryClientProvider.js';
 
 
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter basename={base_path}>
-        <ALLRoutes />
-      </BrowserRouter>
+      <ReactQueryProvider>
+        <BrowserRouter basename={base_path}>
+          <ALLRoutes />
+        </BrowserRouter>
+      </ReactQueryProvider>
     </Provider>
   </React.StrictMode>
 )

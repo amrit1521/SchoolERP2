@@ -249,6 +249,7 @@ const ExamResult = () => {
       title: subject,
       dataIndex: ["subjects", subject],
       render: (value: SubjectResult | undefined) => (
+<<<<<<< Updated upstream
         <span>
           {value ? (
             value.grade_marks ? (
@@ -275,6 +276,13 @@ const ExamResult = () => {
           >
             <CiEdit size={15} />
           </span>
+=======
+        <span className={value && value.mark_obtained < (value.max_mark * 0.33) ? "text-danger" : ""}>
+          {value ? value.mark_obtained  : "-"} {/* show dash if no mark */}
+          
+          <span onClick={() => fetchMarkForEdit(value ? value.id : null)} data-bs-toggle="modal"
+            data-bs-target="#edit_mark" style={{ cursor: 'pointer' }}><CiEdit size={15} /></span>
+>>>>>>> Stashed changes
         </span>
       ),
       sorter: (a: StudentResult, b: StudentResult) =>

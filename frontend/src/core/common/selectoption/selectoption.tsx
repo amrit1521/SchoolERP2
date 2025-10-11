@@ -329,8 +329,8 @@ export const status = [
   { value: "0", label: "Inactive" },
 ];
 export const Marital = [
-  { value: "Single", label: "Single" },
-  { value: "Married", label: "Married" },
+  { value: "single", label: "Single" },
+  { value: "married", label: "Married" },
 ];
 export const Contract = [
   { value: "Permanent", label: "Permanent" },
@@ -887,8 +887,6 @@ export const attendance = [
   { value: "Late", label: "Late" },
 ];
 export const staffrole = [
-
-  { value: "Teacher", label: "Teacher" },
   { value: "Accountant", label: "Accountant" },
   { value: "Librarian", label: "Librarian" },
 ];

@@ -5,7 +5,7 @@ const path = require("path");
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (file.mimetype === "application/pdf") {
-            cb(null, "uploads/document"); 
+            cb(null, "uploads/document");
         } else if (
             file.mimetype === "image/jpg" ||
             file.mimetype === "image/png" ||
@@ -29,7 +29,7 @@ const fileFilter = (req, file, cb) => {
         "image/jpg",
         "image/jpeg",
         "image/png",
-        "application/pdf" 
+        "application/pdf"
     ];
 
     if (allowedTypes.includes(file.mimetype)) {

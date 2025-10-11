@@ -1,3 +1,4 @@
+const { success } = require('zod');
 const db = require('../../config/db');
 
 // ---------------- Add Department ----------------
@@ -121,3 +122,28 @@ exports.deleteDepartment = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
+// department for option
+// ---------------- Department for Dropdown Options ----------------
+exports.departmentForOption = async (req, res) => {
+
+  try {
+    const [rows] = await db.query(
+      "SELECT id, name FROM department WHERE status = '1' ORDER BY name ASC"
+    );
+
+
+    return res.status(200).json({
+      message: "Departments fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching departments for options:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+

@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
-import { Imageurl, specificStudentData1 } from "../../../service/api";
+import { getStuByToken, Imageurl} from "../../../service/api";
 
 const StudentDasboard = () => {
 
@@ -276,10 +276,10 @@ const StudentDasboard = () => {
 
   useEffect(() => {
 
-    const fetchStudent = async (id: number) => {
+    const fetchStudent = async (userId: number) => {
       try {
-        const { data } = await specificStudentData1(id)
-        console.log(data)
+        const { data } = await getStuByToken(userId)
+      
       if(data.success){
           setStudent(data.student)
       }
@@ -355,8 +355,8 @@ const StudentDasboard = () => {
                               Pass
                             </span>
                           </div>
-                          <Link to={routes.editStudent} className="btn btn-primary">
-                            Edit Profile
+                          <Link  to={`${routes.editStudent}/${student.rollnum}`} className="btn btn-primary">
+                            Edit 
                           </Link>
                         </div>
                         <div className="student-card-bg">
@@ -610,7 +610,7 @@ const StudentDasboard = () => {
                   <div className="row flex-fill">
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentFees}/${student.user_id}`}
+                        to={`${routes.studentFees}/${student.rollnum}`}
                         className="card border-0 border-bottom border-primary border-2 flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -625,7 +625,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentResult}/${student.user_id}`}
+                        to={`${routes.studentResult}/${student.rollnum}`}
                         className="card border-0 border-bottom border-success flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -641,7 +641,7 @@ const StudentDasboard = () => {
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
                        
-                        to={`${routes.studentTimeTable}/${student.user_id}`}
+                        to={`${routes.studentTimeTable}/${student.rollnum}`}
                         className="card border-0 border-bottom border-warning flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -656,7 +656,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentLeaves}/${student.user_id}`}
+                        to={`${routes.studentLeaves}/${student.rollnum}`}
                         className="card border-0 border-bottom border-dark border-2 flex-fill animate-card"
                       >
                         <div className="card-body">

@@ -40,13 +40,14 @@ export const enableStudent = (rollnum: number) => api.put(`/stu/enable/${rollnum
 export const stuDataForEdit = (rollnum: number) => api.get(`/stu/studataforedit/${rollnum}`)
 export const editStudent = (data: object, rollnum: number) => api.put(`/stu/editstu/${rollnum}`, data)
 export const deleteStudent = (rollnum: number) => api.delete(`/stu/deletestu/${rollnum}`)
+export const getStuByToken = (userId: number) => api.get(`/stu/getstubytoken/${userId}`)
 
 
 export const uploadStudentFile = (data: object) => api2.post('/stu/upload', data)
 export const deleteFile = (id: Number) => api.delete(`/stu/deletefile/${id}`)
 
 //student leave routes
-export const addLeave = (data: object) => api.post('/stu/addleave', data)
+
 export const getLeaveData = (rollnum: number) => api.get(`/stu/leavedata/${rollnum}`)
 
 // leave----------------------------------
@@ -55,6 +56,9 @@ export const addLeaveType = (data: object) => api.post('/leave/addleavetype', da
 export const deleteLeaveType = (id: number) => api.delete(`/leave/deleteleavetype/${id}`)
 export const speLeaveType = (id: number) => api.get(`/leave/speleavetype/${id}`)
 export const editLeaveType = (data: object, id: number) => api.put(`/leave/editleavetype/${id}`, data)
+
+// add leave by student , teacher etc
+export const addLeave = (data: object) => api.post('/leave/addleave', data)
 
 
 // class section---------------------------
@@ -99,8 +103,8 @@ export const returnBook = (data: object) => api.patch('/library/returnbook', dat
 
 
 // attendance routes----------------------------
-export const markAttendance = (data: object) => api.post('/attendance/markattendance', data)
-export const getStuAttendanceData = (rollnum: any) => api.get(`/attendance/getattendancedetail/${rollnum}`)
+export const markAttendance = (data: object) => api.post('/attendance/markstuattendance', data)
+export const getStuAttendanceData = (rollnum: any) => api.get(`/attendance/getstuattendance/${rollnum}`)
 
 
 
@@ -161,9 +165,9 @@ export const editGrade = (data: object, id: number) => api.put(`/exam/editgrade/
 export const addExamResult = (data: object) => api.post('/exam/addresult', data)
 export const getExamResult = (rollnum: number) => api.get(`/exam/getresult/${rollnum}`)
 export const getExamResultAllStudents = () => api.get('/exam/getstudentsexamresult')
-export const speMark = (id:number)=>api.get(`/exam/spemark/${id}`)
-export const editMark = (data:object , id:number)=>api.put(`/exam/editmark/${id}`,data)
-export const getSpeExamResult = (data:object)=>api.post('/exam/getspeexamresult' , data)
+export const speMark = (id: number) => api.get(`/exam/spemark/${id}`)
+export const editMark = (data: object, id: number) => api.put(`/exam/editmark/${id}`, data)
+export const getSpeExamResult = (data: object) => api.post('/exam/getspeexamresult', data)
 
 // academic reasons==================================================
 export const addAcademicReason = (data: object) => api.post('/reason/addreason', data)
@@ -171,9 +175,6 @@ export const allAcademicReason = () => api.get('/reason/allreason')
 export const deleteReason = (id: number) => api.delete(`/reason/deletereason/${id}`)
 export const speReason = (id: number) => api.get(`/reason/spereason/${id}`)
 export const editReason = (data: object, id: number) => api.put(`/reason/editreason/${id}`, data)
-
-
-
 
 
 
@@ -202,9 +203,14 @@ export const editTeacher = (data: object, teacher_id: any) => api.put(`/teacher/
 export const deleteTeacher = (teacher_id: string) => api.delete(`/teacher/deleteteacher/${teacher_id}`)
 export const disableTeacher = (teacher_id: string) => api.put(`/teacher/disable/${teacher_id}`)
 export const enableTeacher = (teacher_id: string) => api.put(`/teacher/enable/${teacher_id}`)
+export const getTeacherByToken = (userId: number) => api.get(`/teacher/getteacbytoken/${userId}`)
+// leave
+export const getTeacherLeaveData = (teacher_id: any) => api.get(`/teacher/leavedata/${teacher_id}`)
+// attendance
+export const getTeacherAttendance= (teacher_id: string) => api.get(`/attendance/getteacherattendance/${teacher_id}`)
 
 export const uploadTeacherFile = (data: object) => api2.post('/teacher/upload', data)
-export const deleteTeacherFile = (id: Number) => api.delete(`/teacher/deletefile/${id}`)
+export const deleteTeacherFile = (id: number) => api.delete(`/teacher/deletefile/${id}`)
 
 // homwwork=================================================================
 export const addHomeWork = (data: object) => api.post('/homework/addhomework', data)
