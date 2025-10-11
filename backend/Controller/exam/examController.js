@@ -820,7 +820,7 @@ exports.getExamResultAllStudents = async (req, res) => {
 
     rows.forEach(row => {
       const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
-      console.log(key);
+      // console.log(key);
       if (!studentsMap[key]) {
         studentsMap[key] = {
           key: row.id,
@@ -837,7 +837,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       }
 
       const subjKey = `${row.subject_name} (${row.code})`;
-<<<<<<< Updated upstream
+// <<<<<<< Updated upstream
       if(!row.grade_marks){
         studentsMap[key].subjects[subjKey] = {
           id: row.id,
@@ -850,14 +850,7 @@ exports.getExamResultAllStudents = async (req, res) => {
           grade_marks: row.grade_marks || '',
         };
       }
-=======
-      studentsMap[key].subjects[subjKey] = {
-        id: row.id,
-        mark_obtained: row.mark_obtained || 0,
-        max_mark: row.max_mark || 0,
-        
-      };
->>>>>>> Stashed changes
+
 
       // Increment total max marks for this exam
       studentsMap[key].totalMaxMarks += row.max_mark || 0;
@@ -889,7 +882,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       else if (percent >= 33) overallGrade = "D";
 
       const overallResult = percent < 33 ? "Fail" : "Pass";
-      console.log(student);
+      // console.log(student);
       return {
         ...student,
         total: totalObtained,

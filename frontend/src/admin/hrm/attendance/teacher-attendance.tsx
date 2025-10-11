@@ -30,6 +30,8 @@ const TeacherAttendance = () => {
     newSelectedOptions[index] = value;
     setSelectedOptions(newSelectedOptions);
   };
+
+  
   const columns = [
     {
       title: "ID",

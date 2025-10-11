@@ -448,8 +448,8 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
     return res.status(200).json({
       message: 'Not returned books fetched successfully by Rollnum',
       success: true,
-      data: rows,        // all not returned books with last issue date
-      summary: result[0] || null // overall student + latest issue/return
+      data: rows,        
+      summary: result[0] || null 
     });
 
   } catch (error) {

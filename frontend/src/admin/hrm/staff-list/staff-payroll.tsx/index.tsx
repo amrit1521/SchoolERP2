@@ -351,7 +351,7 @@ const StaffPayRoll = () => {
                       <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
                         <div className="ms-2">
                           <p className="mb-1">Total Net Salary</p>
-                          <h5>$5,55,410</h5>
+                          <h5>5,55,410</h5>
                         </div>
                         <span className="avatar avatar-lg bg-secondary-transparent rounded me-2 flex-shrink-0 text-secondary">
                           <i className="ti ti-user-dollar fs-24" />
@@ -362,7 +362,7 @@ const StaffPayRoll = () => {
                       <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
                         <div className="ms-2">
                           <p className="mb-1">Total Gross Salary</p>
-                          <h5>$5,58,380</h5>
+                          <h5>5,58,380</h5>
                         </div>
                         <span className="avatar avatar-lg bg-warning-transparent rounded me-2 flex-shrink-0 text-warning">
                           <i className="ti ti-map-dollar fs-24" />
@@ -373,7 +373,7 @@ const StaffPayRoll = () => {
                       <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
                         <div className="ms-2">
                           <p className="mb-1">Total Earning</p>
-                          <h5>$2,500</h5>
+                          <h5>2,500</h5>
                         </div>
                         <span className="avatar avatar-lg bg-success-transparent rounded me-2 flex-shrink-0 text-success">
                           <i className="ti ti-arrow-big-up-lines fs-24" />
@@ -384,7 +384,7 @@ const StaffPayRoll = () => {
                       <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
                         <div className="ms-2">
                           <p className="mb-1">Total Deduction</p>
-                          <h5>$2,500</h5>
+                          <h5>2,500</h5>
                         </div>
                         <span className="avatar avatar-lg bg-danger-transparent rounded me-2 flex-shrink-0 text-danger">
                           <i className="ti ti-arrow-big-down-lines fs-24" />

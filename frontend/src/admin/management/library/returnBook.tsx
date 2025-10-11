@@ -246,11 +246,8 @@ const ReturnBook = () => {
 
   const handleReturnBookSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Return Payload 👉", returnBookForm);
-
-    try {
+   try {
       const { data } = await returnBook(returnBookForm); 
-      console.log(data)
       if (data.success) {
         toast.success(data.message);
         fetchAllData();

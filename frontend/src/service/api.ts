@@ -98,7 +98,7 @@ export const issuBookToStu = (data: object) => api.post('/library/issuebook', da
 export const getAllStuIssueBook = () => api.get('/library/getallstuissuebook')
 
 export const speStuNotReturnBookData = (rollnum: number) => api.get(`/library/spestunotretubookdata/${rollnum}`)
-export const returnBook = (data: object) => api.patch('/library/returnbook', data)
+export const returnBook = (data: object) => api.put('/library/returnbook', data)
 
 
 

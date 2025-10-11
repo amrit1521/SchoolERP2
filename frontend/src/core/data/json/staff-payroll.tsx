@@ -5,7 +5,7 @@ export const staffpayroll = [
         salaryFor: "Apr - 2024",
         date: "04 May 2024",
         paymentMethod: "Cash",
-        netSalary: "$20,000",
+        netSalary: "20,000",
         details:"View Payslip",
         key:1
     },
@@ -15,7 +15,7 @@ export const staffpayroll = [
         salaryFor: "Mar - 2024",
         date: "05 Apr 2024",
         paymentMethod: "Cheque",
-        netSalary: "$19,000",
+        netSalary: "19,000",
         details:"View Payslip",
         key:2
     },
@@ -25,7 +25,7 @@ export const staffpayroll = [
         salaryFor: "Feb - 2024",
         date: "05 Mar 2024",
         paymentMethod: "Cash",
-        netSalary: "$19,500",
+        netSalary: "19,500",
         details:"payslip",
         key:3
     },
@@ -35,7 +35,7 @@ export const staffpayroll = [
         salaryFor: "Jan - 2024",
         date: "06 Feb 2024",
         paymentMethod: "Cash",
-        netSalary: "$20,000",
+        netSalary: "20,000",
         details:"payslip",
         key:4
     },
@@ -45,7 +45,7 @@ export const staffpayroll = [
         salaryFor: "Dec - 2023",
         date: "03 Jan 2024",
         paymentMethod: "Cheque",
-        netSalary: "$19,480",
+        netSalary: "19,480",
         details:"payslip",
         key:5
     },
@@ -55,7 +55,7 @@ export const staffpayroll = [
         salaryFor: "Nov - 2023",
         date: "05 Dec 2023",
         paymentMethod: "Cheque",
-        netSalary: "$19,480",
+        netSalary: "19,480",
         details:"payslip",
         key:6
     },
@@ -65,7 +65,7 @@ export const staffpayroll = [
         salaryFor: "Oct - 2023",
         date: "03 Nov 2023",
         paymentMethod: "Cheque",
-        netSalary: "$19,480",
+        netSalary: "19,480",
         details:"payslip",
         key:7
     },
@@ -75,7 +75,7 @@ export const staffpayroll = [
         salaryFor: "Sep - 2023",
         date: "04 Oct 2023",
         paymentMethod: "Cheque",
-        netSalary: "$18,000",
+        netSalary: "18,000",
         details:"payslip",
         key:8
     },
@@ -85,7 +85,7 @@ export const staffpayroll = [
         salaryFor: "Aug - 2023",
         date: "06 Sep 2023",
         paymentMethod: "Cheque",
-        netSalary: "$20,000",
+        netSalary: "20,000",
         details:"payslip",
         key:9
     },
@@ -95,7 +95,7 @@ export const staffpayroll = [
         salaryFor: "Jul - 2023",
         date: "05 Aug 2023",
         paymentMethod: "Cheque",
-        netSalary: "$20,000",
+        netSalary: "20,000",
         details:"payslip",
         key:10
     }

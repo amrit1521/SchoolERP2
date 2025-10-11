@@ -29,7 +29,7 @@ import { toast } from "react-toastify";
 import { CiEdit } from "react-icons/ci";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
-import ExamMarkUpload from "./EditExamResult";
+// import ExamMarkUpload from "./EditExamResult";
 
 export interface SubjectResult {
   id: number;
@@ -249,40 +249,13 @@ const ExamResult = () => {
       title: subject,
       dataIndex: ["subjects", subject],
       render: (value: SubjectResult | undefined) => (
-<<<<<<< Updated upstream
-        <span>
-          {value ? (
-            value.grade_marks ? (
-              <span className="text-dark">{value.grade_marks}</span>
-            ) : (
-              <span
-                className={
-                  value.mark_obtained < value.max_mark * 0.33
-                    ? "text-danger"
-                    : ""
-                }
-              >
-                {value.mark_obtained}
-              </span>
-            )
-          ) : (
-            "-"
-          )}
-          <span
-            onClick={() => fetchMarkForEdit(value ? value.id : null)}
-            data-bs-toggle="modal"
-            data-bs-target="#edit_mark"
-            style={{ cursor: "pointer", marginLeft: 8 }}
-          >
-            <CiEdit size={15} />
-          </span>
-=======
+
         <span className={value && value.mark_obtained < (value.max_mark * 0.33) ? "text-danger" : ""}>
           {value ? value.mark_obtained  : "-"} {/* show dash if no mark */}
           
           <span onClick={() => fetchMarkForEdit(value ? value.id : null)} data-bs-toggle="modal"
             data-bs-target="#edit_mark" style={{ cursor: 'pointer' }}><CiEdit size={15} /></span>
->>>>>>> Stashed changes
+{/* >>>>>>> Stashed changes */}
         </span>
       ),
       sorter: (a: StudentResult, b: StudentResult) =>
@@ -411,7 +384,7 @@ const ExamResult = () => {
     {
       title: "Section",
       dataIndex: "section",
-      render: (text: any, record: any, index: number) => (
+      render: (_: any, record: any, index: number) => (
         <CommonSelect
           className={`select text-capitalize ${
             errors.section ? "is-invalid" : ""
@@ -456,7 +429,7 @@ const ExamResult = () => {
     },
     {
       title: "Add Result",
-      render: (text: any, record: any, index: number) => (
+      render: (_: any, index: number) => (
         <button
           type="button"
           className="btn btn-primary"
@@ -1423,11 +1396,11 @@ const ExamResult = () => {
                 />
               </div>
               <div className="modal-body">
-                <ExamMarkUpload
+                {/* <ExamMarkUpload
                   rowIndex={selectedRowIndex}
                   rowData={resultData2[selectedRowIndex]}
                   onClose={() => setShowExamMarkUpload(false)}
-                />
+                /> */}
               </div>
             </div>
           </div>

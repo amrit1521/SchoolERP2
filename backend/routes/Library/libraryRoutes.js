@@ -25,7 +25,7 @@ router.get('/getallstuissuebook' , libraryController.getAllStuIssueBook)
 
 // return book
 router.get('/spestunotretubookdata/:rollnum' , libraryController.bookTakenByStuAndNotReturn)
-router.patch('/returnbook' , libraryController.returnBook)
+router.put('/returnbook' , libraryController.returnBook)
 
 
 
