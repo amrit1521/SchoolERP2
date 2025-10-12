@@ -12,6 +12,7 @@ router.get('/spedetails/:rollnum', studentController.specificDetailsStu)
 router.get('/studataforedit/:rollnum', studentController.getStudentByRollnumForEdit)
 router.put('/editstu/:rollnum', studentController.updateStudent)
 router.delete(`/deletestu/:rollnum`, studentController.deleteStudent)
+router.get('/getstubytoken/:userId' , studentController.getStuByToken)
 // filter students
 router.post('/filterstudents', studentController.filterStudents)
 router.post('/filterstudentsforoption', studentController.filterStudentsForOption)
@@ -29,7 +30,7 @@ router.get('/stuleavereport', studentController.studentLeaveReport)
 router.get('/timetable/:rollnum', studentController.getTimeTable)
 
 // leave
-router.post('/addleave', studentController.addStudentLeave)
+
 router.get('/leavedata/:rollnum', studentController.getStuLeaveData)
 
 

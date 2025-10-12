@@ -31,6 +31,7 @@ const LeaveReport = () => {
     await new Promise((res) => setTimeout(res, 400))
     try {
       const { data } = await studentLeaveReport();
+      console.log(data)
       if (data.success) {
         const transformed = data.data.map((student: any) => ({
           admissionNo: student.admissionNo,

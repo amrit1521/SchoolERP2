@@ -276,7 +276,7 @@ exports.speTeacher = async (req, res) => {
     const [rows] = await db.query(sql, [teacher_id]);
     return res.status(200).json({
       success: true,
-      message: "All teachers fetched successfully",
+      message: "Teacher fetched successfully",
       data: rows[0],
     });
   } catch (error) {
@@ -535,3 +535,106 @@ exports.allTeachersForOption = async (req, res) => {
     });
   }
 };
+
+// get techer by token 
+exports.getTeacherByToken = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
+        t.fromclass,
+        t.toclass,
+        t.section,
+        t.class,
+        t.subject,
+        t.gender,      
+        t.img_src,    
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email      
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id
+      WHERE t.user_id=?
+    `;
+
+    const [rows] = await db.query(sql, [userId]);
+    return res.status(200).json({
+      success: true,
+      message: "Teacher fetched successfully",
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+// get spe teacher leave information
+exports.getTeacherLeaveData = async (req, res) => {
+  const { teacher_id } = req.params;
+  try {
+
+    const sql = `
+      SELECT 
+        lt.id,
+        lt.name, 
+        lt.total_allowed,
+        IFNULL(SUM(la.no_of_days), 0) AS used,
+        (lt.total_allowed - IFNULL(SUM(la.no_of_days), 0)) AS avilable
+      FROM leaves_type lt
+      LEFT JOIN leave_application la
+        ON la.leave_type_id = lt.id
+        AND la.id_or_rollnum = ?
+        AND la.status = "1"
+      GROUP BY lt.id
+      ORDER BY lt.id ASC
+    `;
+
+    const [leave_inform] = await db.query(sql, teacher_id);
+
+
+    const sql2 = `
+  SELECT 
+    la.id,
+    la.no_of_days,
+    la.from_date,
+    la.to_date,
+    la.applied_on,
+    la.status,
+    lt.name AS leave_type
+  FROM leave_application la 
+  LEFT JOIN leaves_type lt
+    ON la.leave_type_id = lt.id
+  WHERE la.id_or_rollnum = ?
+  ORDER BY la.applied_on DESC
+`;
+
+    const [teacherAllLeave] = await db.query(sql2, teacher_id)
+
+    return res.status(200).json({
+      message: 'Leave information fetched successFully!',
+      success: true,
+      leave_inform,
+      teacherAllLeave
+    });
+
+  } catch (error) {
+
+    console.error(error);
+    return res.status(500).json({
+      message: "Something went wrong!",
+      success: false,
+      error: error.message
+    });
+  }
+}
+

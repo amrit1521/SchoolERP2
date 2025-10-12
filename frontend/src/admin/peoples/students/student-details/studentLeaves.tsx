@@ -72,14 +72,14 @@ const fetchLeave = async (rollnum: number) => {
   }
 };
 
-// ✅ Combined function (useEffect ya button click se call hoga)
+
 const fetchStudentAndLeave = async () => {
   setLoading(true);
   try {
     await new Promise((res)=>setTimeout(res, 200))
     const studentData = await fetchStudent(Number(rollnum));
 
-    // Agar student mila to uska rollnum se leave data fetch karo
+  
     if (studentData?.rollnum) {
       await fetchLeave(Number(studentData.rollnum));
     }
@@ -90,7 +90,7 @@ const fetchStudentAndLeave = async () => {
   }
 };
 
-// ✅ Example: useEffect me call
+
 useEffect(() => {
   setToken(localStorage.getItem('token'))
   if (rollnum) {
@@ -165,6 +165,8 @@ useEffect(() => {
   ];
 
 
+// attendance ====================================
+
   interface AttendanceData {
     id: number;
     attendance: string;
@@ -178,11 +180,9 @@ useEffect(() => {
   const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([])
   
 
-
   const fetchStudentAttendance = async (rollnum: string) => {
     try {
       // console.log(rollnum)
-
       const { data } = await getStuAttendanceData(rollnum)
       // console.log(data.details)
       setAttendanceSummary(data.summary)
@@ -194,7 +194,6 @@ useEffect(() => {
     }
 
   }
-
 
 
   function getOnlyDay(dateStr: string): string {
@@ -220,7 +219,6 @@ useEffect(() => {
       row = { key: day, date: day };
       tabledata2.push(row);
     }
-
 
     row[month] = item.attendance;
   });
@@ -610,7 +608,6 @@ useEffect(() => {
                             ))
                         }
 
-
                       </div>
                       <div className="card">
                         <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -646,6 +643,7 @@ useEffect(() => {
                       </div>
                     </div>
                     {/* /Leave */}
+
                     {/* Attendance */}
                     <div className="tab-pane fade" id="attendance">
                       <div className="card">

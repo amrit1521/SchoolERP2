@@ -973,17 +973,17 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.staffDetails,
+    path:`${routes.staffDetails}/:staffid`,
     element: <StaffDetails />,
     route: Route,
   },
   {
-    path: routes.staffPayroll,
+    path: `${routes.staffPayroll}/:staffid`,
     element: <StaffPayRoll />,
     route: Route,
   },
   {
-    path: routes.staffLeave,
+    path: `${routes.staffLeave}/:staffid`,
     element: <StaffLeave />,
     route: Route,
   },
@@ -1141,7 +1141,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.staffsAttendance,
+    path: `${routes.staffsAttendance}/:staffid`,
     element: <StaffsAttendance />,
     route: Route,
   },
@@ -1151,7 +1151,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.editStaff,
+    path: `${routes.editStaff}/:staffid`,
     element: <EditStaff />,
     route: Route,
   },

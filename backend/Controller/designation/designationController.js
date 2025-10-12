@@ -117,3 +117,25 @@ exports.deleteDesignation = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
+exports.desginationForOption = async (req, res) => {
+
+  try {
+    const [rows] = await db.query(
+      "SELECT id, name FROM designation WHERE status = '1' ORDER BY name ASC"
+    );
+
+
+    return res.status(200).json({
+      message: "designation fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching designation for options:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};

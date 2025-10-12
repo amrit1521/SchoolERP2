@@ -125,7 +125,7 @@ const IssueBook = () => {
       render: (text: string, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+            <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
               <img
                 src={`${Imageurl}/${record.stu_img}`}
                 className="img-fluid rounded-circle"
@@ -134,7 +134,7 @@ const IssueBook = () => {
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+                <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
               </p>
               <span className="fs-12">{record.class},{record.section}</span>
             </div>
@@ -167,7 +167,7 @@ const IssueBook = () => {
     },
     {
       title: "Action",
-      dataIndex: "stu_id",
+      dataIndex: "rollnum",
       render: (id:number) => (
         <div className="d-flex align-items-center gap-1">
           <Link

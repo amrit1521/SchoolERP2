@@ -11,9 +11,13 @@ router.get('/teachersforoption', teacherController.allTeachersForOption)
 router.get('/speteacher/:teacher_id', teacherController.speTeacher)
 router.put('/editteacher/:teacher_id', teacherController.updateTeacher)
 router.delete('/deleteteacher/:teacher_id', teacherController.deleteTeacher)
+router.get(`/getteacbytoken/:userId` , teacherController.getTeacherByToken)
 
 router.put('/disable/:teacher_id', teacherController.disableTeacher)
 router.put('/enable/:teacher_id', teacherController.enableTeacher)
+
+// leave information
+router.get('/leavedata/:teacher_id', teacherController.getTeacherLeaveData)
 // upload file and delete
 router.post('/upload', upload.single('teacherfile'), fileController.uploadFile);
 router.delete('/deletefile/:id', fileController.deleteFile)

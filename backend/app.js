@@ -51,6 +51,9 @@ app.use('/api/holiday' , require('./routes/holiday/holidayRoutes'))
 app.use('/api/auth', require('./routes/Auth/authRoutes'))
 app.use('/api/depart',require('./routes/department/departmentRoutes') )
 app.use('/api/designation',require('./routes/designation/designationRoutes') )
+app.use('/api/staff' , require('./routes/staff/staffRoutes'))
+app.use('/api/hostel' , require('./routes/hostel/hostelListRoutes'))
+
 
 
 

@@ -191,7 +191,6 @@ const EditTeacher = () => {
 
             if (data.success && data.data) {
                 const teacher = data.data;
-                console.log(teacher)
 
                 setTeacherData({
                     first_name: teacher.firstname || "",
@@ -248,7 +247,7 @@ const EditTeacher = () => {
                     twitter_link: teacher.twitter_link || "",
                 });
 
-                // Files bhi set karo
+
                 setTeacherImgpath(teacher.img_src || "");
                 setTeacherResumepath(teacher.resume_src || "");
                 setTeacherJoinLetterpath(teacher.letter_src || "");
@@ -286,6 +285,13 @@ const EditTeacher = () => {
                 return;
             }
 
+            const maxSizeInBytes = 4 * 1024 * 1024;
+            if (file.size > maxSizeInBytes) {
+                toast.error("File size should not exceed 4MB.");
+                return;
+            }
+
+
             setFile(file);
 
             const formData = new FormData();
@@ -293,7 +299,7 @@ const EditTeacher = () => {
 
             try {
                 const res = await uploadTeacherFile(formData);
-                const uploadedPath = res.data.file; // filename from backend
+                const uploadedPath = res.data.file;
                 const id = res.data.insertId;
 
                 if (fieldName === "teacherImgpath") {
@@ -413,9 +419,9 @@ const EditTeacher = () => {
         }
 
         setErrors(errors)
-        Object.entries(errors).forEach(([_, error]) => {
-            toast.error(error)
-        })
+        // Object.entries(errors).forEach(([_, error]) => {
+        //     toast.error(error)
+        // })
 
         return Object.keys(errors).length === 0
     };
@@ -424,6 +430,7 @@ const EditTeacher = () => {
         e.preventDefault()
 
         if (!validateTeacherData(teacherData)) {
+            toast.error("Required fileds must be filled !")
             return
         }
         console.log(teacherResume ? "" : "")

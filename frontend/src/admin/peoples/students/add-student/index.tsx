@@ -265,6 +265,13 @@ const AddStudent = () => {
         return;
       }
 
+      const maxSizeInBytes = 4 * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        toast.error("File size should not exceed 4MB.");
+        return;
+      }
+
+
       setFile(file);
 
       const formData = new FormData();
@@ -273,7 +280,7 @@ const AddStudent = () => {
       try {
 
         const res = await uploadStudentFile(formData)
-        const uploadedPath = res.data.file; // filename from backend
+        const uploadedPath = res.data.file;
         const id = res.data.insertId;
 
         if (fieldName === "stuimgpath") {
@@ -468,6 +475,7 @@ const AddStudent = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateStudentForm(studentData)) {
+      toast.error("Required fileds must be filled !")
       return
     }
     try {

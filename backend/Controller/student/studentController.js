@@ -431,13 +431,13 @@ exports.updateStudent = async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // --- 1️⃣ Update users table ---
+
     await connection.query(
       `UPDATE users SET firstname=?, lastname=?, mobile=?, email=?, status=? WHERE id=?`,
       [data.firstname, data.lastname, data.primarycont, data.email, data.status, id]
     );
 
-    // --- 2️⃣ Update students table ---
+
     await connection.query(
       `UPDATE students 
        SET academicyear=?, admissionnum=?, admissiondate=?, rollnum=?, class=?, section=?, 
@@ -474,7 +474,7 @@ exports.updateStudent = async (req, res) => {
       ]
     );
 
-    // --- 3️⃣ Prepare parents data ---
+
     const parentsData = [
       {
         relation: "Father",
@@ -505,7 +505,7 @@ exports.updateStudent = async (req, res) => {
       },
     ].filter(p => p.name);
 
-    // --- Parents insert/update using Promise.all ---
+
     await Promise.all(parentsData.map(async parent => {
       const [existingParent] = await connection.query(
         `SELECT id FROM parents_info WHERE user_id = ? AND relation = ? LIMIT 1`,
@@ -549,7 +549,7 @@ exports.updateStudent = async (req, res) => {
       }
     }));
 
-    // --- 5️⃣ Hostel, Transport, Other info using Promise.all ---
+
     const otherInfoQueries = [];
 
     if (data.hostel || data.room_num) {
@@ -587,7 +587,7 @@ exports.updateStudent = async (req, res) => {
 
     await Promise.all(otherInfoQueries);
 
-    // --- 6️⃣ Commit transaction ---
+
     await connection.commit();
 
     return res.status(200).json({ success: true, message: "Student updated successfully" });
@@ -756,39 +756,7 @@ exports.getTimeTable = async (req, res) => {
   }
 };
 
-// leave for students ----------------------
-exports.addStudentLeave = async (req, res) => {
-  const data = req.body;
 
-  try {
-
-    const sql = `
-      INSERT INTO leave_application 
-      (student_rollnum, leave_type_id, from_date, to_date, leave_day_type, no_of_days, reason, leave_date) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const [leaveres] = await db.query(sql, [
-      data.student_rollnum,
-      data.leave_type_id,
-      dayjs(data.from_date).format('YYYY-MM-DD'),
-      dayjs(data.to_date).format('YYYY-MM-DD'),
-      data.leave_day_type,
-      data.no_of_days,
-      data.reason,
-      dayjs(data.leave_date).format('YYYY-MM-DD')
-    ]);
-
-    return res.status(201).json({
-      message: "Leave applied successfully!",
-      success: true,
-      insertId: leaveres.insertId,
-    });
-  } catch (error) {
-    console.error("Error in addStudentLeave:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
-  }
-};
 
 // get leave name , total , used and avilable
 
@@ -806,7 +774,7 @@ exports.getStuLeaveData = async (req, res) => {
       FROM leaves_type lt
       LEFT JOIN leave_application la
         ON la.leave_type_id = lt.id
-        AND la.student_rollnum = ?
+        AND la.id_or_rollnum = ?
         AND la.status = "1"
       GROUP BY lt.id
       ORDER BY lt.id ASC
@@ -827,7 +795,7 @@ exports.getStuLeaveData = async (req, res) => {
   FROM leave_application la 
   LEFT JOIN leaves_type lt
     ON la.leave_type_id = lt.id
-  WHERE la.student_rollnum = ?
+  WHERE la.id_or_rollnum = ?
   ORDER BY la.applied_on DESC
 `;
 
@@ -872,7 +840,7 @@ exports.studentLeaveReport = async (req, res) => {
       CROSS JOIN leaves_type lt
       LEFT JOIN leave_application la 
         ON la.leave_type_id = lt.id 
-        AND la.student_rollnum = st.rollnum 
+        AND la.id_or_rollnum = st.rollnum 
         AND la.status = "1"
       GROUP BY st.admissionnum, st.rollnum,st.stu_img, u.firstname, u.lastname, lt.id
       ORDER BY st.admissionnum, lt.id;
@@ -957,6 +925,48 @@ WHERE u.type_id = 3
     return res.status(500).json({ message: "Internal server error !", success: false })
   }
 }
+
+
+// for student dashboard data
+exports.getStuByToken = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const sql = `
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,   
+        s.id AS student_id,
+        s.academicyear,
+        s.admissionnum,
+        s.admissiondate,
+        s.rollnum,
+        s.class,
+        s.section,
+        s.stu_img
+      FROM users u
+      LEFT JOIN students s ON u.id = s.stu_id
+      WHERE u.id = ?;
+    `;
+    const [student] = await db.query(sql, [userId]);
+
+    return res.status(200).json({
+      message: 'Student fetched successfully!',
+      success: true,
+      student: student[0],
+
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Internal server error!',
+      success: false,
+    });
+  }
+};
 
 
 

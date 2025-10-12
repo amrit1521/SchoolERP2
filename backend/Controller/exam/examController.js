@@ -1031,6 +1031,7 @@ exports.getExamResultAllStudents = async (req, res) => {
 
     rows.forEach((row) => {
       const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
+      // console.log(key);
       if (!studentsMap[key]) {
         studentsMap[key] = {
           key: row.id,
@@ -1092,10 +1093,11 @@ exports.getExamResultAllStudents = async (req, res) => {
 
       const overallResult = percent < 33 ? "Fail" : "Pass";
       // console.log(student);
+      // console.log(student);
       return {
         ...student,
         total: totalObtained,
-        totalMaxMarks: student.totalMaxMarks, // <-- send this in response
+        totalMaxMarks: student.totalMaxMarks,
         percent,
         grade: overallGrade,
         result: overallResult,
