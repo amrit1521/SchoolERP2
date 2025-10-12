@@ -1,5 +1,4 @@
-
-import { createRoot } from 'react-dom/client'
+import { createRoot } from "react-dom/client";
 import { base_path } from "./environment";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import "../src/style/css/feather.css";
@@ -15,13 +14,12 @@ import "../src/style/icon/ionic/ionicons.css";
 import "../src/style/icon/tabler-icons/webfont/tabler-icons.css";
 import ALLRoutes from "./router/router";
 import "../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js";
+import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 // import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import { BrowserRouter } from 'react-router';
-import React from 'react';
+import { BrowserRouter } from "react-router";
+import React from "react";
 
-
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter basename={base_path}>
@@ -29,4 +27,4 @@ createRoot(document.getElementById('root')!).render(
       </BrowserRouter>
     </Provider>
   </React.StrictMode>
-)
+);

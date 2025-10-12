@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const PdfTemplate1 = ({
   studentItem,
   index,
@@ -691,6 +693,295 @@ const PdfTemplate6 = ({ studentItem, index, exam }: any) => {
   );
 };
 
+interface Subject {
+  name: string;
+  maxMarks: number;
+  term1: number;
+  term2: number;
+}
+
+interface Activity {
+  name: string;
+  grade: string;
+}
+
+const gradingScale = [
+  { min: 91, grade: "A+" },
+  { min: 81, grade: "A" },
+  { min: 71, grade: "B+" },
+  { min: 61, grade: "B" },
+  { min: 51, grade: "C+" },
+  { min: 41, grade: "C" },
+  { min: 32, grade: "D" },
+  { min: 0, grade: "E" },
+];
+
+function getGrade(percentage: number) {
+  for (const scale of gradingScale) {
+    if (percentage >= scale.min) return scale.grade;
+  }
+  return "E";
+}
+
+const initialSubjects: Subject[] = [
+  { name: "HINDI", maxMarks: 60, term1: 0, term2: 0 },
+  { name: "ENGLISH", maxMarks: 60, term1: 0, term2: 0 },
+  { name: "MATHS", maxMarks: 60, term1: 0, term2: 0 },
+  { name: "GK", maxMarks: 60, term1: 0, term2: 0 },
+  { name: "ART", maxMarks: 60, term1: 0, term2: 0 },
+  { name: "ORAL", maxMarks: 60, term1: 0, term2: 0 },
+];
+
+const initialActivities: Activity[] = [
+  { name: "Art & Craft", grade: "" },
+  { name: "Music", grade: "" },
+  { name: "Sports", grade: "" },
+  { name: "Dance", grade: "" },
+];
+
+const PdfTemplate7 = () => {
+  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+  const [activities, setActivities] = useState<Activity[]>(initialActivities);
+
+  // Dummy student & school data (could be props or fetched)
+  const school = {
+    name: "UDAY NARAYAN SIKSHAN SANSTHAN",
+    address: "Kaila, District East Champaran",
+    affiliation: "Affiliated to Bihar School Examination Board, Patna",
+  };
+
+  const student = {
+    name: "VIVEK SINGH",
+    fatherName: "RAM BABU SINGH",
+    motherName: "BABLI DEVI",
+    dob: "01/01/2010",
+    admissionNo: "12345",
+    class: "5th",
+    section: "A",
+  };
+
+  // Sum max and obtained marks for terms
+  const totalMaxTerm1 = subjects.reduce((sum, sub) => sum + sub.maxMarks, 0);
+  const totalObtainedTerm1 = subjects.reduce((sum, sub) => sum + sub.term1, 0);
+  const totalMaxTerm2 = subjects.reduce((sum, sub) => sum + sub.maxMarks, 0);
+  const totalObtainedTerm2 = subjects.reduce((sum, sub) => sum + sub.term2, 0);
+
+  const grandTotalMax = totalMaxTerm1 + totalMaxTerm2;
+  const grandTotalObtained = totalObtainedTerm1 + totalObtainedTerm2;
+  const grandPercentage = grandTotalMax
+    ? (grandTotalObtained / grandTotalMax) * 100
+    : 0;
+
+  const overallGrade = getGrade(grandPercentage);
+
+  // Handlers
+  const handleInputChange = (
+    index: number,
+    term: "term1" | "term2",
+    value: string
+  ) => {
+    let val = parseInt(value);
+    if (isNaN(val)) val = 0;
+    if (val > subjects[index].maxMarks) val = subjects[index].maxMarks;
+    if (val < 0) val = 0;
+
+    const newSubjects = [...subjects];
+    newSubjects[index] = { ...newSubjects[index], [term]: val };
+    setSubjects(newSubjects);
+  };
+
+  const handleActivityGradeChange = (index: number, grade: string) => {
+    const newActivities = [...activities];
+    newActivities[index].grade = grade.toUpperCase().slice(0, 2); // Limit to 2 chars
+    setActivities(newActivities);
+  };
+
+  return (
+    <div className="container border border-2 border-dark p-4 my-5 bg-white">
+      {/* School Header */}
+      <div className="text-center mb-4">
+        <h2 className="fw-bold text-uppercase">{school.name}</h2>
+        <p className="mb-0">{school.address}</p>
+        <p className="mb-0 fst-italic">{school.affiliation}</p>
+        <hr className="border-dark border-2 mt-2" />
+      </div>
+
+      {/* Student Info */}
+      <div className="row mb-4">
+        <div className="col-md-6">
+          <p>
+            <strong>Student Name:</strong> {student.name}
+          </p>
+          <p>
+            <strong>Father's Name:</strong> {student.fatherName}
+          </p>
+          <p>
+            <strong>Mother's Name:</strong> {student.motherName}
+          </p>
+        </div>
+        <div className="col-md-6">
+          <p>
+            <strong>Date of Birth:</strong> {student.dob}
+          </p>
+          <p>
+            <strong>Admission No:</strong> {student.admissionNo}
+          </p>
+          <p>
+            <strong>Class & Section:</strong> {student.class} -{" "}
+            {student.section}
+          </p>
+        </div>
+      </div>
+
+      {/* Marks Table */}
+      <div className="table-responsive">
+        <table className="table table-bordered text-center align-middle">
+          <thead className="table-light">
+            <tr>
+              <th rowSpan={2}>Subject</th>
+              <th colSpan={2}>Term 1</th>
+              <th colSpan={2}>Term 2</th>
+              <th rowSpan={1}>Total Obtained</th>
+              <th rowSpan={1}>Total Grade</th>
+            </tr>
+            <tr>
+              <th>Max Marks</th>
+              <th>Marks Obtained</th>
+              <th>Max Marks</th>
+              <th>Marks Obtained</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subjects.map((subj, idx) => {
+              const totalObtained = subj.term1 + subj.term2;
+              const totalMax = subj.maxMarks * 2;
+              return (
+                <tr key={idx}>
+                  <td>{subj.name}</td>
+                  <td>{subj.maxMarks}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min={0}
+                      max={subj.maxMarks}
+                      value={subj.term1}
+                      onChange={(e) =>
+                        handleInputChange(idx, "term1", e.target.value)
+                      }
+                      className="form-control form-control-sm"
+                    />
+                  </td>
+                  <td>{subj.maxMarks}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min={0}
+                      max={subj.maxMarks}
+                      value={subj.term2}
+                      onChange={(e) =>
+                        handleInputChange(idx, "term2", e.target.value)
+                      }
+                      className="form-control form-control-sm"
+                    />
+                  </td>
+                  <td>
+                    {totalObtained} / {totalMax}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>Total</th>
+              <th>{totalMaxTerm1}</th>
+              <th>{totalObtainedTerm1}</th>
+              <th>{totalMaxTerm2}</th>
+              <th>{totalObtainedTerm2}</th>
+              <th>
+                {grandTotalObtained} / {grandTotalMax} <br />
+                <strong>
+                  Overall Percentage: {grandPercentage.toFixed(2)}% <br />
+                  Grade: {overallGrade}
+                </strong>
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Co-Curricular Activities */}
+      {/* Co-Scholastic */}
+      <div className="mt-4">
+        <strong>CO-SCHOLASTIC : (3 POINT GRADING SCALE A, B, C)</strong>
+        <table className="table table-bordered text-center mt-2">
+          <tbody>
+            <tr>
+              <td>UNIFORM</td>
+              <td>A+</td>
+            </tr>
+            <tr>
+              <td>ACTIVITIES</td>
+              <td>A+</td>
+            </tr>
+            <tr>
+              <td>DIGITAL CLASS</td>
+              <td>A</td>
+            </tr>
+            <tr>
+              <td>WRITTEN SKILLS</td>
+              <td>B</td>
+            </tr>
+            <tr>
+              <td>SPEAKING SKILLS</td>
+              <td>C</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Signatures */}
+      <div className="row text-center mt-4 fw-semibold">
+        <div className="col">Sign. of Class Teacher</div>
+        <div className="col">Sign. of Principal</div>
+        <div className="col">Sign. of Manager</div>
+      </div>
+
+      {/* Grading Scale */}
+      <div className="mt-5">
+        <strong>Grading scale for scholastic areas:</strong>
+        <p>Grades are awarded on an 8-point grading scale as follows:</p>
+        <table className="table table-bordered text-center">
+          <thead className="table-light">
+            <tr>
+              <th>Marks Range (%)</th>
+              <td>91–100</td>
+              <td>81–90</td>
+              <td>71–80</td>
+              <td>61–70</td>
+              <td>51–60</td>
+              <td>41–50</td>
+              <td>32–40</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Grade</th>
+              <td>A+</td>
+              <td>A</td>
+              <td>B+</td>
+              <td>B</td>
+              <td>C+</td>
+              <td>C</td>
+              <td>D</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 export {
   PdfTemplate1,
   PdfTemplate2,
@@ -698,4 +989,5 @@ export {
   PdfTemplate4,
   PdfTemplate5,
   PdfTemplate6,
+  PdfTemplate7,
 };

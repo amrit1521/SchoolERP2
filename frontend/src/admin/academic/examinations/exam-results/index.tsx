@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
 // import { examresult } from '../../../../core/data/json/exam-result';
 // import type { TableData } from '../../../../core/data/interface';
@@ -11,25 +11,24 @@ import {
   classSection,
 } from "../../../../core/common/selectoption/selectoption";
 import { all_routes } from "../../../router/all_routes";
-import TooltipOption from "../../../../core/common/tooltipOption";
+// import TooltipOption from "../../../../core/common/tooltipOption";
 import {
-  addExamResult,
+  // addExamResult,
   allExamData,
-  editMark,
+  // editMark,
   examNameForOption,
-  examSubjectForOption,
-  filterStudentsForOption,
-  getAllSection,
-  getExamResultAllStudents,
-  getSpeExamResult,
-  Imageurl,
-  speMark,
+  // examSubjectForOption,
+  // filterStudentsForOption,
+  // getAllSection,
+  // getExamResultAllStudents,
+  // getSpeExamResult,
+  // Imageurl,
+  // speMark,
 } from "../../../../service/api";
 import { toast } from "react-toastify";
-import { CiEdit } from "react-icons/ci";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
+// import { CiEdit } from "react-icons/ci";
+// import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
-import ExamMarkUpload from "./EditExamResult";
 
 export interface SubjectResult {
   id: number;
@@ -80,16 +79,16 @@ export interface StudetnOption {
   value: number;
   label: string;
 }
-const initialFormData: AddResult = {
-  roll_num: null,
-  exam_name_id: null,
-  subject_id: null,
-  max_mark: null,
-  min_mark: null,
-  mark_obtained: null,
-  marks_type: null,
-  grade_marks: null,
-};
+// const initialFormData: AddResult = {
+//   roll_num: null,
+//   exam_name_id: null,
+//   subject_id: null,
+//   max_mark: null,
+//   min_mark: null,
+//   mark_obtained: null,
+//   marks_type: null,
+//   grade_marks: null,
+// };
 
 // edit mark
 export interface EditMark {
@@ -101,10 +100,10 @@ export interface EditMark {
 
 const ExamResult = () => {
   const routes = all_routes;
-  const [resultData, setResultData] = useState<StudentResult[]>([]);
-  const [originalResultData, setOriginalResultData] = useState<StudentResult[]>(
-    []
-  );
+  // const [resultData, setResultData] = useState<StudentResult[]>([]);
+  // const [originalResultData, setOriginalResultData] = useState<StudentResult[]>(
+  //   []
+  // );
   const [loading, setLoading] = useState<boolean>(false);
 
   // const [selectedClass, setSelectedClass] = useState("");
@@ -121,9 +120,6 @@ const ExamResult = () => {
   >({});
   const navigate = useNavigate();
 
-  // ...inside ExamResult component...
-  const [showExamMarkUpload, setShowExamMarkUpload] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   useEffect(() => {
     const rows = allClass.map((cls, index) => ({
       key: index,
@@ -134,265 +130,264 @@ const ExamResult = () => {
     setResultData2(rows);
   }, []);
 
-  const fetchResult = async () => {
-    setLoading(true);
-    await new Promise((res) => setTimeout(res, 300));
-    try {
-      const { data } = await getExamResultAllStudents();
-      console.log(data);
-      if (data.success) {
-        setResultData(data.data);
-        setOriginalResultData(data.data);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchResult = async () => {
+  //   setLoading(true);
+  //   await new Promise((res) => setTimeout(res, 300));
+  //   try {
+  //     const { data } = await getExamResultAllStudents();
+  //     if (data.success) {
+  //       setResultData(data.data);
+  //       setOriginalResultData(data.data);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchResult();
-  }, []);
+  // useEffect(() => {
+  //   fetchResult();
+  // }, []);
 
-  const [editMarkData, setEditMarkData] = useState<EditMark>({
-    max_mark: null,
-    mark_obtained: null,
-  });
+  // const [editMarkData, setEditMarkData] = useState<EditMark>({
+  //   max_mark: null,
+  //   mark_obtained: null,
+  // });
 
-  const [editId, setEditId] = useState<number | null>(null);
+  // const [editId, setEditId] = useState<number | null>(null);
 
-  const fetchMarkForEdit = async (id: number | null) => {
-    console.log(id);
-    if (!id) {
-      toast.error("Id not provided or you want to edit blank mark!");
-      return;
-    }
-    try {
-      const { data } = await speMark(id);
-      console.log(data);
-      if (data.success) {
-        setEditMarkData({
-          max_mark: data.data.max_mark,
-          mark_obtained: data.data.mark_obtained,
-          grade_marks: data.data.grade_marks,
-          marks_type: data.data.marks_type,
-        });
-        setEditId(id);
-      }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
+  // const fetchMarkForEdit = async (id: number | null) => {
+  //   console.log(id);
+  //   if (!id) {
+  //     toast.error("Id not provided or you want to edit blank mark!");
+  //     return;
+  //   }
+  //   try {
+  //     const { data } = await speMark(id);
+  //     console.log(data);
+  //     if (data.success) {
+  //       setEditMarkData({
+  //         max_mark: data.data.max_mark,
+  //         mark_obtained: data.data.mark_obtained,
+  //         grade_marks: data.data.grade_marks,
+  //         marks_type: data.data.marks_type,
+  //       });
+  //       setEditId(id);
+  //     }
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     toast.error(error.response.data.message);
+  //   }
+  // };
 
-  const handleSelectChangeForEditMark = (
-    name: keyof EditMark,
-    value: string | number
-  ) => {
-    setEditMarkData((prev) => ({ ...prev, [name]: value }));
-  };
+  // const handleSelectChangeForEditMark = (
+  //   name: keyof EditMark,
+  //   value: string | number
+  // ) => {
+  //   setEditMarkData((prev) => ({ ...prev, [name]: value }));
+  // };
 
-  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
 
-    if (editMarkData.max_mark) {
-      if (!editMarkData.mark_obtained) {
-        toast.error("Mark is required !");
-        return;
-      } else if (editMarkData.mark_obtained > editMarkData.max_mark) {
-        toast.warning("Obtained mark should not be greater than max mark");
-        return;
-      }
-    }
+  //   if (editMarkData.max_mark) {
+  //     if (!editMarkData.mark_obtained) {
+  //       toast.error("Mark is required !");
+  //       return;
+  //     } else if (editMarkData.mark_obtained > editMarkData.max_mark) {
+  //       toast.warning("Obtained mark should not be greater than max mark");
+  //       return;
+  //     }
+  //   }
 
-    try {
-      if (editId) {
-        const { data } = await editMark(editMarkData, editId);
-        if (data.success) {
-          toast.success(data.message);
-          fetchResult();
-          setEditId(null);
-          setEditMarkData({
-            mark_obtained: null,
-            max_mark: null,
-          });
-          handleModalPopUp("edit_mark");
-        }
-      }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
+  //   try {
+  //     if (editId) {
+  //       const { data } = await editMark(editMarkData, editId);
+  //       if (data.success) {
+  //         toast.success(data.message);
+  //         fetchResult();
+  //         setEditId(null);
+  //         setEditMarkData({
+  //           mark_obtained: null,
+  //           max_mark: null,
+  //         });
+  //         handleModalPopUp("edit_mark");
+  //       }
+  //     }
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     toast.error(error.response.data.message);
+  //   }
+  // };
 
-  const handleCancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setEditMarkData({
-      max_mark: null,
-      mark_obtained: null,
-    });
-    setEditId(null);
-  };
+  // const handleCancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.preventDefault();
+  //   setEditMarkData({
+  //     max_mark: null,
+  //     mark_obtained: null,
+  //   });
+  //   setEditId(null);
+  // };
 
   // table columns
-  let subjectColumns: any[] = [];
-  if (resultData.length > 0) {
+  // let subjectColumns: any[] = [];
+  if (resultData2.length > 0) {
     const subjectKeys = new Set<string>();
-    resultData.forEach((student) => {
+    resultData2.forEach((student) => {
       Object.keys(student.subjects || {}).forEach((subject) => {
         subjectKeys.add(subject);
       });
     });
 
-    subjectColumns = Array.from(subjectKeys).map((subject) => ({
-      title: subject,
-      dataIndex: ["subjects", subject],
-      render: (value: SubjectResult | undefined) => (
-        <span>
-          {value ? (
-            value.grade_marks ? (
-              <span className="text-dark">{value.grade_marks}</span>
-            ) : (
-              <span
-                className={
-                  value.mark_obtained < value.max_mark * 0.33
-                    ? "text-danger"
-                    : ""
-                }
-              >
-                {value.mark_obtained}
-              </span>
-            )
-          ) : (
-            "-"
-          )}
-          <span
-            onClick={() => fetchMarkForEdit(value ? value.id : null)}
-            data-bs-toggle="modal"
-            data-bs-target="#edit_mark"
-            style={{ cursor: "pointer", marginLeft: 8 }}
-          >
-            <CiEdit size={15} />
-          </span>
-        </span>
-      ),
-      sorter: (a: StudentResult, b: StudentResult) =>
-        (a.subjects[subject]?.mark_obtained || 0) -
-        (b.subjects[subject]?.mark_obtained || 0),
-    }));
+    // subjectColumns = Array.from(subjectKeys).map((subject) => ({
+    //   title: subject,
+    //   dataIndex: ["subjects", subject],
+    //   render: (value: SubjectResult | undefined) => (
+    //     <span>
+    //       {value ? (
+    //         value.grade_marks ? (
+    //           <span className="text-dark">{value.grade_marks}</span>
+    //         ) : (
+    //           <span
+    //             className={
+    //               value.mark_obtained < value.max_mark * 0.33
+    //                 ? "text-danger"
+    //                 : ""
+    //             }
+    //           >
+    //             {value.mark_obtained}
+    //           </span>
+    //         )
+    //       ) : (
+    //         "-"
+    //       )}
+    //       <span
+    //         onClick={() => fetchMarkForEdit(value ? value.id : null)}
+    //         data-bs-toggle="modal"
+    //         data-bs-target="#edit_mark"
+    //         style={{ cursor: "pointer", marginLeft: 8 }}
+    //       >
+    //         <CiEdit size={15} />
+    //       </span>
+    //     </span>
+    //   ),
+    //   sorter: (a: StudentResult, b: StudentResult) =>
+    //     (a.subjects[subject]?.mark_obtained || 0) -
+    //     (b.subjects[subject]?.mark_obtained || 0),
+    // }));
   }
 
-  const columns = [
-    {
-      title: "Admission No",
-      dataIndex: "admissionNo",
-      render: (text: any, record: any) => (
-        <Link
-          to={`${routes.studentDetail}/${record.rollnum}`}
-          className="link-primary"
-        >
-          {text}
-        </Link>
-      ),
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.admissionNo.length - b.admissionNo.length,
-    },
-    {
-      title: "Student Name",
-      dataIndex: "studentName",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          {/* Avatar */}
-          <Link
-            to={`${routes.studentDetail}/${record.rollnum}`}
-            className="avatar me-2"
-          >
-            <img
-              src={`${Imageurl}/${record.img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-              style={{ width: "40px", height: "40px", objectFit: "cover" }}
-            />
-          </Link>
+  // const columns = [
+  //   {
+  //     title: "Admission No",
+  //     dataIndex: "admissionNo",
+  //     render: (text: any, record: any) => (
+  //       <Link
+  //         to={`${routes.studentDetail}/${record.rollnum}`}
+  //         className="link-primary"
+  //       >
+  //         {text}
+  //       </Link>
+  //     ),
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.admissionNo.length - b.admissionNo.length,
+  //   },
+  //   {
+  //     title: "Student Name",
+  //     dataIndex: "studentName",
+  //     render: (text: string, record: any) => (
+  //       <div className="d-flex align-items-center">
+  //         {/* Avatar */}
+  //         <Link
+  //           to={`${routes.studentDetail}/${record.rollnum}`}
+  //           className="avatar me-2"
+  //         >
+  //           <img
+  //             src={`${Imageurl}/${record.img}`}
+  //             className="img-fluid rounded-circle"
+  //             alt="img"
+  //             style={{ width: "40px", height: "40px", objectFit: "cover" }}
+  //           />
+  //         </Link>
 
-          {/* Name and details */}
-          <div className="flex-grow-1">
-            <div>
-              <Link
-                to={`${routes.studentDetail}/${record.rollnum}`}
-                className="text-dark fw-semibold"
-                style={{ textDecoration: "none" }}
-              >
-                {text}
-              </Link>
-            </div>
-            <div className="text-muted fs-12">
-              {record.class && record.section
-                ? `${record.class}-${record.section}`
-                : ""}
-              {record.roll ? ` | ${record.roll}` : ""}
-            </div>
-          </div>
-        </div>
-      ),
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.studentName.length - b.studentName.length,
-    },
+  //         {/* Name and details */}
+  //         <div className="flex-grow-1">
+  //           <div>
+  //             <Link
+  //               to={`${routes.studentDetail}/${record.rollnum}`}
+  //               className="text-dark fw-semibold"
+  //               style={{ textDecoration: "none" }}
+  //             >
+  //               {text}
+  //             </Link>
+  //           </div>
+  //           <div className="text-muted fs-12">
+  //             {record.class && record.section
+  //               ? `${record.class}-${record.section}`
+  //               : ""}
+  //             {record.roll ? ` | ${record.roll}` : ""}
+  //           </div>
+  //         </div>
+  //       </div>
+  //     ),
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.studentName.length - b.studentName.length,
+  //   },
 
-    // New field: Exam Name
+  //   // New field: Exam Name
 
-    // Dynamic subject columns
-    ...subjectColumns,
-    {
-      title: "Exam Name",
-      dataIndex: "examName",
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.examName.localeCompare(b.examName),
-    },
+  //   // Dynamic subject columns
+  //   ...subjectColumns,
+  //   {
+  //     title: "Exam Name",
+  //     dataIndex: "examName",
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.examName.localeCompare(b.examName),
+  //   },
 
-    // New field: Total Max Marks
-    {
-      title: "Total",
-      dataIndex: "totalMaxMarks",
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.totalMaxMarks - b.totalMaxMarks,
-      render: (value: number) => <span>{value}</span>,
-    },
+  //   // New field: Total Max Marks
+  //   {
+  //     title: "Total",
+  //     dataIndex: "totalMaxMarks",
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.totalMaxMarks - b.totalMaxMarks,
+  //     render: (value: number) => <span>{value}</span>,
+  //   },
 
-    {
-      title: "Obtained",
-      dataIndex: "total",
-      sorter: (a: StudentResult, b: StudentResult) => a.total - b.total,
-    },
-    {
-      title: "Percent",
-      dataIndex: "percent",
-      sorter: (a: StudentResult, b: StudentResult) => a.percent - b.percent,
-    },
-    {
-      title: "Grade",
-      dataIndex: "grade",
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.grade.length - b.grade.length,
-    },
-    {
-      title: "Result",
-      dataIndex: "result",
-      render: (text: string) => (
-        <span
-          className={`badge ${
-            text === "Pass" ? "badge-soft-success" : "badge-soft-danger"
-          } d-inline-flex align-items-center`}
-        >
-          <i className="ti ti-circle-filled fs-5 me-1"></i>
-          {text}
-        </span>
-      ),
-      sorter: (a: StudentResult, b: StudentResult) =>
-        a.result.length - b.result.length,
-    },
-  ];
+  //   {
+  //     title: "Obtained",
+  //     dataIndex: "total",
+  //     sorter: (a: StudentResult, b: StudentResult) => a.total - b.total,
+  //   },
+  //   {
+  //     title: "Percent",
+  //     dataIndex: "percent",
+  //     sorter: (a: StudentResult, b: StudentResult) => a.percent - b.percent,
+  //   },
+  //   {
+  //     title: "Grade",
+  //     dataIndex: "grade",
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.grade.length - b.grade.length,
+  //   },
+  //   {
+  //     title: "Result",
+  //     dataIndex: "result",
+  //     render: (text: string) => (
+  //       <span
+  //         className={`badge ${
+  //           text === "Pass" ? "badge-soft-success" : "badge-soft-danger"
+  //         } d-inline-flex align-items-center`}
+  //       >
+  //         <i className="ti ti-circle-filled fs-5 me-1"></i>
+  //         {text}
+  //       </span>
+  //     ),
+  //     sorter: (a: StudentResult, b: StudentResult) =>
+  //       a.result.length - b.result.length,
+  //   },
+  // ];
 
   const columns2 = [
     {
@@ -403,19 +398,15 @@ const ExamResult = () => {
     {
       title: "Section",
       dataIndex: "section",
-      render: (text: any, record: any, index: number) => (
+      render: (_: any, record: any, index: number) => (
         <CommonSelect
-          className={`select text-capitalize ${
-            errors.section ? "is-invalid" : ""
-          }`}
-          options={sectionOptions}
+          options={classSection}
           value={record.section ? record.section.value : null}
           onChange={(opt: any) => {
             const newData = [...resultData2];
             newData[index].section = opt.value;
             setResultData2(newData);
 
-            // Fetch exams for this row based on class + section
             fetchExamForOption2(record.class, opt.value, index);
           }}
         />
@@ -448,32 +439,35 @@ const ExamResult = () => {
     },
     {
       title: "Add Result",
-      render: (text: any, record: any, index: number) => (
+      render: (_: any, __: any, index: number) => (
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => handleAddResult2(index)}
+          onClick={() => {
+            return handleAddResult2(index);
+          }}
+          disabled={!selectedExams.hasOwnProperty(index)}
         >
           Update Result
         </button>
       ),
     },
   ];
-  const [formData, setformdata] = useState<AddResult>(initialFormData);
-  const [errors, setErrors] = useState<any>({});
-  const [sections, setSections] = useState<Section[]>([]);
+  // const [formData, setformdata] = useState<AddResult>(initialFormData);
+  // const [errors, setErrors] = useState<any>({});
+  // const [sections, setSections] = useState<Section[]>([]);
 
   // for fetching students , examname , subjectname etc
-  const [section, setSection] = useState<string>("");
-  const [cls, setCls] = useState<string>("");
-  const [students, setStudets] = useState<StudetnOption[]>([]);
-  const [examOpt, setExamOpt] = useState<{ value: number; label: string }[]>(
-    []
-  );
-  const [subjectData, setSubjectData] = useState<any>([]);
-  const [subjectOpt, setSubejctOpt] = useState<
-    { value: number; label: string }[]
-  >([]);
+  // const [section, setSection] = useState<string>("");
+  // const [cls, setCls] = useState<string>("");
+  // const [students, setStudets] = useState<StudetnOption[]>([]);
+  // const [examOpt, setExamOpt] = useState<{ value: number; label: string }[]>(
+  //   []
+  // );
+  // const [subjectData, setSubjectData] = useState<any>([]);
+  // const [subjectOpt, setSubejctOpt] = useState<
+  //   { value: number; label: string }[]
+  // >([]);
 
   const handleAddResult2 = (index: number) => {
     const selectedExam = selectedExams[index];
@@ -486,44 +480,48 @@ const ExamResult = () => {
     );
     // setShowExamMarkUpload(true);
     navigate("/academic/update-exam-result", {
-      state: { name: "John", age: 30 },
+      state: {
+        exam_name_id: selectedExam?.value,
+        class: rowData?.class,
+        section: rowData?.section,
+      },
     });
   };
 
-  const marksTypeOpt: { value: string; label: string }[] = [
-    { value: "marks", label: "Marks" },
-    { value: "grade", label: "Grade" },
-  ];
-  const gradeMarksOpt: { value: string; label: string }[] = [
-    { value: "A", label: "A" },
-    { value: "B", label: "B" },
-    { value: "C", label: "C" },
-    { value: "D", label: "D" },
-    { value: "E", label: "E" },
-    { value: "F", label: "F" },
-  ];
+  // const marksTypeOpt: { value: string; label: string }[] = [
+  //   { value: "marks", label: "Marks" },
+  //   { value: "grade", label: "Grade" },
+  // ];
+  // const gradeMarksOpt: { value: string; label: string }[] = [
+  //   { value: "A", label: "A" },
+  //   { value: "B", label: "B" },
+  //   { value: "C", label: "C" },
+  //   { value: "D", label: "D" },
+  //   { value: "E", label: "E" },
+  //   { value: "F", label: "F" },
+  // ];
 
-  const fetchStudents = async () => {
-    try {
-      const dataa = {
-        class: cls,
-        section: section,
-      };
-      const { data } = await filterStudentsForOption(dataa);
+  // const fetchStudents = async () => {
+  //   try {
+  //     const dataa = {
+  //       class: cls,
+  //       section: section,
+  //     };
+  //     const { data } = await filterStudentsForOption(dataa);
 
-      if (data.success) {
-        setStudets(
-          data.students.map((s: any) => ({
-            value: s.rollnum,
-            label: `${s.firstname} ${s.lastname}`,
-          }))
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error("Error to fetch studnets !");
-    }
-  };
+  //     if (data.success) {
+  //       setStudets(
+  //         data.students.map((s: any) => ({
+  //           value: s.rollnum,
+  //           label: `${s.firstname} ${s.lastname}`,
+  //         }))
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error("Error to fetch studnets !");
+  //   }
+  // };
 
   const fetchExamForOption2 = async (
     cls: string,
@@ -550,231 +548,233 @@ const ExamResult = () => {
     }
   };
 
-  const fetchExamForOption = async () => {
-    try {
-      const dataa = {
-        class: cls,
-        section: section,
-      };
-      const { data } = await examNameForOption(dataa);
+  // const fetchExamForOption = async () => {
+  //   try {
+  //     const dataa = {
+  //       class: cls,
+  //       section: section,
+  //     };
+  //     const { data } = await examNameForOption(dataa);
 
-      if (data.success) {
-        if (Array.isArray(data.data) && data.data.length > 0) {
-          setExamOpt(
-            data.data.map((e: any) => ({ value: e.id, label: e.examName }))
-          );
-        } else {
-          setExamOpt([{ value: 0, label: "No Exam" }]);
-        }
-      } else {
-        setExamOpt([{ value: 0, label: "No Exam" }]);
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error("Error to fetch examName !");
-    }
-  };
+  //     if (data.success) {
+  //       if (Array.isArray(data.data) && data.data.length > 0) {
+  //         setExamOpt(
+  //           data.data.map((e: any) => ({ value: e.id, label: e.examName }))
+  //         );
+  //       } else {
+  //         setExamOpt([{ value: 0, label: "No Exam" }]);
+  //       }
+  //     } else {
+  //       setExamOpt([{ value: 0, label: "No Exam" }]);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error("Error to fetch examName !");
+  //   }
+  // };
 
-  const fetchSubjectsRelatedToExam = async () => {
-    try {
-      const dataa = {
-        class: cls,
-        section: section,
-        exam_name_id: formData.exam_name_id,
-      };
+  // const fetchSubjectsRelatedToExam = async () => {
+  //   try {
+  //     const dataa = {
+  //       class: cls,
+  //       section: section,
+  //       exam_name_id: formData.exam_name_id,
+  //     };
 
-      const { data } = await examSubjectForOption(dataa);
-      if (data.success) {
-        setSubjectData(data.data);
-        setSubejctOpt(
-          data.data.map((s: any) => ({
-            value: s.id,
-            label: `${s.name}(${s.code})`,
-          }))
-        );
-      }
-    } catch (error) {}
-  };
+  //     const { data } = await examSubjectForOption(dataa);
+  //     if (data.success) {
+  //       setSubjectData(data.data);
+  //       setSubejctOpt(
+  //         data.data.map((s: any) => ({
+  //           value: s.id,
+  //           label: `${s.name}(${s.code})`,
+  //         }))
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (formData.marks_type === "marks") {
-      const subject = subjectData.find(
-        (s: any) => s.id === formData.subject_id
-      );
-      if (subject) {
-        setformdata((prev) => ({
-          ...prev,
-          max_mark: Number(subject.maxMarks),
-          min_mark: Number(subject.minMarks),
-        }));
-      }
-    }
-  }, [formData.marks_type]);
+  // useEffect(() => {
+  //   if (formData.marks_type === "marks") {
+  //     const subject = subjectData.find(
+  //       (s: any) => s.id === formData.subject_id
+  //     );
+  //     if (subject) {
+  //       setformdata((prev) => ({
+  //         ...prev,
+  //         max_mark: Number(subject.maxMarks),
+  //         min_mark: Number(subject.minMarks),
+  //       }));
+  //     }
+  //   }
+  // }, [formData.marks_type]);
   // section, cls, formData.exam_name_id, formData.subject_id, subjectData
-  useEffect(() => {
-    if (section && cls) {
-      fetchStudents();
-      fetchExamForOption();
-    }
-    if (section && cls && formData.exam_name_id) {
-      fetchSubjectsRelatedToExam();
-    }
-  }, [section, cls, formData.exam_name_id]);
+  // useEffect(() => {
+  //   if (section && cls) {
+  //     fetchStudents();
+  //     fetchExamForOption();
+  //   }
+  //   if (section && cls && formData.exam_name_id) {
+  //     fetchSubjectsRelatedToExam();
+  //   }
+  // }, [section, cls, formData.exam_name_id]);
 
-  const fetchData = async <T,>(
-    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
-    setter: React.Dispatch<React.SetStateAction<T>>
-  ) => {
-    try {
-      const { data } = await apiFn();
-      if (data.success) setter(data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-  const fetchSections = () => fetchData(getAllSection, setSections);
+  // const fetchData = async <T,>(
+  //   apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+  //   setter: React.Dispatch<React.SetStateAction<T>>
+  // ) => {
+  //   try {
+  //     const { data } = await apiFn();
+  //     console.log(data);
+  //     if (data.success) setter(data.data);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+  // const fetchSections = () => fetchData(getAllSection, setSections);
 
-  useEffect(() => {
-    fetchSections();
-  }, []);
+  // useEffect(() => {
+  //   fetchSections();
+  // }, []);
 
-  const sectionOptions = useMemo(
-    () =>
-      sections.map((s) => ({
-        value: s.section,
-        label: s.section,
-      })),
-    [sections]
-  );
+  // const sectionOptions = useMemo(
+  //   () =>
+  //     sections.map((s) => ({
+  //       value: s.section,
+  //       label: s.section,
+  //     })),
+  //   [sections]
+  // );
 
-  const validateForm = () => {
-    const newErrors: any = {};
+  // const validateForm = () => {
+  //   const newErrors: any = {};
 
-    if (!cls) newErrors.cls = "Class is required";
-    if (!section) newErrors.section = "Section is required";
-    if (!formData.roll_num) newErrors.roll_num = "Student is required";
-    if (!formData.exam_name_id) newErrors.exam_name_id = "Exam is required";
-    if (!formData.subject_id) newErrors.subject_id = "Subject is required";
-    if (!formData.marks_type) newErrors.marks_type = "Marks Type is required";
+  //   if (!cls) newErrors.cls = "Class is required";
+  //   if (!section) newErrors.section = "Section is required";
+  //   if (!formData.roll_num) newErrors.roll_num = "Student is required";
+  //   if (!formData.exam_name_id) newErrors.exam_name_id = "Exam is required";
+  //   if (!formData.subject_id) newErrors.subject_id = "Subject is required";
+  //   if (!formData.marks_type) newErrors.marks_type = "Marks Type is required";
 
-    if (
-      formData.marks_type === "marks" &&
-      (formData.max_mark === null ||
-        formData.max_mark < 0 ||
-        formData.max_mark === 0)
-    ) {
-      newErrors.max_mark =
-        "Max Marks must  be a required and Should be not Zero";
-    }
+  //   if (
+  //     formData.marks_type === "marks" &&
+  //     (formData.max_mark === null ||
+  //       formData.max_mark < 0 ||
+  //       formData.max_mark === 0)
+  //   ) {
+  //     newErrors.max_mark =
+  //       "Max Marks must  be a required and Should be not Zero";
+  //   }
 
-    if (
-      formData.marks_type === "marks" &&
-      (formData.min_mark === null ||
-        formData.min_mark < 0 ||
-        formData.min_mark === 0)
-    ) {
-      newErrors.min_mark =
-        "Min Marks must  be a required and Should be not Zero";
-    }
+  //   if (
+  //     formData.marks_type === "marks" &&
+  //     (formData.min_mark === null ||
+  //       formData.min_mark < 0 ||
+  //       formData.min_mark === 0)
+  //   ) {
+  //     newErrors.min_mark =
+  //       "Min Marks must  be a required and Should be not Zero";
+  //   }
 
-    if (
-      formData.marks_type === "marks" &&
-      (formData.mark_obtained === null ||
-        formData.mark_obtained < 0 ||
-        formData.mark_obtained === 0)
-    ) {
-      newErrors.mark_obtained =
-        "Marks Obtained must be a required and Should be not Zero";
-    }
+  //   if (
+  //     formData.marks_type === "marks" &&
+  //     (formData.mark_obtained === null ||
+  //       formData.mark_obtained < 0 ||
+  //       formData.mark_obtained === 0)
+  //   ) {
+  //     newErrors.mark_obtained =
+  //       "Marks Obtained must be a required and Should be not Zero";
+  //   }
 
-    if (
-      formData.marks_type === "grade" &&
-      (formData.grade_marks === null || formData.grade_marks === "")
-    ) {
-      newErrors.grade_marks = "Grade Marks cannot be null";
-    }
+  //   if (
+  //     formData.marks_type === "grade" &&
+  //     (formData.grade_marks === null || formData.grade_marks === "")
+  //   ) {
+  //     newErrors.grade_marks = "Grade Marks cannot be null";
+  //   }
 
-    if (
-      formData.marks_type === "marks" &&
-      formData.mark_obtained !== null &&
-      formData.max_mark !== null &&
-      formData.mark_obtained > formData.max_mark
-    ) {
-      newErrors.mark_obtained = "Marks Obtained cannot exceed Max Marks";
-    }
-    return newErrors;
-  };
-  const handleSelectChange = (
-    name: keyof AddResult,
-    value: string | number
-  ) => {
-    setformdata((prev) => ({ ...prev, [name]: value }));
-  };
+  //   if (
+  //     formData.marks_type === "marks" &&
+  //     formData.mark_obtained !== null &&
+  //     formData.max_mark !== null &&
+  //     formData.mark_obtained > formData.max_mark
+  //   ) {
+  //     newErrors.mark_obtained = "Marks Obtained cannot exceed Max Marks";
+  //   }
+  //   return newErrors;
+  // };
+  // const handleSelectChange = (
+  //   name: keyof AddResult,
+  //   value: string | number
+  // ) => {
+  //   setformdata((prev) => ({ ...prev, [name]: value }));
+  // };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    setErrors(validationErrors);
-    console.log(validationErrors);
+  // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   const validationErrors = validateForm();
+  //   setErrors(validationErrors);
+  //   console.log(validationErrors);
 
-    if (Object.keys(validationErrors).length !== 0) {
-      return;
-    }
+  //   if (Object.keys(validationErrors).length !== 0) {
+  //     return;
+  //   }
 
-    try {
-      console.log(formData);
-      const { data } = await addExamResult(formData);
-      if (data.success) {
-        // if (true) {
-        toast.success(data.message);
-        setformdata(initialFormData);
-        setCls("");
-        setSection("");
-      }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
+  //   try {
+  //     console.log(formData);
+  //     const { data } = await addExamResult(formData);
+  //     if (data.success) {
+  //       // if (true) {
+  //       toast.success(data.message);
+  //       setformdata(initialFormData);
+  //       setCls("");
+  //       setSection("");
+  //     }
+  //   } catch (error: any) {
+  //     console.log(error);
+  //     toast.error(error.response.data.message);
+  //   }
+  // };
 
-  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    setformdata(initialFormData);
-    setCls("");
-    setSection("");
-    setErrors({});
-  };
+  // const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   e.preventDefault();
+  //   setformdata(initialFormData);
+  //   setCls("");
+  //   setSection("");
+  //   setErrors({});
+  // };
 
   //  filter students
-  const [allExam, setAllExam] = useState<any[]>([]);
+  // const [allExam, setAllExam] = useState<any[]>([]);
 
-  const fetchDataa = async <T,>(
-    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
-    setter: React.Dispatch<React.SetStateAction<T>>
-  ) => {
-    try {
-      const { data } = await apiFn();
-      if (data.success) setter(data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // const fetchDataa = async <T,>(
+  //   apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+  //   setter: React.Dispatch<React.SetStateAction<T>>
+  // ) => {
+  //   try {
+  //     const { data } = await apiFn();
+  //     if (data.success) setter(data.data);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
-  const fetchExams = () => fetchDataa(allExamData, setAllExam);
+  // const fetchExams = () => fetchDataa(allExamData, setAllExam);
 
-  useEffect(() => {
-    fetchExams();
-  }, []);
+  // useEffect(() => {
+  //   fetchExams();
+  // }, []);
 
-  const examNameOptions = useMemo(
-    () =>
-      allExam.map((e) => ({
-        value: e.id,
-        label: e.examName,
-      })),
-    [allExam]
-  );
+  // const examNameOptions = useMemo(
+  //   () =>
+  //     allExam.map((e) => ({
+  //       value: e.id,
+  //       label: e.examName,
+  //     })),
+  //   [allExam]
+  // );
 
   interface FilterData {
     class: string;
@@ -782,41 +782,116 @@ const ExamResult = () => {
     exam_type: number | null;
   }
 
+  // const [filterData, setFilterData] = useState<FilterData>({
+  //   class: "",
+  //   section: "",
+  //   exam_type: null,
+  // });
+  // const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // const handleFilterSelectChange = (
+  //   name: keyof FilterData,
+  //   value: string | number
+  // ) => {
+  //   setFilterData((prev) => ({ ...prev, [name]: value }));
+  // };
+
+  // const handleApplyClick = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   console.log(filterData);
+  //   try {
+  //     const { data } = await getSpeExamResult(filterData);
+  //     if (data.success) {
+  //       setResultData(data.data);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
+  // const handleResetFilter = (e?: React.MouseEvent) => {
+  //   e?.preventDefault();
+  //   setFilterData({ class: "", section: "", exam_type: null });
+  //   setResultData(originalResultData);
+
+  //   if (dropdownMenuRef.current) {
+  //     dropdownMenuRef.current.classList.remove("show");
+  //   }
+  // };
+
+  //handling filter
   const [filterData, setFilterData] = useState<FilterData>({
     class: "",
     section: "",
     exam_type: null,
   });
+  const [isApplyDisabled, setIsApplyDisabled] = useState(true);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const fetchExamOptions = async (cls: string, section: string) => {
+    try {
+      const { data } = await examNameForOption({ class: cls, section });
+      if (data.success && Array.isArray(data.data)) {
+        setExamOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.examName }))
+        );
+      } else {
+        setExamOptions([]);
+        toast.warning("No exams found for this class & section.");
+      }
+    } catch (error) {
+      console.error("Error fetching exams:", error);
+      toast.error("Error fetching exam names!");
+    }
+  };
 
   const handleFilterSelectChange = (
     name: keyof FilterData,
-    value: string | number
+    value: string | number | null
   ) => {
-    setFilterData((prev) => ({ ...prev, [name]: value }));
+    setFilterData((prev) => {
+      const updated = { ...prev, [name]: value } as FilterData;
+      if (name === "class" || name === "section") {
+        updated.exam_type = null;
+        if (updated.class && updated.section) {
+          fetchExamOptions(updated.class, updated.section);
+        } else setExamOptions([]);
+      }
+      return updated;
+    });
   };
+
+  useEffect(() => {
+    setIsApplyDisabled(!filterData.exam_type);
+  }, [filterData.exam_type]);
 
   const handleApplyClick = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(filterData);
+    if (!filterData.class || !filterData.section || !filterData.exam_type) {
+      toast.warning("Please select class, section, and exam type first!");
+      return;
+    }
+
     try {
-      const { data } = await getSpeExamResult(filterData);
-      if (data.success) {
-        setResultData(data.data);
-      }
+      navigate("/academic/update-exam-result", {
+        state: {
+          exam_name_id: filterData?.exam_type,
+          class: filterData?.class,
+          section: filterData?.section,
+        },
+      });
     } catch (error) {
-      console.log(error);
+      console.error("Filter apply error:", error);
+      toast.error("Failed to apply filter!");
     }
   };
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
     setFilterData({ class: "", section: "", exam_type: null });
-    setResultData(originalResultData);
-
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
+    setExamOptions([]);
+    setIsApplyDisabled(true);
+    dropdownMenuRef.current?.classList.remove("show");
   };
 
   return (
@@ -843,7 +918,7 @@ const ExamResult = () => {
                   </ol>
                 </nav>
               </div>
-              <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
+              {/* <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
                   <Link
@@ -856,7 +931,7 @@ const ExamResult = () => {
                     Add Result
                   </Link>
                 </div>
-              </div>
+              </div> */}
             </div>
             {/* /Page Header */}
             {/* Guardians List */}
@@ -917,7 +992,7 @@ const ExamResult = () => {
                               <label className="form-label">Exam Type</label>
                               <CommonSelect
                                 className="select"
-                                options={examNameOptions}
+                                options={examOptions}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "exam_type",
@@ -935,7 +1010,11 @@ const ExamResult = () => {
                           >
                             Reset
                           </button>
-                          <button type="submit" className="btn btn-primary">
+                          <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isApplyDisabled}
+                          >
                             Apply
                           </button>
                         </div>
@@ -986,19 +1065,18 @@ const ExamResult = () => {
                   //   dataSource={resultData}
                   //   Selection={true}
                   // />
-                  ""
+                  <Table
+                    columns={columns2}
+                    dataSource={resultData2}
+                    Selection={true}
+                  />
                 )}
-                <Table
-                  columns={columns2}
-                  dataSource={resultData2}
-                  Selection={true}
-                />
               </div>
             </div>
           </div>
         </div>
         {/* Add Home Work */}
-        <div className="modal fade" id="add_result">
+        {/* <div className="modal fade" id="add_result">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -1020,7 +1098,7 @@ const ExamResult = () => {
                   </div>
                   <div className="row">
                     <div className="col-md-12">
-                      {/* Class & Section */}
+                      
                       <div className="row mb-3">
                         <div className="col col-6">
                           <label className="form-label">
@@ -1058,7 +1136,7 @@ const ExamResult = () => {
                         </div>
                       </div>
 
-                      {/* Student */}
+                      
                       <div className="mb-3">
                         <label className="form-label">
                           Student <span className="text-danger">*</span>
@@ -1079,7 +1157,7 @@ const ExamResult = () => {
                           </div>
                         )}
                       </div>
-                      {/* Exam */}
+                      
                       <div className="mb-3">
                         <label className="form-label">
                           Exam <span className="text-danger">*</span>
@@ -1101,7 +1179,7 @@ const ExamResult = () => {
                         )}
                       </div>
 
-                      {/* Subject */}
+                      
                       <div className="mb-3">
                         <label className="form-label">
                           Subject <span className="text-danger">*</span>
@@ -1122,7 +1200,7 @@ const ExamResult = () => {
                           </div>
                         )}
                       </div>
-                      {/* Marks Type */}
+                      
                       {formData.subject_id ? (
                         <div className="mb-3">
                           <label className="form-label">
@@ -1148,7 +1226,7 @@ const ExamResult = () => {
                         ""
                       )}
 
-                      {/* Grade Marks */}
+                     
                       {formData.marks_type == "grade" ? (
                         <div className="mb-3">
                           <label className="form-label">
@@ -1173,7 +1251,7 @@ const ExamResult = () => {
                       ) : (
                         ""
                       )}
-                      {/* Max Marks */}
+                      
                       {formData.marks_type == "marks" ? (
                         <div className="mb-3">
                           <label className="form-label">
@@ -1203,7 +1281,7 @@ const ExamResult = () => {
                         ""
                       )}
 
-                      {/* Min Marks */}
+                      
                       {formData.marks_type == "marks" ? (
                         <div className="mb-3">
                           <label className="form-label">
@@ -1233,7 +1311,7 @@ const ExamResult = () => {
                         ""
                       )}
 
-                      {/* Marks Obtained */}
+                      
                       {formData.marks_type == "marks" ? (
                         <div className="mb-3">
                           <label className="form-label">
@@ -1265,7 +1343,6 @@ const ExamResult = () => {
                     </div>
                   </div>
                 </div>
-                {/* Footer */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -1282,8 +1359,8 @@ const ExamResult = () => {
               </form>
             </div>
           </div>
-        </div>
-        <div className="modal fade" id="edit_mark">
+        </div> */}
+        {/* <div className="modal fade" id="edit_mark">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -1377,7 +1454,6 @@ const ExamResult = () => {
                   </div>
                 </div>
 
-                {/* Footer */}
                 <div className="modal-footer">
                   <button
                     type="button"
@@ -1394,43 +1470,9 @@ const ExamResult = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div> */}
         {/* /Add Home Work */}
       </>
-      {/* // ...in your JSX, just before the closing </div> of your main return: */}
-      {showExamMarkUpload && (
-        <div
-          className="modal fade show"
-          style={{ display: "block" }}
-          tabIndex={-1}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Update Result</h4>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowExamMarkUpload(false)}
-                />
-              </div>
-              <div className="modal-body">
-                <ExamMarkUpload
-                  rowIndex={selectedRowIndex}
-                  rowData={resultData2[selectedRowIndex]}
-                  onClose={() => setShowExamMarkUpload(false)}
-                />
-              </div>
-            </div>
-          </div>
-          {/* Modal backdrop */}
-          <div
-            className="modal-backdrop fade show"
-            style={{ zIndex: 1040 }}
-            onClick={() => setShowExamMarkUpload(false)}
-          />
-        </div>
-      )}
     </div>
   );
 };
