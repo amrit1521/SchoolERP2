@@ -47,7 +47,7 @@ exports.addStudent = async (req, res) => {
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
     const [userRes] = await connection.query(
-      `INSERT INTO users (firstname, lastname, mobile, email, password, type_id, status)
+      `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [data.firstname, data.lastname, data.primarycont, data.email, hashPassword, 3, data.status]
     );
@@ -185,7 +185,7 @@ exports.allStudents = async (req, res) => {
                 u.lastname,
                 u.mobile,
                 u.email,
-                u.type_id,
+                u.roll_id,
                 u.status,
                 s.id AS student_id,
                 s.stu_id,
@@ -208,7 +208,7 @@ exports.allStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
-                WHERE u.type_id=3
+                WHERE u.roll_id=3
         `;
 
     const [students] = await db.query(sql);
@@ -237,7 +237,7 @@ exports.filterStudents = async (req, res) => {
                 u.lastname,
                 u.mobile,
                 u.email,
-                u.type_id,
+                u.roll_id,
                 u.status,
                 s.id AS student_id,
                 s.stu_id,
@@ -260,7 +260,7 @@ exports.filterStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
-                WHERE u.type_id=3 AND class=? AND section=?
+                WHERE u.roll_id=3 AND class=? AND section=?
         `;
 
     const [students] = await db.query(sql, [data.class, data.section]);
@@ -288,7 +288,7 @@ exports.filterStudentsForOption = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
             ON u.id = s.stu_id
-            WHERE u.type_id = 3 
+            WHERE u.roll_id = 3 
             AND s.class = ? 
             AND s.section = ?;
 
@@ -912,7 +912,7 @@ LEFT JOIN users u
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
     ON s.stu_id = father.user_id AND father.relation = 'Father'
-WHERE u.type_id = 3
+WHERE u.roll_id = 3
 
         `;
 

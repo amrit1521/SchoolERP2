@@ -208,6 +208,7 @@ export const editGrade = (data: object, id: number) =>
   api.put(`/exam/editgrade/${id}`, data);
 
 // exam result
+export const getAllExamNameForAStud = (rollnum:number) => api.get(`/exam/examNameforastudent/${rollnum}`);
 export const addExamResult = (data: object) =>
   api.post("/exam/addresult", data);
 export const addExamResult2 = (data: object) =>

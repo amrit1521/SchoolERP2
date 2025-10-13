@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const PdfTemplate1 = ({
   studentItem,
@@ -9,28 +9,102 @@ const PdfTemplate1 = ({
   index: number;
   exam: any;
 }) => {
+  const school = {
+    name: "UDAY NARAYAN SIKSHAN SANSTHAN",
+    address: "Kaila, District East Champaran",
+    affiliation: "Affiliated to Bihar School Examination Board, Patna",
+  };
+  const getSubjectResults = (exams: any[]) => {
+    if (!exams || exams.length === 0) {
+      return [];
+    }
+
+    const semester1 = exams.find((exam) => exam.exam_name === "Semester1");
+    const semester2 = exams.find((exam) => exam.exam_name === "Semester2");
+
+    // Check if both semesters exist
+    if (!semester1 || !semester2) {
+      return []; // Return an empty array if either semester is missing
+    }
+
+    const combinedSubjects = semester1.subjects.map((subject1: any) => {
+      const correspondingSubject2 = semester2
+        ? semester2.subjects.find(
+            (subject2: any) => subject1.subject_name === subject2.subject_name
+          )
+        : null;
+
+      return {
+        subject_name: subject1.subject_name,
+        max_mark_sem1: subject1.max_mark,
+        max_mark_sem2: correspondingSubject2
+          ? correspondingSubject2.max_mark
+          : 0,
+        mark_obtained_sem1: subject1.mark_obtained,
+        mark_obtained_sem2: correspondingSubject2
+          ? correspondingSubject2.mark_obtained
+          : 0,
+        grade_sem1: subject1.grade,
+        grade_sem2: correspondingSubject2 ? correspondingSubject2.grade : "",
+        result_sem1: subject1.result,
+        result_sem2: correspondingSubject2 ? correspondingSubject2.result : "",
+      };
+    });
+
+    return combinedSubjects;
+  };
+
+  const combinedResults = getSubjectResults(exam);
   return (
     <div
       id={`collapse${studentItem.rollnum}-${index}`}
       className="accordion-collapse collapse"
       data-bs-parent="#accordionExample"
     >
+      {/* School Logo */}
+      <img
+        src="/assets/img/download-img.png"
+        alt="School Logo"
+        className="img-fluid"
+        style={{
+          position: "static",
+          display: "flex",
+          top: "0px",
+          left: "0px",
+        }}
+      />
       <div
-        className="accordion-body"
+        className="accordion-body position-relative"
         style={{ padding: "20px", backgroundColor: "white" }}
       >
-        {/* PDF Header */}
-        <div className="d-flex align-items-center justify-content-center mb-4">
-          <img
-            src="/assets/img/download-img.png"
-            alt="School Logo"
-            style={{ height: "80px", marginRight: "20px" }}
-          />
-          <div>
-            <h2>Whizlancer International School</h2>
-            <p className="text-center">Gorakhpur Uttar Pradesh</p>
+        <div className="container mt-4">
+          {/* School Header */}
+          <h2 className="text-uppercase text-center fw-bold">
+            Uday Narayan Sikshan Sansthan
+          </h2>
+          {/* School Info Section */}
+          <div className="d-flex flex-column justify-content-center mb-4">
+            <div className="text-center">
+              <p className="mb-0">Dharoli, Chawli</p>
+              <p className="mb-0 fst-italic">
+                Affiliated to CBSE Board / Affiliation No: 2512A4S200
+              </p>
+              <p className="mb-0 fst-italic">
+                Phone: +91 8808498469 | Email: info@yourschoolname.com
+              </p>
+              <p className="mb-0 fst-italic">
+                Visit: www.yourschoolwebsite.com
+              </p>
+            </div>
+            <div className="text-center mt-4">
+              <h3>Academic Report</h3>
+              <p className="mt-2">Academic Session: 2019-2020</p>
+            </div>
           </div>
         </div>
+
+        {/* Divider Line */}
+        <hr className="border-dark border-2 mt-2" />
 
         {/* Student Info */}
         <div className="d-flex align-items-center justify-content-between">
@@ -57,56 +131,93 @@ const PdfTemplate1 = ({
               <strong className="fw-bold">Father's Mobile:</strong>{" "}
               {studentItem.phone_num}
             </div>
-            <div></div>
           </div>
         </div>
 
         <hr />
-        {/* Table */}
+
         {/* Table */}
         <div className="table-responsive">
           <table className="table">
             <thead className="thead-light">
               <tr>
                 <th>Subject</th>
-                <th>Max Marks</th>
-                <th>Min Marks</th>
-                <th>Marks Obtained</th>
+                <th colSpan={2} className="text-center">
+                  Semester 1
+                </th>
+                <th colSpan={2} className="text-center border-end">
+                  Semester 2
+                </th>
+                <th>Total Marks</th>
                 <th>Grade</th>
-                <th className="text-end">Result</th>
+                <th>Result</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th>Max Marks</th>
+                <th>Marks Obtained</th>
+                <th>Max Marks</th>
+                <th>Marks Obtained</th>
+                <th></th>
+                <th></th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {exam.subjects.map((subject: any, subIndex: number) => (
-                <tr key={subIndex}>
-                  <td>{subject.subject_name}</td>
-                  <td>{subject.max_mark}</td>
-                  <td>{subject.min_mark}</td>
-                  <td>{subject.mark_obtained}</td>
-                  <td className="fw-semibold">{subject.grade}</td>
-                  <td className="text-end">
-                    <span
-                      className={`badge d-inline-flex align-items-center ${
-                        subject.result === "Pass"
-                          ? "badge-soft-success"
-                          : "badge-soft-danger"
-                      }`}
-                    >
-                      <i className="ti ti-circle-filled fs-5 me-1" />
-                      {subject.result}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {combinedResults.map((subject: any, subIndex: number) => {
+                const totalMaxMarks =
+                  subject.max_mark_sem1 + subject.max_mark_sem2;
+                const totalMarksObtained =
+                  subject.mark_obtained_sem1 + subject.mark_obtained_sem2;
 
+                const percentage = (
+                  (totalMarksObtained / totalMaxMarks) *
+                  100
+                ).toFixed(2);
+                const status = Number(percentage) >= 33 ? "Pass" : "Fail";
+                const finalGrade =
+                  subject.grade_sem1 === "A+" || subject.grade_sem2 === "A+"
+                    ? "A+"
+                    : "B"; // Example grade logic
+
+                return (
+                  <tr key={subIndex}>
+                    <td>{subject.subject_name}</td>
+                    <td>{subject.max_mark_sem1}</td>
+                    <td>{subject.mark_obtained_sem1}</td>
+                    <td>{subject.max_mark_sem2}</td>
+                    <td>{subject.mark_obtained_sem2}</td>
+                    <td>
+                      {totalMarksObtained} / {totalMaxMarks}
+                    </td>
+                    <td>{finalGrade}</td>
+                    <td className="text-end">
+                      <span
+                        className={`badge d-inline-flex align-items-center ${
+                          status === "Pass"
+                            ? "badge-soft-success"
+                            : "badge-soft-danger"
+                        }`}
+                      >
+                        <i className="ti ti-circle-filled fs-5 me-1" />
+                        {status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
               {/* Totals Row */}
               {(() => {
-                const totalMax = exam.subjects.reduce(
-                  (sum: number, sub: any) => sum + Number(sub.max_mark),
+                const totalMax = combinedResults.reduce(
+                  (sum: number, sub: any) =>
+                    sum + Number(sub.max_mark_sem1) + Number(sub.max_mark_sem2),
                   0
                 );
-                const totalObtained = exam.subjects.reduce(
-                  (sum: number, sub: any) => sum + Number(sub.mark_obtained),
+                const totalObtained = combinedResults.reduce(
+                  (sum: number, sub: any) =>
+                    sum +
+                    Number(sub.mark_obtained_sem1) +
+                    Number(sub.mark_obtained_sem2),
                   0
                 );
                 const percentage = ((totalObtained / totalMax) * 100).toFixed(
@@ -114,15 +225,14 @@ const PdfTemplate1 = ({
                 );
                 const status = Number(percentage) > 33 ? "Pass" : "Fail";
                 return (
-                  <tr className="fw-bold border border-5 ">
-                    <td>Rank:30</td>
-                    <td colSpan={2}>Total:{totalMax}</td>
-
-                    <td>Toatal Obtained:{totalObtained}</td>
-                    <td className="text-end">Per: {percentage}%</td>
+                  <tr className="fw-bold border border-5">
+                    <td>Rank: 30</td>
+                    <td colSpan={2}>Total Marks: {totalMax}</td>
+                    <td>Total Obtained: {totalObtained}</td>
+                    <td className="text-end">Percentage: {percentage}%</td>
                     <td
                       className={`${
-                        status == "Pass" ? "text-success" : "text-danger"
+                        status === "Pass" ? "text-success" : "text-danger"
                       }`}
                     >
                       {status}
@@ -133,16 +243,77 @@ const PdfTemplate1 = ({
             </tbody>
           </table>
         </div>
+        {/* Co-Scholastic */}
+        <div className="mt-4">
+          <strong>CO-SCHOLASTIC : (3 POINT GRADING SCALE A, B, C)</strong>
+          <table className="table table-bordered  mt-2">
+            <tbody>
+              <tr>
+                <td>UNIFORM</td>
+                <td>A</td>
+              </tr>
+              <tr>
+                <td>ACTIVITIES</td>
+                <td>A</td>
+              </tr>
+              <tr>
+                <td>DIGITAL CLASS</td>
+                <td>A</td>
+              </tr>
+              <tr>
+                <td>WRITTEN SKILLS</td>
+                <td>B</td>
+              </tr>
+              <tr>
+                <td>SPEAKING SKILLS</td>
+                <td>C</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div
-          className="mt-3 p-3 border border-warning rounded"
-          style={{ backgroundColor: "#fff8e1" }}
+          className="mt-3 p-3 border rounded"
+          style={{ backgroundColor: "#f5f5f5ff" }}
         >
-          <strong>Disclaimer:</strong> The results displayed above are
-          **provisional** and generated based on the available data. The school
-          reserves the right to make corrections or adjustments if discrepancies
-          are found. This report is for **informational purposes only** and
-          should not be considered as the final official document.
+          {/* Signatures */}
+          <div className="row text-center mt-4 fw-semibold">
+            <div className="col">Sign. of Class Teacher</div>
+            <div className="col">Sign. of Principal</div>
+            <div className="col">Sign. of Manager</div>
+          </div>
+
+          {/* Grading Scale */}
+          <div className="mt-5">
+            <strong>Grading scale for scholastic areas:</strong>
+            <p>Grades are awarded on an 8-point grading scale as follows:</p>
+            <table className="table table-bordered text-center">
+              <thead className="table-light">
+                <tr>
+                  <th>Marks Range (%)</th>
+                  <td>91–100</td>
+                  <td>81–90</td>
+                  <td>71–80</td>
+                  <td>61–70</td>
+                  <td>51–60</td>
+                  <td>41–50</td>
+                  <td>32–40</td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Grade</th>
+                  <td>A+</td>
+                  <td>A</td>
+                  <td>B+</td>
+                  <td>B</td>
+                  <td>C+</td>
+                  <td>C</td>
+                  <td>D</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

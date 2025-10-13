@@ -114,18 +114,18 @@ export default function ExamMarkUpload() {
     }
   }, [exam_name_id, className, section]);
 
-  const handleCheck = (admNo: string, subId: number) => {
-    setMarksData((prev) => ({
-      ...prev,
-      [admNo]: {
-        ...prev[admNo],
-        [subId]: {
-          ...prev[admNo][subId],
-          checked: !prev[admNo][subId].checked,
-        },
-      },
-    }));
-  };
+  // const handleCheck = (admNo: string, subId: number) => {
+  //   setMarksData((prev) => ({
+  //     ...prev,
+  //     [admNo]: {
+  //       ...prev[admNo],
+  //       [subId]: {
+  //         ...prev[admNo][subId],
+  //         checked: !prev[admNo][subId].checked,
+  //       },
+  //     },
+  //   }));
+  // };
 
   const handleMarkChange = (admNo: string, subId: number, value: string) => {
     setMarksData((prev) => ({
@@ -229,8 +229,8 @@ export default function ExamMarkUpload() {
         ),
         minMarks: sub.minMarks,
         maxMarks: sub.maxMarks,
-        checked:
-          marksData[stu.admissionNum]?.[sub.subject_id]?.checked || false,
+        // checked:
+        //   marksData[stu.admissionNum]?.[sub.subject_id]?.checked || false,
       })),
     }));
     const finalPayload = {
@@ -291,10 +291,10 @@ export default function ExamMarkUpload() {
         };
         return (
           <Space>
-            <Checkbox
+            {/* <Checkbox
               checked={current.checked}
               onChange={() => handleCheck(record.admissionNum, sub.subject_id)}
-            />
+            /> */}
             <Input
               type="number"
               style={{ width: 70 }}
@@ -395,7 +395,10 @@ export default function ExamMarkUpload() {
               </div>
             </div>
             {/* /Page Header */} {/* Guardians List */}
-            <div className="dropdown mb-3 me-2 d-flex justify-content-end">
+            <div className="dropdown mb-3 me-2 d-flex justify-content-between mt-3">
+              <div className="text-center pt-2">
+                Class: {className}-({location.state.section}
+              </div>
               <Link
                 to="#"
                 className="btn btn-outline-light bg-white dropdown-toggle"

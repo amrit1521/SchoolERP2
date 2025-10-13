@@ -34,7 +34,7 @@ exports.addTeacher = async (req, res) => {
     }
 
     const sql1 = `
-      INSERT INTO users (firstname, lastname, mobile, email, password, type_id, status)
+      INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     const hashPassword = await bcrypt.hash(data.password, 10);

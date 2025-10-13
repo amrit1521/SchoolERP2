@@ -1,20 +1,25 @@
+import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+import { Link } from "react-router-dom";
 
-import ImageWithBasePath from '../../../core/common/imageWithBasePath'
-import { Link } from 'react-router-dom'
-
-import { paymentType } from '../../../core/common/selectoption/selectoption'
-import { DatePicker } from 'antd'
+import { paymentType } from "../../../core/common/selectoption/selectoption";
+import { DatePicker } from "antd";
 import dayjs from "dayjs";
-import CommonSelect from '../../../core/common/commonSelect'
-import React, { useEffect, useState } from 'react'
-import { addLeave, allFeesGroup, allFeesType, getAllLeaveTypeData, stuFeesSubmit } from '../../../service/api'
-import { toast } from 'react-toastify'
-import { handleModalPopUp } from '../../../handlePopUpmodal';
+import CommonSelect from "../../../core/common/commonSelect";
+import React, { useEffect, useState } from "react";
+import {
+  addLeave,
+  allFeesGroup,
+  allFeesType,
+  getAllLeaveTypeData,
+  stuFeesSubmit,
+} from "../../../service/api";
+import { toast } from "react-toastify";
+import { handleModalPopUp } from "../../../handlePopUpmodal";
 
 type Props = {
   rollnum: number | null;
   onAdd: () => void;
-}
+};
 
 export interface ApplyLeave {
   idOrRollNum: number | null;
@@ -39,8 +44,6 @@ export interface FeesFormData {
 }
 
 const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
-
-
   const [applayLeaveForm, setApplayLeaveForm] = useState<ApplyLeave>({
     idOrRollNum: null,
     leave_type_id: null,
@@ -50,22 +53,25 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     no_of_days: null,
     reason: "",
     leave_date: "",
-  })
+  });
 
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }))
-  }
+    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSelectChange = (name: keyof ApplyLeave, value: string | number) => {
-    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleSelectChange = (
+    name: keyof ApplyLeave,
+    value: string | number
+  ) => {
+    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleDateChange = (name: keyof ApplyLeave, value: string) => {
-    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }))
-  }
+    setApplayLeaveForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const validateLeaveForm = (form: ApplyLeave) => {
     const errors: Record<string, string> = {};
@@ -86,7 +92,6 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       errors.to_date = "To date is required";
     }
 
-
     if (form.from_date && form.to_date) {
       const from = dayjs(form.from_date, "DD MMM YYYY");
       const to = dayjs(form.to_date, "DD MMM YYYY");
@@ -106,20 +111,19 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     if (!form.reason) {
       errors.reason = "Reason is required";
     }
-    setFormErrors(errors)
+    setFormErrors(errors);
     return errors;
   };
 
-
   const handleLeaveSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     const updatedForm = {
       ...applayLeaveForm,
-      idOrRollNum: Number(rollnum)
-    }
+      idOrRollNum: Number(rollnum),
+    };
 
-    const errors = validateLeaveForm(updatedForm)
+    const errors = validateLeaveForm(updatedForm);
 
     if (Object.keys(errors).length > 0) {
       const firstError = Object.values(errors)[0];
@@ -127,12 +131,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       return;
     }
 
-
     try {
-      const { data } = await addLeave(updatedForm)
+      const { data } = await addLeave(updatedForm);
       if (data.success) {
-        onAdd()
-        toast.success(data.message)
+        onAdd();
+        toast.success(data.message);
         setApplayLeaveForm({
           idOrRollNum: null,
           leave_type_id: null,
@@ -142,18 +145,16 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
           no_of_days: null,
           reason: "",
           leave_date: "",
-
-        })
-        handleModalPopUp('apply_leave')
+        });
+        handleModalPopUp("apply_leave");
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleCancelLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     setApplayLeaveForm({
       idOrRollNum: null,
       leave_type_id: null,
@@ -163,11 +164,8 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       no_of_days: null,
       reason: "",
       leave_date: "",
-
-    })
-  }
-
-
+    });
+  };
 
   // add fees -------------------------------------------------------------
 
@@ -183,7 +181,6 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   });
   const [errors, setErrors] = useState<Partial<FeesFormData>>({});
 
-
   const handleFeesInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -193,14 +190,17 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       ...prev,
       [name]:
         type === "checkbox"
-          ? (e.target as HTMLInputElement).checked ? "1" : "0"
+          ? (e.target as HTMLInputElement).checked
+            ? "1"
+            : "0"
           : value,
     }));
   };
 
-
-
-  const handleFeesSelectChange = (name: keyof FeesFormData, value: string | number) => {
+  const handleFeesSelectChange = (
+    name: keyof FeesFormData,
+    value: string | number
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -215,8 +215,8 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   };
 
   const cancelSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    handleModalPopUp('add_fees_collect')
+    e.preventDefault();
+    handleModalPopUp("add_fees_collect");
     setFormData({
       student_rollnum: 0,
       feesGroup: "",
@@ -226,9 +226,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       paymentType: "",
       paymentRef: "",
       notes: "",
-    })
+    });
     setErrors({});
-  }
+  };
 
   const validateForm = () => {
     const newErrors: Partial<FeesFormData> = {};
@@ -236,16 +236,19 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     if (!formData.feesGroup) newErrors.feesGroup = "Fees Group is required";
     if (!formData.feesType) newErrors.feesType = "Fees Type is required";
     if (!formData.amount) newErrors.amount = "Amount is required";
-    else if (isNaN(Number(formData.amount))) newErrors.amount = "Amount must be a number";
+    else if (isNaN(Number(formData.amount)))
+      newErrors.amount = "Amount must be a number";
 
-    if (!formData.collectionDate) newErrors.collectionDate = "Collection Date is required";
-    if (!formData.paymentType) newErrors.paymentType = "Payment Type is required";
-    if (!formData.paymentRef) newErrors.paymentRef = "Payment Reference is required";
+    if (!formData.collectionDate)
+      newErrors.collectionDate = "Collection Date is required";
+    if (!formData.paymentType)
+      newErrors.paymentType = "Payment Type is required";
+    if (!formData.paymentRef)
+      newErrors.paymentRef = "Payment Reference is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handeFeesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,11 +258,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     }
 
     try {
-      const { data } = await stuFeesSubmit(formData)
+      const { data } = await stuFeesSubmit(formData);
       if (data.success) {
-        toast.success(data.message)
-        handleModalPopUp('add_fees_collect')
-        onAdd()
+        toast.success(data.message);
+        handleModalPopUp("add_fees_collect");
+        onAdd();
         setFormData({
           student_rollnum: 0,
           feesGroup: "",
@@ -269,15 +272,14 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
           paymentType: "",
           paymentRef: "",
           notes: "",
-        })
+        });
         setErrors({}); // reset errors
       }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     }
-  }
-
+  };
 
   // sir ke kehne per comment kiya h maine ye
   // interface StudentForFees {
@@ -316,42 +318,72 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   // }, [id])
   // sir ke kehne per comment kiya h maine ye
 
-
-  const [feesGroupOptions, setFeesGroupOptions] = useState<{ value: number; label: string }[]>([]);
-  const [feesTypeOptions, setFeesTypeOptions] = useState<{ value: number; label: string }[]>([]);
-  const [leaveOptions, setLeaveOptions] = useState<{ value: number; label: string }[]>([]);
-  const [typeResult,setTypeResult] = useState<any[]>([]);
-  const [groupResult,setGroupResult] = useState<any[]>([]);
-
+  const [feesGroupOptions, setFeesGroupOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [feesTypeOptions, setFeesTypeOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [leaveOptions, setLeaveOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [typeResult, setTypeResult] = useState<any[]>([]);
+  const [groupResult, setGroupResult] = useState<any[]>([]);
 
   const fetchFeesOptions = async () => {
-
     try {
-      const [groupRes, typeRes] = await Promise.all([allFeesGroup(), allFeesType()]);
+      const [groupRes, typeRes] = await Promise.all([
+        allFeesGroup(),
+        allFeesType(),
+      ]);
       if (groupRes.data.success) {
-        console.log(groupRes,typeRes);
+        console.log(groupRes, typeRes);
         setGroupResult(groupRes.data.feesGroups);
-        setFeesGroupOptions(groupRes.data.feesGroups.map((g: any) => ({ value: g.id, label: g.feesGroup })));
+        setFeesGroupOptions(
+          groupRes.data.feesGroups.map((g: any) => ({
+            value: g.id,
+            label: g.feesGroup,
+          }))
+        );
       }
       if (typeRes.data.success) {
         setTypeResult(typeRes.data.feesTypes);
-        setFeesTypeOptions(typeRes.data.feesTypes.map((t: any) => ({ value: t.id, label: t.name })));
+        setFeesTypeOptions(
+          typeRes.data.feesTypes.map((t: any) => ({
+            value: t.id,
+            label: t.name,
+          }))
+        );
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message || 'Failed to load fees options.');
+      toast.error(
+        error?.response?.data?.message || "Failed to load fees options."
+      );
     }
   };
-  useEffect(()=>{
-    setFeesTypeOptions(typeResult.filter(feetype => feetype.feesGroup === groupResult.filter((group:any)=>group.id === formData.feesGroup)[0].feesGroup).map((t: any) => ({ value: t.id, label: t.name })));
-  },[formData.feesGroup]);
-
+  useEffect(() => {
+    setFeesTypeOptions(
+      typeResult
+        .filter(
+          (feetype) =>
+            feetype.feesGroup ===
+            groupResult.filter(
+              (group: any) => group.id === formData.feesGroup
+            )[0].feesGroup
+        )
+        .map((t: any) => ({ value: t.id, label: t.name }))
+    );
+  }, [formData.feesGroup]);
 
   const fetchLeaveTypes = async () => {
     try {
       const { data } = await getAllLeaveTypeData();
       if (data.success) {
-        const options = data.data.map((item: any) => ({ value: item.id, label: item.name }));
+        const options = data.data.map((item: any) => ({
+          value: item.id,
+          label: item.name,
+        }));
         setLeaveOptions(options);
       }
     } catch (error) {
@@ -359,16 +391,13 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     }
   };
 
-
   useEffect(() => {
-    fetchFeesOptions()
-    fetchLeaveTypes()
-  }, [])
+    fetchFeesOptions();
+    fetchLeaveTypes();
+  }, []);
 
   return (
     <>
-
-
       {/* Add Fees Collect */}
       <div className="modal fade" id="add_fees_collect">
         <div className="modal-dialog modal-dialog-centered  modal-lg">
@@ -449,15 +478,22 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                         className="select"
                         options={feesGroupOptions}
                         value={formData.feesGroup}
-                        onChange={(option) =>
-                        {
-                          console.log(option,formData.feesGroup,feesGroupOptions);
-                          return handleFeesSelectChange("feesGroup", option ? option.value : "")
-                        }
-                        }
+                        onChange={(option) => {
+                          console.log(
+                            option,
+                            formData.feesGroup,
+                            feesGroupOptions
+                          );
+                          return handleFeesSelectChange(
+                            "feesGroup",
+                            option ? option.value : ""
+                          );
+                        }}
                       />
                       {errors.feesGroup && (
-                        <small className="text-danger">{errors.feesGroup}</small>
+                        <small className="text-danger">
+                          {errors.feesGroup}
+                        </small>
                       )}
                     </div>
                   </div>
@@ -471,7 +507,10 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                         options={feesTypeOptions}
                         value={formData.feesType}
                         onChange={(option) =>
-                          handleFeesSelectChange("feesType", option ? option.value : "")
+                          handleFeesSelectChange(
+                            "feesType",
+                            option ? option.value : ""
+                          )
                         }
                       />
                       {errors.feesType && (
@@ -515,7 +554,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                           onChange={(dateString) =>
                             handleFeesDateChange(
                               "collectionDate",
-                              Array.isArray(dateString) ? dateString[0] : dateString
+                              Array.isArray(dateString)
+                                ? dateString[0]
+                                : dateString
                             )
                           }
                         />
@@ -524,7 +565,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                         </span>
                       </div>
                       {errors.collectionDate && (
-                        <small className="text-danger">{errors.collectionDate}</small>
+                        <small className="text-danger">
+                          {errors.collectionDate}
+                        </small>
                       )}
                     </div>
                   </div>
@@ -538,11 +581,16 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                         options={paymentType}
                         value={formData.paymentType}
                         onChange={(option) =>
-                          handleFeesSelectChange("paymentType", option ? option.value : "")
+                          handleFeesSelectChange(
+                            "paymentType",
+                            option ? option.value : ""
+                          )
                         }
                       />
                       {errors.paymentType && (
-                        <small className="text-danger">{errors.paymentType}</small>
+                        <small className="text-danger">
+                          {errors.paymentType}
+                        </small>
                       )}
                     </div>
                   </div>
@@ -560,7 +608,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                         onChange={handleFeesInputChange}
                       />
                       {errors.paymentRef && (
-                        <small className="text-danger">{errors.paymentRef}</small>
+                        <small className="text-danger">
+                          {errors.paymentRef}
+                        </small>
                       )}
                     </div>
                   </div>
@@ -605,7 +655,10 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
               </div>
 
               <div className="modal-footer">
-                <button className="btn btn-light me-2" onClick={(e) => cancelSubmit(e)}>
+                <button
+                  className="btn btn-light me-2"
+                  onClick={(e) => cancelSubmit(e)}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
@@ -613,12 +666,10 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       </div>
       {/* Add Fees Collect */}
-
 
       {/* Delete Modal */}
       <div className="modal fade" id="delete-modal">
@@ -631,8 +682,8 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone once
-                  you delete.
+                  You want to delete all the marked items, this cant be undone
+                  once you delete.
                 </p>
                 <div className="d-flex justify-content-center">
                   <Link
@@ -642,7 +693,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                   >
                     Cancel
                   </Link>
-                  <Link to="#" className="btn btn-danger" data-bs-dismiss="modal">
+                  <Link
+                    to="#"
+                    className="btn btn-danger"
+                    data-bs-dismiss="modal"
+                  >
                     Yes, Delete
                   </Link>
                 </div>
@@ -672,7 +727,10 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
               <div className="modal-body">
                 <div className="student-detail-info">
                   <span className="student-img">
-                    <ImageWithBasePath src="assets/img/students/student-01.jpg" alt="Img" />
+                    <ImageWithBasePath
+                      src="assets/img/students/student-01.jpg"
+                      alt="Img"
+                    />
                   </span>
                   <div className="name-info">
                     <h6>
@@ -705,7 +763,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                 </div>
               </div>
               <div className="modal-footer">
-                <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                <Link
+                  to="#"
+                  className="btn btn-light me-2"
+                  data-bs-dismiss="modal"
+                >
                   Cancel
                 </Link>
               </div>
@@ -714,6 +776,76 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
         </div>
         {/* /Login Details */}
       </>
+
+      <>
+        {/* result pdf Details */}
+        <div className="modal fade" id="Pdf_template">
+          <div className="modal-dialog modal-dialog-centered  modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Choose Result Template</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="student-detail-info">
+                  <span className="student-img">
+                    {/* <ImageWithBasePath
+                src="assets/img/students/student-01.jpg"
+                alt="Img"
+              /> */}
+                  </span>
+                  <div className="name-info">
+                    <h6>
+                      Janet <span>III, A</span>
+                    </h6>
+                  </div>
+                </div>
+                <div className="table-responsive custom-table no-datatable_length">
+                  <table className="table datanew">
+                    <thead className="thead-light">
+                      <tr>
+                        <th>User Type</th>
+                        <th>User Name</th>
+                        <th>Password </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Parent</td>
+                        <td>parent53</td>
+                        <td>parent@53</td>
+                      </tr>
+                      <tr>
+                        <td>Student</td>
+                        <td>student20</td>
+                        <td>stdt@53</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <Link
+                  to="#"
+                  className="btn btn-light me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* result pdf Details */}
+      </>
+
       {/* Apply Leave */}
       <div className="modal fade" id="apply_leave">
         <div className="modal-dialog modal-dialog-centered">
@@ -739,11 +871,24 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                     <DatePicker
                       className="form-control datetimepicker"
                       format="DD MMM YYYY"
-                      value={applayLeaveForm.leave_date ? dayjs(applayLeaveForm.leave_date, "DD MMM YYYY") : null}
+                      value={
+                        applayLeaveForm.leave_date
+                          ? dayjs(applayLeaveForm.leave_date, "DD MMM YYYY")
+                          : null
+                      }
                       placeholder="Select Date"
-                      onChange={(date) => handleDateChange("leave_date", date ? dayjs(date).format("DD MMM YYYY") : "")}
+                      onChange={(date) =>
+                        handleDateChange(
+                          "leave_date",
+                          date ? dayjs(date).format("DD MMM YYYY") : ""
+                        )
+                      }
                     />
-                    {formErrors.leave_date && <small className="text-danger">{formErrors.leave_date}</small>}
+                    {formErrors.leave_date && (
+                      <small className="text-danger">
+                        {formErrors.leave_date}
+                      </small>
+                    )}
                   </div>
 
                   {/* Leave Type */}
@@ -753,9 +898,18 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                       className="select"
                       options={leaveOptions}
                       value={applayLeaveForm.leave_type_id}
-                      onChange={(opt) => handleSelectChange("leave_type_id", opt ? opt.value : "")}
+                      onChange={(opt) =>
+                        handleSelectChange(
+                          "leave_type_id",
+                          opt ? opt.value : ""
+                        )
+                      }
                     />
-                    {formErrors.leave_type_id && <small className="text-danger">{formErrors.leave_type_id}</small>}
+                    {formErrors.leave_type_id && (
+                      <small className="text-danger">
+                        {formErrors.leave_type_id}
+                      </small>
+                    )}
                   </div>
 
                   {/* From Date */}
@@ -764,11 +918,24 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                     <DatePicker
                       className="form-control datetimepicker"
                       format="DD MMM YYYY"
-                      value={applayLeaveForm.from_date ? dayjs(applayLeaveForm.from_date, "DD MMM YYYY") : null}
+                      value={
+                        applayLeaveForm.from_date
+                          ? dayjs(applayLeaveForm.from_date, "DD MMM YYYY")
+                          : null
+                      }
                       placeholder="Select Date"
-                      onChange={(date) => handleDateChange("from_date", date ? dayjs(date).format("DD MMM YYYY") : "")}
+                      onChange={(date) =>
+                        handleDateChange(
+                          "from_date",
+                          date ? dayjs(date).format("DD MMM YYYY") : ""
+                        )
+                      }
                     />
-                    {formErrors.from_date && <small className="text-danger">{formErrors.from_date}</small>}
+                    {formErrors.from_date && (
+                      <small className="text-danger">
+                        {formErrors.from_date}
+                      </small>
+                    )}
                   </div>
 
                   {/* To Date */}
@@ -777,11 +944,24 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                     <DatePicker
                       className="form-control datetimepicker"
                       format="DD MMM YYYY"
-                      value={applayLeaveForm.to_date ? dayjs(applayLeaveForm.to_date, "DD MMM YYYY") : null}
+                      value={
+                        applayLeaveForm.to_date
+                          ? dayjs(applayLeaveForm.to_date, "DD MMM YYYY")
+                          : null
+                      }
                       placeholder="Select Date"
-                      onChange={(date) => handleDateChange("to_date", date ? dayjs(date).format("DD MMM YYYY") : "")}
+                      onChange={(date) =>
+                        handleDateChange(
+                          "to_date",
+                          date ? dayjs(date).format("DD MMM YYYY") : ""
+                        )
+                      }
                     />
-                    {formErrors.to_date && <small className="text-danger">{formErrors.to_date}</small>}
+                    {formErrors.to_date && (
+                      <small className="text-danger">
+                        {formErrors.to_date}
+                      </small>
+                    )}
                   </div>
 
                   {/* Leave Days */}
@@ -806,7 +986,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                           type="radio"
                           name="leave_day_type"
                           value="first_half"
-                          checked={applayLeaveForm.leave_day_type === "first_half"}
+                          checked={
+                            applayLeaveForm.leave_day_type === "first_half"
+                          }
                           onChange={handleChange}
                         />
                         <span className="checkmark" />
@@ -818,14 +1000,20 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                           type="radio"
                           name="leave_day_type"
                           value="second_half"
-                          checked={applayLeaveForm.leave_day_type === "second_half"}
+                          checked={
+                            applayLeaveForm.leave_day_type === "second_half"
+                          }
                           onChange={handleChange}
                         />
                         <span className="checkmark" />
                         Second Half
                       </label>
                     </div>
-                    {formErrors.leave_day_type && <small className="text-danger">{formErrors.leave_day_type}</small>}
+                    {formErrors.leave_day_type && (
+                      <small className="text-danger">
+                        {formErrors.leave_day_type}
+                      </small>
+                    )}
                   </div>
 
                   {/* No of Days */}
@@ -838,7 +1026,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                       value={applayLeaveForm.no_of_days || ""}
                       onChange={handleChange}
                     />
-                    {formErrors.no_of_days && <small className="text-danger">{formErrors.no_of_days}</small>}
+                    {formErrors.no_of_days && (
+                      <small className="text-danger">
+                        {formErrors.no_of_days}
+                      </small>
+                    )}
                   </div>
 
                   {/* Reason */}
@@ -851,7 +1043,9 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                       value={applayLeaveForm.reason}
                       onChange={handleChange}
                     />
-                    {formErrors.reason && <small className="text-danger">{formErrors.reason}</small>}
+                    {formErrors.reason && (
+                      <small className="text-danger">{formErrors.reason}</small>
+                    )}
                   </div>
                 </div>
               </div>
@@ -870,15 +1064,12 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       </div>
       {/* /Apply Leave */}
-
     </>
+  );
+};
 
-  )
-}
-
-export default StudentModals
+export default StudentModals;

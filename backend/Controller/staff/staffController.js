@@ -41,7 +41,7 @@ exports.addStaff = async (req, res) => {
     // 🔹 Insert into users
     const [userRes] = await connection.query(
       `INSERT INTO users (
-        firstname, lastname, mobile, email, password, type_id, status, remark, created_at, updated_at
+        firstname, lastname, mobile, email, password, roll_id, status, remark, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.firstname,
@@ -214,7 +214,7 @@ exports.fetchSpeDetailsAllStaff = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.type_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
     `;
 
     const [rows] = await db.query(sql);
@@ -249,7 +249,7 @@ exports.filterSpeDetailsAllStaff = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.type_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
       WHERE sf.department =? AND sf.designation=?
     `;
 
@@ -324,7 +324,7 @@ exports.fetchSpecficStaffDeatils = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.type_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ?
     `;
@@ -423,7 +423,7 @@ exports.fetchStaffDataForEditById = async (req, res) => {
       LEFT JOIN leaves_info le ON sf.user_id = le.user_id
       LEFT JOIN hostel_info hs ON sf.user_id = hs.user_id
       LEFT JOIN transport_info tp ON sf.user_id = tp.user_id 
-      LEFT JOIN users u ON sf.user_id = u.id AND u.type_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ? AND u.remark = 'staff'
       LIMIT 1

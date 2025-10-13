@@ -4,7 +4,11 @@ import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
 import { useEffect, useState } from "react";
-import { getExamResult, specificStudentData1 } from "../../../../service/api";
+import {
+  getAllExamNameForAStud,
+  getExamResult,
+  specificStudentData1,
+} from "../../../../service/api";
 import html2pdf from "html2pdf.js";
 import {
   PdfTemplate1,
@@ -16,6 +20,7 @@ import {
   PdfTemplate7,
 } from "./pdfTemplate";
 import { Select } from "antd";
+import { toast } from "react-toastify";
 const StudentResult = () => {
   const routes = all_routes;
   const { rollnum } = useParams<{ rollnum: string }>();
@@ -27,6 +32,10 @@ const StudentResult = () => {
   const [selectedTemplates, setSelectedTemplates] = useState<{
     [key: string]: string;
   }>({});
+  const [examOptions, setExamOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [selectedExams, setSelectedExams] = useState<string[]>([]);
   const TemplateType = [
     { value: "type1", label: "Template Type 1" },
     { value: "type2", label: "Template Type 2" },
@@ -78,7 +87,20 @@ const StudentResult = () => {
     if (!rollnum) return;
     try {
       const { data } = await getExamResult(rollnum);
+      const result = await getAllExamNameForAStud(rollnum);
+      if (result.data.success && Array.isArray(result.data.data)) {
+        setExamOptions(
+          result.data.data.map((e: any) => ({
+            value: e.exam_name_id,
+            label: e.examName,
+          }))
+        );
+      } else {
+        setExamOptions([]);
+        toast.warning("No exams found for this class & section.");
+      }
       if (data.success) {
+        console.log(data.data);
         setResults(data.data);
       }
     } catch (error) {
@@ -88,7 +110,6 @@ const StudentResult = () => {
 
   useEffect(() => {
     setToken(localStorage.getItem("token"));
-
     if (rollnum) {
       fetchStudent();
       fetchResult(Number(rollnum));
@@ -128,11 +149,39 @@ const StudentResult = () => {
       });
   };
 
+  const getCombinedResults = (exams: any[]) => {
+    const semester1 = exams.find((exam) => exam.exam_name === "Semester1");
+    const semester2 = exams.find((exam) => exam.exam_name === "Semester2");
+    const combinedSubjects = semester1.subjects.map((subject1: any) => {
+      const correspondingSubject2 = semester2
+        ? semester2.subjects.find(
+            (subject2: any) => subject1.subject_name === subject2.subject_name
+          )
+        : null;
+      return {
+        subject_name: subject1.subject_name,
+        max_mark_sem1: subject1.max_mark,
+        max_mark_sem2: correspondingSubject2
+          ? correspondingSubject2.max_mark
+          : 0,
+        mark_obtained_sem1: subject1.mark_obtained,
+        mark_obtained_sem2: correspondingSubject2
+          ? correspondingSubject2.mark_obtained
+          : 0,
+        grade_sem1: subject1.grade,
+        grade_sem2: correspondingSubject2 ? correspondingSubject2.grade : "",
+        result_sem1: subject1.result,
+        result_sem2: correspondingSubject2 ? correspondingSubject2.result : "",
+      };
+    });
+    console.log("combined: ", combinedSubjects);
+
+    return combinedSubjects;
+  };
   // console.log(results[0].exams)
 
   return (
     <>
-      {/* Page Wrapper */}
       <div className="page-wrapper">
         <div className="content">
           <div className="row">
@@ -258,13 +307,54 @@ const StudentResult = () => {
                           className="accordions-items-seperate"
                           id="accordionExample"
                         >
+                          <div className="me-3 d-flex gap-2">
+                            <Select
+                              options={examOptions}
+                              mode="multiple"
+                              className="Select"
+                              placeholder="Choose Exams"
+                              value={selectedExams}
+                              onChange={(value) => setSelectedExams(value)}
+                              style={{
+                                width: "25%",
+                                height: "40px",
+                              }}
+                            />
+                            <Link
+                              to="#"
+                              className="btn btn-light me-2 mb-2"
+                              data-bs-toggle="modal"
+                              data-bs-target="#Pdf_template"
+                            >
+                              <i className="ti ti-lock me-2" />
+                              Choose Template
+                            </Link>
+                          </div>
                           {results && results.length > 0 ? (
-                            results.map((studentItem: any) =>
-                              studentItem.exams.map(
+                            results.map((studentItem: any) => {
+                              const combinedResults = studentItem.exams
+                                ? getCombinedResults(studentItem.exams)
+                                : [];
+                              console.log(
+                                "combined Result: ",
+                                combinedResults,
+                                studentItem
+                              );
+                              {
+                                renderTemplate("PdfTemplate1", {
+                                  exam: combinedResults,
+                                });
+                              }
+                              return studentItem.exams.map(
                                 (exam: any, index: number) => {
                                   const examKey = `${studentItem.rollnum}-${index}`;
                                   const selectedType =
                                     selectedTemplates[examKey] || "type1";
+
+                                  // Combine Semester 1 and Semester 2 results for this student
+                                  // const combinedResults = exam.exams
+                                  //   ? getCombinedResults(exam.exams)
+                                  //   : [];
                                   return (
                                     <div
                                       className="accordion-item"
@@ -284,8 +374,9 @@ const StudentResult = () => {
                                           </span>
                                           {exam.exam_name}
                                         </button>
+
                                         <div className="me-3">
-                                          <Select
+                                          {/* <Select
                                             options={TemplateType}
                                             className="Select"
                                             placeholder="choose Template"
@@ -296,30 +387,30 @@ const StudentResult = () => {
                                                 [examKey]: value,
                                               }))
                                             }
-                                          />
+                                          /> */}
                                         </div>
-                                        <button
-                                          className="btn btn-success btn-sm ms-2"
-                                          onClick={() =>
-                                            downloadPDF(`collapse${examKey}`)
-                                          }
-                                        >
-                                          Download PDF
-                                        </button>
+                                        {/* <button
+                                        className="btn btn-success btn-sm ms-2"
+                                        onClick={() =>
+                                          downloadPDF(`collapse${examKey}`)
+                                        }
+                                      >
+                                        Download PDF
+                                      </button> */}
                                       </h2>
                                       {renderTemplate(selectedType, {
                                         studentItem,
                                         index,
-                                        exam,
+                                        exam: studentItem.exams,
                                       })}
                                     </div>
                                   );
                                 }
-                              )
-                            )
+                              );
+                            })
                           ) : (
                             <div className="my-5 text-center fw-semibold">
-                              Exam Not Schedule..
+                              Exam Not Scheduled..
                             </div>
                           )}
                         </div>

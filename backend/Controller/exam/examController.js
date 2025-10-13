@@ -894,6 +894,35 @@ exports.addExamResult2 = async (req, res) => {
   }
 };
 
+exports.examNameForStudentResults = async (req,res) =>{
+  const {rollNum} = req.params;
+  try{
+    const sql = `
+    SELECT er.exam_name_id, er.roll_num, en.examName
+    FROM exam_result er
+    JOIN examName en ON er.exam_name_id = en.id
+    WHERE er.roll_num = ?
+    GROUP BY er.exam_name_id, er.roll_num;
+    `;
+    const [rows] = await db.query(sql, [rollNum]);
+    if (!rows.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No results found!" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Exam Name fetched successfully!",
+      data: rows,
+    });
+  }catch(error){
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+}
+
 exports.getExamResultSpeStudents = async (req, res) => {
   const { rollnum } = req.params;
   try {
