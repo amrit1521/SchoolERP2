@@ -86,7 +86,7 @@ export const deleteSubject = (id: number) =>
   api.delete(`/subject/deletesubject/${id}`);
 export const speSubject = (id: number) => api.get(`/subject/spesubject/${id}`);
 export const editSubject = (data: object, id: number) =>
-  api.put(`/subject/editsubject/${id}`, data);
+  api.put(`/subject/editsubject/${id}`, data); 
 
 // table routes-----------------------------
 export const addTimeTable = (data: object) =>
@@ -126,6 +126,10 @@ export const markAttendance = (data: object) =>
   api.post("/attendance/markstuattendance", data);
 export const getStuAttendanceData = (rollnum: any) =>
   api.get(`/attendance/getstuattendance/${rollnum}`);
+
+//teacher attendance ---------------------
+export const allTeacherForAttendance = () => api.get('/teacher/allteacherforattendance');
+export const markTeacherAttendance = (data:any) => api.post('/attendance/markteacherattendance',data);
 
 // student fees ------------------------------
 export const studentDetForFees = (id: any) =>

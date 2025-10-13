@@ -9,6 +9,7 @@ function safeJSON(value) {
 }
 
 async function getUserId(teacher_id) {
+  console.log('teacher_id: ',teacher_id);
   const [res] = await db.query(`SELECT user_id FROM teachers WHERE teacher_id=?`, [teacher_id])
   return res[0].user_id
 }
@@ -190,6 +191,39 @@ exports.allTeachers = async (req, res) => {
     `;
 
     const [rows] = await db.query(sql);
+    return res.status(200).json({
+      success: true,
+      message: "All teachers fetched successfully",
+      data: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+exports.allTeachersForAttendance = async (req, res) => {
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
+        t.section,
+        t.class,
+        t.img_src, 
+        u.firstname,
+        u.lastname
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id 
+    `;
+
+    const [rows] = await db.query(sql);
+    console.log(rows);
     return res.status(200).json({
       success: true,
       message: "All teachers fetched successfully",
