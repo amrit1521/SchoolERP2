@@ -16,4 +16,7 @@ router.get('/getstaffattendance/:staffid' , attendanaceController.getStaffAttend
 // teacher attendance
 router.get('/getteacherattendance/:teacher_id' , attendanaceController.getTeacherAttendanceData)
 
+router.post('/markteacherattendance' , attendanaceController.markTeacherAttendance)
+
+
 module.exports = router

@@ -13,6 +13,7 @@ import {
   PdfTemplate4,
   PdfTemplate5,
   PdfTemplate6,
+  PdfTemplate7,
 } from "./pdfTemplate";
 import { Select } from "antd";
 const StudentResult = () => {
@@ -33,6 +34,7 @@ const StudentResult = () => {
     { value: "type4", label: "Template Type 4" },
     { value: "type5", label: "Template Type 5" },
     { value: "type6", label: "Template Type 6" },
+    { value: "type7", label: "Template Type 7" },
   ];
 
   const renderTemplate = (type: string, props: any) => {
@@ -49,6 +51,8 @@ const StudentResult = () => {
         return <PdfTemplate5 {...props} />;
       case "type6":
         return <PdfTemplate6 {...props} />;
+      case "type7":
+        return <PdfTemplate7 />;
       default:
         return <PdfTemplate1 {...props} />;
     }

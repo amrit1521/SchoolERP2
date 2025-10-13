@@ -5,6 +5,10 @@ const upload = require('../../multer/multer')
 const router = express.Router()
 
 
+
+
+router.get('/allteacherforattendance',teacherController.allTeachersForAttendance)
+
 router.post('/addteacher', teacherController.addTeacher)
 router.get('/allteacher', teacherController.allTeachers)
 router.get('/teachersforoption', teacherController.allTeachersForOption)
@@ -21,6 +25,5 @@ router.get('/leavedata/:teacher_id', teacherController.getTeacherLeaveData)
 // upload file and delete
 router.post('/upload', upload.single('teacherfile'), fileController.uploadFile);
 router.delete('/deletefile/:id', fileController.deleteFile)
-
 
 module.exports = router
