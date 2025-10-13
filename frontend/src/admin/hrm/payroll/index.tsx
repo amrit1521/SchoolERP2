@@ -1,7 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 import type { TableData } from "../../../core/data/interface";
-import { payroll } from "../../../core/data/json/pay-roll";
+// import { payroll } from "../../../core/data/json/pay-roll";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
@@ -12,84 +12,139 @@ import {
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
+import { getAllapplySalaryDetail } from "../../../service/salaryPayment";
+import { Spinner } from "../../../spinner";
+
+export interface SalaryApplication {
+  id: number;
+  employee_id: number;
+  name: string;
+  department: string;
+  designation: string;
+  phone: number;
+  status: "0" | "1";
+  salary_month: string;
+  amount: string;
+}
+
+
+
+
 
 const Payroll = () => {
-  const data = payroll;
+  // const data = payroll;
+
+
+  const [payrollData, setPayRollData] = useState<SalaryApplication[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchPayRoll = async () => {
+
+    setLoading(true)
+
+    await new Promise((res) => setTimeout(res, 400))
+    try {
+
+      const { data } = await getAllapplySalaryDetail()
+      if (data.success) {
+        setPayRollData(data.data)
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPayRoll();
+  }, [])
+
+  const tableData = payrollData.map((item) => ({
+    key: item.id,
+    id: item.id,
+    name: item.name,
+    department: item.department,
+    designation: item.designation,
+    phone: item.phone,
+    amount: item.amount,
+    status: item.status
+  }))
+
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: (record: any) => (
-        <>
-          <Link to="#" className="link-primary">
-            {record.id}
-          </Link>
-        </>
+      render: (id: number) => (
+        <Link to="#" className="link-primary">
+          {id}
+        </Link>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
-
     {
       title: "Name",
       dataIndex: "name",
+      render: (text: string) => <span className="text-capitalize">{text}</span>,
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
     {
       title: "Department",
       dataIndex: "department",
-      sorter: (a: TableData, b: TableData) =>
-        a.department.length - b.department.length,
+      render: (text: string) => <span className="text-capitalize">{text}</span>,
+      sorter: (a: TableData, b: TableData) => a.department.length - b.department.length,
     },
     {
       title: "Designation",
       dataIndex: "designation",
-      sorter: (a: TableData, b: TableData) =>
-        a.designation.length - b.designation.length,
+      render: (text: string) => <span className="text-capitalize">{text}</span>,
+      sorter: (a: TableData, b: TableData) => a.designation.length - b.designation.length,
     },
     {
       title: "Phone",
       dataIndex: "phone",
-      sorter: (a: TableData, b: TableData) => a.phone.length - b.phone.length,
+      sorter: (a: TableData, b: TableData) => a.phone.length - b.phone.length, 
     },
     {
       title: "Amount",
       dataIndex: "amount",
-      sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
+      sorter: (a: TableData, b: TableData) => Number(a.amount) - Number(b.amount),
     },
     {
       title: "Status",
       dataIndex: "status",
-      render: (text: string) => (
-        <>
-          {text === "Paid" ? (
-            <span className="badge badge-soft-success d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          ) : (
-            <span className="badge badge-soft-warning d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          )}
-        </>
-      ),
-      sorter: (a: any, b: any) => a.status.length - b.status.length,
+      render: (text: string) =>
+        text === "1" ? (
+          <span className="badge badge-soft-success d-inline-flex align-items-center">
+            <i className="ti ti-circle-filled fs-5 me-1"></i>
+            Paid
+          </span>
+        ) : (
+          <span className="badge badge-soft-warning d-inline-flex align-items-center">
+            <i className="ti ti-circle-filled fs-5 me-1"></i>
+            Generated
+          </span>
+        ),
+      sorter: (a: TableData, b: TableData) => a.status.localeCompare(b.status),
     },
     {
-      title: "",
+      title: "Action",
       dataIndex: "details",
-      render: (text: string) => (
-        <>
+      render: (_: any, record: TableData) =>
+        record.status === "1" ? (
           <Link to="#" className="btn btn-light add-fee">
-            {text}
+            View Payslip
           </Link>
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) =>
-        a.details.length - b.details.length,
+        ) : (
+          <Link to="#" className="btn btn-light add-fee">
+            Pay
+          </Link>
+        ),
+      sorter: false, // Cannot sort on action buttons
     },
   ];
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -97,6 +152,8 @@ const Payroll = () => {
     }
   };
   const routes = all_routes;
+
+
   return (
     <div>
       <>
@@ -122,7 +179,7 @@ const Payroll = () => {
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-              <TooltipOption />
+                <TooltipOption />
               </div>
             </div>
             {/* Page Header*/}
@@ -243,7 +300,7 @@ const Payroll = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Payroll List */}
-                  <Table columns={columns} dataSource={data} Selection={true} />
+                {loading ? (<Spinner />) : (<Table columns={columns} dataSource={tableData} Selection={true} />)}
                 {/* /Payroll List */}
               </div>
             </div>

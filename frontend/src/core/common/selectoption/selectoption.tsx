@@ -476,9 +476,9 @@ export const leaveType = [
   { value: 4, label: "paternityLeave" },
 ];
 export const allClass = [
-  { value: "I", label: "I" },
-  { value: "II", label: "II" },
-  { value: "III", label: "III" },
+  { value: 1, label: "I" },
+  { value: 2, label: "II" },
+  { value: 3, label: "III" },
   { value: "IV", label: "IV" },
   { value: "V", label: "V" },
   { value: "VI", label: "VI" },
@@ -519,14 +519,19 @@ export const classSylabus = [
   { value: "II", label: "II" },
   { value: "III", label: "III" },
 ];
+
+
 export const classSection = [
 
-  { value: "A", label: "A" },
-  { value: "B", label: "B" },
-  { value: "C", label: "C" },
-  { value: "D", label: "D" },
-  { value: "E", label: "E" },
+  { value: "a", label: "A" },
+  { value: "b", label: "B" },
+  { value: "c", label: "C" },
+  { value: "d", label: "D" },
+  { value: "e", label: "E" },
 ];
+
+
+
 export const language = [
 
   { value: "English", label: "English" },

@@ -3,7 +3,7 @@ const db = require('../../config/db');
 
 exports.allSection = async (req, res) => {
   try {
-    const [rows] = await db.query(`SELECT id, section, status FROM classSection ORDER BY section ASC`);
+    const [rows] = await db.query(`SELECT id, section_name AS section, status FROM sections ORDER BY section_name ASC`);
     return res.status(200).json({
       success: true,
       data: rows,
@@ -34,7 +34,7 @@ exports.addSection = async (req, res) => {
 
    
     const [existing] = await db.query(
-      `SELECT id FROM classSection WHERE LOWER(section) = ?`,
+      `SELECT id FROM sections WHERE LOWER(section) = ?`,
       [sectionName]
     );
 
@@ -46,7 +46,7 @@ exports.addSection = async (req, res) => {
     }
 
     const [result] = await db.query(
-      `INSERT INTO classSection (section, status) VALUES (?, ?)`,
+      `INSERT INTO sections (section, status) VALUES (?, ?)`,
       [sectionName, status.trim()]
     );
 
@@ -82,7 +82,7 @@ exports.editSpecificSection = async (req, res) => {
 
     
     const [existing] = await db.query(
-      `SELECT id FROM classSection WHERE LOWER(section) = ? AND id != ?`,
+      `SELECT id FROM sections WHERE LOWER(section) = ? AND id != ?`,
       [sectionName, id]
     );
 
@@ -94,7 +94,7 @@ exports.editSpecificSection = async (req, res) => {
     }
 
     const [result] = await db.query(
-      `UPDATE classSection SET section = ?, status = ? WHERE id = ?`,
+      `UPDATE sections SET section = ?, status = ? WHERE id = ?`,
       [sectionName, status.trim(), id]
     );
 
@@ -130,7 +130,7 @@ exports.deleteSection = async (req, res) => {
       });
     }
 
-    const [result] = await db.query(`DELETE FROM classSection WHERE id = ?`, [id]);
+    const [result] = await db.query(`DELETE FROM sections WHERE id = ?`, [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
@@ -164,7 +164,7 @@ exports.getSectionById = async (req, res) => {
       });
     }
 
-    const [rows] = await db.query(`SELECT id, section, status FROM classSection WHERE id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id, section_name, status FROM sections WHERE id = ?`, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({

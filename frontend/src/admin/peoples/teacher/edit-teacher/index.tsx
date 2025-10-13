@@ -383,9 +383,9 @@ const EditTeacher = () => {
         if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont)) errors.primarycont = "Valid 10-digit contact number is required";
         if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Valid email is required";
         if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
-        if (!data.fromclass.trim()) errors.fromclass = "From Class is required";
-        if (!data.toclass.trim()) errors.toclass = "To Class is required";
-        if (!data.class.trim()) errors.class = "Class is required";
+        if (!data.fromclass) errors.fromclass = "From Class is required";
+        if (!data.toclass) errors.toclass = "To Class is required";
+        if (!data.class) errors.class = "Class is required";
         if (!data.section?.trim()) errors.section = "Section is required";
         if (!data.subject.trim()) errors.subject = "Subject is required";
         if (!data.gender.trim()) errors.gender = "Gender is required";

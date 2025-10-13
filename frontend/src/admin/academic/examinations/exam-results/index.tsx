@@ -109,9 +109,9 @@ const ExamResult = () => {
 
   // const [selectedClass, setSelectedClass] = useState("");
   // const [selectedSection, setSelectedSection] = useState("");
-  const [examOptions, setExamOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
+  // const [examOptions, setExamOptions] = useState<
+  //   { value: number; label: string }[]
+  // >([]);
   const [resultData2, setResultData2] = useState<any[]>([]);
   const [examOptionsMap, setExamOptionsMap] = useState<
     Record<number, { value: number; label: string }[]>
@@ -123,7 +123,7 @@ const ExamResult = () => {
 
   // ...inside ExamResult component...
   const [showExamMarkUpload, setShowExamMarkUpload] = useState(false);
-  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+  // const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   useEffect(() => {
     const rows = allClass.map((cls, index) => ({
       key: index,
@@ -235,7 +235,7 @@ const ExamResult = () => {
     setEditId(null);
   };
 
-  // table columns
+ 
   let subjectColumns: any[] = [];
   if (resultData.length > 0) {
     const subjectKeys = new Set<string>();
@@ -255,7 +255,7 @@ const ExamResult = () => {
           
           <span onClick={() => fetchMarkForEdit(value ? value.id : null)} data-bs-toggle="modal"
             data-bs-target="#edit_mark" style={{ cursor: 'pointer' }}><CiEdit size={15} /></span>
-{/* >>>>>>> Stashed changes */}
+
         </span>
       ),
       sorter: (a: StudentResult, b: StudentResult) =>
@@ -284,7 +284,7 @@ const ExamResult = () => {
       dataIndex: "studentName",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          {/* Avatar */}
+          
           <Link
             to={`${routes.studentDetail}/${record.rollnum}`}
             className="avatar me-2"
@@ -297,7 +297,7 @@ const ExamResult = () => {
             />
           </Link>
 
-          {/* Name and details */}
+        
           <div className="flex-grow-1">
             <div>
               <Link
@@ -321,9 +321,9 @@ const ExamResult = () => {
         a.studentName.length - b.studentName.length,
     },
 
-    // New field: Exam Name
+   
 
-    // Dynamic subject columns
+   
     ...subjectColumns,
     {
       title: "Exam Name",
@@ -962,12 +962,12 @@ const ExamResult = () => {
                 {loading ? (
                   <Spinner />
                 ) : (
-                  // <Table
-                  //   columns={columns}
-                  //   dataSource={resultData}
-                  //   Selection={true}
-                  // />
-                  ""
+                  <Table
+                    columns={columns}
+                    dataSource={resultData}
+                    Selection={true}
+                  />
+                  
                 )}
                 <Table
                   columns={columns2}

@@ -334,9 +334,9 @@ const TeacherForm = () => {
     // if (data.password !== data.conpassword) errors.password = "Password and confirm password do not match";
 
     if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
-    if (!data.fromclass.trim()) errors.fromclass = "From Class is required";
-    if (!data.toclass.trim()) errors.toclass = "To Class is required";
-    if (!data.class.trim()) errors.class = "Class is required";
+    if (!data.fromclass) errors.fromclass = "From Class is required";
+    if (!data.toclass) errors.toclass = "To Class is required";
+    if (!data.class) errors.class = "Class is required";
     if (!data.section?.trim()) errors.section = "Section is required";
     if (!data.subject.trim()) errors.subject = "Subject is required";
     if (!data.gender.trim()) errors.gender = "Gender is required";

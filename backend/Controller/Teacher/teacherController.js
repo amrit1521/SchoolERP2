@@ -33,7 +33,7 @@ exports.addTeacher = async (req, res) => {
     }
 
     const sql1 = `
-      INSERT INTO users (firstname, lastname, mobile, email, password, type_id, status)
+      INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     const hashPassword = await bcrypt.hash(data.password, 10);
@@ -51,16 +51,18 @@ exports.addTeacher = async (req, res) => {
 
     const sql2 = `
       INSERT INTO teachers (
-        user_id, teacher_id,fromclass,toclass,section, class, subject, gender, blood_gp, date_of_join, 
+        user_id, teacher_id, department, designation,fromclass,toclass,section, class, subject, gender, blood_gp, date_of_join, 
         fat_name, mot_name, dob, mari_status, lan_known, qualification, 
         work_exp, prev_school, prev_school_addr, prev_school_num, address, 
         perm_address, pan_or_id, other_info ,facebook_link ,instagram_link,linked_link,twitter_link , 
         img_src , resume_src , letter_src
-      ) VALUES (?,?, ?, ?, ?, ?, ?,?,?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?,?,?,?)
+      ) VALUES (?,?, ?, ?, ?,?,?, ?, ?,?,?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?,?,?,?)
     `;
     await connection.query(sql2, [
       userId,
       data.teacher_id,
+      17,
+      7,
       data.fromclass,
       data.toclass,
       data.section,
@@ -103,7 +105,7 @@ exports.addTeacher = async (req, res) => {
     ]);
 
     const sql4 = `
-      INSERT INTO teacher_leaves 
+      INSERT INTO leaves_info
       (user_id, medical_leaves, casual_leaves, maternity_leaves, sick_leaves) 
       VALUES (?, ?, ?, ?, ?)
     `;

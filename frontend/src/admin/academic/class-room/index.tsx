@@ -37,7 +37,7 @@ const ClassRoom = () => {
   const fetchAllClassRoom = async () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
-    console.log("saurabh")
+   
     try {
       const { data } = await allClassRoom()
       if (data.success) {
