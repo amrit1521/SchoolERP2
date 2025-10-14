@@ -937,8 +937,15 @@ exports.getExamResultSpeStudents = async (req, res) => {
         cs.name AS subject_name,
         cs.code,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        s.perm_address,
+        s.dob,
+        s.academicyear,
+        cl.class_name,
+        se.section_name,
+        s.admissionnum,
         p.name,
         p.phone_num,
         u.firstname,
@@ -947,6 +954,8 @@ exports.getExamResultSpeStudents = async (req, res) => {
       LEFT JOIN examName en ON er.exam_name_id = en.id
       LEFT JOIN class_subject cs ON er.subject_id = cs.id
       LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN parents_info p ON p.user_id = s.stu_id AND relation="Father"
       LEFT JOIN users u ON s.stu_id = u.id
       WHERE er.roll_num = ?
@@ -972,10 +981,15 @@ exports.getExamResultSpeStudents = async (req, res) => {
           rollnum: row.rollnum,
           firstname: row.firstname,
           lastname: row.lastname,
-          class: row.class,
-          section: row.section,
+          class: row.class_name,
+          section: row.section_name,
           fat_name: row.name,
           phone_num: row.phone_num,
+          student_image:row.stu_img,
+          stud_admNo: row.admissionnum,
+          stud_dob: row.dob,
+          stud_address: row.perm_address,
+          stud_academicYear: row.academicyear,
           exams: {},
         };
       }

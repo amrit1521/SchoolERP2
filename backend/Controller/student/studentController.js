@@ -56,7 +56,7 @@ exports.addStudent = async (req, res) => {
 
     await connection.query(
       `INSERT INTO students (
-        stu_id, academicyear, admissionnum, admissiondate, rollnum, class, section,
+        stu_id, academicyear, admissionnum, admissiondate, rollnum, class_id, section_id,
         gender, dob, bloodgp, house, religion, category, caste, motherton, lanknown,
         stu_img, curr_address, perm_address, prev_school, prev_school_address,
         medicalcert, transfercert, stu_condition, allergies, medications
@@ -193,8 +193,10 @@ exports.allStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                s.class,
-                s.section,
+                s.class_id,
+                s.section_id,
+                cl.class_name as class,
+                se.section_name as section,
                 s.gender,
                 s.dob,
                 s.bloodgp,
@@ -208,6 +210,8 @@ exports.allStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
+            JOIN classes cl ON cl.id = s.class_id
+      		  JOIN sections se ON se.id = s.section_id
                 WHERE u.roll_id=3
         `;
 
@@ -245,8 +249,10 @@ exports.filterStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                s.class,
-                s.section,
+                cl.class_name as class,
+                se.section_name as section,
+                s.class_id,
+                s.section_id,
                 s.gender,
                 s.dob,
                 s.bloodgp,
@@ -260,6 +266,8 @@ exports.filterStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
+            JOIN classes cl ON cl.id = s.class_id
+      		  JOIN sections se ON se.id = s.section_id
                 WHERE u.roll_id=3 AND class=? AND section=?
         `;
 
@@ -289,8 +297,8 @@ exports.filterStudentsForOption = async (req, res) => {
             RIGHT JOIN students s
             ON u.id = s.stu_id
             WHERE u.roll_id = 3 
-            AND s.class = ? 
-            AND s.section = ?;
+            AND s.class_id = ? 
+            AND s.section_id = ?;
 
         `;
 
@@ -369,7 +377,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
       SELECT 
         u.id AS user_id, u.firstname, u.lastname, u.status, u.mobile, u.email,
         s.id AS student_id, s.academicyear, s.admissionnum, s.admissiondate, s.rollnum, 
-        s.class, s.section, s.gender, s.dob, s.bloodgp, s.religion, s.caste, s.house, 
+        s.class_id, s.section_id, cl.class_name as class, se.section_name as section, s.gender, s.dob, s.bloodgp, s.religion, s.caste, s.house, 
         s.stu_img, s.category, s.motherton, s.lanknown, s.curr_address, s.perm_address, 
         s.allergies, s.medications, s.prev_school, s.prev_school_address,s.stu_condition, s.medicalcert, 
         s.transfercert,
@@ -381,6 +389,8 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
         p.address AS parent_address, p.img_src AS parent_img, p.guardian_Is
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id = o.user_id
@@ -621,8 +631,10 @@ exports.specificDetailsStu = async (req, res) => {
         s.admissionnum,
         s.admissiondate,
         s.rollnum,
-        s.class,
-        s.section,
+        s.class_id,
+        s.section_id,
+        cl.class_name as class,
+        se.section_name as section,
         s.gender,
         s.dob,
         s.bloodgp,
@@ -654,6 +666,8 @@ exports.specificDetailsStu = async (req, res) => {
         p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
@@ -899,6 +913,8 @@ exports.studentReport = async (req, res) => {
     s.rollnum ,
     s.class ,
     s.section,
+    cl.class_name as class,
+    se.section_name as section,
     s.gender,
     s.dob,
     s.stu_img ,   
@@ -908,6 +924,8 @@ exports.studentReport = async (req, res) => {
     father.name AS father_name,
     father.img_src AS father_img 
 FROM students s
+JOIN classes cl ON cl.id = s.class_id
+JOIN sections se ON se.id = s.section_id
 LEFT JOIN users u 
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
@@ -944,11 +962,15 @@ exports.getStuByToken = async (req, res) => {
         s.admissionnum,
         s.admissiondate,
         s.rollnum,
-        s.class,
-        s.section,
+        s.class_id,
+        s.section_id,
+        cl.class_name as class,
+        se.section_name as section
         s.stu_img
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       WHERE u.id = ?;
     `;
     const [student] = await db.query(sql, [userId]);

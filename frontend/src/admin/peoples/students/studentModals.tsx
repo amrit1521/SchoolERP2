@@ -793,44 +793,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <div className="modal-body">
-                <div className="student-detail-info">
-                  <span className="student-img">
-                    {/* <ImageWithBasePath
-                src="assets/img/students/student-01.jpg"
-                alt="Img"
-              /> */}
-                  </span>
-                  <div className="name-info">
-                    <h6>
-                      Janet <span>III, A</span>
-                    </h6>
-                  </div>
-                </div>
-                <div className="table-responsive custom-table no-datatable_length">
-                  <table className="table datanew">
-                    <thead className="thead-light">
-                      <tr>
-                        <th>User Type</th>
-                        <th>User Name</th>
-                        <th>Password </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Parent</td>
-                        <td>parent53</td>
-                        <td>parent@53</td>
-                      </tr>
-                      <tr>
-                        <td>Student</td>
-                        <td>student20</td>
-                        <td>stdt@53</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <div className="modal-body"></div>
               <div className="modal-footer">
                 <Link
                   to="#"
