@@ -3,7 +3,23 @@ const db = require('../../config/db');
 
 exports.allSection = async (req, res) => {
   try {
-    const [rows] = await db.query(`SELECT id, section_name AS section, status FROM sections ORDER BY section_name ASC`);
+
+    const sql = `
+    SELECT 
+    s.id,
+    s.section_name AS section,
+    s.status,
+    c.class_name,
+    r.room_no
+    FROM sections s 
+    LEFT JOIN classes c ON s.class_id = c.id
+    LEFT JOIN class_room r ON s.room_no = r.id
+    ORDER BY s.section_name ASC
+       
+    `
+
+
+    const [rows] = await db.query(sql);
     return res.status(200).json({
       success: true,
       data: rows,
@@ -21,40 +37,57 @@ exports.allSection = async (req, res) => {
 
 exports.addSection = async (req, res) => {
   try {
-    const { section, status } = req.body;
+    const { class_id, room_no, section, status } = req.body;
 
-    if (!section || !status) {
+
+    if (!class_id || !room_no || !section) {
       return res.status(400).json({
         success: false,
-        message: "All fields must be required!",
+        message: "All fields (class_id, room_no, section, status) are required!",
       });
     }
 
     const sectionName = section.trim().toLowerCase();
 
-   
-    const [existing] = await db.query(
-      `SELECT id FROM sections WHERE LOWER(section) = ?`,
-      [sectionName]
+
+    const [roomExists] = await db.query(
+      `SELECT id FROM sections WHERE room_no = ? AND class_id != ?`,
+      [room_no, class_id]
     );
 
-    if (existing.length > 0) {
+    if (roomExists.length > 0) {
       return res.status(409).json({
         success: false,
-        message: `Section '${section}' already exists`,
+        message: `Room No. '${room_no}' is already assigned to another class.`,
       });
     }
 
+
+    const [sectionExists] = await db.query(
+      `SELECT id FROM sections WHERE LOWER(section_name) = ? AND class_id = ?`,
+      [sectionName, class_id]
+    );
+
+    if (sectionExists.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Section '${section}' already exists in this class.`,
+      });
+    }
+
+
     const [result] = await db.query(
-      `INSERT INTO sections (section, status) VALUES (?, ?)`,
-      [sectionName, status.trim()]
+      `INSERT INTO sections (class_id, section_name, room_no, status)
+       VALUES (?, ?, ?, ?)`,
+      [class_id, sectionName, room_no, status.trim()]
     );
 
     return res.status(201).json({
       success: true,
-      message: "Section added successfully",
+      message: "Section added successfully!",
       insertId: result.insertId,
     });
+
   } catch (error) {
     console.error("Error in addSection:", error);
     return res.status(500).json({
@@ -66,12 +99,15 @@ exports.addSection = async (req, res) => {
 };
 
 
+
 exports.editSpecificSection = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { section, status } = req.body;
+    const { class_id, room_no, section, status } = req.body;
+    console.log(id)
+    console.log(class_id, room_no, section, status)
 
-    if (!id || !section || !status) {
+    if (!id || !class_id || !room_no || !section) {
       return res.status(400).json({
         success: false,
         message: "All fields must be required!",
@@ -80,9 +116,9 @@ exports.editSpecificSection = async (req, res) => {
 
     const sectionName = section.trim().toLowerCase();
 
-    
+
     const [existing] = await db.query(
-      `SELECT id FROM sections WHERE LOWER(section) = ? AND id != ?`,
+      `SELECT id FROM sections WHERE LOWER(section_name) = ? AND id != ?`,
       [sectionName, id]
     );
 
@@ -94,8 +130,8 @@ exports.editSpecificSection = async (req, res) => {
     }
 
     const [result] = await db.query(
-      `UPDATE sections SET section = ?, status = ? WHERE id = ?`,
-      [sectionName, status.trim(), id]
+      `UPDATE sections SET class_id =? , section_name = ?,room_no =?, status = ? WHERE id = ?`,
+      [class_id, sectionName, room_no, status.trim(), id]
     );
 
     if (result.affectedRows === 0) {
@@ -164,7 +200,7 @@ exports.getSectionById = async (req, res) => {
       });
     }
 
-    const [rows] = await db.query(`SELECT id, section_name, status FROM sections WHERE id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id,class_id , section_name AS section ,room_no, status FROM sections WHERE id = ?`, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({

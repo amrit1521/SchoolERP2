@@ -382,7 +382,7 @@ const EditTeacher = () => {
         if (!data.last_name.trim()) errors.last_name = "Last name is required";
         if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont)) errors.primarycont = "Valid 10-digit contact number is required";
         if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Valid email is required";
-        if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
+        if (!data.teacher_id) errors.teacher_id = "Teacher ID is required";
         if (!data.fromclass) errors.fromclass = "From Class is required";
         if (!data.toclass) errors.toclass = "To Class is required";
         if (!data.class) errors.class = "Class is required";

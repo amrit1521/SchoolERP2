@@ -14,7 +14,7 @@ import { all_routes } from "../../../router/all_routes";
 // import TooltipOption from "../../../../core/common/tooltipOption";
 import {
   // addExamResult,
-  allExamData,
+  // allExamData,
   // editMark,
   examNameForOption,
   // examSubjectForOption,
@@ -529,6 +529,8 @@ const ExamResult = () => {
     rowIndex: number
   ) => {
     try {
+      
+      setLoading(false)
       const { data } = await examNameForOption({ class: cls, section });
       let options: { value: number; label: string }[] = [];
 
@@ -832,11 +834,11 @@ const ExamResult = () => {
     try {
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
-        setExamOptions(
+        setExamOptionsMap(
           data.data.map((e: any) => ({ value: e.id, label: e.examName }))
         );
       } else {
-        setExamOptions([]);
+        setExamOptionsMap([]);
         toast.warning("No exams found for this class & section.");
       }
     } catch (error) {
@@ -855,7 +857,7 @@ const ExamResult = () => {
         updated.exam_type = null;
         if (updated.class && updated.section) {
           fetchExamOptions(updated.class, updated.section);
-        } else setExamOptions([]);
+        } else setExamOptionsMap([]);
       }
       return updated;
     });
@@ -889,7 +891,7 @@ const ExamResult = () => {
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
     setFilterData({ class: "", section: "", exam_type: null });
-    setExamOptions([]);
+    setExamOptionsMap([]);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");
   };
@@ -990,16 +992,16 @@ const ExamResult = () => {
                             </div>
                             <div className="col-md-6">
                               <label className="form-label">Exam Type</label>
-                              <CommonSelect
+                              {/* <CommonSelect
                                 className="select"
-                                options={examOptions}
+                                options={examOptionsMap}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "exam_type",
                                     option ? option.value : ""
                                   )
                                 }
-                              />
+                              /> */}
                             </div>
                           </div>
                         </div>

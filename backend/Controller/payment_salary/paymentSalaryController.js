@@ -5,8 +5,8 @@ const dayjs = require('dayjs')
 exports.applySalary = async (req, res) => {
   try {
     const { id } = req.params;
-    const { apply_date, salary_month, type , notes } = req.body;
-    console.log(type)
+    const { apply_date, salary_month, type, notes } = req.body;
+
 
     if (!id) {
       return res.status(400).json({ message: "Employee ID is required!", success: false });
@@ -15,10 +15,7 @@ exports.applySalary = async (req, res) => {
     if (!apply_date || !salary_month) {
       return res.status(400).json({ message: "Apply date & Salary month are required!", success: false });
     }
-
     const formattedMonth = dayjs(salary_month).format("YYYY-MM-DD");
-
- 
     const checkSql = `
       SELECT id FROM payment_salary 
       WHERE employee_id = ? AND salary_month = ?
@@ -32,9 +29,7 @@ exports.applySalary = async (req, res) => {
       });
     }
 
-  
     let employeeData = null;
-
     if (type === "staff") {
       const sql = `
         SELECT 
@@ -101,7 +96,7 @@ exports.applySalary = async (req, res) => {
       return res.status(400).json({ message: "Invalid employee type!", success: false });
     }
 
-    
+
     const {
       employee_id,
       role_id,
@@ -112,6 +107,7 @@ exports.applySalary = async (req, res) => {
       designation,
       gross_salary,
     } = employeeData;
+
 
     const fullName = `${firstname} ${lastname}`;
     const formattedApplyDate = dayjs(apply_date).format("YYYY-MM-DD");
@@ -131,12 +127,12 @@ exports.applySalary = async (req, res) => {
       phone,
       formattedMonth,
       formattedApplyDate,
-      "0", 
+      "0",
       gross_salary || 0,
       0,
       0,
       gross_salary || 0,
-      notes||null
+      notes || null
     ];
 
     await db.query(insertSql, insertValues);
@@ -152,23 +148,203 @@ exports.applySalary = async (req, res) => {
   }
 };
 
-exports.getAllApplySalaryDetails = async(req,res)=>{
+exports.getAllApplySalaryDetails = async (req, res) => {
 
- 
-    try {
 
-        const sql = `SELECT id ,employee_id , name , department , designation , phone , status , salary_month , gross_salary AS amount FROM payment_salary `
+  try {
 
-        const [rows] = await db.query(sql)
+    const sql = `SELECT id ,employee_id , name , department , designation , phone , status , salary_month , gross_salary AS amount FROM payment_salary `
 
-        return res.status(200).json({message:"All applied details for details !" , success:true , data:rows})
+    const [rows] = await db.query(sql)
 
-        
-    } catch (error) {
-         console.log(error)
-         return res.status(500).json({message:"Internal server error !" , success:false})
-    }
+    return res.status(200).json({ message: "All applied details for details !", success: true, data: rows })
+
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
 }
+
+
+
+
+
+exports.paySalary = async (req, res) => {
+  const { id } = req.params;
+  const { payment_method } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      message: "Salary ID is required!",
+      success: false,
+    });
+  }
+
+  if (!payment_method) {
+    return res.status(400).json({
+      message: "Payment method is required!",
+      success: false,
+    });
+  }
+
+  try {
+
+    const paidDate = dayjs().format("YYYY-MM-DD HH:mm:ss");
+
+
+    const [result] = await db.query(
+      `UPDATE payment_salary 
+       SET status = ?, paid_date = ?, payment_method = ? 
+       WHERE id = ?`,
+      ["1", paidDate, payment_method, id]
+    );
+
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "No salary record found with this ID!",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Salary has been successfully paid!",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error while paying salary:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+
+exports.getSalaryById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ message: "Salary ID is required!", success: false });
+  }
+
+  try {
+    const sql = `
+      SELECT 
+        ps.id,
+        ps.employee_id,
+        ps.name,
+        ps.salary_month,
+        ps.status,
+        ps.payment_method,
+        ps.paid_date,
+        ps.apply_date,
+        ps.net_salary,
+        ps.notes,
+        CASE 
+          WHEN ps.status = '1' THEN 'Paid'
+          ELSE 'Generated'
+        END AS status_label,
+        r.role_name
+      FROM payment_salary ps
+      LEFT JOIN roles r ON ps.role_id = r.id
+      WHERE ps.id = ?
+    `;
+
+    const [rows] = await db.query(sql, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Salary record not found!", success: false });
+    }
+
+    return res.status(200).json({
+      message: "Salary details fetched successfully!",
+      success: true,
+      data: rows[0],
+    });
+  } catch (error) {
+    console.log("Error fetching salary details:", error);
+    return res.status(500).json({ message: "Internal server error!", success: false });
+  }
+};
+
+exports.getSalaryDetailsByTeacherStaffId = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      message: "Staff/Teacher ID is required!",
+      success: false,
+    });
+  }
+
+  try {
+  
+    const salarySql = `
+      SELECT 
+        id,
+        salary_month,
+        payment_method,
+        paid_date,
+        gross_salary,
+        total_earnings,
+        total_deductions,
+        net_salary
+      FROM payment_salary
+      WHERE employee_id = ? AND status = '1'
+      ORDER BY salary_month DESC
+    `;
+    const [salaryRows] = await db.query(salarySql, [id]);
+
+   
+    if (salaryRows.length === 0) {
+      return res.status(200).json({
+        message: "No paid salary records found for this employee.",
+        success: true,
+        data: [],
+        totals: {
+          total_gross_salary: 0,
+          total_net_salary: 0,
+          total_deductions: 0,
+          total_earnings: 0,
+        },
+      });
+    }
+
+   
+    const totalSql = `
+      SELECT 
+        COALESCE(SUM(gross_salary), 0) AS total_gross_salary,
+        COALESCE(SUM(net_salary), 0) AS total_net_salary,
+        COALESCE(SUM(total_deductions), 0) AS total_deductions,
+        COALESCE(SUM(total_earnings), 0) AS total_earnings
+      FROM payment_salary
+      WHERE employee_id = ? AND status = '1'
+    `;
+    const [totalRows] = await db.query(totalSql, [id]);
+
+    const totals = totalRows[0];
+
+  
+    return res.status(200).json({
+      message: "Salary details fetched successfully!",
+      success: true,
+      data: salaryRows,
+      totals,
+    });
+  } catch (error) {
+    console.error("Error fetching salary details:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+
 
 
 

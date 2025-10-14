@@ -135,7 +135,7 @@ const TeacherAttendance = () => {
       dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to="#" className="avatar avatar-md">
+          <Link to={`${routes.teacherDetails}/${record.id}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"

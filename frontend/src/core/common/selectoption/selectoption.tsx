@@ -476,9 +476,9 @@ export const leaveType = [
   { value: 4, label: "paternityLeave" },
 ];
 export const allClass = [
-  { value: 1, label: "I" },
-  { value: 2, label: "II" },
-  { value: 3, label: "III" },
+  { value: "I", label: "I" },
+  { value: "II", label: "II" },
+  { value: "III", label: "III" },
   { value: "IV", label: "IV" },
   { value: "V", label: "V" },
   { value: "VI", label: "VI" },
