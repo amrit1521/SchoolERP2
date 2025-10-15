@@ -6,10 +6,7 @@ import Table from "../../../../core/common/dataTable/index";
 import { Link, useNavigate } from "react-router-dom";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
-import {
-  allClass,
-  classSection,
-} from "../../../../core/common/selectoption/selectoption";
+import { classSection } from "../../../../core/common/selectoption/selectoption";
 import { all_routes } from "../../../router/all_routes";
 // import TooltipOption from "../../../../core/common/tooltipOption";
 import {
@@ -17,6 +14,7 @@ import {
   allExamData,
   // editMark,
   examNameForOption,
+  getAllSectionForAClass,
   // examSubjectForOption,
   // filterStudentsForOption,
   // getAllSection,
@@ -29,6 +27,7 @@ import { toast } from "react-toastify";
 // import { CiEdit } from "react-icons/ci";
 // import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
+import { allRealClasses } from "../../../../service/classApi";
 
 export interface SubjectResult {
   id: number;
@@ -105,7 +104,8 @@ const ExamResult = () => {
   //   []
   // );
   const [loading, setLoading] = useState<boolean>(false);
-
+  const [allClass, setAllClass] = useState<any[]>([]);
+  const [section, setSections] = useState<any[]>([]);
   // const [selectedClass, setSelectedClass] = useState("");
   // const [selectedSection, setSelectedSection] = useState("");
   const [examOptions, setExamOptions] = useState<
@@ -120,15 +120,63 @@ const ExamResult = () => {
   >({});
   const navigate = useNavigate();
 
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
+
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        console.log(id);
+        const { data } = await getAllSectionForAClass(id);
+        let options = [];
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          options.push(
+            ...data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+        } else {
+          setSections([]);
+        }
+        return options;
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
+
   useEffect(() => {
-    const rows = allClass.map((cls, index) => ({
-      key: index,
-      class: cls.value,
-      section: "",
-      examName: "",
-    }));
-    setResultData2(rows);
+    fetchClass();
   }, []);
+
+  useEffect(() => {
+    if (allClass.length != 0) {
+      const rows = allClass.map(async (cls) => ({
+        key: cls.value,
+        class: cls.label,
+        section: "",
+        examName: "",
+        allSection: await fetchSections(cls.value),
+      }));
+      console.log(rows);
+      setResultData2(rows);
+    }
+  }, [allClass]);
 
   // const fetchResult = async () => {
   //   setLoading(true);
@@ -403,6 +451,7 @@ const ExamResult = () => {
           options={classSection}
           value={record.section ? record.section.value : null}
           onChange={(opt: any) => {
+            console.log("record: ", record);
             const newData = [...resultData2];
             newData[index].section = opt.value;
             setResultData2(newData);

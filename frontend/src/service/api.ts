@@ -72,6 +72,7 @@ export const addLeave = (data: object) => api.post("/leave/addleave", data);
 
 // class section---------------------------
 export const getAllSection = () => api.get("/section");
+export const getAllSectionForAClass = (id:number) => api.get(`/section/speclass/${id}`);
 export const addClassSection = (data: object) => api.post("/section", data);
 export const deleteSection = (id: any) => api.delete(`/section/${id}`);
 export const speSection = (id: any) => api.get(`/section/${id}`);
