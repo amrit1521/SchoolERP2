@@ -7,13 +7,18 @@ import { Link, useNavigate } from "react-router-dom";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { all_routes } from "../../../router/all_routes";
+import html2pdf from "html2pdf.js";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import ReactDOM from "react-dom/client";
 // import TooltipOption from "../../../../core/common/tooltipOption";
 import {
   // addExamResult,
-  allExamData,
+  // allExamData,
   // editMark,
   examNameForOption,
   getAllSectionForAClass,
+  getResultAllStudentsOfClass,
   // examSubjectForOption,
   // filterStudentsForOption,
   // getAllSection,
@@ -27,6 +32,7 @@ import { toast } from "react-toastify";
 // import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
 import { allRealClasses } from "../../../../service/classApi";
+import { DemoPdfTemplate1, PdfTemplate1 } from "./resultTemplate";
 
 export interface SubjectResult {
   id: number;
@@ -123,31 +129,33 @@ const ExamResult = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
     null
   );
-  const [modalStudentItem, setModalStudentItem] = useState<any>(null);
-  const pdfRenderRef = useRef(null);
+  const [modalStudentItem, setModalStudentItem] = useState<any[]>([]);
+
   const templateConfigs = [
     {
       id: 1,
       label: "t-1",
-      component: Template1,
+      component: PdfTemplate1,
+      componentDemo: DemoPdfTemplate1,
       badge: "primary",
     },
-    {
-      id: 2,
-      label: "t-2",
-      component: Template2,
-      badge: "success",
-    },
-    {
-      id: 3,
-      label: "t-3",
-      component: Template3,
-      badge: "info",
-    },
+    // {
+    //   id: 2,
+    //   label: "t-2",
+    //   component: Template2,
+    //   badge: "success",
+    // },
+    // {
+    //   id: 3,
+    //   label: "t-3",
+    //   component: Template3,
+    //   badge: "info",
+    // },
   ];
 
   const fetchClass = async () => {
     try {
+      setLoading(true);
       const { data } = await allRealClasses();
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         setAllClass(
@@ -156,6 +164,7 @@ const ExamResult = () => {
       } else {
         setAllClass([]);
       }
+      setLoading(false);
     } catch (error) {
       console.log(error);
       toast.error("Error to fetch classes !");
@@ -215,53 +224,180 @@ const ExamResult = () => {
     fetchRows();
   }, [allClass]);
 
-  const handleDownloadTemplate = async () => {
-    if (!selectedTemplateId || !modalStudentItem) return;
+  const fetchStudentResultForClass = async (id: number) => {
+    try {
+      const { data } = await getResultAllStudentsOfClass(id);
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        console.log(data);
+        setModalStudentItem([...data.data]);
+        setIsModalVisible(true);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch studentResultData !");
+    }
+  };
+
+  // const handleDownloadTemplate = async () => {
+  //   console.log("selected :", selectedTemplateId);
+  //   if (!selectedTemplateId || !modalStudentItem?.length) return;
+
+  //   const selectedTemplate = templateConfigs.find(
+  //     (t) => t.id === selectedTemplateId
+  //   );
+  //   if (!selectedTemplate) return;
+
+  //   const Component = selectedTemplate.component;
+  //   const zip = new JSZip();
+
+  //   const container = document.createElement("div");
+  //   container.style.position = "fixed";
+  //   container.style.top = "-9999px";
+  //   container.style.left = "-9999px";
+  //   document.body.appendChild(container);
+
+  //   // Sequentially generate PDFs
+  //   for (let i = 0; i < modalStudentItem.length; i++) {
+  //     const student = modalStudentItem[i];
+  //     console.log("student: ", modalStudentItem, student);
+  //     console.log(
+  //       `Generating ${i + 1}/${modalStudentItem.length}: ${student?.rollnum}`
+  //     );
+
+  //     container.innerHTML = "";
+  //     const tempDiv = document.createElement("div");
+  //     container.appendChild(tempDiv);
+
+  //     const root = ReactDOM.createRoot(tempDiv);
+  //     root.render(
+  //       <Component
+  //       // studentItem={student}
+  //       // studentRollnum={student.rollnum}
+  //       // label={selectedTemplate.label}
+  //       />
+  //     );
+
+  //     await new Promise((r) => setTimeout(r, 500)); // allow render time
+
+  //     const pdfBlob = await html2pdf()
+  //       .set({
+  //         margin: 10,
+  //         html2canvas: { scale: 2 },
+  //         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  //       })
+  //       .from(tempDiv)
+  //       .output("blob");
+
+  //     zip.file(
+  //       `Result-${student?.rollnum}-${selectedTemplate.label}.pdf`,
+  //       pdfBlob
+  //     );
+  //     root.unmount();
+  //   }
+
+  //   document.body.removeChild(container);
+
+  //   // Download all PDFs as one ZIP file
+  //   const zipBlob = await zip.generateAsync({ type: "blob" });
+  //   saveAs(zipBlob, `ClassResults-${selectedTemplate.label}.zip`);
+
+  //   // Close modal after success
+  //   setIsModalVisible(false);
+  //   setSelectedTemplateId(null);
+  // };
+
+  const handleDownloadTemplate = async (classNumber: number) => {
+    if (!selectedTemplateId || !modalStudentItem?.length) return;
 
     const selectedTemplate = templateConfigs.find(
       (t) => t.id === selectedTemplateId
     );
-    if (!selectedTemplate || !pdfRenderRef.current) return;
+    if (!selectedTemplate) return;
+    console.log("modalStudents: ", modalStudentItem);
+    const TemplateComponent = selectedTemplate.component;
 
-    // pdfRenderRef.current.innerHTML = '';
+    const studentsInClass = modalStudentItem.filter(
+      (s) => s.class === classNumber
+    );
 
-    // Create a container div for PDF rendering
-    const pdfElement = document.createElement("div");
-    pdfElement.style.width = "800px"; // Approx A4 width
-    pdfElement.style.padding = "20px";
-    pdfElement.style.backgroundColor = "#fff";
+    const studentsGrouped = studentsInClass.reduce((acc: any, student) => {
+      const key = student.admissionNo;
+      if (!acc[key]) acc[key] = { studentItem: student, exams: [] };
+      acc[key].exams.push({
+        exam_name: student.examName,
+        subjects: Object.entries(student.subjects).map(([name, val]: any) => ({
+          subject_name: name,
+          mark_obtained: val.mark_obtained,
+          max_mark: val.max_mark,
+          grade: student.grade,
+          result: student.result,
+        })),
+      });
+      return acc;
+    }, {});
 
-    // Dynamically render the selected template
-    const Component = selectedTemplate.component;
-    // const node = (
-    //   <Component
-    //     studentItem={modalStudentItem}
-    //     studentRollnum={modalStudentItem.rollnum}
-    //     label={selectedTemplate.label}
-    //   />
-    // );
-    // const root = ReactDOM.createRoot(pdfElement);
-    // root.render(node);
+    const filteredStudents: any[] = Object.values(studentsGrouped).filter(
+      (s: any) =>
+        s.exams.some((e: any) => e.exam_name === "Semester1") &&
+        s.exams.some((e: any) => e.exam_name === "Semester2")
+    );
 
-    // Wait for render and append to DOM
-    // setTimeout(() => {
-    //   pdfRenderRef.current.appendChild(pdfElement);
+    if (!filteredStudents.length) {
+      alert("No students found with both Semester1 & Semester2 exams.");
+      return;
+    }
 
-    //   html2pdf()
-    //     .set({
-    //       margin: 10,
-    //       filename: `Result-${modalStudentItem.rollnum}-${selectedTemplate.label}.pdf`,
-    //       html2canvas: { scale: 2 },
-    //       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    //     })
-    //     .from(pdfElement)
-    //     .save()
-    //     .then(() => {
-    //       // Cleanup after download
-    //       setIsModalVisible(false);
-    //       setSelectedTemplateId(null);
-    //     });
-    // }, 500);
+    const zip = new JSZip();
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    document.body.appendChild(container);
+
+    for (let i = 0; i < filteredStudents.length; i++) {
+      const { studentItem, exams } = filteredStudents[i];
+
+      const mappedStudentItem = {
+        ...studentItem,
+        firstname: studentItem.studentName.split(" ")[0],
+        lastname: studentItem.studentName.split(" ")[1] || "",
+        stud_admNo: studentItem.admissionNo,
+        student_image: studentItem.img,
+      };
+
+      container.innerHTML = "";
+      const tempDiv = document.createElement("div");
+      container.appendChild(tempDiv);
+
+      const root = ReactDOM.createRoot(tempDiv);
+      root.render(
+        <TemplateComponent studentItem={mappedStudentItem} exam={exams} />
+      );
+
+      await new Promise((r) => setTimeout(r, 500));
+
+      const pdfBlob = await html2pdf()
+        .set({
+          margin: 10,
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(tempDiv)
+        .output("blob");
+
+      zip.file(`Result-${mappedStudentItem.stud_admNo}.pdf`, pdfBlob);
+      root.unmount();
+    }
+
+    document.body.removeChild(container);
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    saveAs(
+      zipBlob,
+      `SemesterResults-Class${classNumber}-${selectedTemplate.label}.zip`
+    );
   };
 
   // const fetchResult = async () => {
@@ -595,13 +731,12 @@ const ExamResult = () => {
     },
     {
       title: "Download Result",
-      render: (_: any, __: any, index: number) => (
+      render: (_: any, record: any) => (
         <button
           type="button"
           className="btn btn-primary"
           onClick={() => {
-            setModalStudentItem("sdf");
-            setIsModalVisible(true);
+            fetchStudentResultForClass(record.key);
           }}
           // disabled={!selectedExams.hasOwnProperty(index)}
         >
@@ -1661,15 +1796,44 @@ const ExamResult = () => {
                 <div className="modal-body">
                   <div className="row">
                     {templateConfigs.map((template) => (
-                      <div className="col-lg-6 col-xl-4 mb-4" key={template.id}>
+                      <div className="col-lg-6 col-xl-5 mb-4" key={template.id}>
                         <div
                           className="border p-3 h-100 d-flex flex-column bg-light rounded position-relative"
-                          style={{ minHeight: "550px", cursor: "pointer" }}
+                          style={{
+                            minHeight: "500px",
+                            maxHeight: "600px",
+                            cursor: "pointer",
+                            overflow: "hidden",
+                          }}
                           onClick={() => setSelectedTemplateId(template.id)}
                         >
-                          <template.component />
+                          <div
+                            className="demo-wrapper"
+                            style={{
+                              flex: "1 1 auto",
+                              display: "flex",
+                              alignItems: "flex-start",
+                              justifyContent: "center",
+                              overflow: "auto",
+                              padding: "10px",
+                              background: "#fff",
+                              borderRadius: "6px",
+                              scrollbarWidth: "thin",
+                            }}
+                          >
+                            <div
+                              style={{
+                                transform: "scale(0.7)",
+                                transformOrigin: "top center",
+                                width: "fit-content",
+                                minWidth: "100%",
+                              }}
+                            >
+                              <template.componentDemo />
+                            </div>
+                          </div>
 
-                          <div className="mt-auto d-flex justify-content-end">
+                          <div className="mt-auto d-flex justify-content-end pt-2">
                             <button
                               type="button"
                               className={`btn ${
@@ -1678,7 +1842,7 @@ const ExamResult = () => {
                                   : "btn-outline-primary"
                               } btn-sm`}
                               onClick={(e) => {
-                                e.stopPropagation(); // prevent parent click
+                                e.stopPropagation();
                                 setSelectedTemplateId(template.id);
                               }}
                             >
@@ -1692,6 +1856,7 @@ const ExamResult = () => {
                     ))}
                   </div>
                 </div>
+
                 <div className="modal-footer d-flex gap-2">
                   <button
                     type="button"
@@ -1707,7 +1872,7 @@ const ExamResult = () => {
                     type="button"
                     className="btn btn-primary"
                     disabled={!selectedTemplateId}
-                    onClick={handleDownloadTemplate}
+                    onClick={() => handleDownloadTemplate(selectedTemplateId!)}
                   >
                     Download Selected
                   </button>
@@ -1718,33 +1883,6 @@ const ExamResult = () => {
         )}
       </>
     </div>
-  );
-};
-
-const Template1 = () => {
-  return (
-    <>
-      <h1>This is Template 1.</h1>
-      <h1>This is template pdf1.</h1>
-    </>
-  );
-};
-
-const Template2 = () => {
-  return (
-    <>
-      <h1>This is Template 2.</h1>
-      <h1>This is template pdf2.</h1>
-    </>
-  );
-};
-
-const Template3 = () => {
-  return (
-    <>
-      <h1>This is Template 3.</h1>
-      <h1>This is template pdf3.</h1>
-    </>
   );
 };
 

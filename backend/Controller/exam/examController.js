@@ -894,9 +894,9 @@ exports.addExamResult2 = async (req, res) => {
   }
 };
 
-exports.examNameForStudentResults = async (req,res) =>{
-  const {rollNum} = req.params;
-  try{
+exports.examNameForStudentResults = async (req, res) => {
+  const { rollNum } = req.params;
+  try {
     const sql = `
     SELECT er.exam_name_id, er.roll_num, en.examName
     FROM exam_result er
@@ -915,13 +915,13 @@ exports.examNameForStudentResults = async (req,res) =>{
       message: "Exam Name fetched successfully!",
       data: rows,
     });
-  }catch(error){
+  } catch (error) {
     console.error(error);
     return res
       .status(500)
       .json({ message: "Internal server error!", success: false });
   }
-}
+};
 
 exports.getExamResultSpeStudents = async (req, res) => {
   const { rollnum } = req.params;
@@ -985,7 +985,7 @@ exports.getExamResultSpeStudents = async (req, res) => {
           section: row.section_name,
           fat_name: row.name,
           phone_num: row.phone_num,
-          student_image:row.stu_img,
+          student_image: row.stu_img,
           stud_admNo: row.admissionnum,
           stud_dob: row.dob,
           stud_address: row.perm_address,
@@ -1045,8 +1045,8 @@ exports.getExamResultAllStudents = async (req, res) => {
         cs.code,
         s.admissionnum,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
         s.stu_img,
         p.name AS father_name,
         p.phone_num,
@@ -1081,8 +1081,8 @@ exports.getExamResultAllStudents = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class: row.class,
-          section: row.section,
+          class: row.class_id,
+          section: row.section_id,
           img: row.stu_img || "assets/img/students/default.jpg",
           examName: row.examName,
           subjects: {},
@@ -1137,6 +1137,134 @@ exports.getExamResultAllStudents = async (req, res) => {
       const overallResult = percent < 33 ? "Fail" : "Pass";
       // console.log(student);
       // console.log(student);
+      return {
+        ...student,
+        total: totalObtained,
+        totalMaxMarks: student.totalMaxMarks,
+        percent,
+        grade: overallGrade,
+        result: overallResult,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Results fetched successfully!",
+      data: students,
+    });
+  } catch (error) {
+    console.error("❌ Error in getExamResultAllStudents:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};
+
+exports.getExamResultAllStudentsOfAClass = async (req, res) => {
+  const { classId } = req.params;
+  try {
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        er.grade_marks,
+        en.examName,
+        cs.name AS subject_name,
+        cs.code,
+        s.admissionnum,
+        s.rollnum,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        p.name AS father_name,
+        p.phone_num,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN class_subject cs ON er.subject_id = cs.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
+      LEFT JOIN users u ON s.stu_id = u.id
+      Where s.class_id = ?
+      ORDER BY s.rollnum, en.examName, cs.name
+    `;
+
+    const [rows] = await db.query(sql, [classId]);
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: false,
+        message: "No results found!",
+      });
+    }
+    const studentsMap = {};
+
+    rows.forEach((row) => {
+      const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
+      if (!studentsMap[key]) {
+        studentsMap[key] = {
+          key: row.id,
+          rollnum: row.rollnum,
+          admissionNo: row.admissionnum,
+          studentName: `${row.firstname} ${row.lastname}`,
+          class: row.class_id,
+          section: row.section_id,
+          img: row.stu_img || "assets/img/students/default.jpg",
+          examName: row.examName,
+          subjects: {},
+          totalMaxMarks: 0,
+        };
+      }
+
+      const subjKey = `${row.subject_name} (${row.code})`;
+      if (!row.grade_marks) {
+        studentsMap[key].subjects[subjKey] = {
+          id: row.id,
+          mark_obtained: row.mark_obtained || 0,
+          max_mark: row.max_mark || 0,
+        };
+      } else {
+        studentsMap[key].subjects[subjKey] = {
+          id: row.id,
+          grade_marks: row.grade_marks || "",
+        };
+      }
+
+      // Increment total max marks for this exam
+      studentsMap[key].totalMaxMarks += row.max_mark || 0;
+    });
+
+    // Calculate total, percent, grade, and result per exam
+    const students = Object.values(studentsMap).map((student) => {
+      let totalObtained = 0;
+
+      Object.values(student.subjects).forEach((subj) => {
+        if (subj.mark_obtained) {
+          totalObtained += subj.mark_obtained;
+        } else if (subj.grade_marks) {
+          totalObtained += calculateObtainedMarksForGrades(subj.grade_marks);
+        }
+      });
+
+      const percent =
+        student.totalMaxMarks > 0
+          ? Number(((totalObtained / student.totalMaxMarks) * 100).toFixed(2))
+          : 0;
+
+      let overallGrade = "F";
+
+      if (percent >= 90) overallGrade = "A+";
+      else if (percent >= 80) overallGrade = "A";
+      else if (percent >= 70) overallGrade = "B+";
+      else if (percent >= 60) overallGrade = "B";
+      else if (percent >= 50) overallGrade = "C";
+      else if (percent >= 33) overallGrade = "D";
+
+      const overallResult = percent < 33 ? "Fail" : "Pass";
+
       return {
         ...student,
         total: totalObtained,
@@ -1258,7 +1386,6 @@ exports.getExamResultUpdateList = async (req, res) => {
 
         const markObtained = result?.mark_obtained ?? null;
 
-        // If marks are added, add to totals
         if (markObtained !== null) {
           groupedData[key].totalObtained += markObtained;
           groupedData[key].totalMax += parseInt(row.maxMarks);

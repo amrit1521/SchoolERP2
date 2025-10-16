@@ -31,10 +31,17 @@ router.post("/addresult", examController.addExamResult);
 router.post("/addresult2", examController.addExamResult2);
 router.get("/getresult/:rollnum", examController.getExamResultSpeStudents);
 router.get("/getstudentsexamresult", examController.getExamResultAllStudents);
-router.get("/examNameforastudent/:rollNum", examController.examNameForStudentResults);
+router.get(
+  "/examNameforastudent/:rollNum",
+  examController.examNameForStudentResults
+);
 router.post(
   "/getstudentexamresultlist",
   examController.getExamResultUpdateList
+);
+router.get(
+  "/getexamresultforclass/:classId",
+  examController.getExamResultAllStudentsOfAClass
 );
 router.post("/getspeexamresult", examController.getSpeExamResult);
 router.get("/spemark/:id", examController.speMarkForEdit);

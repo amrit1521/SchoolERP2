@@ -72,7 +72,8 @@ export const addLeave = (data: object) => api.post("/leave/addleave", data);
 
 // class section---------------------------
 export const getAllSection = () => api.get("/section");
-export const getAllSectionForAClass = (id:number) => api.get(`/section/speclass/${id}`);
+export const getAllSectionForAClass = (id: number) =>
+  api.get(`/section/speclass/${id}`);
 export const addClassSection = (data: object) => api.post("/section", data);
 export const deleteSection = (id: any) => api.delete(`/section/${id}`);
 export const speSection = (id: any) => api.get(`/section/${id}`);
@@ -87,7 +88,7 @@ export const deleteSubject = (id: number) =>
   api.delete(`/subject/deletesubject/${id}`);
 export const speSubject = (id: number) => api.get(`/subject/spesubject/${id}`);
 export const editSubject = (data: object, id: number) =>
-  api.put(`/subject/editsubject/${id}`, data); 
+  api.put(`/subject/editsubject/${id}`, data);
 
 // table routes-----------------------------
 export const addTimeTable = (data: object) =>
@@ -129,8 +130,10 @@ export const getStuAttendanceData = (rollnum: any) =>
   api.get(`/attendance/getstuattendance/${rollnum}`);
 
 //teacher attendance ---------------------
-export const allTeacherForAttendance = () => api.get('/teacher/allteacherforattendance');
-export const markTeacherAttendance = (data:any) => api.post('/attendance/markteacherattendance',data);
+export const allTeacherForAttendance = () =>
+  api.get("/teacher/allteacherforattendance");
+export const markTeacherAttendance = (data: any) =>
+  api.post("/attendance/markteacherattendance", data);
 
 // student fees ------------------------------
 export const studentDetForFees = (id: any) =>
@@ -209,7 +212,8 @@ export const editGrade = (data: object, id: number) =>
   api.put(`/exam/editgrade/${id}`, data);
 
 // exam result
-export const getAllExamNameForAStud = (rollnum:number) => api.get(`/exam/examNameforastudent/${rollnum}`);
+export const getAllExamNameForAStud = (rollnum: number) =>
+  api.get(`/exam/examNameforastudent/${rollnum}`);
 export const addExamResult = (data: object) =>
   api.post("/exam/addresult", data);
 export const addExamResult2 = (data: object) =>
@@ -218,6 +222,8 @@ export const getExamResult = (rollnum: number) =>
   api.get(`/exam/getresult/${rollnum}`);
 export const getExamResultAllStudents = () =>
   api.get("/exam/getstudentsexamresult");
+export const getResultAllStudentsOfClass = (id: number) =>
+  api.get(`/exam/getexamresultforclass/${id}`);
 export const speMark = (id: number) => api.get(`/exam/spemark/${id}`);
 export const editMark = (data: object, id: number) =>
   api.put(`/exam/editmark/${id}`, data);
