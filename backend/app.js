@@ -54,6 +54,7 @@ app.use('/api/designation',require('./routes/designation/designationRoutes') )
 app.use('/api/staff' , require('./routes/staff/staffRoutes'))
 app.use('/api/hostel' , require('./routes/hostel/hostelListRoutes'))
 app.use('/api/salary' , require('./routes/payment_salary/paymentSalaryRoutes'))
+app.use('/api/sport' , require('./routes/sports/sportsRoutes'))
 
 
 

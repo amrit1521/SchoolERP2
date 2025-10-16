@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
@@ -15,9 +15,11 @@ import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 // import HostelModal from "./hostelModal";
-import { hostelRoomsData } from "../../../core/data/json/hostelRoomsData";
-import { hostelForOption, hostelRoomTypeForOption } from "../../../service/hostel";
+// import { hostelRoomsData } from "../../../core/data/json/hostelRoomsData";
+import { addHostelRoom, allHostelRoom, deleteHostelRoom, editHostelRoom, hostelForOption, hostelRoomTypeForOption, speHostelRoom } from "../../../service/hostel";
 import { toast } from "react-toastify";
+import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { Spinner } from "../../../spinner";
 
 interface HostelRoomFormData {
   roomNo: string;
@@ -44,20 +46,26 @@ interface Option {
 const HostelRooms = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const data = hostelRoomsData;
+  // const data = hostelRoomsData;
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
 
-
-
-
-
+  const [hostelRooms, setHostelRooms] = useState<any>([])
+  const [loading, setLoading] = useState<boolean>(false)
   const [hostelOptions, setHostelOptions] = useState<Option[]>([]);
   const [roomTypeOptions, setRoomTypeOptions] = useState<Option[]>([]);
-
+  const [formData, setFormData] = useState<HostelRoomFormData>({
+    roomNo: "",
+    hostelId: null,
+    roomTypeId: null,
+    bedCount: null,
+    costPerBed: null,
+  });
+  const [editId, setEditId] = useState<number | null>(null)
+  const [errors, setErrors] = useState<HostelRoomFormErrors>({});
 
   const fetchOptions = useCallback(async () => {
     try {
@@ -89,37 +97,40 @@ const HostelRooms = () => {
     }
   }, []);
 
+  const fetchHostelRooms = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 400))
+    try {
+
+      const { data } = await allHostelRoom()
+      if (data.success) {
+        setHostelRooms(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
+    fetchHostelRooms()
     fetchOptions();
   }, [fetchOptions]);
 
-
-
   // add hostel room
-  const [formData, setFormData] = useState<HostelRoomFormData>({
-    roomNo: "",
-    hostelId: null,
-    roomTypeId: null,
-    bedCount: null,
-    costPerBed: null,
-  });
-
-  const [errors, setErrors] = useState<HostelRoomFormErrors>({});
-  const [loading, setLoading] = useState<boolean>(false);
-
-  // Handle input change
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "costPerBed" ? Number(value) : value,
+      [name]: value,
     }));
   };
 
-  // Handle select change
+
   const handleSelectChange = (name: keyof HostelRoomFormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -127,11 +138,11 @@ const HostelRooms = () => {
     }));
   };
 
-  // Validate form
+
   const validateForm = (): boolean => {
     const newErrors: HostelRoomFormErrors = {};
 
-    if (!formData.roomNo.trim()) newErrors.roomNo = "Room number is required!";
+    if (!formData.roomNo) newErrors.roomNo = "Room number is required!";
     if (!formData.hostelId) newErrors.hostelId = "Select a hostel!";
     if (!formData.roomTypeId) newErrors.roomTypeId = "Select room type!";
     if (!formData.bedCount) newErrors.bedCount = "Select bed count!";
@@ -142,35 +153,107 @@ const HostelRooms = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle submit
+  // edit
+  const fetchById = async (id: number) => {
+    if (!id) return
+    try {
+
+      const { data } = await speHostelRoom(id)
+      if (data.success) {
+        const res = data.data
+        setFormData({
+          roomNo: res.roomNo,
+          hostelId: res.hostelId,
+          roomTypeId: res.roomTypeId,
+          bedCount: res.bedCount,
+          costPerBed: res.costPerBed,
+        })
+        setEditId(id)
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    setLoading(true);
-    console.log(formData)
     try {
-      // const { data } = await addHostelRoom(formData);
-      // if (data.success) {
-      //   toast.success(data.message);
-      //   onSuccess();
-      //   handleCancel();
-      // }
+      if (editId) {
+        const { data } = await editHostelRoom(formData, editId)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('edit_hostel_rooms')
+
+        }
+      } else {
+        const { data } = await addHostelRoom(formData);
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('add_hostel_rooms')
+        }
+      }
+      setEditId(null)
+      fetchHostelRooms()
+      setFormData({
+        roomNo: "",
+        hostelId: null,
+        roomTypeId: null,
+        bedCount: null,
+        costPerBed: null,
+      })
+
     } catch (error: any) {
       console.log(error);
       toast.error(error.response?.data?.message || "Something went wrong!");
-    } finally {
-      setLoading(false);
     }
   };
 
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setFormData({
+      roomNo: "",
+      hostelId: null,
+      roomTypeId: null,
+      bedCount: null,
+      costPerBed: null,
+    })
+    setEditId(null)
+  }
+
+
+  // delete 
+  // delete----------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const { data } = await deleteHostelRoom(id)
+      if (data.success) {
+        toast.success(data.message)
+        fetchHostelRooms();
+        setDeleteId(null)
+        handleModalPopUp('delete-modal')
+      }
+      setEditId(null)
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" className="link-primary">
-          {text}
+          HR{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
@@ -185,13 +268,18 @@ const HostelRooms = () => {
     {
       title: "Hostel Name",
       dataIndex: "hostelName",
-
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.hostelName.length - b.hostelName.length,
     },
     {
       title: "Room Type",
       dataIndex: "roomType",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.roomType.length - b.roomType.length,
     },
@@ -210,7 +298,7 @@ const HostelRooms = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -224,26 +312,26 @@ const HostelRooms = () => {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => fetchById(record.id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_hostel_rooms"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link
+                  <button
+                    onClick={() => setDeleteId(record.id)}
                     className="dropdown-item rounded-1"
-                    to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -415,7 +503,9 @@ const HostelRooms = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {
+                loading ? <Spinner /> : (<Table dataSource={hostelRooms} columns={columns} Selection={true} />)
+              }
               {/* /Student List */}
             </div>
           </div>
@@ -436,7 +526,7 @@ const HostelRooms = () => {
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
-                // onClick={handleCancel}
+                  onClick={(e) => handleCancel(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -523,12 +613,13 @@ const HostelRooms = () => {
                   <button
                     type="button"
                     className="btn btn-light me-2"
-                  // onClick={handleCancel}
+                    data-bs-dismiss="modal"
+                    onClick={(e) => handleCancel(e)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
-                    {loading ? "Adding..." : "Add Hostel Room"}
+                  <button type="submit" className="btn btn-primary" >
+                    Add Hostel Room
                   </button>
                 </div>
               </form>
@@ -540,6 +631,7 @@ const HostelRooms = () => {
         <div className="modal fade" id="edit_hostel_rooms">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
+              {/* Header */}
               <div className="modal-header">
                 <h4 className="modal-title">Edit Hostel Room</h4>
                 <button
@@ -547,80 +639,143 @@ const HostelRooms = () => {
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
+                  onClick={(e) => handleCancel(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
+                      {/* Room No */}
                       <div className="mb-3">
                         <label className="form-label">Room No</label>
                         <input
                           type="text"
-                          className="form-control"
-                          placeholder="Enter Room No"
-                          defaultValue="A1"
+                          name="roomNo"
+                          value={formData.roomNo}
+                          onChange={handleChange}
+                          className={`form-control ${errors.roomNo ? "is-invalid" : ""}`}
+                          placeholder="Enter room number"
                         />
+                        {errors.roomNo && <div className="invalid-feedback">{errors.roomNo}</div>}
                       </div>
+
+                      {/* Hostel */}
                       <div className="mb-3">
                         <label className="form-label">Hostel Name</label>
                         <CommonSelect
-                          className="select"
+                          className={`select ${errors.hostelId ? "is-invalid" : ""}`}
                           options={hostelOptions}
-                        // defaultValue={roomtype[0].value}
+                          value={formData.hostelId}
+                          onChange={(option) => handleSelectChange("hostelId", option?.value || null)}
                         />
+                        {errors.hostelId && <div className="invalid-feedback">{errors.hostelId}</div>}
                       </div>
+
+                      {/* Room Type */}
                       <div className="mb-3">
                         <label className="form-label">Room Type</label>
                         <CommonSelect
-                          className="select"
+                          className={`select ${errors.roomTypeId ? "is-invalid" : ""}`}
                           options={roomTypeOptions}
-                        // defaultValue={roomtype[0].value}
+                          value={formData.roomTypeId}
+                          onChange={(option) => handleSelectChange("roomTypeId", option?.value || null)}
                         />
+                        {errors.roomTypeId && (
+                          <div className="invalid-feedback">{errors.roomTypeId}</div>
+                        )}
                       </div>
+
+                      {/* Bed Count */}
                       <div className="mb-3">
                         <label className="form-label">No of Bed</label>
                         <CommonSelect
-                          className="select"
+                          className={`select ${errors.bedCount ? "is-invalid" : ""}`}
                           options={bedcount}
-                        // defaultValue={bedcount[0].value}
+                          value={formData.bedCount}
+                          onChange={(option) => handleSelectChange("bedCount", option?.value || null)}
                         />
+                        {errors.bedCount && <div className="invalid-feedback">{errors.bedCount}</div>}
                       </div>
+
+                      {/* Cost per Bed */}
                       <div className="mb-0">
                         <label className="form-label">Cost per Bed</label>
                         <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Cost per Bed"
-                          defaultValue="$200"
+                          type="number"
+                          name="costPerBed"
+                          value={formData.costPerBed || ""}
+                          onChange={handleChange}
+                          className={`form-control ${errors.costPerBed ? "is-invalid" : ""}`}
+                          placeholder="Enter cost per bed"
                         />
+                        {errors.costPerBed && (
+                          <div className="invalid-feedback">{errors.costPerBed}</div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Footer */}
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={(e) => handleCancel(e)}
                   >
                     Cancel
-                  </Link>
-                  <Link
-                    to="#"
-                    data-bs-dismiss="modal"
-                    className="btn btn-primary"
-                  >
-                    Save Changes
-                  </Link>
+                  </button>
+                  <button type="submit" className="btn btn-primary" >
+                    Edit Hostel Room
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
         {/* Edit Hostel Room */}
+
+        {/* Delete Modal */}
+        <div className="modal fade" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete all the marked items, this cant be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        data-bs-dismiss="modal"
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {/* /Delete Modal */}
       </>
     </>
   );

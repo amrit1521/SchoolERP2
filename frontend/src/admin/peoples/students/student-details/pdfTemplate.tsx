@@ -700,10 +700,10 @@ interface Subject {
   term2: number;
 }
 
-interface Activity {
-  name: string;
-  grade: string;
-}
+// interface Activity {
+//   name: string;
+//   grade: string;
+// }
 
 const gradingScale = [
   { min: 91, grade: "A+" },
@@ -732,16 +732,16 @@ const initialSubjects: Subject[] = [
   { name: "ORAL", maxMarks: 60, term1: 0, term2: 0 },
 ];
 
-const initialActivities: Activity[] = [
-  { name: "Art & Craft", grade: "" },
-  { name: "Music", grade: "" },
-  { name: "Sports", grade: "" },
-  { name: "Dance", grade: "" },
-];
+// const initialActivities: Activity[] = [
+//   { name: "Art & Craft", grade: "" },
+//   { name: "Music", grade: "" },
+//   { name: "Sports", grade: "" },
+//   { name: "Dance", grade: "" },
+// ];
 
 const PdfTemplate7 = () => {
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
-  const [activities, setActivities] = useState<Activity[]>(initialActivities);
+  // const [activities, setActivities] = useState<Activity[]>(initialActivities);
 
   // Dummy student & school data (could be props or fetched)
   const school = {
@@ -790,11 +790,11 @@ const PdfTemplate7 = () => {
     setSubjects(newSubjects);
   };
 
-  const handleActivityGradeChange = (index: number, grade: string) => {
-    const newActivities = [...activities];
-    newActivities[index].grade = grade.toUpperCase().slice(0, 2); // Limit to 2 chars
-    setActivities(newActivities);
-  };
+  // const handleActivityGradeChange = (index: number, grade: string) => {
+  //   const newActivities = [...activities];
+  //   newActivities[index].grade = grade.toUpperCase().slice(0, 2); 
+  //   setActivities(newActivities);
+  // };
 
   return (
     <div className="container border border-2 border-dark p-4 my-5 bg-white">
