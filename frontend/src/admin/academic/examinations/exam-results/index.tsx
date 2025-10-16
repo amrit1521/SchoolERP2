@@ -6,7 +6,6 @@ import Table from "../../../../core/common/dataTable/index";
 import { Link, useNavigate } from "react-router-dom";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
-import { classSection } from "../../../../core/common/selectoption/selectoption";
 import { all_routes } from "../../../router/all_routes";
 // import TooltipOption from "../../../../core/common/tooltipOption";
 import {
@@ -105,7 +104,6 @@ const ExamResult = () => {
   // );
   const [loading, setLoading] = useState<boolean>(false);
   const [allClass, setAllClass] = useState<any[]>([]);
-  const [section, setSections] = useState<any[]>([]);
   // const [selectedClass, setSelectedClass] = useState("");
   // const [selectedSection, setSelectedSection] = useState("");
   const [examOptions, setExamOptions] = useState<
@@ -118,7 +116,35 @@ const ExamResult = () => {
   const [selectedExams, setSelectedExams] = useState<
     Record<number, { value: number; label: string }>
   >({});
+  const [allSections, setAllSections] = useState<any[]>([]);
   const navigate = useNavigate();
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    null
+  );
+  const [modalStudentItem, setModalStudentItem] = useState<any>(null);
+  const pdfRenderRef = useRef(null);
+  const templateConfigs = [
+    {
+      id: 1,
+      label: "t-1",
+      component: Template1,
+      badge: "primary",
+    },
+    {
+      id: 2,
+      label: "t-2",
+      component: Template2,
+      badge: "success",
+    },
+    {
+      id: 3,
+      label: "t-3",
+      component: Template3,
+      badge: "info",
+    },
+  ];
 
   const fetchClass = async () => {
     try {
@@ -135,13 +161,11 @@ const ExamResult = () => {
       toast.error("Error to fetch classes !");
     }
   };
-
   const fetchSections = async (id: number) => {
     try {
       if (id) {
-        console.log(id);
         const { data } = await getAllSectionForAClass(id);
-        let options = [];
+        const options: any[] = [];
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           options.push(
             ...data.data.map((e: any) => ({
@@ -149,8 +173,16 @@ const ExamResult = () => {
               label: e.section_name,
             }))
           );
-        } else {
-          setSections([]);
+          setAllSections((prev) => {
+            const existingIndex = prev.findIndex(
+              (section) => section.id === id
+            );
+            if (existingIndex !== -1) {
+              return prev;
+            } else {
+              return [...prev, { id, sections: options }];
+            }
+          });
         }
         return options;
       }
@@ -164,19 +196,73 @@ const ExamResult = () => {
     fetchClass();
   }, []);
 
-  useEffect(() => {
-    if (allClass.length != 0) {
-      const rows = allClass.map(async (cls) => ({
-        key: cls.value,
-        class: cls.label,
-        section: "",
-        examName: "",
-        allSection: await fetchSections(cls.value),
-      }));
-      console.log(rows);
+  const fetchRows = async () => {
+    if (allClass.length !== 0) {
+      const rows = await Promise.all(
+        allClass.map(async (cls) => ({
+          key: cls.value,
+          class: cls.label,
+          section: null,
+          examName: "",
+          allSection: await fetchSections(cls.value),
+        }))
+      );
       setResultData2(rows);
     }
+  };
+
+  useEffect(() => {
+    fetchRows();
   }, [allClass]);
+
+  const handleDownloadTemplate = async () => {
+    if (!selectedTemplateId || !modalStudentItem) return;
+
+    const selectedTemplate = templateConfigs.find(
+      (t) => t.id === selectedTemplateId
+    );
+    if (!selectedTemplate || !pdfRenderRef.current) return;
+
+    // pdfRenderRef.current.innerHTML = '';
+
+    // Create a container div for PDF rendering
+    const pdfElement = document.createElement("div");
+    pdfElement.style.width = "800px"; // Approx A4 width
+    pdfElement.style.padding = "20px";
+    pdfElement.style.backgroundColor = "#fff";
+
+    // Dynamically render the selected template
+    const Component = selectedTemplate.component;
+    // const node = (
+    //   <Component
+    //     studentItem={modalStudentItem}
+    //     studentRollnum={modalStudentItem.rollnum}
+    //     label={selectedTemplate.label}
+    //   />
+    // );
+    // const root = ReactDOM.createRoot(pdfElement);
+    // root.render(node);
+
+    // Wait for render and append to DOM
+    // setTimeout(() => {
+    //   pdfRenderRef.current.appendChild(pdfElement);
+
+    //   html2pdf()
+    //     .set({
+    //       margin: 10,
+    //       filename: `Result-${modalStudentItem.rollnum}-${selectedTemplate.label}.pdf`,
+    //       html2canvas: { scale: 2 },
+    //       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    //     })
+    //     .from(pdfElement)
+    //     .save()
+    //     .then(() => {
+    //       // Cleanup after download
+    //       setIsModalVisible(false);
+    //       setSelectedTemplateId(null);
+    //     });
+    // }, 500);
+  };
 
   // const fetchResult = async () => {
   //   setLoading(true);
@@ -448,15 +534,21 @@ const ExamResult = () => {
       dataIndex: "section",
       render: (_: any, record: any, index: number) => (
         <CommonSelect
-          options={classSection}
+          options={
+            record?.allSection
+              ? record.allSection.map((e: any) => ({
+                  value: e.value,
+                  label: e.label.toUpperCase(),
+                }))
+              : []
+          }
           value={record.section ? record.section.value : null}
           onChange={(opt: any) => {
             console.log("record: ", record);
             const newData = [...resultData2];
             newData[index].section = opt.value;
             setResultData2(newData);
-
-            fetchExamForOption2(record.class, opt.value, index);
+            fetchExamForOption2(record.key, opt.value, index);
           }}
         />
       ),
@@ -501,6 +593,22 @@ const ExamResult = () => {
         </button>
       ),
     },
+    {
+      title: "Download Result",
+      render: (_: any, __: any, index: number) => (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            setModalStudentItem("sdf");
+            setIsModalVisible(true);
+          }}
+          // disabled={!selectedExams.hasOwnProperty(index)}
+        >
+          Download Result
+        </button>
+      ),
+    },
   ];
   // const [formData, setformdata] = useState<AddResult>(initialFormData);
   // const [errors, setErrors] = useState<any>({});
@@ -521,17 +629,11 @@ const ExamResult = () => {
   const handleAddResult2 = (index: number) => {
     const selectedExam = selectedExams[index];
     const rowData = resultData2[index];
-    console.log(
-      "Adding result for row:",
-      rowData,
-      "Selected Exam:",
-      selectedExam
-    );
     // setShowExamMarkUpload(true);
     navigate("/academic/update-exam-result", {
       state: {
         exam_name_id: selectedExam?.value,
-        class: rowData?.class,
+        class: rowData?.key,
         section: rowData?.section,
       },
     });
@@ -573,8 +675,8 @@ const ExamResult = () => {
   // };
 
   const fetchExamForOption2 = async (
-    cls: string,
-    section: string,
+    cls: number,
+    section: number,
     rowIndex: number
   ) => {
     try {
@@ -826,8 +928,8 @@ const ExamResult = () => {
   // );
 
   interface FilterData {
-    class: string;
-    section: string;
+    class: number | null;
+    section: number | null;
     exam_type: number | null;
   }
 
@@ -870,14 +972,15 @@ const ExamResult = () => {
 
   //handling filter
   const [filterData, setFilterData] = useState<FilterData>({
-    class: "",
-    section: "",
+    class: null,
+    section: null,
     exam_type: null,
   });
+  const [sectionOptions, setSectionOptions] = useState<any[]>([]);
   const [isApplyDisabled, setIsApplyDisabled] = useState(true);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchExamOptions = async (cls: string, section: string) => {
+  const fetchExamOptions = async (cls: number, section: number) => {
     try {
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
@@ -900,7 +1003,11 @@ const ExamResult = () => {
   ) => {
     setFilterData((prev) => {
       const updated = { ...prev, [name]: value } as FilterData;
-      if (name === "class" || name === "section") {
+      if (name === "class") {
+        setSectionOptions(
+          allSections.filter((section) => section.id == value)[0]?.sections
+        );
+      } else if (name === "section") {
         updated.exam_type = null;
         if (updated.class && updated.section) {
           fetchExamOptions(updated.class, updated.section);
@@ -937,8 +1044,9 @@ const ExamResult = () => {
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "", exam_type: null });
+    setFilterData({ class: null, section: null, exam_type: null });
     setExamOptions([]);
+    console.log(filterData);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");
   };
@@ -1016,6 +1124,7 @@ const ExamResult = () => {
                               <CommonSelect
                                 className="select"
                                 options={allClass}
+                                value={filterData.class}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "class",
@@ -1028,7 +1137,15 @@ const ExamResult = () => {
                               <label className="form-label">Section</label>
                               <CommonSelect
                                 className="select"
-                                options={classSection}
+                                options={
+                                  sectionOptions
+                                    ? sectionOptions.map((e: any) => ({
+                                        value: e.value,
+                                        label: e.label.toUpperCase(),
+                                      }))
+                                    : []
+                                }
+                                value={filterData.section}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "section",
@@ -1042,6 +1159,7 @@ const ExamResult = () => {
                               <CommonSelect
                                 className="select"
                                 options={examOptions}
+                                value={filterData.exam_type}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "exam_type",
@@ -1521,8 +1639,112 @@ const ExamResult = () => {
           </div>
         </div> */}
         {/* /Add Home Work */}
+        {isModalVisible && modalStudentItem && (
+          <div
+            className="modal show d-block"
+            tabIndex={-1}
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog modal-xl modal-dialog-scrollable">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Choose a Result Template</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setIsModalVisible(false);
+                      setSelectedTemplateId(null);
+                    }}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="row">
+                    {templateConfigs.map((template) => (
+                      <div className="col-lg-6 col-xl-4 mb-4" key={template.id}>
+                        <div
+                          className="border p-3 h-100 d-flex flex-column bg-light rounded position-relative"
+                          style={{ minHeight: "550px", cursor: "pointer" }}
+                          onClick={() => setSelectedTemplateId(template.id)}
+                        >
+                          <template.component />
+
+                          <div className="mt-auto d-flex justify-content-end">
+                            <button
+                              type="button"
+                              className={`btn ${
+                                selectedTemplateId === template.id
+                                  ? "btn-success"
+                                  : "btn-outline-primary"
+                              } btn-sm`}
+                              onClick={(e) => {
+                                e.stopPropagation(); // prevent parent click
+                                setSelectedTemplateId(template.id);
+                              }}
+                            >
+                              {selectedTemplateId === template.id
+                                ? "✓ Selected"
+                                : "Select This"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="modal-footer d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsModalVisible(false);
+                      setSelectedTemplateId(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={!selectedTemplateId}
+                    onClick={handleDownloadTemplate}
+                  >
+                    Download Selected
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     </div>
+  );
+};
+
+const Template1 = () => {
+  return (
+    <>
+      <h1>This is Template 1.</h1>
+      <h1>This is template pdf1.</h1>
+    </>
+  );
+};
+
+const Template2 = () => {
+  return (
+    <>
+      <h1>This is Template 2.</h1>
+      <h1>This is template pdf2.</h1>
+    </>
+  );
+};
+
+const Template3 = () => {
+  return (
+    <>
+      <h1>This is Template 3.</h1>
+      <h1>This is template pdf3.</h1>
+    </>
   );
 };
 

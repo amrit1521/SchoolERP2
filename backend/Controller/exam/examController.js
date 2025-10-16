@@ -1182,12 +1182,16 @@ exports.getExamResultUpdateList = async (req, res) => {
         cs.code,
         s.admissionnum,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
+        cl.class_name as class,
+        se.section_name as section,
         u.firstname,
         u.lastname
       FROM examSchedule es
-      RIGHT JOIN students s ON es.className = s.class AND es.section = s.section
+      RIGHT JOIN students s ON es.className = s.class_id AND es.section = s.section_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN class_subject cs ON es.subject = cs.id
       LEFT JOIN users u ON s.stu_id = u.id
       WHERE es.className = ? AND es.section = ? AND es.examName = ?
@@ -1238,6 +1242,8 @@ exports.getExamResultUpdateList = async (req, res) => {
           name: `${row.firstname} ${row.lastname}`,
           class: row.class,
           section: row.section,
+          class_id: row.class_id,
+          section_id: row.section_id,
           admissionNum: row.admissionnum,
           rollNum: row.rollnum,
           subject: [],
