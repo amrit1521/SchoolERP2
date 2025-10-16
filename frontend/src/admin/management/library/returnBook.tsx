@@ -134,7 +134,7 @@ const ReturnBook = () => {
               <p className="text-dark mb-0">
                 <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
               </p>
-              <span className="fs-12">{record.class},{record.section}</span>
+              <span className="fs-12 text-capitalize">{record.class}-{record.section}</span>
             </div>
           </div>
         </>

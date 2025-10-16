@@ -2,9 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // import { classhomework } from "../../../core/data/json/class_home_work";
 import Table from "../../../core/common/dataTable/index";
 import {
-  allClass,
-  classSection,
-  classSylabus,
   language,
   weak,
 } from "../../../core/common/selectoption/selectoption";
@@ -20,12 +17,9 @@ import dayjs from 'dayjs'
 import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSubject, Imageurl, speHomework } from "../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { allRealClasses } from "../../../service/classApi";
 
-export interface Teacher {
-  teacher_id: number;
-  firstname: string;
-  lastname: string;
-}
+
 
 export interface Homework {
   id: number;
@@ -41,6 +35,12 @@ export interface Homework {
   img_src?: string;
 }
 
+export interface Teacher {
+  teacher_id: number;
+  firstname: string;
+  lastname: string;
+}
+
 export interface Section {
   id: number;
   section: string;
@@ -49,6 +49,11 @@ export interface Section {
 export interface Subject {
   id: number;
   name: string;
+}
+
+export interface classes {
+  id: number,
+  class_name: string;
 }
 
 const ClassHomeWork = () => {
@@ -71,6 +76,7 @@ const ClassHomeWork = () => {
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [allClass, setAllClass] = useState<classes[]>([])
   const [loading, setLoading] = useState<boolean>(false);
 
   // -------------------------
@@ -112,7 +118,8 @@ const ClassHomeWork = () => {
   // -------------------------
   const fetchTeachers = () => fetchData(allTeacherForOption, setTeachers);
   const fetchSections = () => fetchData(getAllSection, setSections);
-  const fetchSubjects = () => fetchData(getAllSubject, setSubjects)
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
+  const fetchClasses = () => fetchData(allRealClasses, setAllClass)
 
   // -------------------------
   // Effects
@@ -123,6 +130,7 @@ const ClassHomeWork = () => {
     fetchSections();
     fetchSubjects()
     fetchHomeWorks();
+    fetchClasses();
   }, []);
 
   // -------------------------
@@ -141,7 +149,7 @@ const ClassHomeWork = () => {
   const teacherOptions = useMemo(
     () =>
       teachers.map((t) => ({
-        value: t.teacher_id,
+        value: Number(t.teacher_id),
         label: `${t.firstname} ${t.lastname}`,
       })),
     [teachers]
@@ -158,6 +166,11 @@ const ClassHomeWork = () => {
 
     [subjects]
   )
+
+  const classOptions = useMemo(
+    () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+    [allClass]
+  );
 
   const tableData = homeworks.map((hw) => ({
     key: hw.id,
@@ -223,7 +236,12 @@ const ClassHomeWork = () => {
     if (!formData.teacherId) newErrors.teacherId = "Teacher is required";
     if (!formData.homeworkDate) newErrors.homeworkDate = "Homework date is required";
     if (!formData.submissionDate) newErrors.submissionDate = "Submission date is required";
+    if (!formData.attachments)
+      newErrors.attachments = "Attachment is required !"
+    else if (formData.attachments.length < 6)
+      newErrors.attachments = "Attachment must be at least 6 chracters !"
     if (!formData.description) newErrors.description = "Description is required";
+    else if (formData.description.length < 6) newErrors.description = "Description must be at least 10 chracters !"
 
     setErrors(newErrors);
 
@@ -323,7 +341,7 @@ const ClassHomeWork = () => {
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
+    // console.log(id)
     e.preventDefault()
     try {
 
@@ -459,7 +477,7 @@ const ClassHomeWork = () => {
       ),
     },
   ];
-  
+
   return (
     <div>
       <>
@@ -540,7 +558,7 @@ const ClassHomeWork = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={classSylabus}
+                                  options={classOptions}
                                 />
                               </div>
                             </div>
@@ -550,7 +568,7 @@ const ClassHomeWork = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={classSection}
+                                  options={classOptions}
                                 />
                               </div>
                             </div>
@@ -658,7 +676,7 @@ const ClassHomeWork = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
                             handleSelectChange("className", opt?.value || "")
@@ -799,8 +817,11 @@ const ClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className="form-control"
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""}`}
                         />
+                        {errors.attachments && (
+                          <div className="invalid-feedback">{errors.attachments}</div>
+                        )}
                       </div>
 
                       {/* Description */}
@@ -881,7 +902,7 @@ const ClassHomeWork = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
                             handleSelectChange("className", opt?.value || "")
@@ -1022,8 +1043,12 @@ const ClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className="form-control"
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""
+                            }`}
                         />
+                        {errors.attachments && (
+                          <div className="invalid-feedback">{errors.attachments}</div>
+                        )}
                       </div>
 
                       {/* Description */}

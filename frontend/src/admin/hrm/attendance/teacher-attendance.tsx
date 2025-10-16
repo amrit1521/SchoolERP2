@@ -1,40 +1,97 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
-import {
-  teacherId,
-  studentclass,
-} from "../../../core/common/selectoption/selectoption";
+// import {
+//   teacherId,
+//   studentclass,
+// } from "../../../core/common/selectoption/selectoption";
 import Table from "../../../core/common/dataTable/index";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import {
   allTeacherForAttendance,
+  getAllSection,
   Imageurl,
   markTeacherAttendance,
 } from "../../../service/api";
 import { toast } from "react-toastify";
+import { allRealClasses } from "../../../service/classApi";
+interface AttendanceData {
+  id: string;
+  name: string;
+  class: string;
+  section: string;
+  attendance: string;
+  notes: string;
+}
+
+interface Classes {
+  id: number;
+  class_name: string;
+}
+
+interface Section {
+  id: number;
+  section: string;
+}
 
 const TeacherAttendance = () => {
   const routes = all_routes;
 
-  interface AttendanceData {
-    id: string;
-    name: string;
-    class: string;
-    section: string;
-    attendance: string;
-    notes: string;
-  }
+
 
   const [teachers, setTeachers] = useState<any[]>([]);
   const [allTeachersList, setAllTeachersList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
 
-  // Generate attendance list
+  // class and section for option 
+  const [sections, setSections] = useState<Section[]>([])
+  const [allClass, setAllClass] = useState<Classes[]>([])
+
+  const fetchData = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>
+  ) => {
+    try {
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const fetchSections = () => fetchData(getAllSection, setSections);
+  const fetchClasses = () => fetchData(allRealClasses, setAllClass)
+
+
+  useEffect(() => {
+    fetchClasses()
+    fetchSections()
+
+  }, []);
+
+
+  const sectionOptions = useMemo(
+    () =>
+      sections.map((s) => ({
+        value: s.id,
+        label: s.section,
+      })),
+    [sections]
+  );
+
+
+  const classOptions = useMemo(
+    () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+    [allClass]
+  );
+
+
+
   const generateAttendanceData = (teachList: any[]): AttendanceData[] =>
     teachList.map((teacher) => ({
       id: teacher.teacher_id,
@@ -45,7 +102,6 @@ const TeacherAttendance = () => {
       notes: "",
     }));
 
-  // Fetch teachers on mount
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
@@ -64,12 +120,12 @@ const TeacherAttendance = () => {
     fetchTeachers();
   }, []);
 
-  // Initialize attendance state
+
   useEffect(() => {
     setAttendanceData(generateAttendanceData(teachers));
   }, [teachers]);
 
-  // Attendance change
+
   const handleAttendanceChange = (id: string, value: string) => {
     setAttendanceData((prev) =>
       prev.map((teacher) =>
@@ -78,7 +134,7 @@ const TeacherAttendance = () => {
     );
   };
 
-  // Notes change
+
   const handleNotesChange = (id: string, value: string) => {
     setAttendanceData((prev) =>
       prev.map((teacher) =>
@@ -87,7 +143,7 @@ const TeacherAttendance = () => {
     );
   };
 
-  // Submit attendance
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log(attendanceData);
@@ -105,7 +161,7 @@ const TeacherAttendance = () => {
     }
   };
 
-  // Table data
+
   const tabledata = teachers.map((item) => ({
     key: item.teacher_id,
     id: item.teacher_id,
@@ -118,7 +174,7 @@ const TeacherAttendance = () => {
     notes: "",
   }));
 
-  // Table columns
+
   const columns = [
     {
       title: "Teacher ID",
@@ -157,6 +213,9 @@ const TeacherAttendance = () => {
     {
       title: "Section",
       dataIndex: "section",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: any, b: any) => a.section.length - b.section.length,
     },
     {
@@ -204,13 +263,13 @@ const TeacherAttendance = () => {
 
   // Filter states
   interface FilterData {
-    class: string;
-    section: string;
+    class: number | null;
+    section: number | null;
   }
 
   const [filterData, setFilterData] = useState<FilterData>({
-    class: "",
-    section: "",
+    class: null,
+    section: null,
   });
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -233,7 +292,7 @@ const TeacherAttendance = () => {
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "" });
+    setFilterData({ class: null, section: null });
     setTeachers(allTeachersList);
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
@@ -295,7 +354,7 @@ const TeacherAttendance = () => {
                           <label className="form-label">Class</label>
                           <CommonSelect
                             className="select"
-                            options={studentclass}
+                            options={classOptions}
                             onChange={(option) =>
                               handleFilterSelectChange(
                                 "class",
@@ -307,8 +366,8 @@ const TeacherAttendance = () => {
                         <div className="col-md-6">
                           <label className="form-label">Section</label>
                           <CommonSelect
-                            className="select"
-                            options={teacherId}
+                            className="select text-capitalize"
+                            options={sectionOptions}
                             onChange={(option) =>
                               handleFilterSelectChange(
                                 "section",

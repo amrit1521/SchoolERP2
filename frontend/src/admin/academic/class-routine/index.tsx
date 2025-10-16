@@ -195,7 +195,7 @@ const ClassRoutine = () => {
 
 
   const fetchroutinebyid = async (id: number) => {
-    console.log(id)
+    // console.log(id)
     try {
 
       const { data } = await speClassRoutine(id)
@@ -221,7 +221,7 @@ const ClassRoutine = () => {
     e.preventDefault();
     if (!validateRoutine()) return;
 
-    console.log("Submitting routine:", routineForm);
+    // console.log("Submitting routine:", routineForm);
 
     try {
 
@@ -267,7 +267,7 @@ const ClassRoutine = () => {
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+    // console.log(id)
     try {
 
       const { data } = await deleteRoutine(id)

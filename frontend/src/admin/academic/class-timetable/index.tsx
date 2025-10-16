@@ -131,7 +131,7 @@ const ClassTimetable = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    console.log(name, value)
+    // console.log(name, value)
     setTableData((prev) => ({
       ...prev,
       [name]: value,
@@ -142,7 +142,7 @@ const ClassTimetable = () => {
     e.preventDefault();
     try {
       const res = await addTimeTable(tableData);
-      console.log(res)
+      // console.log(res)
       if (res.data.success) {
         toast.success(res.data.message)
         fetchTimeTable()
@@ -176,7 +176,7 @@ const ClassTimetable = () => {
     await new Promise((res) => setTimeout(res, 600))
     try {
       const { data } = await getTimeTable()
-      console.log(data)
+      // console.log(data)
       if (data.success) {
         setTimeTable(data.timetable)
         setTimeTablefilter(data.timetable)
@@ -227,10 +227,10 @@ const ClassTimetable = () => {
 
   const handleApplyClick = async(e: React.FormEvent) => {
     e.preventDefault();
-    console.log(filterData)
+    // console.log(filterData)
    try {
      const {data} = await filterTimeTable(filterData)
-    console.log(data)
+    // console.log(data)
     if(data.success){
         setTimeTablefilter(data.data)
     }

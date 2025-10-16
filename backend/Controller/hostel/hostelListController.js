@@ -1,6 +1,6 @@
 const db = require("../../config/db");
 
-// ====================== ADD HOSTEL ======================
+// hostel list
 exports.addHostel = async (req, res) => {
   try {
     let { hostelName, hostelType, intake, address, description } = req.body;
@@ -42,7 +42,7 @@ exports.addHostel = async (req, res) => {
   }
 };
 
-// ====================== GET ALL HOSTELS ======================
+
 exports.getHostels = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -55,7 +55,7 @@ exports.getHostels = async (req, res) => {
   }
 };
 
-// ====================== GET HOSTEL BY ID ======================
+
 exports.getHostelById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -73,7 +73,7 @@ exports.getHostelById = async (req, res) => {
   }
 };
 
-// ====================== UPDATE HOSTEL ======================
+
 exports.updateHostel = async (req, res) => {
   const { id } = req.params;
   let { hostelName, hostelType, intake, address, description } = req.body;
@@ -115,7 +115,6 @@ exports.updateHostel = async (req, res) => {
   }
 };
 
-// ====================== DELETE HOSTEL ======================
 exports.deleteHostel = async (req, res) => {
   const { id } = req.params;
   try {
@@ -135,7 +134,7 @@ exports.deleteHostel = async (req, res) => {
   }
 };
 
-// ====================== HOSTELS FOR OPTION LIST ======================
+
 exports.hostelForOption = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -152,3 +151,189 @@ exports.hostelForOption = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
+
+// hostel room type
+exports.addHostelRoomType = async (req, res) => {
+  try {
+    let { roomType, description } = req.body;
+
+    
+    if (!roomType || !description) {
+      return res.status(400).json({
+        message: "Room Type and Description are required!",
+        success: false,
+      });
+    }
+
+    roomType = roomType.trim();
+    description = description.trim();
+
+    const [existing] = await db.query(
+      "SELECT id FROM hostel_room_type WHERE LOWER(roomType) = ?",
+      [roomType.toLowerCase()]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        message: "Room Type already exists!",
+        success: false,
+      });
+    }
+
+   
+    const [result] = await db.query(
+      "INSERT INTO hostel_room_type (roomType, description) VALUES (?, ?)",
+      [roomType, description]
+    );
+
+    return res.status(201).json({
+      message: "Hostel Room Type added successfully!",
+      success: true,
+      id: result.insertId,
+    });
+  } catch (error) {
+    console.error("Error adding hostel room type:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+exports.getHostelRoomTypes = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT id, roomType, description FROM hostel_room_type ORDER BY id ASC"
+    );
+    return res.status(200).json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching hostel room types:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+exports.getHostelRoomTypeById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await db.query(
+      "SELECT id, roomType, description FROM hostel_room_type WHERE id = ?",
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "Hostel room type not found!",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error("Error fetching hostel room type by ID:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+exports.updateHostelRoomType = async (req, res) => {
+  const { id } = req.params;
+  let { roomType, description } = req.body;
+
+  if (!roomType || !description) {
+    return res.status(400).json({
+      message: "Room Type and Description are required!",
+      success: false,
+    });
+  }
+
+  try {
+    roomType = roomType.trim();
+    description = description.trim();
+
+   
+    const [duplicate] = await db.query(
+      "SELECT id FROM hostel_room_type WHERE LOWER(roomType) = ? AND id != ?",
+      [roomType.toLowerCase(), id]
+    );
+
+    if (duplicate.length > 0) {
+      return res.status(400).json({
+        message: "Another room type with same name already exists!",
+        success: false,
+      });
+    }
+
+   
+    await db.query(
+      "UPDATE hostel_room_type SET roomType = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [roomType, description, id]
+    );
+
+    return res.status(200).json({
+      message: "Hostel room type updated successfully!",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error updating hostel room type:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+exports.deleteHostelRoomType = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.query("DELETE FROM hostel_room_type WHERE id = ?", [
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Hostel room type not found!",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Hostel room type deleted successfully!",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error deleting hostel room type:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+exports.hostelRoomTypeForOption = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT id, roomType FROM hostel_room_type ORDER BY id ASC"
+    );
+
+    return res.status(200).json({
+      message: "Hostels Room Type fetched successfully",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching hostel room type options:", error);
+    return res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
+
+

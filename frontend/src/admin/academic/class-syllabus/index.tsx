@@ -153,7 +153,7 @@ const ClassSyllabus = () => {
   // edit--------------------------------------------------
   const fetchaGroupById = async (id: number) => {
 
-    console.log(id)
+    // console.log(id)
     try {
       const { data } = await speGroup(id)
       if (data.success) {
@@ -226,7 +226,7 @@ const ClassSyllabus = () => {
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+    // console.log(id)
     try {
 
       const { data } = await deleteGroup(id)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
@@ -12,13 +12,11 @@ import {
     PickupPoint,
     Shift,
     VehicleNumber,
-    allClass,
     allSubject,
     bloodGroup,
     gender,
     roomNO,
     route,
-    sections,
     status,
 
 } from "../../../../core/common/selectoption/selectoption";
@@ -27,7 +25,8 @@ import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { deleteTeacherFile, editTeacher, Imageurl, sepTeacher, uploadTeacherFile } from "../../../../service/api";
+import { deleteTeacherFile, editTeacher, getAllSection, getTeacherDataForEdit, Imageurl,  uploadTeacherFile } from "../../../../service/api";
+import { allRealClasses } from "../../../../service/classApi";
 
 export interface TeacherData {
 
@@ -101,11 +100,65 @@ export interface TeacherData {
 
 }
 
+interface Classes {
+    id: number;
+    class_name: string;
+}
+
+interface Section {
+    id: number;
+    section: string;
+}
+
+
 const EditTeacher = () => {
 
     const { teacher_id } = useParams()
     const routes = all_routes;
     const navigate = useNavigate()
+
+    // class and section for option 
+    const [sections, setSections] = useState<Section[]>([])
+    const [allClass, setAllClass] = useState<Classes[]>([])
+
+    const fetchData = async <T,>(
+        apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+        setter: React.Dispatch<React.SetStateAction<T>>
+    ) => {
+        try {
+            const { data } = await apiFn();
+            if (data.success) setter(data.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+
+    const fetchSections = () => fetchData(getAllSection, setSections);
+    const fetchClasses = () => fetchData(allRealClasses, setAllClass)
+
+    useEffect(() => {
+        fetchClasses()
+        fetchSections()
+
+    }, []);
+
+
+    const sectionOptions = useMemo(
+        () =>
+            sections.map((s) => ({
+                value: s.id,
+                label: s.section,
+            })),
+        [sections]
+    );
+
+
+    const classOptions = useMemo(
+        () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+        [allClass]
+    );
+
 
     const [teacherData, setTeacherData] = useState<TeacherData>({
         first_name: "",
@@ -187,7 +240,7 @@ const EditTeacher = () => {
 
     const fetchSpecificTeacher = async (teacher_id: string) => {
         try {
-            const { data } = await sepTeacher(teacher_id);
+            const { data } = await getTeacherDataForEdit(teacher_id);
 
             if (data.success && data.data) {
                 const teacher = data.data;
@@ -386,7 +439,7 @@ const EditTeacher = () => {
         if (!data.fromclass) errors.fromclass = "From Class is required";
         if (!data.toclass) errors.toclass = "To Class is required";
         if (!data.class) errors.class = "Class is required";
-        if (!data.section?.trim()) errors.section = "Section is required";
+        if (!data.section) errors.section = "Section is required";
         if (!data.subject.trim()) errors.subject = "Subject is required";
         if (!data.gender.trim()) errors.gender = "Gender is required";
         if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
@@ -627,6 +680,7 @@ const EditTeacher = () => {
     }
 
 
+
     return (
         <>
             {/* Page Wrapper */}
@@ -752,7 +806,7 @@ const EditTeacher = () => {
                                                         <label className="form-label">From Class</label><span className="text-danger"> *</span>
                                                         <CommonSelect
                                                             className="select"
-                                                            options={allClass}
+                                                            options={classOptions}
                                                             value={teacherData.fromclass}
                                                             onChange={(option) => handleSelectChange("fromclass", option ? option.value : "")}
                                                         />
@@ -766,7 +820,7 @@ const EditTeacher = () => {
                                                         <label className="form-label">To Class</label><span className="text-danger"> *</span>
                                                         <CommonSelect
                                                             className="select"
-                                                            options={allClass}
+                                                            options={classOptions}
                                                             value={teacherData.toclass}
                                                             onChange={(option) => handleSelectChange("toclass", option ? option.value : "")}
                                                         />
@@ -781,7 +835,7 @@ const EditTeacher = () => {
                                                         <label className="form-label">Class</label><span className="text-danger"> *</span>
                                                         <CommonSelect
                                                             className="select"
-                                                            options={allClass}
+                                                            options={classOptions}
                                                             value={teacherData.class}
                                                             onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                                                         />
@@ -795,7 +849,7 @@ const EditTeacher = () => {
                                                         <label className="form-label">Section</label><span className="text-danger"> *</span>
                                                         <CommonSelect
                                                             className="select text-capitalize"
-                                                            options={sections}
+                                                            options={sectionOptions}
                                                             value={teacherData.section}
                                                             onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                                                         />

@@ -164,7 +164,7 @@ const ClassSubject = () => {
 
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
+    // console.log(id)
     e.preventDefault()
     try {
 

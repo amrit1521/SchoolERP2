@@ -8,13 +8,15 @@ exports.allSection = async (req, res) => {
     SELECT 
     s.id,
     s.section_name AS section,
+    noOfStudents,
+    noOfSubjects,
     s.status,
     c.class_name,
     r.room_no
     FROM sections s 
     LEFT JOIN classes c ON s.class_id = c.id
     LEFT JOIN class_room r ON s.room_no = r.id
-    ORDER BY s.section_name ASC
+    ORDER BY s.class_id ASC
        
     `
 
@@ -37,13 +39,13 @@ exports.allSection = async (req, res) => {
 
 exports.addSection = async (req, res) => {
   try {
-    const { class_id, room_no, section, status } = req.body;
+    const { class_id, room_no, section, noOfStudents, noOfSubjects, status } = req.body;
 
 
-    if (!class_id || !room_no || !section) {
+    if (!class_id || !room_no || !section || !noOfStudents || !noOfSubjects) {
       return res.status(400).json({
         success: false,
-        message: "All fields (class_id, room_no, section, status) are required!",
+        message: "All fields are required!",
       });
     }
 
@@ -58,7 +60,7 @@ exports.addSection = async (req, res) => {
     if (roomExists.length > 0) {
       return res.status(409).json({
         success: false,
-        message: `Room No. '${room_no}' is already assigned to another class.`,
+        message: `Room No is already assigned to another class.`,
       });
     }
 
@@ -77,9 +79,9 @@ exports.addSection = async (req, res) => {
 
 
     const [result] = await db.query(
-      `INSERT INTO sections (class_id, section_name, room_no, status)
-       VALUES (?, ?, ?, ?)`,
-      [class_id, sectionName, room_no, status.trim()]
+      `INSERT INTO sections (class_id, section_name, room_no, noOfStudents , noOfSubjects, status)
+       VALUES (?, ?, ?,?,?, ?)`,
+      [class_id, sectionName, room_no, noOfStudents, noOfSubjects, status.trim()]
     );
 
     return res.status(201).json({
@@ -103,11 +105,11 @@ exports.addSection = async (req, res) => {
 exports.editSpecificSection = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { class_id, room_no, section, status } = req.body;
-    console.log(id)
-    console.log(class_id, room_no, section, status)
+    const { class_id, room_no, section, noOfStudents, noOfSubjects, status } = req.body;
 
-    if (!id || !class_id || !room_no || !section) {
+
+
+    if (!id || !class_id || !room_no || !section || !noOfStudents || !noOfSubjects) {
       return res.status(400).json({
         success: false,
         message: "All fields must be required!",
@@ -118,8 +120,8 @@ exports.editSpecificSection = async (req, res) => {
 
 
     const [existing] = await db.query(
-      `SELECT id FROM sections WHERE LOWER(section_name) = ? AND id != ?`,
-      [sectionName, id]
+      `SELECT id FROM sections WHERE LOWER(section_name) = ? AND class_id=? AND id != ?`,
+      [sectionName,class_id, id]
     );
 
     if (existing.length > 0) {
@@ -130,8 +132,8 @@ exports.editSpecificSection = async (req, res) => {
     }
 
     const [result] = await db.query(
-      `UPDATE sections SET class_id =? , section_name = ?,room_no =?, status = ? WHERE id = ?`,
-      [class_id, sectionName, room_no, status.trim(), id]
+      `UPDATE sections SET class_id =? , section_name = ?,room_no =?, noOfStudents=?,noOfSubjects=?  ,status = ? WHERE id = ?`,
+      [class_id, sectionName, room_no, noOfStudents, noOfSubjects, status.trim(), id]
     );
 
     if (result.affectedRows === 0) {
@@ -200,7 +202,7 @@ exports.getSectionById = async (req, res) => {
       });
     }
 
-    const [rows] = await db.query(`SELECT id,class_id , section_name AS section ,room_no, status FROM sections WHERE id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id,class_id , section_name AS section ,room_no,noOfStudents , noOfSubjects, status FROM sections WHERE id = ?`, [id]);
 
     if (rows.length === 0) {
       return res.status(404).json({

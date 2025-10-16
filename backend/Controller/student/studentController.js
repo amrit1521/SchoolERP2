@@ -193,8 +193,10 @@ exports.allStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                s.class,
-                s.section,
+                c.class_name as class,
+                s.class_id,
+                se.section_name as section,
+                s.section_id,
                 s.gender,
                 s.dob,
                 s.bloodgp,
@@ -208,6 +210,9 @@ exports.allStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
+          RIGHT JOIN classes  c ON c.id =  s.class_id
+          RIGHT JOIN sections se ON se.id = s.section_id
+          
                 WHERE u.roll_id=3
         `;
 

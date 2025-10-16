@@ -1,5 +1,6 @@
 import axios from "axios";
 
+
 const BASE_URL: string =
   import.meta.env.VITE_SERVERURL || "http://localhost:3004";
 export const API_URL = `${BASE_URL}/api`;
@@ -26,16 +27,11 @@ export const api2 = axios.create({
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);
 export const allStudents = () => api.get("/stu/");
-export const specificStudentData1 = (rollnum: number) =>
-  api.get(`/stu/spedetails/${rollnum}`);
-export const getStuTimeTable = (rollnum: number) =>
-  api.get(`/stu/timetable/${rollnum}`);
-export const filterStudents = (data: object) =>
-  api.post("/stu/filterstudents", data);
-export const filterStudentsForOption = (data: object) =>
-  api.post("/stu/filterstudentsforoption", data);
-export const disableStudent = (rollnum: number) =>
-  api.put(`/stu/disable/${rollnum}`);
+export const specificStudentData1 = (rollnum: number) =>api.get(`/stu/spedetails/${rollnum}`);
+export const getStuTimeTable = (rollnum: number) =>api.get(`/stu/timetable/${rollnum}`);
+export const filterStudents = (data: object) =>api.post("/stu/filterstudents", data);
+export const filterStudentsForOption = (data: object) =>api.post("/stu/filterstudentsforoption", data);
+export const disableStudent = (rollnum: number) =>api.put(`/stu/disable/${rollnum}`);
 export const enableStudent = (rollnum: number) =>
   api.put(`/stu/enable/${rollnum}`);
 export const stuDataForEdit = (rollnum: number) =>
@@ -86,7 +82,7 @@ export const deleteSubject = (id: number) =>
   api.delete(`/subject/deletesubject/${id}`);
 export const speSubject = (id: number) => api.get(`/subject/spesubject/${id}`);
 export const editSubject = (data: object, id: number) =>
-  api.put(`/subject/editsubject/${id}`, data); 
+  api.put(`/subject/editsubject/${id}`, data);
 
 // table routes-----------------------------
 export const addTimeTable = (data: object) =>
@@ -129,7 +125,7 @@ export const getStuAttendanceData = (rollnum: any) =>
 
 //teacher attendance ---------------------
 export const allTeacherForAttendance = () => api.get('/teacher/allteacherforattendance');
-export const markTeacherAttendance = (data:any) => api.post('/attendance/markteacherattendance',data);
+export const markTeacherAttendance = (data: any) => api.post('/attendance/markteacherattendance', data);
 
 // student fees ------------------------------
 export const studentDetForFees = (id: any) =>
@@ -263,6 +259,7 @@ export const allTeachers = () => api.get("/teacher/allteacher");
 export const allTeacherForOption = () => api.get("/teacher/teachersforoption");
 export const sepTeacher = (teacher_id: any) =>
   api.get(`/teacher/speteacher/${teacher_id}`);
+export const getTeacherDataForEdit = (teacher_id: any) => api.get(`/teacher/teacherdataforedit/${teacher_id}`)
 export const editTeacher = (data: object, teacher_id: any) =>
   api.put(`/teacher/editteacher/${teacher_id}`, data);
 export const deleteTeacher = (teacher_id: string) =>

@@ -948,7 +948,7 @@ const ParentGrid = () => {
                     <p className="mb-0">
                       <Link to={`${routes.studentDetail}/${speParentData.rollnum}`}>{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
                     </p>
-                    <span>{speParentData.class}, {speParentData.section}</span>
+                    <span className="text-uppercase">{speParentData.class} - {speParentData.section}</span>
                   </div>
                 </div>
                 <ul className="d-flex align-items-center flex-wrap">

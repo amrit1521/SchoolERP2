@@ -9,7 +9,7 @@ function safeJSON(value) {
 }
 
 async function getUserId(teacher_id) {
-  console.log('teacher_id: ',teacher_id);
+  console.log('teacher_id: ', teacher_id);
   const [res] = await db.query(`SELECT user_id FROM teachers WHERE teacher_id=?`, [teacher_id])
   return res[0].user_id
 }
@@ -179,7 +179,7 @@ exports.allTeachers = async (req, res) => {
         t.fromclass,
         t.toclass,
         t.section,
-        t.class,
+        t.class AS class_id,
         t.subject,
         t.date_of_join,
         t.img_src, 
@@ -187,9 +187,17 @@ exports.allTeachers = async (req, res) => {
         u.lastname,
         u.status,
         u.mobile,
-        u.email
+        u.email,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id 
+      LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
     `;
 
     const [rows] = await db.query(sql);
@@ -199,7 +207,7 @@ exports.allTeachers = async (req, res) => {
       data: rows,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching teachers:", error);
     return res.status(500).json({
       success: false,
       message: "Error fetching teachers",
@@ -208,6 +216,7 @@ exports.allTeachers = async (req, res) => {
   }
 };
 
+
 exports.allTeachersForAttendance = async (req, res) => {
   try {
     const sql = `
@@ -215,17 +224,19 @@ exports.allTeachersForAttendance = async (req, res) => {
         t.id,
         t.user_id,
         t.teacher_id,
-        t.section,
-        t.class,
         t.img_src, 
         u.firstname,
-        u.lastname
+        u.lastname,
+         cc.class_name AS class,
+        s.section_name AS section
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id 
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
     `;
 
     const [rows] = await db.query(sql);
-    console.log(rows);
+   
     return res.status(200).json({
       success: true,
       message: "All teachers fetched successfully",
@@ -250,10 +261,97 @@ exports.speTeacher = async (req, res) => {
         t.id,
         t.user_id,
         t.teacher_id,
+        t.subject,
+        t.gender,
+        t.blood_gp,
+        t.date_of_join,
+        t.fat_name,
+        t.mot_name,
+        t.dob,
+        t.mari_status,
+        t.lan_known,
+        t.qualification,
+        t.work_exp,
+        t.prev_school,
+        t.prev_school_addr,
+        t.prev_school_num,
+        t.address,
+        t.perm_address,
+        t.pan_or_id,
+        t.other_info,
+        t.facebook_link,
+        t.instagram_link,
+        t.linked_link,
+        t.twitter_link,
+        t.img_src,
+        t.resume_src,
+        t.letter_src,
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,
+        b.account_name,
+        b.account_num,
+        b.bank_name,
+        b.ifsc_code,
+        b.branch_name,
+        h.hostel,
+        h.room_num,
+        tp.route,
+        tp.vehicle_num,
+        tp.pickup_point,
+        pi.epf_no,
+        pi.basic_salary,
+        pi.contract_type,
+        pi.work_sift,
+        pi.work_location,
+        pi.date_of_leave,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN bank_info b ON t.user_id =b.user_id
+      LEFT JOIN hostel_info h ON t.user_id = h.user_id
+      LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
+      LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
+       LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
+      WHERE t.teacher_id=?
+    `;
+
+    const [rows] = await db.query(sql, [teacher_id]);
+    return res.status(200).json({
+      success: true,
+      message: "Teacher fetched successfully",
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+exports.teacherDataForEdit = async (req, res) => {
+  const { teacher_id } = req.params;
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
         t.fromclass,
         t.toclass,
-        t.section,
         t.class,
+        t.section,
         t.subject,
         t.gender,
         t.blood_gp,
@@ -306,10 +404,12 @@ exports.speTeacher = async (req, res) => {
       LEFT JOIN hostel_info h ON t.user_id = h.user_id
       LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
       LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
+  
       WHERE t.teacher_id=?
     `;
 
     const [rows] = await db.query(sql, [teacher_id]);
+    console.log(rows[0])
     return res.status(200).json({
       success: true,
       message: "Teacher fetched successfully",
@@ -581,10 +681,6 @@ exports.getTeacherByToken = async (req, res) => {
         t.id,
         t.user_id,
         t.teacher_id,
-        t.fromclass,
-        t.toclass,
-        t.section,
-        t.class,
         t.subject,
         t.gender,      
         t.img_src,    
@@ -592,9 +688,17 @@ exports.getTeacherByToken = async (req, res) => {
         u.lastname,
         u.status,
         u.mobile,
-        u.email      
+        u.email,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section  
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id
+       LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
       WHERE t.user_id=?
     `;
 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { all_routes } from "../../../router/all_routes";
 import { toast } from "react-toastify";
-import { Card, Checkbox, Input, Select, Space, message } from "antd";
+import { Card, Checkbox, Input, Space, message } from "antd";
 import Table from "../../../../core/common/dataTable/index";
 import { Link, useLocation } from "react-router-dom";
 import { Spinner } from "../../../../spinner";
@@ -24,7 +24,7 @@ import {
   allClass,
   classSection,
 } from "../../../../core/common/selectoption/selectoption";
-const { Option } = Select;
+// const { Option } = Select;
 
 // ---------- Types ----------
 interface Subject {
@@ -148,13 +148,13 @@ export default function ExamMarkUpload() {
   const [examOptions, setExamOptions] = useState<
     { value: number; label: string }[]
   >([]);
-  const [isExamLoading, setIsExamLoading] = useState(false);
+  // const [isExamLoading, setIsExamLoading] = useState(false);
   const [isApplyDisabled, setIsApplyDisabled] = useState(true);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
   const fetchExamOptions = async (cls: string, section: string) => {
     try {
-      setIsExamLoading(true);
+      // setIsExamLoading(true);
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
         setExamOptions(
@@ -167,9 +167,7 @@ export default function ExamMarkUpload() {
     } catch (error) {
       console.error("Error fetching exams:", error);
       toast.error("Error fetching exam names!");
-    } finally {
-      setIsExamLoading(false);
-    }
+    } 
   };
 
   const handleFilterSelectChange = (
