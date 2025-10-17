@@ -9,28 +9,36 @@ import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
-import { Controller, useForm } from "react-hook-form";
-import {
-  addRoutes,
-  getTransportRoutesById,
-  udpateTransportRoutes,
-} from "../../../service/api";
+import { addRoutes, udpateTransportRoutes } from "../../../service/api";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
+interface TransportRoute {
+  id: number;
+  routeName: string;
+  status: number;
+}
+
+interface TransportModalProps {
+  onRouteAdded: () => void;
+  onRouteUpdated: () => void;
+  selectedRoute: TransportRoute | null;
+  clearSelected: () => void;
+}
+
+const TransportModal: React.FC<TransportModalProps> = ({
+  onRouteAdded,
+  onRouteUpdated,
+  selectedRoute,
+  clearSelected,
+}) => {
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based, so we add 1
   const day = String(today.getDate()).padStart(2, "0");
   const formattedDate = `${month}-${day}-${year}`;
   const defaultValue = dayjs(formattedDate);
-  const { register, handleSubmit, control, reset } = useForm({
-    defaultValues: {
-      routeName: "",
-      status: false,
-    },
-  });
+
   const getModalContainer = () => {
     const modalElement = document.getElementById("modal-datepicker");
     return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
@@ -40,59 +48,96 @@ const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
     return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
   };
 
-  const handleCreateRoutes = async (formData: any) => {
-    const date = new Date();
-    const options: any = { day: "2-digit", month: "long", year: "numeric" };
-    formData["addedOn"] = date.toLocaleDateString("en-GB", options);
-    formData["keyId"] =
-      "R" + ("000000" + Math.floor(Math.random() * 1000000)).slice(-6);
-    console.log(formData);
+  const [routeName, setRouteName] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedRoute) {
+      setRouteName(selectedRoute.routeName || "");
+      setIsActive(selectedRoute.status === 1);
+    } else {
+      resetForm();
+    }
+  }, [selectedRoute]);
+
+  const resetForm = () => {
+    setRouteName("");
+    setIsActive(true);
+  };
+
+  const validateForm = (): boolean => {
+    if (!routeName.trim()) {
+      toast.error("Please enter a route name");
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateRoutes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setLoading(true);
     try {
-      const { data } = await addRoutes(formData);
+      const date = new Date();
+      const options: any = { day: "2-digit", month: "long", year: "numeric" };
+      const payload = {
+        routeName,
+        status: isActive ? 1 : 0,
+        addedOn: date.toLocaleDateString("en-GB", options),
+      };
+      const { data } = await addRoutes(payload);
       if (data.success) {
-        toast.success(data.message || "routes added Successfully.");
+        toast.success(data.message || "Route added successfully");
+        resetForm(); // <-- reset form after submit
+        onRouteAdded();
+        closeModal("add_routes");
+      } else {
+        toast.error(data.message || "Failed to add route");
       }
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-    reset();
-  };
-
-  const fetchRoutes = async (rowsId: number) => {
-    const { data } = await getTransportRoutesById(rowsId);
-    if (data.success) {
-      reset({
-        routeName: data.result.routeName,
-        status: data.result.status,
-      });
+      toast.error(error.response?.data?.message || "Error adding route");
+    } finally {
+      setLoading(false);
     }
   };
-  if (rowsId) {
-    fetchRoutes(rowsId);
-  }
 
-  const handleUpdateRoutes = async (formData: any) => {
-    console.log(formData);
+  const handleUpdateRoutes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm() || !selectedRoute) return;
+    setLoading(true);
     try {
-      if (rowsId) {
-        const { data } = await udpateTransportRoutes(formData, rowsId);
-        if (data.success) {
-          toast.success(data.message || "routes updated Successfully.");
-        }
+      const payload = { routeName, status: isActive ? 1 : 0 };
+      const { data } = await udpateTransportRoutes(payload, selectedRoute.id);
+      if (data.success) {
+        toast.success(data.message || "Route updated successfully");
+        resetForm();
+        onRouteUpdated();
+        clearSelected();
+        closeModal("edit_routes");
+      } else {
+        toast.error(data.message || "Failed to update route");
       }
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Error updating route");
+    } finally {
+      setLoading(false);
     }
-    reset();
+  };
+
+  const closeModal = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const modal = (window as any).bootstrap?.Modal?.getInstance(el);
+      modal?.hide();
+    }
   };
 
   return (
     <>
       <>
         {/* Add Route */}
-        <div className="modal fade" id="add_routes">
+        <div className="modal fade" id="add_routes" tabIndex={-1}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -101,53 +146,42 @@ const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
                   type="button"
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
-                  aria-label="Close"
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form onSubmit={handleSubmit(handleCreateRoutes)}>
+              <form onSubmit={handleCreateRoutes}>
                 <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Route Name</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          {...register("routeName", { required: true })}
-                        />
-                      </div>
+                  <div className="mb-3">
+                    <label className="form-label">Route Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter Route Name"
+                      value={routeName}
+                      onChange={(e) => setRouteName(e.target.value)}
+                    />
+                  </div>
+                  <div className="modal-status-toggle d-flex align-items-center justify-content-between">
+                    <div className="status-title">
+                      <h5>Status</h5>
+                      <p>Change the status by toggle</p>
                     </div>
-
-                    <div className="modal-status-toggle d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the status by toggle</p>
-                      </div>
-
-                      <div className="status-toggle modal-status">
-                        <Controller
-                          name="status"
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              type="checkbox"
-                              id="user1"
-                              className="check"
-                              checked={field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
-                            />
-                          )}
-                        />
-                        <label htmlFor="user1" className="checktoggle">
-                          {" "}
-                        </label>
-                      </div>
+                    <div className="status-toggle modal-status">
+                      <input
+                        type="checkbox"
+                        id="userStatus1"
+                        className="check"
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                      />
+                      <label
+                        htmlFor="userStatus1"
+                        className="checktoggle"
+                      ></label>
                     </div>
                   </div>
                 </div>
-
                 <div className="modal-footer">
                   <Link
                     to="#"
@@ -158,19 +192,19 @@ const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
                   </Link>
                   <button
                     type="submit"
-                    data-bs-dismiss="modal"
                     className="btn btn-primary"
+                    disabled={loading}
                   >
-                    Add Route
+                    {loading ? "Adding..." : "Add Route"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
-        {/* Add Route*/}
+
         {/* Edit Route */}
-        <div className="modal fade" id="edit_routes">
+        <div className="modal fade" id="edit_routes" tabIndex={-1}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -179,48 +213,38 @@ const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
                   type="button"
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
-                  aria-label="Close"
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form onSubmit={handleSubmit(handleUpdateRoutes)}>
+              <form onSubmit={handleUpdateRoutes}>
                 <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Route Name</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Enter Route Name"
-                          {...register("routeName", { required: true })}
-                        />
-                      </div>
+                  <div className="mb-3">
+                    <label className="form-label">Route Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={routeName}
+                      onChange={(e) => setRouteName(e.target.value)}
+                    />
+                  </div>
+                  <div className="modal-status-toggle d-flex align-items-center justify-content-between">
+                    <div className="status-title">
+                      <h5>Status</h5>
+                      <p>Change the status by toggle</p>
                     </div>
-                    <div className="modal-satus-toggle d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle </p>
-                      </div>
-                      <div className="status-toggle modal-status">
-                        <Controller
-                          name="status"
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              type="checkbox"
-                              id="user1"
-                              className="check"
-                              checked={field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
-                            />
-                          )}
-                        />
-                        <label htmlFor="user1" className="checktoggle">
-                          {" "}
-                        </label>
-                      </div>
+                    <div className="status-toggle modal-status">
+                      <input
+                        type="checkbox"
+                        id="userStatus2"
+                        className="check"
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                      />
+                      <label
+                        htmlFor="userStatus2"
+                        className="checktoggle"
+                      ></label>
                     </div>
                   </div>
                 </div>
@@ -234,17 +258,16 @@ const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
                   </Link>
                   <button
                     type="submit"
-                    data-bs-dismiss="modal"
                     className="btn btn-primary"
+                    disabled={loading}
                   >
-                    Save Changes
+                    {loading ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
-        {/* Edit Route */}
       </>
       <>
         {/* Add Assign New Vehicle */}

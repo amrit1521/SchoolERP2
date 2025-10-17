@@ -310,9 +310,13 @@ export const forgotPassword = (email: object) =>
 export const resetPassword = (data: object) =>
   api.post("/auth/reset-password", data);
 
-
 // transport =================================================================
-export const addRoutes = (data:object) => api.post("/transport/addroutes",data);
+export const addRoutes = (data: object) =>
+  api.post("/transport/addroutes", data);
 export const getAllTransportRoutes = () => api.get("/transport/getallroutes");
-export const getTransportRoutesById = (id:number) => api.get(`/transport/gettranportroutesbyId/${id}`);
-export const udpateTransportRoutes = (data:any, id:number) => api.get(`/transport/updatetransportroutes/${id}`,data);
+export const getTransportRoutesById = (id: number | null) =>
+  api.get(`/transport/gettranportroutesbyId/${id}`);
+export const udpateTransportRoutes = (data: any, id: number | null) =>
+  api.patch(`/transport/updatetransportroutes/${id}`, data);
+export const deleteTransportRoutesById = (id: number | null) =>
+  api.delete(`/transport/deletetransportroutes/${id}`);
