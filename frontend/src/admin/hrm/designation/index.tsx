@@ -178,6 +178,9 @@ const Designation = () => {
     {
       title: "Designation",
       dataIndex: "designation",
+      render:(text:string)=>(
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) => a.designation.length - b.designation.length,
     },
     {

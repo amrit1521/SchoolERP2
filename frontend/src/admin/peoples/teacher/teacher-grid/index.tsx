@@ -49,15 +49,15 @@ const TeacherGrid = () => {
   }, [])
 
   // delete section----------------------------------------------------
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
 
-  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleDelete = async (teacher_id: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     // console.log(id)
     try {
 
-      const { data } = await deleteTeacher(id)
+      const { data } = await deleteTeacher(teacher_id)
       if (data.success) {
         toast.success(data.message)
         fetchTeachers();
@@ -287,7 +287,7 @@ const TeacherGrid = () => {
                 <div className="col-xxl-3 col-xl-4 col-md-6 d-flex" key={i}>
                   <div className="card flex-fill">
                     <div className="card-header d-flex align-items-center justify-content-between">
-                      <Link to={`${routes.teacherDetails}/${teacher.user_id}`} className="link-primary">
+                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="link-primary">
                         {teacher.teacher_id}
                       </Link>
                       <div className="d-flex align-items-center">
@@ -305,14 +305,14 @@ const TeacherGrid = () => {
                           </Link>
                           <ul className="dropdown-menu dropdown-menu-right p-3">
                             <li>
-                              <Link className="dropdown-item rounded-1" to={`${routes.editTeacher}/${teacher.user_id}`} >
+                              <Link className="dropdown-item rounded-1" to={`${routes.editTeacher}/${teacher.teacher_id}`} >
                                 <i className="ti ti-edit-circle me-2" /> Edit
                               </Link>
                             </li>
                             <li>
                               <button
                                 className="dropdown-item rounded-1"
-                                onClick={() => { setDeleteId(teacher.user_id)}}
+                                onClick={() => { setDeleteId(teacher.teacher_id)}}
                                 data-bs-toggle="modal"
                                 data-bs-target="#delete-modal"
                               >
@@ -327,7 +327,7 @@ const TeacherGrid = () => {
                     <div className="card-body">
                       <div className="bg-light-300 rounded-2 p-3 mb-3">
                         <div className="d-flex align-items-center">
-                          <Link to={`${routes.teacherDetails}/${teacher.user_id}`} className="avatar avatar-lg flex-shrink-0">
+                          <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="avatar avatar-lg flex-shrink-0">
                             <img
                               src={`${Imageurl}/${teacher.img_src}`}
                               className="img-fluid rounded-circle"
@@ -336,7 +336,7 @@ const TeacherGrid = () => {
                           </Link>
                           <div className="ms-2">
                             <h6 className="text-dark text-truncate mb-0">
-                              <Link to={`${routes.teacherDetails}/${teacher.user_id}`} >
+                              <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} >
                                 {teacher.firstname} {teacher.lastname}
                               </Link>
                             </h6>
@@ -358,7 +358,7 @@ const TeacherGrid = () => {
 
                     <div className="card-footer d-flex align-items-center justify-content-between">
                       <span className="badge badge-soft-danger">{teacher.subject}</span>
-                      <Link to={`${routes.teacherDetails}/${teacher.user_id}`} className="btn btn-light btn-sm">
+                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="btn btn-light btn-sm">
                         View Details
                       </Link>
                     </div>

@@ -3,29 +3,46 @@ import { Link, useParams } from "react-router-dom";
 import { all_routes } from "../../../router/all_routes";
 import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
-import { leaveData } from "../../../../core/data/json/leaveData";
-import { Attendance } from "../../../../core/data/json/attendance";
+// import { leaveData } from "../../../../core/data/json/leaveData";
+// import { Attendance } from "../../../../core/data/json/attendance";
 import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import TeacherModal from "../teacherModal";
 import { useEffect, useState } from "react";
-import { sepTeacher } from "../../../../service/api";
+import { getTeacherAttendance, getTeacherLeaveData, sepTeacher } from "../../../../service/api";
+import dayjs from 'dayjs'
+import { Spinner } from "../../../../spinner";
+import Skeleton from "react-loading-skeleton";
+import { toast } from "react-toastify";
+
+
+export interface LeaveInform {
+  id: number;
+  name: string;
+  total_allowed: number;
+  used: number;
+  avilable: number;
+}
 
 const TeacherLeave = () => {
   const routes = all_routes;
-  const data = leaveData;
-  const data2 = Attendance;
-    const { userId } = useParams()
+  // const data = leaveData;
+  // const data2 = Attendance;
+  const { teacher_id } = useParams()
   // console.log(typeof userId)
 
   const [teacher, setTeacher] = useState<any>({})
+  const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([])
+  const [leaveDataa, setLeaveDataa] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [loading2, setLoading2] = useState<boolean>(false)
 
-  const fetchTeacher = async (id: string) => {
+
+  const fetchTeacher = async (teacher_id: string) => {
     setLoading(true)
-    await new Promise((res) => setTimeout(res, 500))
+    await new Promise((res) => setTimeout(res, 400))
     try {
-      const { data } = await sepTeacher(id)
+      const { data } = await sepTeacher(teacher_id)
       if (data.success) {
         setTeacher(data.data)
       }
@@ -37,11 +54,56 @@ const TeacherLeave = () => {
     }
   }
 
-  useEffect(() => {
-    if (userId) {
-      fetchTeacher(userId)
+
+  const handleAdd = () => {
+    fetchLeave(teacher_id)
+  }
+
+
+
+  // ✅ Leave API function
+  const fetchLeave = async (teacherId: any) => {
+    setLoading2(true)
+    await new Promise((res) => setTimeout(res, 400))
+    try {
+      const res = await getTeacherLeaveData(teacherId);
+
+      if (res?.data?.success) {
+        setLeaveInform(res.data.leave_inform);
+        setLeaveDataa(res.data.teacherAllLeave);
+      } else {
+        console.warn("Failed to fetch leave data");
+        setLeaveDataa([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching leave data:", error);
+      setLeaveDataa([]);
+    } finally {
+      setLoading2(false)
     }
-  }, [userId])
+  };
+
+
+  useEffect(() => {
+    if (teacher_id) {
+      fetchTeacher(teacher_id)
+      fetchLeave(teacher_id)
+    }
+  }, [teacher_id])
+
+
+  const tableData = leaveDataa.map((item: any) => ({
+    key: item.id,
+    leaveType: item.leave_type,
+    leaveDate: `${dayjs(item.from_date).format("DD MMM YYYY")} to  ${dayjs(
+      item.to_date
+    ).format("DD MMM YYYY")}`,
+    noOfDays: String(item.no_of_days),
+    appliedOn: dayjs(item.applied_on).format("DD MMM YYYY"),
+    status: item.status == "1" ? "Approved" : "Pending",
+  }));
+
+
   const columns = [
     {
       title: "Leave Type",
@@ -88,253 +150,314 @@ const TeacherLeave = () => {
       sorter: (a: TableData, b: TableData) => a.status.length - b.status.length,
     },
   ];
+
+
+
+
+  interface AttendanceData {
+    id: number;
+    attendance: string;
+    attendance_date_info: string;
+
+
+  }
+
+
+  const [attendanceSummary, setAttendanceSummary] = useState<any>({})
+  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([])
+
+
+  const fetchTeacherAttendance = async (teacher_id: string) => {
+    try {
+      // console.log(rollnum)
+      const { data } = await getTeacherAttendance(teacher_id)
+      // console.log(data.details)
+      setAttendanceSummary(data.summary)
+      setAttendanceData(data.details)
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.success)
+    }
+
+  }
+
+
+  function getOnlyDay(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.getDate().toString().padStart(2, "0");
+  }
+
+  const getMonth = (dateStr: string) => {
+    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    return monthNames[new Date(dateStr).getMonth()];
+  };
+
+
+  const tabledata2: any[] = [];
+
+  attendanceData.forEach((item) => {
+    const day = getOnlyDay(item.attendance_date_info);
+    const month = getMonth(item.attendance_date_info);
+
+    // Find if a row for this day already exists
+    let row = tabledata2.find((r) => r.date === day);
+    if (!row) {
+      row = { key: day, date: day };
+      tabledata2.push(row);
+    }
+
+    row[month] = item.attendance;
+  });
+
   const columns2 = [
     {
       title: "Date | Month",
       dataIndex: "date",
-      sorter: (a: TableData, b: TableData) => a.date.length - b.date.length,
+      sorter: (a: TableData, b: TableData) => a.date.localeCompare(b.date),
     },
     {
       title: "Jan",
       dataIndex: "jan",
       render: (text: string) => (
         <>
-          {text === "1" ? (
+          {text === "Present" ? (
             <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
+          ) : text === "Holiday" ? (
             <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
+          ) : text === "Halfday" ? (
             <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
+          ) : text === "Late" ? (
             <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
           )}
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.jan.length - b.jan.length,
+      sorter: (a: TableData, b: TableData) => a.jan.localeCompare(b.jan),
     },
     {
-        title: "feb",
-        dataIndex: "feb",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.feb.length - b.feb.length,
-      },
-      {
-        title: "mar",
-        dataIndex: "mar",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.mar.length - b.mar.length,
-      },
-      {
-        title: "apr",
-        dataIndex: "apr",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.apr.length - b.apr.length,
-      },
-      {
-        title: "may",
-        dataIndex: "may",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.may.length - b.may.length,
-      },
-      {
-        title: "jun",
-        dataIndex: "jun",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.jun.length - b.jun.length,
-      },
-      {
-        title: "jul",
-        dataIndex: "jul",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.jul.length - b.jul.length,
-      },
-      {
-        title: "aug",
-        dataIndex: "aug",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.aug.length - b.aug.length,
-      },
-      {
-        title: "sep",
-        dataIndex: "sep",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.sep.length - b.sep.length,
-      },
-      {
-        title: "oct",
-        dataIndex: "oct",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.oct.length - b.oct.length,
-      },
-      {
-        title: "nov",
-        dataIndex: "nov",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.nov.length - b.nov.length,
-      },
-      {
-        title: "dec",
-        dataIndex: "dec",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) => a.dec.length - b.dec.length,
-      },
+      title: "Feb",
+      dataIndex: "feb",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.feb.localeCompare(b.feb),
+    },
+    {
+      title: "Mar",
+      dataIndex: "mar",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.mar.localeCompare(b.mar),
+    },
+    {
+      title: "Apr",
+      dataIndex: "apr",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.apr.localeCompare(b.apr),
+    },
+    {
+      title: "May",
+      dataIndex: "may",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.may.localeCompare(b.may),
+    },
+    {
+      title: "Jun",
+      dataIndex: "jun",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.jun.localeCompare(b.jun),
+    },
+    {
+      title: "Jul",
+      dataIndex: "jul",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.jul.localeCompare(b.jul),
+    },
+    {
+      title: "Aug",
+      dataIndex: "aug",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.aug.localeCompare(b.aug),
+    },
+    {
+      title: "Sep",
+      dataIndex: "sep",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.sep.localeCompare(b.sep),
+    },
+    {
+      title: "Oct",
+      dataIndex: "oct",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.oct.localeCompare(b.oct),
+    },
+    {
+      title: "Nov",
+      dataIndex: "nov",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.nov.localeCompare(b.nov),
+    },
+    {
+      title: "Dec",
+      dataIndex: "dec",
+      render: (text: string) => (
+        <>
+          {text === "Present" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "Holiday" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "Halfday" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "Late" ? (
+            <span className="attendance-range bg-info"></span>
+          ) : (
+            <span className="attendance-range bg-danger"></span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.dec.localeCompare(b.dec),
+    },
   ];
+
   return (
     <>
       {/* Page Wrapper */}
@@ -342,7 +465,7 @@ const TeacherLeave = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-              <TeacherBreadcrumb userId={Number(userId)} />
+            {teacher_id && (<TeacherBreadcrumb teacher_id={teacher_id} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -355,31 +478,31 @@ const TeacherLeave = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.teacherDetails}/${teacher.user_id}`} className="nav-link ">
+                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="nav-link ">
                         <i className="ti ti-school me-2" />
                         Teacher Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teachersRoutine}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teachersRoutine}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-table-options me-2" />
                         Routine
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherLeaves}/${teacher.user_id}`} className="nav-link active">
+                      <Link to={`${routes.teacherLeaves}/${teacher.teacher_id}`} className="nav-link active">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherSalary}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teacherSalary}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Salary
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.teacherLibrary}/${teacher.user_id}`} className="nav-link">
+                      <Link to={`${routes.teacherLibrary}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-bookmark-edit me-2" />
                         Library
                       </Link>
@@ -401,14 +524,14 @@ const TeacherLeave = () => {
                           </Link>
                         </li>
                         <li className="mb-3">
-                          <Link
-                            to="#"
+                          <button
+                            onClick={() => fetchTeacherAttendance(teacher.teacher_id)}
                             className="nav-link rounded fs-12 fw-semibold"
                             data-bs-toggle="tab"
                             data-bs-target="#attendance"
                           >
                             Attendance
-                          </Link>
+                          </button>
                         </li>
                       </ul>
                     </div>
@@ -418,58 +541,51 @@ const TeacherLeave = () => {
                     {/* Leave */}
                     <div className="tab-pane fade show active" id="leave">
                       <div className="row gx-3">
-                        <div className="col-lg-6 col-xxl-3 d-flex">
-                          <div className="card flex-fill">
-                            <div className="card-body">
-                              <h5 className="mb-2">Medical Leave (10)</h5>
-                              <div className="d-flex align-items-center flex-wrap">
-                                <p className="border-end pe-2 me-2 mb-0">
-                                  Used : 5
-                                </p>
-                                <p className="mb-0">Available : 5</p>
+
+
+                        {
+                          loading2 ? (
+                            Array.from({ length: 4 }).map((_, index) => (
+                              <div key={index} className="col-lg-6 col-xxl-3 d-flex">
+                                <div className="card flex-fill">
+                                  <div className="card-body">
+                                    <h5 className="mb-2">
+                                      <Skeleton height={18} width={150} />
+                                    </h5>
+                                    <div className="d-flex align-items-center flex-wrap">
+                                      <span className="pe-2 me-2 mb-0 d-inline-block">
+                                        <Skeleton height={16} width={80} />
+                                      </span>
+                                      <span className="mb-0 d-inline-block">
+                                        <Skeleton height={16} width={100} />
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-lg-6 col-xxl-3 d-flex">
-                          <div className="card flex-fill">
-                            <div className="card-body">
-                              <h5 className="mb-2">Casual Leave (12)</h5>
-                              <div className="d-flex align-items-center flex-wrap">
-                                <p className="border-end pe-2 me-2 mb-0">
-                                  Used : 1
-                                </p>
-                                <p className="mb-0">Available : 11</p>
+                            ))
+                          ) : (
+                            leaveInform &&
+                            leaveInform.map((item) => (
+                              <div key={item.id} className="col-lg-6 col-xxl-3 d-flex">
+                                <div className="card flex-fill">
+                                  <div className="card-body">
+                                    <h5 className="mb-2 text-capitalize">
+                                      {`${item.name} (${item.total_allowed})`}
+                                    </h5>
+                                    <div className="d-flex align-items-center flex-wrap">
+                                      <p className="border-end pe-2 me-2 mb-0">
+                                        Used : {item.used}
+                                      </p>
+                                      <p className="mb-0">Available : {item.avilable}</p>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-lg-6 col-xxl-3 d-flex">
-                          <div className="card flex-fill">
-                            <div className="card-body">
-                              <h5 className="mb-2">Maternity Leave (10)</h5>
-                              <div className="d-flex align-items-center flex-wrap">
-                                <p className="border-end pe-2 me-2 mb-0">
-                                  Used : 0
-                                </p>
-                                <p className="mb-0">Available : 10</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-lg-6 col-xxl-3 d-flex">
-                          <div className="card flex-fill">
-                            <div className="card-body">
-                              <h5 className="mb-2">Paternity Leave (0)</h5>
-                              <div className="d-flex align-items-center flex-wrap">
-                                <p className="border-end pe-2 me-2 mb-0">
-                                  Used : 0
-                                </p>
-                                <p className="mb-0">Available : 0</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                            ))
+                          )}
+
+
                       </div>
                       <div className="card">
                         <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -486,11 +602,13 @@ const TeacherLeave = () => {
                         </div>
                         {/* Leaves List */}
                         <div className="card-body p-0 py-3">
-                          <Table
-                            dataSource={data}
-                            columns={columns}
-                            Selection={false}
-                          />
+                          {
+                            loading2 ? (<Spinner />) : (<Table
+                              dataSource={tableData}
+                              columns={columns}
+                              Selection={false}
+                            />)
+                          }
                         </div>
                         {/* /Leaves List */}
                       </div>
@@ -562,7 +680,7 @@ const TeacherLeave = () => {
                                 </span>
                                 <div className="ms-2">
                                   <p className="mb-1">Present</p>
-                                  <h5>265</h5>
+                                  <h5>{attendanceSummary?.Present ?? 0}</h5>
                                 </div>
                               </div>
                             </div>
@@ -575,7 +693,7 @@ const TeacherLeave = () => {
                                 </span>
                                 <div className="ms-2">
                                   <p className="mb-1">Absent</p>
-                                  <h5>05</h5>
+                                  <h5>{attendanceSummary?.Absent ?? 0}</h5>
                                 </div>
                               </div>
                             </div>
@@ -588,7 +706,7 @@ const TeacherLeave = () => {
                                 </span>
                                 <div className="ms-2">
                                   <p className="mb-1">Half Day</p>
-                                  <h5>01</h5>
+                                  <h5>{attendanceSummary?.Halfday ?? 0}</h5>
                                 </div>
                               </div>
                             </div>
@@ -601,7 +719,7 @@ const TeacherLeave = () => {
                                 </span>
                                 <div className="ms-2">
                                   <p className="mb-1">Late</p>
-                                  <h5>12</h5>
+                                  <h5>{attendanceSummary?.Late ?? 0}</h5>
                                 </div>
                               </div>
                             </div>
@@ -697,7 +815,7 @@ const TeacherLeave = () => {
                                 <p className="text-dark">Absent</p>
                               </div>
                               <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
-                                <span className="avatar avatar-sm bg-pending rounded me-2 flex-shrink-0 ">
+                                <span className="avatar avatar-sm bg-info rounded me-2 flex-shrink-0 ">
                                   <i className="ti ti-clock-x" />
                                 </span>
                                 <p className="text-dark">Late</p>
@@ -709,7 +827,7 @@ const TeacherLeave = () => {
                                 <p className="text-dark">Halfday</p>
                               </div>
                               <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
-                                <span className="avatar avatar-sm bg-info rounded me-2 flex-shrink-0 ">
+                                <span className="avatar avatar-sm bg-pending rounded me-2 flex-shrink-0 ">
                                   <i className="ti ti-calendar-event" />
                                 </span>
                                 <p className="text-dark">Holiday</p>
@@ -717,9 +835,9 @@ const TeacherLeave = () => {
                             </div>
                           </div>
                           {/* Attendance List */}
-                         
+
                           <Table
-                            dataSource={data2}
+                            dataSource={tabledata2}
                             columns={columns2}
                             Selection={false}
                           />
@@ -736,7 +854,7 @@ const TeacherLeave = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TeacherModal />
+      {teacher_id && (<TeacherModal onAdd={handleAdd} teacherId={teacher_id} />)}
     </>
   );
 };

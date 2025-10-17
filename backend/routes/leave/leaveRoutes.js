@@ -7,4 +7,8 @@ router.delete('/deleteleavetype/:id'  ,leaveController.deleteLeaveType)
 router.get('/speleavetype/:id' , leaveController.getLeaveTypeById)
 router.put('/editleavetype/:id' , leaveController.updateLeaveType)
 
+
+// add leave by student ,staff , teachert 
+router.post('/addleave', leaveController.addLeave)
+
 module.exports = router

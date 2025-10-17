@@ -8,6 +8,12 @@ function safeJSON(value) {
   return value || null;
 }
 
+async function getUserId(teacher_id) {
+  console.log('teacher_id: ', teacher_id);
+  const [res] = await db.query(`SELECT user_id FROM teachers WHERE teacher_id=?`, [teacher_id])
+  return res[0].user_id
+}
+
 exports.addTeacher = async (req, res) => {
   const data = req.body;
   const connection = await db.getConnection()
@@ -28,7 +34,7 @@ exports.addTeacher = async (req, res) => {
     }
 
     const sql1 = `
-      INSERT INTO users (firstname, lastname, mobile, email, password, type_id, status)
+      INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     const hashPassword = await bcrypt.hash(data.password, 10);
@@ -46,16 +52,18 @@ exports.addTeacher = async (req, res) => {
 
     const sql2 = `
       INSERT INTO teachers (
-        user_id, teacher_id,fromclass,toclass,section, class, subject, gender, blood_gp, date_of_join, 
+        user_id, teacher_id, department, designation,fromclass,toclass,section, class, subject, gender, blood_gp, date_of_join, 
         fat_name, mot_name, dob, mari_status, lan_known, qualification, 
         work_exp, prev_school, prev_school_addr, prev_school_num, address, 
         perm_address, pan_or_id, other_info ,facebook_link ,instagram_link,linked_link,twitter_link , 
         img_src , resume_src , letter_src
-      ) VALUES (?,?, ?, ?, ?, ?, ?,?,?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?,?,?,?)
+      ) VALUES (?,?, ?, ?, ?,?,?, ?, ?,?,?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?,?,?,?)
     `;
     await connection.query(sql2, [
       userId,
       data.teacher_id,
+      17,
+      7,
       data.fromclass,
       data.toclass,
       data.section,
@@ -88,7 +96,7 @@ exports.addTeacher = async (req, res) => {
     ]);
 
     const sql3 = `
-      INSERT INTO teacher_payroll_info 
+      INSERT INTO payroll_info 
       (user_id ,epf_no , basic_salary , contract_type , work_sift , work_location , date_of_leave)   
       VALUES (?,?,?,?,?,?,?)
     `;
@@ -98,7 +106,7 @@ exports.addTeacher = async (req, res) => {
     ]);
 
     const sql4 = `
-      INSERT INTO teacher_leaves 
+      INSERT INTO leaves_info
       (user_id, medical_leaves, casual_leaves, maternity_leaves, sick_leaves) 
       VALUES (?, ?, ?, ?, ?)
     `;
@@ -112,7 +120,7 @@ exports.addTeacher = async (req, res) => {
 
     // bank details
     const sqlb = `
-      INSERT INTO teacher_bank_info 
+      INSERT INTO bank_info 
       (user_id , account_name,account_num,bank_name,ifsc_code,branch_name) 
       VALUES (?,?,?,?,?,?)
     `;
@@ -171,7 +179,7 @@ exports.allTeachers = async (req, res) => {
         t.fromclass,
         t.toclass,
         t.section,
-        t.class,
+        t.class AS class_id,
         t.subject,
         t.date_of_join,
         t.img_src, 
@@ -179,12 +187,56 @@ exports.allTeachers = async (req, res) => {
         u.lastname,
         u.status,
         u.mobile,
-        u.email
+        u.email,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id 
+      LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
     `;
 
     const [rows] = await db.query(sql);
+    return res.status(200).json({
+      success: true,
+      message: "All teachers fetched successfully",
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.allTeachersForAttendance = async (req, res) => {
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
+        t.img_src, 
+        u.firstname,
+        u.lastname,
+         cc.class_name AS class,
+        s.section_name AS section
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id 
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
+    `;
+
+    const [rows] = await db.query(sql);
+   
     return res.status(200).json({
       success: true,
       message: "All teachers fetched successfully",
@@ -202,7 +254,94 @@ exports.allTeachers = async (req, res) => {
 
 
 exports.speTeacher = async (req, res) => {
-  const { userId } = req.params;
+  const { teacher_id } = req.params;
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
+        t.subject,
+        t.gender,
+        t.blood_gp,
+        t.date_of_join,
+        t.fat_name,
+        t.mot_name,
+        t.dob,
+        t.mari_status,
+        t.lan_known,
+        t.qualification,
+        t.work_exp,
+        t.prev_school,
+        t.prev_school_addr,
+        t.prev_school_num,
+        t.address,
+        t.perm_address,
+        t.pan_or_id,
+        t.other_info,
+        t.facebook_link,
+        t.instagram_link,
+        t.linked_link,
+        t.twitter_link,
+        t.img_src,
+        t.resume_src,
+        t.letter_src,
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,
+        b.account_name,
+        b.account_num,
+        b.bank_name,
+        b.ifsc_code,
+        b.branch_name,
+        h.hostel,
+        h.room_num,
+        tp.route,
+        tp.vehicle_num,
+        tp.pickup_point,
+        pi.epf_no,
+        pi.basic_salary,
+        pi.contract_type,
+        pi.work_sift,
+        pi.work_location,
+        pi.date_of_leave,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN bank_info b ON t.user_id =b.user_id
+      LEFT JOIN hostel_info h ON t.user_id = h.user_id
+      LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
+      LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
+       LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
+      WHERE t.teacher_id=?
+    `;
+
+    const [rows] = await db.query(sql, [teacher_id]);
+    return res.status(200).json({
+      success: true,
+      message: "Teacher fetched successfully",
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+exports.teacherDataForEdit = async (req, res) => {
+  const { teacher_id } = req.params;
   try {
     const sql = `
       SELECT  
@@ -211,8 +350,8 @@ exports.speTeacher = async (req, res) => {
         t.teacher_id,
         t.fromclass,
         t.toclass,
-        t.section,
         t.class,
+        t.section,
         t.subject,
         t.gender,
         t.blood_gp,
@@ -261,17 +400,19 @@ exports.speTeacher = async (req, res) => {
         pi.date_of_leave
       FROM teachers t
       LEFT JOIN users u ON t.user_id = u.id
-      LEFT JOIN teacher_bank_info b ON t.user_id =b.user_id
+      LEFT JOIN bank_info b ON t.user_id =b.user_id
       LEFT JOIN hostel_info h ON t.user_id = h.user_id
       LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
-      LEFT JOIN teacher_payroll_info pi ON t.user_id = pi.user_id
-      WHERE t.user_id=?
+      LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
+  
+      WHERE t.teacher_id=?
     `;
 
-    const [rows] = await db.query(sql, [userId]);
+    const [rows] = await db.query(sql, [teacher_id]);
+    console.log(rows[0])
     return res.status(200).json({
       success: true,
-      message: "All teachers fetched successfully",
+      message: "Teacher fetched successfully",
       data: rows[0],
     });
   } catch (error) {
@@ -286,11 +427,13 @@ exports.speTeacher = async (req, res) => {
 
 
 exports.updateTeacher = async (req, res) => {
-  const { id } = req.params;
+  const { teacher_id } = req.params;
   const data = req.body;
   let connection;
 
-  if (!id) return res.status(400).json({ success: false, message: "Teacher ID is required" });
+  if (!teacher_id) return res.status(400).json({ success: false, message: "Teacher ID is required" });
+
+  const id = await getUserId(teacher_id)
 
   try {
     connection = await db.getConnection();
@@ -348,7 +491,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_payroll_info 
+      `INSERT INTO payroll_info 
         (user_id, epf_no, basic_salary, contract_type, work_sift, work_location, date_of_leave) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
@@ -369,7 +512,7 @@ exports.updateTeacher = async (req, res) => {
 
 
     await connection.query(
-      `INSERT INTO teacher_bank_info 
+      `INSERT INTO bank_info 
         (user_id, account_name, account_num, bank_name, ifsc_code, branch_name)
         VALUES (?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
@@ -429,8 +572,8 @@ exports.updateTeacher = async (req, res) => {
 
 
 exports.disableTeacher = async (req, res) => {
-  const { id } = req.params;
-
+  const { teacher_id } = req.params;
+  const id = await getUserId(teacher_id)
 
   try {
     const [result] = await db.query(
@@ -450,8 +593,9 @@ exports.disableTeacher = async (req, res) => {
   }
 };
 
-exports.enaableTeacher = async (req, res) => {
-  const { id } = req.params;
+exports.enableTeacher = async (req, res) => {
+  const { teacher_id } = req.params;
+  const id = await getUserId(teacher_id)
 
 
   try {
@@ -474,11 +618,14 @@ exports.enaableTeacher = async (req, res) => {
 
 
 exports.deleteTeacher = async (req, res) => {
-  const { id } = req.params;
+  const { teacher_id } = req.params;
 
-  if (!id) {
+
+  if (!teacher_id) {
     return res.status(400).json({ message: "Id not provided!", success: false });
   }
+  const id = await getUserId(teacher_id)
+
 
   try {
     const [result] = await db.query(`DELETE FROM users WHERE id=?`, [id]);
@@ -524,3 +671,110 @@ exports.allTeachersForOption = async (req, res) => {
     });
   }
 };
+
+// get techer by token 
+exports.getTeacherByToken = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const sql = `
+      SELECT  
+        t.id,
+        t.user_id,
+        t.teacher_id,
+        t.subject,
+        t.gender,      
+        t.img_src,    
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,
+        cf.class_name AS fromclass,
+        ct.class_name AS toclass,
+        cc.class_name AS class,
+        s.section_name AS section  
+      FROM teachers t
+      LEFT JOIN users u ON t.user_id = u.id
+       LEFT JOIN classes cf ON t.fromclass = cf.id
+      LEFT JOIN classes ct ON t.toclass = ct.id
+      LEFT JOIN classes cc ON t.class = cc.id
+      LEFT JOIN sections s ON t.section = s.id
+      WHERE t.user_id=?
+    `;
+
+    const [rows] = await db.query(sql, [userId]);
+    return res.status(200).json({
+      success: true,
+      message: "Teacher fetched successfully",
+      data: rows[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching teachers",
+      error: error.message,
+    });
+  }
+};
+
+// get spe teacher leave information
+exports.getTeacherLeaveData = async (req, res) => {
+  const { teacher_id } = req.params;
+  try {
+
+    const sql = `
+      SELECT 
+        lt.id,
+        lt.name, 
+        lt.total_allowed,
+        IFNULL(SUM(la.no_of_days), 0) AS used,
+        (lt.total_allowed - IFNULL(SUM(la.no_of_days), 0)) AS avilable
+      FROM leaves_type lt
+      LEFT JOIN leave_application la
+        ON la.leave_type_id = lt.id
+        AND la.id_or_rollnum = ?
+        AND la.status = "1"
+      GROUP BY lt.id
+      ORDER BY lt.id ASC
+    `;
+
+    const [leave_inform] = await db.query(sql, teacher_id);
+
+
+    const sql2 = `
+  SELECT 
+    la.id,
+    la.no_of_days,
+    la.from_date,
+    la.to_date,
+    la.applied_on,
+    la.status,
+    lt.name AS leave_type
+  FROM leave_application la 
+  LEFT JOIN leaves_type lt
+    ON la.leave_type_id = lt.id
+  WHERE la.id_or_rollnum = ?
+  ORDER BY la.applied_on DESC
+`;
+
+    const [teacherAllLeave] = await db.query(sql2, teacher_id)
+
+    return res.status(200).json({
+      message: 'Leave information fetched successFully!',
+      success: true,
+      leave_inform,
+      teacherAllLeave
+    });
+
+  } catch (error) {
+
+    console.error(error);
+    return res.status(500).json({
+      message: "Something went wrong!",
+      success: false,
+      error: error.message
+    });
+  }
+}
+

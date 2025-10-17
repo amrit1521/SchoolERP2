@@ -112,9 +112,9 @@ const IssueBook = () => {
     {
       title: "Due Date",
       dataIndex: "dueDate",
-      render:(text:any)=>(
-                 <span>{dayjs(text).format('DD MMM YYYY')}</span>
-            ),
+      render: (text: any) => (
+        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.dueDate.length - b.dueDate.length,
     },
@@ -125,7 +125,7 @@ const IssueBook = () => {
       render: (text: string, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+            <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
               <img
                 src={`${Imageurl}/${record.stu_img}`}
                 className="img-fluid rounded-circle"
@@ -134,9 +134,9 @@ const IssueBook = () => {
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+                <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
               </p>
-              <span className="fs-12">{record.class},{record.section}</span>
+              <span className="fs-12 text-capitalize">{record.class}-{record.section}</span>
             </div>
           </div>
         </>
@@ -167,14 +167,14 @@ const IssueBook = () => {
     },
     {
       title: "Action",
-      dataIndex: "stu_id",
-      render: (id:number) => (
+      dataIndex: "rollnum",
+      render: (id: number) => (
         <div className="d-flex align-items-center gap-1">
           <Link
             to={`${routes.studentLibrary}/${id}`}
             className="btn btn-light add-fee"
-            // data-bs-toggle="modal"
-            // data-bs-target="#book_details"
+          // data-bs-toggle="modal"
+          // data-bs-target="#book_details"
           >
             View Details
           </Link>

@@ -27,7 +27,7 @@ import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { allClassRoom } from "../../../../service/classApi";
 import dayjs from 'dayjs'
 export interface Section {
-  id: number;
+  id:string;
   section: string;
 }
 
@@ -36,7 +36,7 @@ export interface Subject {
   name: string;
 }
 
-interface Room {
+export interface Room {
   id: number;
   room_no: number;
 }
@@ -75,7 +75,6 @@ const ExamSchedule = () => {
   };
 
   const fetchSchedule = async () => {
-
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
 
@@ -84,7 +83,6 @@ const ExamSchedule = () => {
       if (data.success) {
         setScheduleData(data.data);
       }
-
 
     } catch (error: any) {
       console.error(error);
@@ -148,7 +146,7 @@ const ExamSchedule = () => {
 
   // Section, Subject, Room Options
   const sectionOptions = useMemo(
-    () => sections.map((s) => ({ value: s.id, label: s.section })),
+    () => sections.map((s) => ({ value: s.section, label: s.section })),
     [sections]
   );
 

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
@@ -11,40 +11,267 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { hostelListData } from "../../../core/data/json/hostelListData";
-import HostelModal from "./hostelModal";
+// import { hostelListData } from "../../../core/data/json/hostelListData";
+import { toast } from "react-toastify";
+import { addHostel, allHostel, deleteHostel, editHostel, speHostel } from "../../../service/hostel";
+import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { Spinner } from "../../../spinner";
+
+
+
+export interface Hostel {
+  id: number;
+  hostelName: string;
+  hostelType: "Boys" | "Girls";
+  intake: string;
+  address: string;
+  description: string;
+}
+
+
+export interface HostelFormData {
+  hostelName: string;
+  hostelType: string;
+  intake: string;
+  address: string;
+  description: string;
+}
+
+export interface HostelFormErrors {
+  hostelName: string;
+  hostelType: string;
+  intake: string;
+  address: string;
+  description: string;
+}
+
+const initialFormData = {
+  hostelName: "",
+  hostelType: "",
+  intake: "",
+  address: "",
+  description: "",
+}
 
 const HostelList = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const data = hostelListData;
+  // const data = hostelListData;
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const [hostel, setHostel] = useState<Hostel[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchHostels = async () => {
+
+    setLoading(true)
+    new Promise((res) => setTimeout(res, 400))
+    try {
+      const { data } = await allHostel()
+      if (data.success) {
+        setHostel(data.data)
+      }
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+  useEffect(() => {
+    fetchHostels()
+  }, [])
+
+  // add hostel
+
+  const [formData, setFormData] = useState<HostelFormData>(initialFormData);
+
+  const [errors, setErrors] = useState<HostelFormErrors>({
+    hostelName: "",
+    hostelType: "",
+    intake: "",
+    address: "",
+    description: "",
+  });
+  const [editId, setEditId] = useState<number | null>(null)
+
+
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, hostelType: value }));
+    setErrors((prev) => ({ ...prev, hostelType: "" }));
+  };
+
+
+  const fetchHostelById = async (id: number) => {
+    if (!id) return
+    try {
+      const { data } = await speHostel(id)
+      if (data.success) {
+        const res = data.data
+        setFormData({
+          hostelName: res.hostelName,
+          hostelType: res.hostelType,
+          intake: res.intake,
+          address: res.address,
+          description: res.description,
+        })
+        setEditId(id)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: HostelFormErrors = {
+      hostelName: "",
+      hostelType: "",
+      intake: "",
+      address: "",
+      description: "",
+    };
+
+    if (!formData.hostelName.trim())
+      newErrors.hostelName = "Hostel name is required";
+
+    if (!formData.hostelType)
+      newErrors.hostelType = "Please select hostel type";
+
+    if (!formData.intake.trim())
+      newErrors.intake = "Intake is required";
+    else if (!/^\d+$/.test(formData.intake))
+      newErrors.intake = "Intake must be a number";
+
+    if (!formData.address.trim())
+      newErrors.address = "Address is required";
+
+    if (!formData.description.trim())
+      newErrors.description = "Description is required";
+
+    setErrors(newErrors);
+
+    return Object.values(newErrors).every((val) => val === "");
+  };
+
+
+  // edit
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+
+      if (editId) {
+        const { data } = await editHostel(formData, editId)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('edit_hostel')
+          setEditId(null)
+        }
+
+      } else {
+        const { data } = await addHostel(formData)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('add_hostel')
+
+        }
+      }
+
+      setFormData(initialFormData)
+      fetchHostels()
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  };
+
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setFormData(initialFormData);
+    setErrors({
+      hostelName: "",
+      hostelType: "",
+      intake: "",
+      address: "",
+      description: "",
+    })
+
+
+  }
+
+  // delete----------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const { data } = await deleteHostel(id)
+      if (data.success) {
+        toast.success(data.message)
+        fetchHostels();
+        setDeleteId(null)
+        handleModalPopUp('delete-modal')
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
+
+
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: string) => (
-        <Link to="#" className="link-primary">
-          {text}
-        </Link>
+      render: (id: number) => (
+        <div className="link-primary">
+          {id}
+        </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
     {
       title: "Hostel Name",
       dataIndex: "hostelName",
-      
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.hostelName.length - b.hostelName.length,
     },
     {
       title: "Hostel Type",
       dataIndex: "hostelType",
-      
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.hostelType.length - b.hostelType.length,
     },
@@ -56,20 +283,20 @@ const HostelList = () => {
     },
     {
       title: "Intake",
-      dataIndex: "inTake",
+      dataIndex: "intake",
       sorter: (a: TableData, b: TableData) =>
         a.inTake.length - b.inTake.length,
     },
     {
       title: "Description",
       dataIndex: "description",
-      
+
       sorter: (a: TableData, b: TableData) => a.description.length - b.description.length,
     },
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -83,26 +310,26 @@ const HostelList = () => {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => fetchHostelById(record.id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_hostel"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link
+                  <button
+                    onClick={() => setDeleteId(record.id)}
                     className="dropdown-item rounded-1"
-                    to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -111,6 +338,9 @@ const HostelList = () => {
       ),
     },
   ];
+
+
+
   return (
     <>
       {/* Page Wrapper */}
@@ -129,7 +359,7 @@ const HostelList = () => {
                     <Link to="#">Management</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                  Hostel
+                    Hostel
                   </li>
                 </ol>
               </nav>
@@ -261,7 +491,9 @@ const HostelList = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {
+                loading ? (<Spinner />) : (<Table dataSource={hostel} columns={columns} Selection={true} />)
+              }
               {/* /Student List */}
             </div>
           </div>
@@ -269,7 +501,293 @@ const HostelList = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <HostelModal />
+      {/* Add Hostel */}
+      <div className="modal fade" id="add_hostel">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h4 className="modal-title">Add Hostel</h4>
+              <button
+                onClick={(e) => handleCancel(e)}
+                type="button"
+                className="btn-close custom-btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              >
+                <i className="ti ti-x" />
+              </button>
+            </div>
+
+
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-12">
+
+                    <div className="mb-3">
+                      <label className="form-label">Hostel Name</label>
+                      <input
+                        type="text"
+                        name="hostelName"
+                        value={formData.hostelName}
+                        onChange={handleChange}
+                        className={`form-control ${errors.hostelName ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.hostelName && (
+                        <small className="text-danger">
+                          {errors.hostelName}
+                        </small>
+                      )}
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Hostel Type</label>
+                      <CommonSelect
+                        className={`select ${errors.hostelType ? "is-invalid" : ""
+                          }`}
+                        options={hostelType}
+                        value={formData.hostelType}
+                        onChange={(opt: any) => handleSelectChange(opt.value)}
+                      />
+                      {errors.hostelType && (
+                        <small className="text-danger">
+                          {errors.hostelType}
+                        </small>
+                      )}
+                    </div>
+
+                    {/* Intake */}
+                    <div className="mb-3">
+                      <label className="form-label">Intake</label>
+                      <input
+                        type="number"
+                        name="intake"
+                        value={formData.intake}
+                        onChange={handleChange}
+                        className={`form-control ${errors.intake ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.intake && (
+                        <small className="text-danger">{errors.intake}</small>
+                      )}
+                    </div>
+
+                    {/* Address */}
+                    <div className="mb-3">
+                      <label className="form-label">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className={`form-control ${errors.address ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.address && (
+                        <small className="text-danger">{errors.address}</small>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div className="mb-0">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        name="description"
+                        rows={4}
+                        value={formData.description}
+                        onChange={handleChange}
+                        className={`form-control ${errors.description ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.description && (
+                        <small className="text-danger">
+                          {errors.description}
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  onClick={(e) => handleCancel(e)}
+                  type="button"
+                  className="btn btn-light me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Hostel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Add Hostel */}
+      {/* Edit Hostel */}
+      <div className="modal fade" id="edit_hostel">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h4 className="modal-title">Edit Hostel</h4>
+              <button
+                type="button"
+                className="btn-close custom-btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              >
+                <i className="ti ti-x" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-12">
+
+                    <div className="mb-3">
+                      <label className="form-label">Hostel Name</label>
+                      <input
+                        type="text"
+                        name="hostelName"
+                        value={formData.hostelName}
+                        onChange={handleChange}
+                        className={`form-control ${errors.hostelName ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.hostelName && (
+                        <small className="text-danger">
+                          {errors.hostelName}
+                        </small>
+                      )}
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Hostel Type</label>
+                      <CommonSelect
+                        className={`select ${errors.hostelType ? "is-invalid" : ""
+                          }`}
+                        options={hostelType}
+                        value={formData.hostelType}
+                        onChange={(opt: any) => handleSelectChange(opt.value)}
+                      />
+                      {errors.hostelType && (
+                        <small className="text-danger">
+                          {errors.hostelType}
+                        </small>
+                      )}
+                    </div>
+
+                    {/* Intake */}
+                    <div className="mb-3">
+                      <label className="form-label">Intake</label>
+                      <input
+                        type="number"
+                        name="intake"
+                        value={formData.intake}
+                        onChange={handleChange}
+                        className={`form-control ${errors.intake ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.intake && (
+                        <small className="text-danger">{errors.intake}</small>
+                      )}
+                    </div>
+
+                    {/* Address */}
+                    <div className="mb-3">
+                      <label className="form-label">Address</label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className={`form-control ${errors.address ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.address && (
+                        <small className="text-danger">{errors.address}</small>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div className="mb-0">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        name="description"
+                        rows={4}
+                        value={formData.description}
+                        onChange={handleChange}
+                        className={`form-control ${errors.description ? "is-invalid" : ""
+                          }`}
+                      />
+                      {errors.description && (
+                        <small className="text-danger">
+                          {errors.description}
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  onClick={(e) => handleCancel(e)}
+                  type="button"
+                  className="btn btn-light me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Edit Hostel
+                </button>
+              </div>
+            </form>
+
+
+          </div>
+        </div>
+      </div>
+      {/* /Edit Hostel */}
+
+      {/* Delete Modal */}
+      <div className="modal fade" id="delete-modal">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <form >
+              <div className="modal-body text-center">
+                <span className="delete-icon">
+                  <i className="ti ti-trash-x" />
+                </span>
+                <h4>Confirm Deletion</h4>
+                <p>
+                  You want to delete all the marked items, this cant be undone
+                  once you delete.
+                </p>
+                {
+                  deleteId && (<div className="d-flex justify-content-center">
+                    <button
+                      onClick={(e) => cancelDelete(e)}
+                      className="btn btn-light me-3"
+                      data-bs-dismiss="modal"
+                    >
+                      Cancel
+                    </button>
+                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>)
+                }
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Delete Modal */}
     </>
   );
 };

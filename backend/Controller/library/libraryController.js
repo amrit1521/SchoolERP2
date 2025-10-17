@@ -274,11 +274,10 @@ exports.getAllStuIssueBook = async (req, res) => {
         st.admissionnum,
         u.firstname,
         u.lastname,
-        st.stu_img,
-        st.class,
-        st.section,
+        st.stu_img, 
         st.rollnum,
-        
+         c.class_name AS class,
+        s.section_name AS section,
         COUNT(ib.id) AS issuedBook,
         SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
         
@@ -288,7 +287,9 @@ exports.getAllStuIssueBook = async (req, res) => {
       FROM libraryIssueBooks ib
       LEFT JOIN students st ON ib.rollnum = st.rollnum
       LEFT JOIN users u ON st.stu_id = u.id
-      GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class, st.section
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id
+      GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class_id, st.section_id
       ORDER BY st.rollnum ASC
     `;
 
@@ -448,8 +449,8 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
     return res.status(200).json({
       message: 'Not returned books fetched successfully by Rollnum',
       success: true,
-      data: rows,        // all not returned books with last issue date
-      summary: result[0] || null // overall student + latest issue/return
+      data: rows,
+      summary: result[0] || null
     });
 
   } catch (error) {

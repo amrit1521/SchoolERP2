@@ -37,7 +37,7 @@ const ClassRoom = () => {
   const fetchAllClassRoom = async () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
-    console.log("saurabh")
+   
     try {
       const { data } = await allClassRoom()
       if (data.success) {
@@ -182,7 +182,7 @@ const ClassRoom = () => {
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
+    // console.log(id)
     e.preventDefault()
     try {
 

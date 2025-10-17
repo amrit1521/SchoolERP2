@@ -23,7 +23,7 @@ export interface IssuedBook {
 
 const StudentLibrary = () => {
 
-  const { id } = useParams<{ id: string }>();
+  const { rollnum } = useParams<{ rollnum: string }>();
 
   const [student, setStudent] = useState<any>({})
   const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([])
@@ -32,9 +32,9 @@ const StudentLibrary = () => {
 
 
 
-  const fetchStudent = async (studentId: number) => {
+  const fetchStudent = async (rollnum: number) => {
     try {
-      const res = await specificStudentData1(studentId);
+      const res = await specificStudentData1(rollnum);
 
       if (res?.data?.success) {
         setStudent(res.data.student);
@@ -72,7 +72,7 @@ const StudentLibrary = () => {
     setLoading(true);
     try {
       await new Promise((res) => setTimeout(res, 500))
-      const studentData = await fetchStudent(Number(id));
+      const studentData = await fetchStudent(Number(rollnum));
 
       // Agar student mila to uska rollnum se leave data fetch karo
       if (studentData?.rollnum) {
@@ -88,10 +88,10 @@ const StudentLibrary = () => {
   // ✅ Example: useEffect me call
   useEffect(() => {
     setToken(localStorage.getItem('token'))
-    if (id) {
+    if (rollnum) {
       fetchStudentAndIssuebook();
     }
-  }, [id]);
+  }, [rollnum]);
   const routes = all_routes;
 
   return (
@@ -101,7 +101,7 @@ const StudentLibrary = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-           {token&&( <StudentBreadcrumb token={token} id={Number(id)} />)}
+           {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -114,38 +114,38 @@ const StudentLibrary = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link">
                         <i className="ti ti-school me-2" />
                         Student Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
 
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${id}`} className="nav-link active">
+                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link active">
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>

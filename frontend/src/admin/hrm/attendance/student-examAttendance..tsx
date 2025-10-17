@@ -54,7 +54,6 @@ const ExamAttendance = () => {
   const tabledata = students.map((item) => ({
     key: item.student_id,
     id: item.student_id,
-    user_id: item.stu_id,
     admissionNo: item.admissionnum,
     rollNo: item.rollnum,
     name: `${item.firstname} ${item.lastname}`,
@@ -137,12 +136,12 @@ const ExamAttendance = () => {
       dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.studentLeaves}/${record.user_id}`} className="avatar avatar-md">
+          <Link to={`${routes.studentLeaves}/${record.rollNo}`} className="avatar avatar-md">
             <img src={`${Imageurl}/${record.img}`} className="img-fluid rounded-circle" alt="img" />
           </Link>
-          <div className="ms-2">
+          <Link to={`${routes.studentLeaves}/${record.rollNo}`} className="ms-2">
             <p className="text-dark mb-0">{text}</p>
-          </div>
+          </Link>
         </div>
       ),
       sorter: (a: any, b: any) => a.name.length - b.name.length,

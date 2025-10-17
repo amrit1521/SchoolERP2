@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
@@ -12,13 +12,11 @@ import {
   PickupPoint,
   Shift,
   VehicleNumber,
-  allClass,
   allSubject,
   bloodGroup,
   gender,
   roomNO,
   route,
-  sections,
   status,
 
 } from "../../../../core/common/selectoption/selectoption";
@@ -27,7 +25,8 @@ import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { addTeacher, deleteTeacherFile, uploadTeacherFile } from "../../../../service/api";
+import { addTeacher, deleteTeacherFile, getAllSection, uploadTeacherFile } from "../../../../service/api";
+import { allRealClasses } from "../../../../service/classApi";
 
 const TeacherForm = () => {
   const routes = all_routes;
@@ -225,6 +224,13 @@ const TeacherForm = () => {
         return;
       }
 
+      const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
+      if (file.size > maxSizeInBytes) {
+        toast.error("File size should not exceed 4MB.");
+        return;
+      }
+
+
       setFile(file);
 
       const formData = new FormData();
@@ -299,13 +305,13 @@ const TeacherForm = () => {
     setTeacherData((prev) => ({ ...prev, [name]: dateString }));
   };
 
-  // Handle for CommonSelect
+
   const handleSelectChange = (name: keyof TeacherData, value: string | number) => {
     setTeacherData((prev) => ({ ...prev, [name]: value }));
   };
 
 
-  // Generic tag handler
+ 
   const handleTagsChange = (field: keyof typeof teacherData, tags: string[]) => {
     setTeacherData((prev) => ({
       ...prev,
@@ -313,7 +319,7 @@ const TeacherForm = () => {
     }));
   };
 
-  // Validation function
+
   const validateTeacherData = (data: TeacherData) => {
     const errors: Partial<Record<keyof TeacherData, string>> = {};
 
@@ -327,10 +333,10 @@ const TeacherForm = () => {
     // if (data.password !== data.conpassword) errors.password = "Password and confirm password do not match";
 
     if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
-    if (!data.fromclass.trim()) errors.fromclass = "From Class is required";
-    if (!data.toclass.trim()) errors.toclass = "To Class is required";
-    if (!data.class.trim()) errors.class = "Class is required";
-    if (!data.section?.trim()) errors.section = "Section is required";
+    if (!data.fromclass) errors.fromclass = "From Class is required";
+    if (!data.toclass) errors.toclass = "To Class is required";
+    if (!data.class) errors.class = "Class is required";
+    if (!data.section) errors.section = "Section is required";
     if (!data.subject.trim()) errors.subject = "Subject is required";
     if (!data.gender.trim()) errors.gender = "Gender is required";
     if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
@@ -343,8 +349,13 @@ const TeacherForm = () => {
     if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
     if (!data.pan_or_id.trim()) errors.pan_or_id = "Pan Or Id is required";
 
+    if (!data.epf_no) errors.epf_no = "EPF number is required";
     if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
     if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
+
+
+    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required !"
+    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required !"
 
     if (!data.account_name.trim()) errors.account_name = "Account name is required";
     if (!data.account_num.trim()) errors.account_num = "Bank account number is required";
@@ -363,21 +374,16 @@ const TeacherForm = () => {
     }
 
     setErrors(errors)
-    Object.entries(errors).forEach(([_, error]) => {
-      toast.error(error)
-    })
 
     return Object.keys(errors).length === 0
   };
-
-
-
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!validateTeacherData(teacherData)) {
+      toast.error("Required fileds must be filled !")
       return
     }
 
@@ -386,7 +392,7 @@ const TeacherForm = () => {
         toast.error('Password and Confirm Password do not match !')
         return
       }
-      // console.log(teacherImg, teacherResume, teacherJoinLetter)
+
 
       const formData = new FormData()
       if (teacherImg && teacherResume && teacherJoinLetter) {
@@ -494,7 +500,7 @@ const TeacherForm = () => {
   }
 
 
-  const handleCancel = (e:React.MouseEvent<HTMLButtonElement>) => {
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setTeacherData({
       first_name: "",
@@ -568,6 +574,64 @@ const TeacherForm = () => {
     navigate(-1)
 
   }
+
+
+  // options
+
+  interface Classes {
+    id:number;
+    class_name:string;
+  }
+
+  interface Section {
+    id:number;
+    section:string;
+  }
+
+  
+    // OPTIONS 
+    const [sections,  setSections] = useState<Section[]>([])
+    const [allClass, setAllClass] = useState<Classes[]>([])
+  
+    const fetchData = async <T,>(
+      apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+      setter: React.Dispatch<React.SetStateAction<T>>
+    ) => {
+      try {
+        const { data } = await apiFn();
+        if (data.success) setter(data.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+  
+   const fetchSections = () => fetchData(getAllSection, setSections);
+    const fetchClasses = () => fetchData(allRealClasses, setAllClass)
+  
+    useEffect(() => {
+      fetchClasses()
+      fetchSections()
+  
+    }, []);
+  
+  
+      const sectionOptions = useMemo(
+        () =>
+          sections.map((s) => ({
+            value: s.id,
+            label: s.section,
+          })),
+        [sections]
+      );
+    
+  
+    const classOptions = useMemo(
+      () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+      [allClass]
+    );
+
+
 
   return (
     <>
@@ -693,7 +757,7 @@ const TeacherForm = () => {
                             <label className="form-label">From Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.fromclass}
                               onChange={(option) => handleSelectChange("fromclass", option ? option.value : "")}
                             />
@@ -707,7 +771,7 @@ const TeacherForm = () => {
                             <label className="form-label">To Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.toclass}
                               onChange={(option) => handleSelectChange("toclass", option ? option.value : "")}
                             />
@@ -722,7 +786,7 @@ const TeacherForm = () => {
                             <label className="form-label">Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.class}
                               onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                             />
@@ -736,7 +800,7 @@ const TeacherForm = () => {
                             <label className="form-label">Section</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select text-capitalize"
-                              options={sections}
+                              options={sectionOptions}
                               value={teacherData.section}
                               onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                             />
@@ -1095,7 +1159,7 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">EPF No</label>
+                            <label className="form-label">EPF No</label><span className="text-danger">*</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1103,6 +1167,9 @@ const TeacherForm = () => {
                               value={teacherData.epf_no}
                               onChange={handleInputChange}
                             />
+                            {errors.epf_no && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.epf_no}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
@@ -1195,14 +1262,14 @@ const TeacherForm = () => {
                         <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
                           <i className="ti ti-users fs-16" />
                         </span>
-                        <h4 className="text-dark">Leaves</h4>
+                        <h4 className="text-dark">Leavess </h4>
                       </div>
                     </div>
                     <div className="card-body pb-1">
                       <div className="row">
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Medical Leaves</label>
+                            <label className="form-label">Medical Leaves<span className="text-danger">*</span> </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1210,11 +1277,14 @@ const TeacherForm = () => {
                               value={teacherData.medical_leaves}
                               onChange={handleInputChange}
                             />
+                            {errors.medical_leaves && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.medical_leaves}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Casual Leaves</label>
+                            <label className="form-label">Casual Leaves <span className="text-danger">*</span></label>
                             <input
                               type="text"
                               className="form-control"
@@ -1222,6 +1292,9 @@ const TeacherForm = () => {
                               value={teacherData.casual_leaves}
                               onChange={handleInputChange}
                             />
+                            {errors.casual_leaves && (
+                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.casual_leaves}</div>
+                            )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
@@ -1254,6 +1327,8 @@ const TeacherForm = () => {
                     </div>
                   </div>
                   {/* /Leaves */}
+
+
                   {/* Bank Details */}
                   <div className="card">
                     <div className="card-header bg-light">
@@ -1406,6 +1481,8 @@ const TeacherForm = () => {
                   </div>
                 </div>
                 {/* /Transport Information */}
+
+
                 {/* Hostel Information */}
                 <div className="card">
                   <div className="card-header bg-light d-flex align-items-center justify-content-between">
@@ -1633,7 +1710,7 @@ const TeacherForm = () => {
                 </>
 
                 <div className="text-end">
-                  <button type="button" onClick={(e)=>handleCancel(e)} className="btn btn-light me-3">
+                  <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-3">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

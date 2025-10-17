@@ -336,7 +336,7 @@ const StudentGrid = () => {
                                 <li>
                                   <Link
                                     className="dropdown-item rounded-1"
-                                    to={`${routes.studentDetail}/${student.stu_id}`}
+                                    to={`${routes.studentDetail}/${student.rollnum}`}
                                   >
                                     <i className="ti ti-menu me-2" />
                                     View Student
@@ -345,7 +345,7 @@ const StudentGrid = () => {
                                 <li>
                                   <Link
                                     className="dropdown-item rounded-1"
-                                    to={`${routes.editStudent}/${student.stu_id}`}
+                                    to={`${routes.editStudent}/${student.rollnum}`}
                                   >
                                     <i className="ti ti-edit-circle me-2" />
                                     Edit
@@ -363,7 +363,7 @@ const StudentGrid = () => {
                                 <li>
                                   <button
                                     className="dropdown-item rounded-1"
-                                    onClick={() => setDeleteId(student.stu_id)}
+                                    onClick={() => setDeleteId(student.rollnum)}
                                     data-bs-toggle="modal"
                                     data-bs-target="#delete_modal"
                                   >
@@ -379,7 +379,7 @@ const StudentGrid = () => {
                           <div className="bg-light-300 rounded-2 p-3 mb-3">
                             <div className="d-flex align-items-center">
                               <Link
-                                to={`${routes.studentDetail}/${student.stu_id}`}
+                                to={`${routes.studentDetail}/${student.rollnum}`}
                                 className="avatar avatar-lg flex-shrink-0"
                               >
                                 <img
@@ -390,7 +390,7 @@ const StudentGrid = () => {
                               </Link>
                               <div className="ms-2">
                                 <h6 className="mb-0">
-                                  <Link className='text-capitalize' to={`${routes.studentDetail}/${student.stu_id}`}>{`${student.firstname} ${student.lastname}`}</Link>
+                                  <Link className='text-capitalize' to={`${routes.studentDetail}/${student.rollnum}`}>{`${student.firstname} ${student.lastname}`}</Link>
                                 </h6>
                                 <p>{`${student.class}, ${student.section}`}</p>
                               </div>

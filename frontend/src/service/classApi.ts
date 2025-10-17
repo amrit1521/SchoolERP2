@@ -28,3 +28,7 @@ export const allClassSchedule = ()=>api.get('/class/allschedule')
 export const deleteClassSchedule = (id:number)=>api.delete(`/class/delschedule/${id}`)
 export const speClassSchedule = (id:number)=>api.get(`/class/speschedule/${id}`)
 export const editClassSchedule = (data:object , id:number)=>api.put(`/class/editschedule/${id}` , data)
+
+
+// all real classes
+export const allRealClasses = ()=>api.get('/class/allrealclasses')

@@ -27,7 +27,7 @@ const StudentLeaves = () => {
     avilable: number;
   }
 
-  const { id } = useParams<{ id: string }>();
+  const { rollnum } = useParams<{ rollnum: string }>();
 
   const [student, setStudent] = useState<any>({})
   const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([])
@@ -37,9 +37,9 @@ const StudentLeaves = () => {
 
 
   // ✅ Student API function
-const fetchStudent = async (studentId: number) => {
+const fetchStudent = async (rollnum: number) => {
   try {
-    const res = await specificStudentData1(studentId);
+    const res = await specificStudentData1(rollnum);
 
     if (res?.data?.success) {
       setStudent(res.data.student);
@@ -72,14 +72,14 @@ const fetchLeave = async (rollnum: number) => {
   }
 };
 
-// ✅ Combined function (useEffect ya button click se call hoga)
+
 const fetchStudentAndLeave = async () => {
   setLoading(true);
   try {
     await new Promise((res)=>setTimeout(res, 200))
-    const studentData = await fetchStudent(Number(id));
+    const studentData = await fetchStudent(Number(rollnum));
 
-    // Agar student mila to uska rollnum se leave data fetch karo
+  
     if (studentData?.rollnum) {
       await fetchLeave(Number(studentData.rollnum));
     }
@@ -90,13 +90,13 @@ const fetchStudentAndLeave = async () => {
   }
 };
 
-// ✅ Example: useEffect me call
+
 useEffect(() => {
   setToken(localStorage.getItem('token'))
-  if (id) {
+  if (rollnum) {
     fetchStudentAndLeave();
   }
-}, [id]);
+}, [rollnum]);
 
 
   const handleAdd = () => {
@@ -165,6 +165,8 @@ useEffect(() => {
   ];
 
 
+// attendance ====================================
+
   interface AttendanceData {
     id: number;
     attendance: string;
@@ -178,11 +180,9 @@ useEffect(() => {
   const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([])
   
 
-
   const fetchStudentAttendance = async (rollnum: string) => {
     try {
       // console.log(rollnum)
-
       const { data } = await getStuAttendanceData(rollnum)
       // console.log(data.details)
       setAttendanceSummary(data.summary)
@@ -194,7 +194,6 @@ useEffect(() => {
     }
 
   }
-
 
 
   function getOnlyDay(dateStr: string): string {
@@ -220,7 +219,6 @@ useEffect(() => {
       row = { key: day, date: day };
       tabledata2.push(row);
     }
-
 
     row[month] = item.attendance;
   });
@@ -486,7 +484,7 @@ useEffect(() => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-            {token&&( <StudentBreadcrumb token={token} id={Number(id)} />)}
+            {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -499,38 +497,38 @@ useEffect(() => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link">
                         <i className="ti ti-school me-2" />
                         Student Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${id}`} className="nav-link active">
+                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link active">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
 
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link">
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>
@@ -610,7 +608,6 @@ useEffect(() => {
                             ))
                         }
 
-
                       </div>
                       <div className="card">
                         <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -646,6 +643,7 @@ useEffect(() => {
                       </div>
                     </div>
                     {/* /Leave */}
+
                     {/* Attendance */}
                     <div className="tab-pane fade" id="attendance">
                       <div className="card">

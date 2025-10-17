@@ -36,6 +36,10 @@ router.get('/speschedule/:id' , classController.getScheduleById)
 router.put('/editschedule/:id' , classController.updateSchedule)
 
 
+// class for option master
+router.get('/allrealclasses' ,classController.getAllClassForOption)
+
+
 
 
 

@@ -142,7 +142,7 @@ const fieldLabels: Record<keyof StudentData, string> = {
 
 const EditStudent = () => {
 
-    const { id } = useParams()
+    const { rollnum } = useParams()
     const navigate = useNavigate()
     const routes = all_routes;
 
@@ -154,9 +154,9 @@ const EditStudent = () => {
     const [originalTrasnferCert, setOriginalTransferCert] = useState<string>('');
 
 
-    const fetchStudentDataByUserId = async (id: number) => {
+    const fetchStudentDataByUserId = async (rollnum: number) => {
         try {
-            const { data } = await stuDataForEdit(id);
+            const { data } = await stuDataForEdit(rollnum);
 
             if (data.success && data.student) {
                 const student = data.student;
@@ -263,10 +263,10 @@ const EditStudent = () => {
     };
 
     useEffect(() => {
-        if (id) {
-            fetchStudentDataByUserId(Number(id))
+        if (rollnum) {
+            fetchStudentDataByUserId(Number(rollnum))
         }
-    }, [id])
+    }, [rollnum])
 
     const [studentData, setStudentData] = useState<StudentData>({
         academicyear: '',
@@ -344,6 +344,8 @@ const EditStudent = () => {
     const [medcertid, setMedcertid] = useState<Number | null>(null)
     const [transcertid, setTranscertid] = useState<Number | null>(null)
 
+    const [errors, setErrors] = useState<Partial<Record<keyof StudentData, string>>>({});
+
     const handleFileChange = async (
         e: React.ChangeEvent<HTMLInputElement>,
         setFile: React.Dispatch<React.SetStateAction<File | null>>,
@@ -357,6 +359,13 @@ const EditStudent = () => {
                 toast.error("Only JPG, PNG, or PDF files are allowed.");
                 return;
             }
+
+            const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
+            if (file.size > maxSizeInBytes) {
+                toast.error("File size should not exceed 4MB.");
+                return;
+            }
+
 
             setFile(file);
 
@@ -484,8 +493,6 @@ const EditStudent = () => {
             [field]: tags
         }));
     };
-    const [errors, setErrors] = useState<Partial<Record<keyof StudentData, string>>>({});
-
 
     const validateStudentForm = (data: StudentData) => {
         const newErrors: Partial<Record<keyof StudentData, string>> = {};
@@ -547,6 +554,7 @@ const EditStudent = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!validateStudentForm(studentData)) {
+            toast.error("Required fileds must be filled !")
             return
         }
 
@@ -586,7 +594,7 @@ const EditStudent = () => {
             // }
 
             // Send request
-            const res = await editStudent(formData, Number(id));
+            const res = await editStudent(formData, Number(rollnum));
 
             if (res.data.success) {
                 toast.success(res.data.message);

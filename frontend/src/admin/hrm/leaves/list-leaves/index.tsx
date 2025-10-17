@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-// import { leave } from "../../../../core/data/json/list_leaves";
 import type { TableData } from "../../../../core/data/interface";
 import Table from "../../../../core/common/dataTable/index";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
@@ -14,7 +13,7 @@ import { handleModalPopUp } from "../../../../handlePopUpmodal";
 
 const ListLeaves = () => {
   const routes = all_routes;
-  // const data = leave;
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -38,16 +37,12 @@ const ListLeaves = () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
     try {
-
       const { data } = await getAllLeaveTypeData()
-      console.log(data)
       if (data.success) {
         setLeaveData(data.data)
       }
-
     } catch (error) {
       console.log(error)
-
     } finally {
       setLoading(false)
     }
@@ -72,7 +67,7 @@ const ListLeaves = () => {
     status: "1",
   });
 
-  // const [errors, setErrors] = useState<>({})
+  
   const [editId, setEditId] = useState<number | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

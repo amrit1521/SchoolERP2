@@ -19,7 +19,7 @@ const StudentDetails = () => {
     img_src?: string;
     guardian_is?: string;
   }
-  const { id } = useParams<{ id: string }>();
+  const { rollnum } = useParams<{ rollnum:string }>();
 
   const [student, setStudent] = useState<any>({})
   const [parents, setParents] = useState<Parent[]>([])
@@ -32,7 +32,7 @@ const StudentDetails = () => {
       setLoading(true)
       await new Promise((resolve)=> setTimeout(resolve, 500))
       try {
-        const res = await specificStudentData1(Number(id))
+        const res = await specificStudentData1(Number(rollnum))
         // console.log(res)
         setStudent(res.data.student)
         setParents(res.data.parents)
@@ -46,7 +46,7 @@ const StudentDetails = () => {
     }
     fetchStudent();
 
-  }, [id])
+  }, [rollnum])
 
   // if (loading) {
   //   return <p className='spinner' role='status'>loading...</p>
@@ -60,7 +60,7 @@ const StudentDetails = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-            {token&&( <StudentBreadcrumb token={token} id={Number(id)} />)}
+            {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -73,38 +73,38 @@ const StudentDetails = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${id}`} className="nav-link active">
+                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link active">
                         <i className="ti ti-school me-2" />
                         Student Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
 
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${id}`} className="nav-link">
+                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link">
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>

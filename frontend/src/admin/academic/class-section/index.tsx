@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -7,16 +7,17 @@ import Table from "../../../core/common/dataTable";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import TooltipOption from "../../../core/common/tooltipOption";
-
-// Data & API
 import { all_routes } from "../../router/all_routes";
 import { activeList } from "../../../core/common/selectoption/selectoption";
 import { getAllSection, addClassSection, deleteSection, speSection, editSection } from "../../../service/api";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { allClassRoom, allRealClasses } from "../../../service/classApi";
 
-// ✅ Interfaces
+
 interface AllSection {
   id: number;
+  class_name:string;
+  room_no:number;
   section: string;
   status: string;
 }
@@ -29,9 +30,26 @@ interface TableData {
 }
 
 interface SectionData {
+  class_id: number | null,
+  room_no: number | null,
   section: string;
   status: string;
 }
+
+// OPTIONS
+export interface Room {
+  id: number;
+  room_no: number;
+}
+
+export interface classes {
+  id: number,
+  class_name: string;
+}
+
+
+
+
 
 const ClassSection: React.FC = () => {
   const routes = all_routes;
@@ -41,10 +59,17 @@ const ClassSection: React.FC = () => {
   const [allSections, setAllSections] = useState<AllSection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [sectionData, setSectionData] = useState<SectionData>({
+    class_id: null,
+    room_no: null,
     section: "",
     status: "0",
   });
   const [editId, setEditId] = useState<number | null>(null)
+  const [errors, setErrors] = useState({
+    class_id: "",
+    room_no: "",
+    section: "",
+  });
 
   // 🔹 Form Handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +80,13 @@ const ClassSection: React.FC = () => {
     }));
   };
 
+  const handleSelectChange = (name: keyof SectionData, value: number | string) => {
+    setSectionData((prev) => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
 
   const fetchSectionbyId = async (id: number) => {
 
@@ -64,6 +96,8 @@ const ClassSection: React.FC = () => {
       if (data.success) {
         setEditId(id)
         setSectionData({
+          class_id: data.data.class_id,
+          room_no: data.data.room_no,
           section: data.data.section,
           status: data.data.status
         })
@@ -75,39 +109,74 @@ const ClassSection: React.FC = () => {
 
   }
 
+  const validateForm = (): boolean => {
+    let isValid = true;
+    const newErrors = { class_id: "", room_no: "", section: "" };
+
+
+    if (!sectionData.class_id) {
+      newErrors.class_id = "Please select a class.";
+      isValid = false;
+    }
+
+
+    if (!sectionData.room_no) {
+      newErrors.room_no = "Please select a room number.";
+      isValid = false;
+    }
+
+
+    if (!sectionData.section.trim()) {
+      newErrors.section = "Section name is required.";
+      isValid = false;
+    } else if (sectionData.section.length > 1) {
+      newErrors.section = "Section name should only contain 1 character (like A, B, C).";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (sectionData.section.length > 1) {
-      toast.error('It is not valid section name !')
-      return
-    }
+
+    if (!validateForm()) return; 
+    console.log(sectionData)
+
     try {
-
       if (editId) {
-
-        const {data} = await editSection(sectionData , editId);
-        if(data.success){
-            toast.success(data.message)
-            handleModalPopUp('edit_section')
-            setEditId(null)
+        const { data } = await editSection(sectionData, editId);
+        if (data.success) {
+          toast.success(data.message);
+          handleModalPopUp("edit_section");
+          setEditId(null);
         }
-
       } else {
         const { data } = await addClassSection(sectionData);
         if (data.success) {
-          toast.success(data.message)
-          handleModalPopUp('add_class_section')
+          toast.success(data.message);
+          handleModalPopUp("add_class_section");
         }
       }
 
-      setSectionData({ section: "", status: "0" });
-      fetchSection();
 
-    } catch (error:any) {
+      setSectionData({ class_id: null, room_no: null, section: "", status: "0" });
+      setErrors({ class_id: "", room_no: "", section: "" });
+      fetchSection();
+    } catch (error: any) {
       console.error(error);
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
   };
+
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setSectionData({ class_id: null, room_no: null, section: "", status: "0" });
+    setErrors({ class_id: "", room_no: "", section: "" });
+  }
+
 
 
 
@@ -118,6 +187,7 @@ const ClassSection: React.FC = () => {
     try {
 
       const { data } = await getAllSection();
+      console.log(data)
 
       if (data.success) {
         setAllSections(data.data);
@@ -138,6 +208,8 @@ const ClassSection: React.FC = () => {
     key: item.id,
     id: item.id,
     sectionName: item.section,
+    class_name:item.class_name,
+    room_no:item.room_no,
     status: item.status === "1" ? "Active" : "Inactive",
   }));
 
@@ -179,6 +251,15 @@ const ClassSection: React.FC = () => {
       sorter: (a: TableData, b: TableData) => a.id - b.id,
       render: (id: number) => <Link to="#" className="link-primary">{id}</Link>,
     },
+     {
+      title: "Class",
+      dataIndex: "class_name",
+      render: (text: string) => (
+        <span className="text-uppercase">{text}</span>
+      ),
+      sorter: (a: any, b: any) =>
+        a.class_name.localeCompare(b.class_name),
+    },
     {
       title: "Section Name",
       dataIndex: "sectionName",
@@ -187,6 +268,15 @@ const ClassSection: React.FC = () => {
       ),
       sorter: (a: TableData, b: TableData) =>
         a.sectionName.localeCompare(b.sectionName),
+    },
+     {
+      title: "Room No",
+      dataIndex: "room_no",
+      render: (roomno: number) => (
+        <span>{roomno}</span>
+      ),
+      sorter: (a: any, b: any) =>
+        a.room_no - b.room_no,
     },
     {
       title: "Status",
@@ -243,6 +333,48 @@ const ClassSection: React.FC = () => {
       ),
     },
   ];
+
+
+  // OPTIONS 
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [allClass, setAllClass] = useState<classes[]>([])
+
+  const fetchData = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>
+  ) => {
+    try {
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const fetchRooms = () => fetchData(allClassRoom, setRooms)
+  const fetchClasses = () => fetchData(allRealClasses, setAllClass)
+
+  useEffect(() => {
+    fetchClasses()
+    fetchRooms()
+
+  }, []);
+
+
+  const roomOptions = useMemo(
+    () => rooms.map((r) => ({ value: r.id, label: String(r.room_no) })),
+    [rooms]
+  );
+
+  const classOptions = useMemo(
+    () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+    [rooms]
+  );
+
+
+
+
 
   const handleApplyClick = () => {
     dropdownMenuRef.current?.classList.remove("show");
@@ -382,6 +514,7 @@ const ClassSection: React.FC = () => {
         </div>
       </div>
 
+
       {/* 🔹 Add Section Modal */}
       <div className="modal fade" id="add_class_section">
         <div className="modal-dialog modal-dialog-centered">
@@ -389,21 +522,51 @@ const ClassSection: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <div className="modal-header">
                 <h4 className="modal-title">Add Section</h4>
-                <button type="button" className="btn-close custom-btn-close" data-bs-dismiss="modal">
+                <button type="button" onClick={(e) => handleCancel(e)} className="btn-close custom-btn-close" data-bs-dismiss="modal">
                   <i className="ti ti-x" />
                 </button>
               </div>
+
               <div className="modal-body">
+                {/* 🔸 Class */}
+                <div className="mb-3">
+                  <label className="form-label">Class</label>
+                  <CommonSelect
+                    className={`select ${errors.class_id ? "is-invalid" : ""}`}
+                    options={classOptions}
+                    value={sectionData.class_id}
+                    onChange={(opt) => handleSelectChange("class_id", opt ? opt.value : "")}
+                  />
+                  {errors.class_id && <small className="text-danger">{errors.class_id}</small>}
+                </div>
+
+
+                <div className="mb-3">
+                  <label className="form-label">Room No</label>
+                  <CommonSelect
+                    className={`select ${errors.room_no ? "is-invalid" : ""}`}
+                    options={roomOptions}
+                    value={sectionData.room_no}
+                    onChange={(opt) => handleSelectChange("room_no", opt ? opt.value : "")}
+                  />
+                  {errors.room_no && <small className="text-danger">{errors.room_no}</small>}
+                </div>
+
+
                 <div className="mb-3">
                   <label className="form-label">Section</label>
                   <input
                     type="text"
-                    className="form-control text-uppercase"
+                    className={`form-control text-uppercase ${errors.section ? "is-invalid" : ""}`}
                     name="section"
                     value={sectionData.section}
                     onChange={handleChange}
+                    maxLength={1}
                   />
+                  {errors.section && <small className="text-danger">{errors.section}</small>}
                 </div>
+
+
                 <div className="d-flex align-items-center justify-content-between">
                   <div className="status-title">
                     <h5>Status</h5>
@@ -420,11 +583,12 @@ const ClassSection: React.FC = () => {
                   </div>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                   Cancel
-                </Link>
-                <button type="submit" className="btn btn-primary" >
+                </button>
+                <button type="submit" className="btn btn-primary">
                   Add Section
                 </button>
               </div>
@@ -432,6 +596,9 @@ const ClassSection: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 🔹 Add Section Modal */}
+
       {/* edit section modal */}
       <div className="modal fade" id="edit_section">
         <div className="modal-dialog modal-dialog-centered">
@@ -439,21 +606,51 @@ const ClassSection: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <div className="modal-header">
                 <h4 className="modal-title">Edit Section</h4>
-                <button type="button" className="btn-close custom-btn-close" data-bs-dismiss="modal">
+                <button type="button" onClick={(e) => handleCancel(e)} className="btn-close custom-btn-close" data-bs-dismiss="modal">
                   <i className="ti ti-x" />
                 </button>
               </div>
+
               <div className="modal-body">
+
+                <div className="mb-3">
+                  <label className="form-label">Class</label>
+                  <CommonSelect
+                    className={`select ${errors.class_id ? "is-invalid" : ""}`}
+                    options={classOptions}
+                    value={sectionData.class_id}
+                    onChange={(opt) => handleSelectChange("class_id", opt ? opt.value : "")}
+                  />
+                  {errors.class_id && <small className="text-danger">{errors.class_id}</small>}
+                </div>
+
+
+                <div className="mb-3">
+                  <label className="form-label">Room No</label>
+                  <CommonSelect
+                    className={`select ${errors.room_no ? "is-invalid" : ""}`}
+                    options={roomOptions}
+                    value={sectionData.room_no}
+                    onChange={(opt) => handleSelectChange("room_no", opt ? opt.value : "")}
+                  />
+                  {errors.room_no && <small className="text-danger">{errors.room_no}</small>}
+                </div>
+
+
                 <div className="mb-3">
                   <label className="form-label">Section</label>
                   <input
                     type="text"
-                    className="form-control text-uppercase"
+                    className={`form-control text-uppercase ${errors.section ? "is-invalid" : ""}`}
                     name="section"
                     value={sectionData.section}
                     onChange={handleChange}
+                    maxLength={1}
                   />
+                  {errors.section && <small className="text-danger">{errors.section}</small>}
                 </div>
+
+
                 <div className="d-flex align-items-center justify-content-between">
                   <div className="status-title">
                     <h5>Status</h5>
@@ -470,18 +667,20 @@ const ClassSection: React.FC = () => {
                   </div>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                   Cancel
-                </Link>
-                <button type="submit" className="btn btn-primary" >
-                  Edit Section
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  save changes
                 </button>
               </div>
             </form>
           </div>
         </div>
       </div>
+      {/* edit section modal */}
 
       {/* Delete Modal */}
       <div className="modal fade" id="delete-modal">

@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom'
 
 type Props = {
      token:string;
-     id:number
+     rollnum:number
 }
 
-const StudentBreadcrumb:React.FC<Props> = ({token ,id}) => {
+const StudentBreadcrumb:React.FC<Props> = ({token ,rollnum}) => {
     const routes = all_routes
   return (
     <div className="col-md-12">
@@ -42,7 +42,7 @@ const StudentBreadcrumb:React.FC<Props> = ({token ,id}) => {
                
               {token && (JSON.parse(token).role ===1|| JSON.parse(token).role === 2) ? (
               <Link
-                 to={`${routes.editStudent}/${id}`}
+                 to={`${routes.editStudent}/${rollnum}`}
                 className="btn btn-primary d-flex align-items-center mb-2"
               >
                 <i className="ti ti-edit-circle me-2" />

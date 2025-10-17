@@ -17,6 +17,13 @@ function safeJSON(value) {
   return value || null;
 }
 
+async function getUserId(rollnum) {
+
+  const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
+  return stu[0].stu_id
+
+}
+
 exports.addStudent = async (req, res) => {
   const data = req.body;
   let connection;
@@ -40,7 +47,7 @@ exports.addStudent = async (req, res) => {
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
     const [userRes] = await connection.query(
-      `INSERT INTO users (firstname, lastname, mobile, email, password, type_id, status)
+      `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [data.firstname, data.lastname, data.primarycont, data.email, hashPassword, 3, data.status]
     );
@@ -169,9 +176,6 @@ exports.addStudent = async (req, res) => {
   }
 };
 
-
-
-
 exports.allStudents = async (req, res) => {
   try {
     const sql = `
@@ -181,7 +185,7 @@ exports.allStudents = async (req, res) => {
                 u.lastname,
                 u.mobile,
                 u.email,
-                u.type_id,
+                u.roll_id,
                 u.status,
                 s.id AS student_id,
                 s.stu_id,
@@ -189,8 +193,10 @@ exports.allStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                s.class,
-                s.section,
+                c.class_name as class,
+                s.class_id,
+                se.section_name as section,
+                s.section_id,
                 s.gender,
                 s.dob,
                 s.bloodgp,
@@ -204,7 +210,10 @@ exports.allStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
-                WHERE u.type_id=3
+          RIGHT JOIN classes  c ON c.id =  s.class_id
+          RIGHT JOIN sections se ON se.id = s.section_id
+          
+                WHERE u.roll_id=3
         `;
 
     const [students] = await db.query(sql);
@@ -233,7 +242,7 @@ exports.filterStudents = async (req, res) => {
                 u.lastname,
                 u.mobile,
                 u.email,
-                u.type_id,
+                u.roll_id,
                 u.status,
                 s.id AS student_id,
                 s.stu_id,
@@ -256,7 +265,38 @@ exports.filterStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
-                WHERE u.type_id=3 AND class=? AND section=?
+                WHERE u.roll_id=3 AND class=? AND section=?
+        `;
+
+    const [students] = await db.query(sql, [data.class, data.section]);
+
+    res.status(200).json({
+      message: "Students fetched successfully",
+      success: true,
+      students
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error!', success: false });
+  }
+};
+exports.filterStudentsForOption = async (req, res) => {
+
+  const data = req.body;
+  try {
+    const sql = `
+          SELECT 
+            u.firstname,
+            u.lastname,
+            s.rollnum
+            FROM users u
+            RIGHT JOIN students s
+            ON u.id = s.stu_id
+            WHERE u.roll_id = 3 
+            AND s.class = ? 
+            AND s.section = ?;
+
         `;
 
     const [students] = await db.query(sql, [data.class, data.section]);
@@ -274,7 +314,8 @@ exports.filterStudents = async (req, res) => {
 };
 
 exports.disableStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
 
   try {
@@ -297,7 +338,8 @@ exports.disableStudent = async (req, res) => {
 
 
 exports.enableStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
 
   try {
@@ -320,13 +362,13 @@ exports.enableStudent = async (req, res) => {
 
 
 
-exports.getStudentByIdForEdit = async (req, res) => {
-  const { id } = req.params;
+exports.getStudentByRollnumForEdit = async (req, res) => {
+  const { rollnum } = req.params;
 
-  if (!id) {
-    return res.status(400).json({ success: false, message: "Student ID is required" });
+  if (!rollnum) {
+    return res.status(400).json({ success: false, message: "Student Roll Number is required" });
   }
-
+  const id = await getUserId(rollnum)
   try {
     const sql = `
       SELECT 
@@ -379,25 +421,28 @@ exports.getStudentByIdForEdit = async (req, res) => {
 
 
 exports.updateStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
   const data = req.body;
   let connection;
-
-  if (!id) {
-    return res.status(400).json({ success: false, message: "Student ID is required" });
+  if (!rollnum) {
+    return res.status(400).json({ success: false, message: "Student RollNumber is required" });
   }
+
+  const id = await getUserId(rollnum)
+
+
 
   try {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // --- 1️⃣ Update users table ---
+
     await connection.query(
       `UPDATE users SET firstname=?, lastname=?, mobile=?, email=?, status=? WHERE id=?`,
       [data.firstname, data.lastname, data.primarycont, data.email, data.status, id]
     );
 
-    // --- 2️⃣ Update students table ---
+
     await connection.query(
       `UPDATE students 
        SET academicyear=?, admissionnum=?, admissiondate=?, rollnum=?, class=?, section=?, 
@@ -434,7 +479,7 @@ exports.updateStudent = async (req, res) => {
       ]
     );
 
-    // --- 3️⃣ Prepare parents data ---
+
     const parentsData = [
       {
         relation: "Father",
@@ -465,7 +510,7 @@ exports.updateStudent = async (req, res) => {
       },
     ].filter(p => p.name);
 
-    // --- Parents insert/update using Promise.all ---
+
     await Promise.all(parentsData.map(async parent => {
       const [existingParent] = await connection.query(
         `SELECT id FROM parents_info WHERE user_id = ? AND relation = ? LIMIT 1`,
@@ -509,7 +554,7 @@ exports.updateStudent = async (req, res) => {
       }
     }));
 
-    // --- 5️⃣ Hostel, Transport, Other info using Promise.all ---
+
     const otherInfoQueries = [];
 
     if (data.hostel || data.room_num) {
@@ -547,7 +592,7 @@ exports.updateStudent = async (req, res) => {
 
     await Promise.all(otherInfoQueries);
 
-    // --- 6️⃣ Commit transaction ---
+
     await connection.commit();
 
     return res.status(200).json({ success: true, message: "Student updated successfully" });
@@ -562,7 +607,9 @@ exports.updateStudent = async (req, res) => {
 };
 
 exports.specificDetailsStu = async (req, res) => {
-  const id = req.params.id;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
+
   try {
 
     const sql = `
@@ -573,6 +620,7 @@ exports.specificDetailsStu = async (req, res) => {
         u.status,
         u.mobile,
         u.email,
+       
         s.id AS student_id,
         s.academicyear,
         s.admissionnum,
@@ -606,17 +654,20 @@ exports.specificDetailsStu = async (req, res) => {
         o.bank_name,
         o.branch,
         o.ifsc_num,
-        o.other_det
+        o.other_det,
+         p.name,
+        p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
-      WHERE u.id = ?;
+      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+      WHERE s.rollnum = ?;
     `;
     const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`
 
-    const [student] = await db.query(sql, [id]);
+    const [student] = await db.query(sql, [rollnum]);
     const [parents] = await db.query(sql2, [id])
 
     return res.status(200).json({
@@ -636,7 +687,8 @@ exports.specificDetailsStu = async (req, res) => {
 
 
 exports.deleteStudent = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
   try {
     const sql = `DELETE FROM users WHERE id = ?`;
@@ -657,7 +709,8 @@ exports.deleteStudent = async (req, res) => {
 
 // student time table --------------------
 exports.getTimeTable = async (req, res) => {
-  const { id } = req.params;
+  const { rollnum } = req.params;
+  const id = await getUserId(rollnum)
 
   try {
 
@@ -707,41 +760,10 @@ exports.getTimeTable = async (req, res) => {
     });
   }
 };
-// leave for students ----------------------
-exports.addStudentLeave = async (req, res) => {
-  const data = req.body;
 
-  try {
 
-    const sql = `
-      INSERT INTO leave_application 
-      (student_rollnum, leave_type_id, from_date, to_date, leave_day_type, no_of_days, reason, leave_date) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
 
-    const [leaveres] = await db.query(sql, [
-      data.student_rollnum,
-      data.leave_type_id,
-      data.from_date,
-      data.to_date,
-      data.leave_day_type,
-      data.no_of_days,
-      data.reason,
-      data.leave_date,
-    ]);
-
-    return res.status(201).json({
-      message: "Leave applied successfully!",
-      success: true,
-      insertId: leaveres.insertId,
-    });
-  } catch (error) {
-    console.error("Error in addStudentLeave:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
-  }
-};
-
-// get leave name  , total , used and avilable
+// get leave name , total , used and avilable
 
 exports.getStuLeaveData = async (req, res) => {
   const { rollnum } = req.params;
@@ -757,7 +779,7 @@ exports.getStuLeaveData = async (req, res) => {
       FROM leaves_type lt
       LEFT JOIN leave_application la
         ON la.leave_type_id = lt.id
-        AND la.student_rollnum = ?
+        AND la.id_or_rollnum = ?
         AND la.status = "1"
       GROUP BY lt.id
       ORDER BY lt.id ASC
@@ -778,7 +800,7 @@ exports.getStuLeaveData = async (req, res) => {
   FROM leave_application la 
   LEFT JOIN leaves_type lt
     ON la.leave_type_id = lt.id
-  WHERE la.student_rollnum = ?
+  WHERE la.id_or_rollnum = ?
   ORDER BY la.applied_on DESC
 `;
 
@@ -804,7 +826,7 @@ exports.getStuLeaveData = async (req, res) => {
 
 
 exports.studentLeaveReport = async (req, res) => {
-  console.log("fhdghdgfdh")
+
   try {
     const sql = `
       SELECT 
@@ -823,7 +845,7 @@ exports.studentLeaveReport = async (req, res) => {
       CROSS JOIN leaves_type lt
       LEFT JOIN leave_application la 
         ON la.leave_type_id = lt.id 
-        AND la.student_rollnum = st.rollnum 
+        AND la.id_or_rollnum = st.rollnum 
         AND la.status = "1"
       GROUP BY st.admissionnum, st.rollnum,st.stu_img, u.firstname, u.lastname, lt.id
       ORDER BY st.admissionnum, lt.id;
@@ -895,12 +917,12 @@ LEFT JOIN users u
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
     ON s.stu_id = father.user_id AND father.relation = 'Father'
-WHERE u.type_id = 3
+WHERE u.roll_id = 3
 
         `;
 
     const [rows] = await db.query(sql)
-    return res.status(200).json({ message: "All students for report data", data: rows , success:true })
+    return res.status(200).json({ message: "All students for report data", data: rows, success: true })
 
 
   } catch (error) {
@@ -908,6 +930,48 @@ WHERE u.type_id = 3
     return res.status(500).json({ message: "Internal server error !", success: false })
   }
 }
+
+
+// for student dashboard data
+exports.getStuByToken = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const sql = `
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,   
+        s.id AS student_id,
+        s.academicyear,
+        s.admissionnum,
+        s.admissiondate,
+        s.rollnum,
+        s.class,
+        s.section,
+        s.stu_img
+      FROM users u
+      LEFT JOIN students s ON u.id = s.stu_id
+      WHERE u.id = ?;
+    `;
+    const [student] = await db.query(sql, [userId]);
+
+    return res.status(200).json({
+      message: 'Student fetched successfully!',
+      success: true,
+      student: student[0],
+
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Internal server error!',
+      success: false,
+    });
+  }
+};
 
 
 

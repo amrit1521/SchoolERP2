@@ -21,7 +21,7 @@ exports.addHomework = async (req, res) => {
 
     const sql = `
       INSERT INTO home_work 
-      (className, section, subject, homeworkDate, submissionDate, attachements, description, status, teacherId, created_at, updated_at) 
+      (class_id, section_id, subject, homeworkDate, submissionDate, attachements, description, status, teacherId, created_at, updated_at) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
@@ -40,7 +40,7 @@ exports.addHomework = async (req, res) => {
     const [result] = await db.query(sql, values);
 
     return res.status(201).json({
-      message: `Homework added successfully to class ${className}`,
+      message: `Homework added successfully !`,
       homeworkId: result.insertId,
       success: true
     });
@@ -54,8 +54,7 @@ exports.allHomework = async (req, res) => {
   try {
     const sql = `
       SELECT 
-        hw.id,
-        hw.className,
+        hw.id, 
         hw.homeworkDate,
         hw.submissionDate,
         hw.attachements,
@@ -68,12 +67,14 @@ exports.allHomework = async (req, res) => {
         u.firstname,
         u.lastname,
         su.name AS subject,
-        se.section
+        se.section_name AS section,
+        c.class_name  AS className
       FROM home_work hw
       LEFT JOIN teachers t ON hw.teacherId = t.teacher_id
       LEFT JOIN users u ON t.user_id = u.id
       LEFT JOIN class_subject su ON hw.subject = su.id
-      LEFT JOIN  classSection se ON hw.section = se.id
+      LEFT JOIN  sections se ON hw.section_id = se.id
+      LEFT JOIN classes c ON hw.class_id = c.id
       ORDER BY hw.created_at DESC
     `;
     const [rows] = await db.query(sql);
@@ -88,10 +89,13 @@ exports.allHomework = async (req, res) => {
 exports.getHomeworkById = async (req, res) => {
   try {
     const { id } = req.params;
+    if(!id){
+      return res.status(404).json({message:"Home work id is required !"})
+    }
 
     const sql = `
-      SELECT 
-       * FROM
+      SELECT id ,class_id AS className , section_id AS section ,subject , homeWorkDate , submissionDate , teacherId , status , attachements , description
+        FROM
       home_work
       WHERE id = ?
     `;
@@ -127,7 +131,7 @@ exports.updateHomework = async (req, res) => {
 
     const sql = `
       UPDATE home_work 
-      SET className = ?, section = ?, subject = ?, homeworkDate = ?, submissionDate = ?, attachements = ?, 
+      SET class_id = ?, section_id = ?, subject = ?, homeworkDate = ?, submissionDate = ?, attachements = ?, 
           description = ?, status = ?, teacherId = ?, updated_at = NOW()
       WHERE id = ?
     `;

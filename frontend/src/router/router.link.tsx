@@ -246,7 +246,7 @@ import Video from "../admin/uiInterface/base-ui/video";
 import StudentGrid from "../admin/peoples/students/student-grid/index.tsx";
 import Storage from "../admin/settings/otherSettings/storage.tsx";
 import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
-
+import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
 const routes = all_routes;
 
 export const publicRoutes = [
@@ -758,37 +758,37 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: `${routes.editStudent}/:id`,
+    path: `${routes.editStudent}/:rollnum`,
     element: <EditStudent />,
     route: Route,
   },
   {
-    path: `${routes.studentLibrary}/:id`,
+    path: `${routes.studentLibrary}/:rollnum`,
     element: <StudentLibrary />,
     route: Route,
   },
   {
-    path: `${routes.studentDetail}/:id`,
+    path: `${routes.studentDetail}/:rollnum`,
     element: <StudentDetails />,
     route: Route,
   },
   {
-    path: `${routes.studentFees}/:id`,
+    path: `${routes.studentFees}/:rollnum`,
     element: <StudentFees />,
     route: Route,
   },
   {
-    path: `${routes.studentLeaves}/:id`,
+    path: `${routes.studentLeaves}/:rollnum`,
     element: <StudentLeaves />,
     route: Route,
   },
   {
-    path: `${routes.studentResult}/:id`,
+    path: `${routes.studentResult}/:rollnum`,
     element: <StudentResult />,
     route: Route,
   },
   {
-    path: `${routes.studentTimeTable}/:id`,
+    path: `${routes.studentTimeTable}/:rollnum`,
     element: <StudentTimeTable />,
     route: Route,
   },
@@ -882,6 +882,11 @@ export const publicRoutes = [
     route: Route,
   },
   {
+    path: routes.updateExamResult,
+    element: <ExamMarkUpload />,
+    route: Route,
+  },
+  {
     path: routes.examAttendance,
     element: <ExamAttendance />,
     route: Route,
@@ -902,33 +907,33 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: `${routes.editTeacher}/:userId`,
+    path: `${routes.editTeacher}/:teacher_id`,
     element: <EditTeacher />,
     route: Route,
   },
 
   {
-    path: `${routes.teacherDetails}/:userId`,
+    path: `${routes.teacherDetails}/:teacher_id`,
     element: <TeacherDetails />,
     route: Route,
   },
   {
-    path: `${routes.teachersRoutine}/:userId`,
+    path: `${routes.teachersRoutine}/:teacher_id`,
     element: <TeachersRoutine />,
     route: Route,
   },
   {
-    path: `${routes.teacherSalary}/:userId`,
+    path: `${routes.teacherSalary}/:teacher_id`,
     element: <TeacherSalary />,
     route: Route,
   },
   {
-    path: `${routes.teacherLeaves}/:userId`,
+    path: `${routes.teacherLeaves}/:teacher_id`,
     element: <TeacherLeave />,
     route: Route,
   },
   {
-    path: `${routes.teacherLibrary}/:userId`,
+    path: `${routes.teacherLibrary}/:teacher_id`,
     element: <TeacherLibrary />,
     route: Route,
   },
@@ -968,17 +973,17 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.staffDetails,
+    path:`${routes.staffDetails}/:staffid`,
     element: <StaffDetails />,
     route: Route,
   },
   {
-    path: routes.staffPayroll,
+    path: `${routes.staffPayroll}/:staffid`,
     element: <StaffPayRoll />,
     route: Route,
   },
   {
-    path: routes.staffLeave,
+    path: `${routes.staffLeave}/:staffid`,
     element: <StaffLeave />,
     route: Route,
   },
@@ -1136,7 +1141,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.staffsAttendance,
+    path: `${routes.staffsAttendance}/:staffid`,
     element: <StaffsAttendance />,
     route: Route,
   },
@@ -1146,7 +1151,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.editStaff,
+    path: `${routes.editStaff}/:staffid`,
     element: <EditStaff />,
     route: Route,
   },

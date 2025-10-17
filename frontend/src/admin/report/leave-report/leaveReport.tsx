@@ -31,6 +31,7 @@ const LeaveReport = () => {
     await new Promise((res) => setTimeout(res, 400))
     try {
       const { data } = await studentLeaveReport();
+      console.log(data)
       if (data.success) {
         const transformed = data.data.map((student: any) => ({
           admissionNo: student.admissionNo,
@@ -87,12 +88,12 @@ const LeaveReport = () => {
           key: "studentName",
           render: (text: any, record: any) => (
             <div className="d-flex align-items-center">
-              <Link to={`${routes.studentDetail}/${record.stu_id}`} className="avatar avatar-md">
+              <Link to={`${routes.studentDetail}/${record.rollNo}`} className="avatar avatar-md">
                 <img src={`${Imageurl}/${record.stu_img}`} alt="avatar" className="img-fluid rounded-circle" />
               </Link>
               <div className="ms-2">
                 <p className="text-dark mb-0">
-                  <Link to={`${routes.studentDetail}/${record.stu_id}`}>{text}</Link>
+                  <Link to={`${routes.studentDetail}/${record.rollNo}`}>{text}</Link>
                 </p>
                 <span className="fs-12">Roll No : {record.rollNo}</span>
               </div>
