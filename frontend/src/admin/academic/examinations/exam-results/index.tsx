@@ -32,7 +32,12 @@ import { toast } from "react-toastify";
 // import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
 import { allRealClasses } from "../../../../service/classApi";
-import { DemoPdfTemplate1, PdfTemplate1 } from "./resultTemplate";
+import {
+  DemoPdfTemplate1,
+  DemoTemplate2,
+  PdfTemplate1,
+  PdfTemplate2,
+} from "./resultTemplate";
 
 export interface SubjectResult {
   id: number;
@@ -129,6 +134,9 @@ const ExamResult = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
     null
   );
+  const [selectedResultClass, setSelectedResultClass] = useState<number | null>(
+    null
+  );
   const [modalStudentItem, setModalStudentItem] = useState<any[]>([]);
 
   const templateConfigs = [
@@ -139,12 +147,13 @@ const ExamResult = () => {
       componentDemo: DemoPdfTemplate1,
       badge: "primary",
     },
-    // {
-    //   id: 2,
-    //   label: "t-2",
-    //   component: Template2,
-    //   badge: "success",
-    // },
+    {
+      id: 2,
+      label: "t-2",
+      component: PdfTemplate2,
+      componentDemo: DemoTemplate2,
+      badge: "success",
+    },
     // {
     //   id: 3,
     //   label: "t-3",
@@ -228,8 +237,8 @@ const ExamResult = () => {
     try {
       const { data } = await getResultAllStudentsOfClass(id);
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        console.log(data);
         setModalStudentItem([...data.data]);
+        setSelectedResultClass(id);
         setIsModalVisible(true);
       } else {
         toast.error(data.message);
@@ -240,74 +249,6 @@ const ExamResult = () => {
     }
   };
 
-  // const handleDownloadTemplate = async () => {
-  //   console.log("selected :", selectedTemplateId);
-  //   if (!selectedTemplateId || !modalStudentItem?.length) return;
-
-  //   const selectedTemplate = templateConfigs.find(
-  //     (t) => t.id === selectedTemplateId
-  //   );
-  //   if (!selectedTemplate) return;
-
-  //   const Component = selectedTemplate.component;
-  //   const zip = new JSZip();
-
-  //   const container = document.createElement("div");
-  //   container.style.position = "fixed";
-  //   container.style.top = "-9999px";
-  //   container.style.left = "-9999px";
-  //   document.body.appendChild(container);
-
-  //   // Sequentially generate PDFs
-  //   for (let i = 0; i < modalStudentItem.length; i++) {
-  //     const student = modalStudentItem[i];
-  //     console.log("student: ", modalStudentItem, student);
-  //     console.log(
-  //       `Generating ${i + 1}/${modalStudentItem.length}: ${student?.rollnum}`
-  //     );
-
-  //     container.innerHTML = "";
-  //     const tempDiv = document.createElement("div");
-  //     container.appendChild(tempDiv);
-
-  //     const root = ReactDOM.createRoot(tempDiv);
-  //     root.render(
-  //       <Component
-  //       // studentItem={student}
-  //       // studentRollnum={student.rollnum}
-  //       // label={selectedTemplate.label}
-  //       />
-  //     );
-
-  //     await new Promise((r) => setTimeout(r, 500)); // allow render time
-
-  //     const pdfBlob = await html2pdf()
-  //       .set({
-  //         margin: 10,
-  //         html2canvas: { scale: 2 },
-  //         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  //       })
-  //       .from(tempDiv)
-  //       .output("blob");
-
-  //     zip.file(
-  //       `Result-${student?.rollnum}-${selectedTemplate.label}.pdf`,
-  //       pdfBlob
-  //     );
-  //     root.unmount();
-  //   }
-
-  //   document.body.removeChild(container);
-
-  //   // Download all PDFs as one ZIP file
-  //   const zipBlob = await zip.generateAsync({ type: "blob" });
-  //   saveAs(zipBlob, `ClassResults-${selectedTemplate.label}.zip`);
-
-  //   // Close modal after success
-  //   setIsModalVisible(false);
-  //   setSelectedTemplateId(null);
-  // };
-
   const handleDownloadTemplate = async (classNumber: number) => {
     if (!selectedTemplateId || !modalStudentItem?.length) return;
 
@@ -315,11 +256,10 @@ const ExamResult = () => {
       (t) => t.id === selectedTemplateId
     );
     if (!selectedTemplate) return;
-    console.log("modalStudents: ", modalStudentItem);
     const TemplateComponent = selectedTemplate.component;
 
     const studentsInClass = modalStudentItem.filter(
-      (s) => s.class === classNumber
+      (s) => s.class_id === classNumber
     );
 
     const studentsGrouped = studentsInClass.reduce((acc: any, student) => {
@@ -337,7 +277,7 @@ const ExamResult = () => {
       });
       return acc;
     }, {});
-
+    console.log("studentsGrouped: ", modalStudentItem, classNumber);
     const filteredStudents: any[] = Object.values(studentsGrouped).filter(
       (s: any) =>
         s.exams.some((e: any) => e.exam_name === "Semester1") &&
@@ -364,7 +304,7 @@ const ExamResult = () => {
         firstname: studentItem.studentName.split(" ")[0],
         lastname: studentItem.studentName.split(" ")[1] || "",
         stud_admNo: studentItem.admissionNo,
-        student_image: studentItem.img,
+        student_image: studentItem.student_image,
       };
 
       container.innerHTML = "";
@@ -376,12 +316,22 @@ const ExamResult = () => {
         <TemplateComponent studentItem={mappedStudentItem} exam={exams} />
       );
 
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 800));
+
+      await Promise.all(
+        Array.from(tempDiv.querySelectorAll("img")).map((img: any) => {
+          return new Promise((resolve) => {
+            if (img.complete) return resolve(true);
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
 
       const pdfBlob = await html2pdf()
         .set({
           margin: 10,
-          html2canvas: { scale: 2 },
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         })
         .from(tempDiv)
@@ -680,7 +630,6 @@ const ExamResult = () => {
           }
           value={record.section ? record.section.value : null}
           onChange={(opt: any) => {
-            console.log("record: ", record);
             const newData = [...resultData2];
             newData[index].section = opt.value;
             setResultData2(newData);
@@ -702,7 +651,6 @@ const ExamResult = () => {
             value={selectedExam?.value}
             onChange={(opt: any) => {
               const newData = [...resultData2];
-              console.log(opt);
               newData[index].examName = opt.label;
               setResultData2(newData);
               return setSelectedExams((prev) => ({
@@ -1872,7 +1820,7 @@ const ExamResult = () => {
                     type="button"
                     className="btn btn-primary"
                     disabled={!selectedTemplateId}
-                    onClick={() => handleDownloadTemplate(selectedTemplateId!)}
+                    onClick={() => handleDownloadTemplate(selectedResultClass!)}
                   >
                     Download Selected
                   </button>

@@ -667,11 +667,11 @@ const calculateGradeResult = (grade) => {
 
 const calculateObtainedMarksForGrades = (grade) => {
   if (grade === "A") return 90;
-  if (grade === "B") return 90;
-  if (grade === "C") return 90;
-  if (grade === "D") return 90;
-  if (grade === "E") return 90;
-  if (grade === "F") return 90;
+  if (grade === "B") return 80;
+  if (grade === "C") return 70;
+  if (grade === "D") return 60;
+  if (grade === "E") return 50;
+  if (grade === "F") return 30;
 };
 
 exports.addExamResult = async (req, res) => {
@@ -1047,6 +1047,8 @@ exports.getExamResultAllStudents = async (req, res) => {
         s.rollnum,
         s.section_id,
         s.class_id,
+        cl.class_name,
+        se.section_name,
         s.stu_img,
         p.name AS father_name,
         p.phone_num,
@@ -1056,6 +1058,8 @@ exports.getExamResultAllStudents = async (req, res) => {
       LEFT JOIN examName en ON er.exam_name_id = en.id
       LEFT JOIN class_subject cs ON er.subject_id = cs.id
       LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
       LEFT JOIN users u ON s.stu_id = u.id
       ORDER BY s.rollnum, en.examName, cs.name
@@ -1081,8 +1085,10 @@ exports.getExamResultAllStudents = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class: row.class_id,
-          section: row.section_id,
+          class_id:row.class_id,
+          section_id:row.section_id,
+          class: row.class_name,
+          section: row.section_name,
           img: row.stu_img || "assets/img/students/default.jpg",
           examName: row.examName,
           subjects: {},
@@ -1170,6 +1176,7 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
         er.mark_obtained,
         er.max_mark,
         er.grade_marks,
+        er.grade,
         en.examName,
         cs.name AS subject_name,
         cs.code,
@@ -1177,6 +1184,11 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
         s.rollnum,
         s.section_id,
         s.class_id,
+        cl.class_name,
+        se.section_name,
+        s.perm_address,
+        s.dob,
+        s.academicyear,
         s.stu_img,
         p.name AS father_name,
         p.phone_num,
@@ -1186,6 +1198,8 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
       LEFT JOIN examName en ON er.exam_name_id = en.id
       LEFT JOIN class_subject cs ON er.subject_id = cs.id
       LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
       LEFT JOIN users u ON s.stu_id = u.id
       Where s.class_id = ?
@@ -1210,9 +1224,16 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class: row.class_id,
-          section: row.section_id,
-          img: row.stu_img || "assets/img/students/default.jpg",
+          class_id:row.class_id,
+          section_id:row.section_id,
+          class: row.class_name,
+          section: row.section_name,
+          father_name:row.father_name,
+          date_of_birth:row.dob,
+          address:row.perm_address,
+          academic_year:row.academicyear,
+          phone_num:row.phone_num,
+          student_image: row.stu_img || "assets/img/students/default.jpg",
           examName: row.examName,
           subjects: {},
           totalMaxMarks: 0,
@@ -1220,18 +1241,18 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
       }
 
       const subjKey = `${row.subject_name} (${row.code})`;
-      if (!row.grade_marks) {
-        studentsMap[key].subjects[subjKey] = {
-          id: row.id,
-          mark_obtained: row.mark_obtained || 0,
-          max_mark: row.max_mark || 0,
-        };
-      } else {
-        studentsMap[key].subjects[subjKey] = {
-          id: row.id,
-          grade_marks: row.grade_marks || "",
-        };
-      }
+      studentsMap[key].subjects[subjKey] = {
+        id: row.id,
+        mark_obtained: row.mark_obtained || 0,
+        max_mark: row.max_mark || 0,
+        grade_marks:row.grade,
+      };
+      //  else {
+      //   studentsMap[key].subjects[subjKey] = {
+      //     id: row.id,
+      //     grade_marks: row.grade || "",
+      //   };
+      // }
 
       // Increment total max marks for this exam
       studentsMap[key].totalMaxMarks += row.max_mark || 0;
@@ -1244,9 +1265,10 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
       Object.values(student.subjects).forEach((subj) => {
         if (subj.mark_obtained) {
           totalObtained += subj.mark_obtained;
-        } else if (subj.grade_marks) {
-          totalObtained += calculateObtainedMarksForGrades(subj.grade_marks);
         }
+        //  else if (subj.grade_marks) {
+        //   totalObtained += calculateObtainedMarksForGrades(subj.grade_marks);
+        // }
       });
 
       const percent =

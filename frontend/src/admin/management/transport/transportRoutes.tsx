@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
@@ -10,71 +10,88 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { transportRouteList } from "../../../core/data/json/transport_route";
+
 import TransportModal from "./transportModal";
+import { getAllTransportRoutes } from "../../../service/api";
+import { toast } from "react-toastify";
 
 const TransportRoutes = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const data = transportRouteList;
+  const [transportRouteList, setTransportRouteList] = useState<any[]>([]);
+  const [rowsId, setRowsId] = useState<number | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        console.log("data: ", data);
+        setTransportRouteList([...data.result]);
+        toast.success(data.message || "routes added Successfully.");
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoutes();
+  }, []);
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" className="link-primary">
-          {text}
+          R0{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
     },
     {
       title: "Routes",
-      dataIndex: "routes",
-      
-      sorter: (a: TableData, b: TableData) =>
-        a.routes.length - b.routes.length,
+      dataIndex: "routeName",
+
+      sorter: (a: TableData, b: TableData) => a.routes.length - b.routes.length,
     },
     {
-        title: "Status",
-        dataIndex: "status",
-        render: (text: string) => (
-          <>
-            {text === "Active" ? (
-              <span
-                className="badge badge-soft-success d-inline-flex align-items-center"
-              >
-                <i className='ti ti-circle-filled fs-5 me-1'></i>{text}
-              </span>
-            ):
-            (
-              <span
-                className="badge badge-soft-danger d-inline-flex align-items-center"
-              >
-                <i className='ti ti-circle-filled fs-5 me-1'></i>{text}
-              </span>
-            )}
-          </>
-        ),
-        sorter: (a: TableData, b: TableData) =>
-          a.status.length - b.status.length,
-      },
+      title: "Status",
+      dataIndex: "status",
+      render: (text: number) => (
+        <>
+          {text === 1 ? (
+            <span className="badge badge-soft-success d-inline-flex align-items-center">
+              <i className="ti ti-circle-filled fs-5 me-1"></i>
+              {"Active"}
+            </span>
+          ) : (
+            <span className="badge badge-soft-danger d-inline-flex align-items-center">
+              <i className="ti ti-circle-filled fs-5 me-1"></i>
+              {"InActive"}
+            </span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) => a.status.length - b.status.length,
+    },
     {
       title: "Added On",
       dataIndex: "addedOn",
       sorter: (a: TableData, b: TableData) =>
         a.addedOn.length - b.addedOn.length,
     },
-    
+
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (text: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -83,6 +100,7 @@ const TransportRoutes = () => {
                 className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
+                onClick={() => setRowsId(record.id)}
               >
                 <i className="ti ti-dots-vertical fs-14" />
               </Link>
@@ -134,7 +152,7 @@ const TransportRoutes = () => {
                     <Link to="#">Management</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                  Routes
+                    Routes
                   </li>
                 </ol>
               </nav>
@@ -256,7 +274,11 @@ const TransportRoutes = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              <Table
+                dataSource={transportRouteList}
+                columns={columns}
+                Selection={true}
+              />
               {/* /Student List */}
             </div>
           </div>
@@ -264,7 +286,7 @@ const TransportRoutes = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TransportModal />
+      <TransportModal rowsId={rowsId} />
     </>
   );
 };

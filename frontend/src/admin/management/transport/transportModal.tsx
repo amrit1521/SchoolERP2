@@ -1,26 +1,93 @@
-
 import { Link } from "react-router-dom";
-import { driverName, PickupPoint2, routesList, VehicleNumber } from "../../../core/common/selectoption/selectoption";
+import {
+  driverName,
+  PickupPoint2,
+  routesList,
+  VehicleNumber,
+} from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
+import { Controller, useForm } from "react-hook-form";
+import {
+  addRoutes,
+  getTransportRoutesById,
+  udpateTransportRoutes,
+} from "../../../service/api";
+import { toast } from "react-toastify";
+import { useEffect } from "react";
 
-const TransportModal = () => {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0') // Month is zero-based, so we add 1
-    const day = String(today.getDate()).padStart(2, '0')
-    const formattedDate = `${month}-${day}-${year}`
-    const defaultValue = dayjs(formattedDate);
-    const getModalContainer = () => {
-     const modalElement = document.getElementById('modal-datepicker');
-     return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-   };
-    const getModalContainer2 = () => {
-     const modalElement = document.getElementById('modal-datepicker2');
-     return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-   };
+const TransportModal = ({ rowsId }: { rowsId: number | null }) => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based, so we add 1
+  const day = String(today.getDate()).padStart(2, "0");
+  const formattedDate = `${month}-${day}-${year}`;
+  const defaultValue = dayjs(formattedDate);
+  const { register, handleSubmit, control, reset } = useForm({
+    defaultValues: {
+      routeName: "",
+      status: false,
+    },
+  });
+  const getModalContainer = () => {
+    const modalElement = document.getElementById("modal-datepicker");
+    return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
+  };
+  const getModalContainer2 = () => {
+    const modalElement = document.getElementById("modal-datepicker2");
+    return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
+  };
+
+  const handleCreateRoutes = async (formData: any) => {
+    const date = new Date();
+    const options: any = { day: "2-digit", month: "long", year: "numeric" };
+    formData["addedOn"] = date.toLocaleDateString("en-GB", options);
+    formData["keyId"] =
+      "R" + ("000000" + Math.floor(Math.random() * 1000000)).slice(-6);
+    console.log(formData);
+    try {
+      const { data } = await addRoutes(formData);
+      if (data.success) {
+        toast.success(data.message || "routes added Successfully.");
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+    reset();
+  };
+
+  const fetchRoutes = async (rowsId: number) => {
+    const { data } = await getTransportRoutesById(rowsId);
+    if (data.success) {
+      reset({
+        routeName: data.result.routeName,
+        status: data.result.status,
+      });
+    }
+  };
+  if (rowsId) {
+    fetchRoutes(rowsId);
+  }
+
+  const handleUpdateRoutes = async (formData: any) => {
+    console.log(formData);
+    try {
+      if (rowsId) {
+        const { data } = await udpateTransportRoutes(formData, rowsId);
+        if (data.success) {
+          toast.success(data.message || "routes updated Successfully.");
+        }
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+    reset();
+  };
+
   return (
     <>
       <>
@@ -39,22 +106,40 @@ const TransportModal = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleSubmit(handleCreateRoutes)}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
                       <div className="mb-3">
                         <label className="form-label">Route Name</label>
-                        <input type="text" className="form-control" />
+                        <input
+                          type="text"
+                          className="form-control"
+                          {...register("routeName", { required: true })}
+                        />
                       </div>
                     </div>
-                    <div className="modal-satus-toggle d-flex align-items-center justify-content-between">
+
+                    <div className="modal-status-toggle d-flex align-items-center justify-content-between">
                       <div className="status-title">
                         <h5>Status</h5>
-                        <p>Change the Status by toggle </p>
+                        <p>Change the status by toggle</p>
                       </div>
+
                       <div className="status-toggle modal-status">
-                        <input type="checkbox" id="user1" className="check" />
+                        <Controller
+                          name="status"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              type="checkbox"
+                              id="user1"
+                              className="check"
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          )}
+                        />
                         <label htmlFor="user1" className="checktoggle">
                           {" "}
                         </label>
@@ -62,6 +147,7 @@ const TransportModal = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="modal-footer">
                   <Link
                     to="#"
@@ -70,13 +156,13 @@ const TransportModal = () => {
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Add Route
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
@@ -98,7 +184,7 @@ const TransportModal = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleSubmit(handleUpdateRoutes)}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
@@ -108,7 +194,7 @@ const TransportModal = () => {
                           type="text"
                           className="form-control"
                           placeholder="Enter Route Name"
-                          defaultValue="Seattle"
+                          {...register("routeName", { required: true })}
                         />
                       </div>
                     </div>
@@ -118,13 +204,20 @@ const TransportModal = () => {
                         <p>Change the Status by toggle </p>
                       </div>
                       <div className="status-toggle modal-status">
-                        <input
-                          type="checkbox"
-                          id="user2"
-                          className="check"
-                          defaultChecked
+                        <Controller
+                          name="status"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              type="checkbox"
+                              id="user1"
+                              className="check"
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          )}
                         />
-                        <label htmlFor="user2" className="checktoggle">
+                        <label htmlFor="user1" className="checktoggle">
                           {" "}
                         </label>
                       </div>
@@ -139,13 +232,13 @@ const TransportModal = () => {
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Save Changes
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
@@ -618,7 +711,7 @@ const TransportModal = () => {
       </>
       <>
         {/* Add New Vehicle */}
-        <div className="modal fade"  id="add_vehicle">
+        <div className="modal fade" id="add_vehicle">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -633,7 +726,7 @@ const TransportModal = () => {
                 </button>
               </div>
               <form>
-                <div className="modal-body" id='modal-datepicker'>
+                <div className="modal-body" id="modal-datepicker">
                   <div className="row">
                     <div className="col-md-12">
                       <div className="row">
@@ -653,16 +746,16 @@ const TransportModal = () => {
                           <div className="mb-3">
                             <label className="form-label">Made of Year</label>
                             <div className="date-pic">
-                            <DatePicker
+                              <DatePicker
                                 className="form-control datetimepicker"
                                 format={{
-                                    format: "DD-MM-YYYY",
-                                    type: "mask",
+                                  format: "DD-MM-YYYY",
+                                  type: "mask",
                                 }}
                                 getPopupContainer={getModalContainer}
                                 defaultValue=""
                                 placeholder="16 May 2024"
-                                />
+                              />
                               <span className="cal-icon">
                                 <i className="ti ti-calendar" />
                               </span>
@@ -775,7 +868,7 @@ const TransportModal = () => {
                 </button>
               </div>
               <form>
-                <div className="modal-body" id='modal-datepicker2'>
+                <div className="modal-body" id="modal-datepicker2">
                   <div className="row">
                     <div className="col-md-12">
                       <div className="row">
@@ -805,16 +898,16 @@ const TransportModal = () => {
                           <div className="mb-3">
                             <label className="form-label">Made of Year</label>
                             <div className="date-pic">
-                            <DatePicker
-                      className="form-control datetimepicker"
-                      format={{
-                        format: "DD-MM-YYYY",
-                        type: "mask",
-                      }}
-                      getPopupContainer={getModalContainer2}
-                      defaultValue={defaultValue}
-                      placeholder="16 May 2024"
-                    />
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format={{
+                                  format: "DD-MM-YYYY",
+                                  type: "mask",
+                                }}
+                                getPopupContainer={getModalContainer2}
+                                defaultValue={defaultValue}
+                                placeholder="16 May 2024"
+                              />
                               <span className="cal-icon">
                                 <i className="ti ti-calendar" />
                               </span>
