@@ -316,7 +316,7 @@ export const addRoutes = (data: object) =>
 export const getAllTransportRoutes = () => api.get("/transport/getallroutes");
 export const getTransportRoutesById = (id: number | null) =>
   api.get(`/transport/gettranportroutesbyId/${id}`);
-export const udpateTransportRoutes = (data: any, id: number | null) =>
+export const udpateTransportRoutes = (data: any, id: number) =>
   api.patch(`/transport/updatetransportroutes/${id}`, data);
 export const deleteTransportRoutesById = (id: number | null) =>
   api.delete(`/transport/deletetransportroutes/${id}`);

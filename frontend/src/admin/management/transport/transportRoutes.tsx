@@ -9,7 +9,8 @@ import {
   getAllTransportRoutes,
   deleteTransportRoutesById,
 } from "../../../service/api";
-
+import PredefinedDateRanges from "../../../core/common/datePicker";
+import CommonSelect from "../../../core/common/commonSelect";
 interface TransportRoute {
   id: number;
   routeName: string;
@@ -23,20 +24,27 @@ const TransportRoutes = () => {
   const [transportRouteList, setTransportRouteList] = useState<
     TransportRoute[]
   >([]);
+  const [filterRouteList, setFilterRouteList] = useState<TransportRoute[]>([]);
+  const [transportRouteOption, setTransportRouteOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const statusOption: { value: number; label: string }[] = [
+    { value: 1, label: "Active" },
+    { value: 0, label: "Inactive" },
+  ];
   const [selectedRoute, setSelectedRoute] = useState<TransportRoute | null>(
     null
   );
 
-  const handleApplyClick = () => {
-    dropdownMenuRef.current?.classList.remove("show");
-  };
-
-  // 🔹 Fetch all routes
   const fetchRoutes = async () => {
     try {
       const { data } = await getAllTransportRoutes();
       if (data.success) {
         setTransportRouteList(data.result);
+        setFilterRouteList(data.result);
+        setTransportRouteOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
       } else {
         toast.error(data.message || "Failed to load routes");
       }
@@ -45,9 +53,7 @@ const TransportRoutes = () => {
     }
   };
 
-  // 🔹 Delete route
-  const handleDeleteRoute = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this route?")) return;
+  const handleDelete = async (id: number) => {
     try {
       const { data } = await deleteTransportRoutesById(id);
       if (data.success) {
@@ -64,6 +70,42 @@ const TransportRoutes = () => {
   useEffect(() => {
     fetchRoutes();
   }, []);
+
+  interface FilterData {
+    routeName: number | null;
+    status: number | null;
+  }
+  const [filterData, setFilterData] = useState<FilterData>({
+    routeName: null,
+    status: null,
+  });
+
+  const handleFilterSelectChange = (
+    name: keyof FilterData,
+    value: string | number | null
+  ) => {
+    setFilterData((prev) => {
+      const updated = { ...prev, [name]: value } as FilterData;
+      return updated;
+    });
+  };
+
+  const handleApplyClick = () => {
+    if (filterData?.routeName != null && filterData.status !== null) {
+      setFilterRouteList(
+        transportRouteList.filter(
+          (e) => e.id === filterData.routeName && filterData.status === e.status
+        )
+      );
+    }
+    dropdownMenuRef.current?.classList.remove("show");
+  };
+
+  const handleResetFilter = () => {
+    setFilterData({ routeName: null, status: null });
+    setFilterRouteList(transportRouteList);
+    dropdownMenuRef.current?.classList.remove("show");
+  };
 
   const columns = [
     {
@@ -122,7 +164,9 @@ const TransportRoutes = () => {
                   to="#"
                   data-bs-toggle="modal"
                   data-bs-target="#edit_routes"
-                  onClick={() => setSelectedRoute(record)}
+                  onClick={() => {
+                    setSelectedRoute(record);
+                  }}
                 >
                   <i className="ti ti-edit-circle me-2" /> Edit
                 </Link>
@@ -131,7 +175,9 @@ const TransportRoutes = () => {
                 <Link
                   className="dropdown-item rounded-1 text-danger"
                   to="#"
-                  onClick={() => handleDeleteRoute(record.id)}
+                  data-bs-toggle="modal"
+                  data-bs-target="#delete-modal"
+                  onClick={() => setSelectedRoute(record)}
                 >
                   <i className="ti ti-trash-x me-2" /> Delete
                 </Link>
@@ -181,9 +227,136 @@ const TransportRoutes = () => {
           </div>
 
           <div className="card">
+            <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
+              <h4 className="mb-3">Routes</h4>
+
+              <div className="d-flex align-items-center flex-wrap">
+                <div className="input-icon-start mb-3 me-2 position-relative">
+                  <PredefinedDateRanges />
+                </div>
+
+                <div className="dropdown mb-3 me-2">
+                  <Link
+                    to="#"
+                    className="btn btn-outline-light bg-white dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                  >
+                    <i className="ti ti-filter me-2" />
+                    Filter
+                  </Link>
+
+                  <div
+                    className="dropdown-menu drop-width"
+                    ref={dropdownMenuRef}
+                  >
+                    <form>
+                      <div className="d-flex align-items-center border-bottom p-3">
+                        <h4>Filter</h4>
+                      </div>
+
+                      <div className="p-3 border-bottom">
+                        <div className="row">
+                          <div className="col-md-12">
+                            <div className="mb-3">
+                              <label className="form-label">Routes</label>
+
+                              <CommonSelect
+                                className="select"
+                                options={transportRouteOption}
+                                value={filterData.routeName}
+                                onChange={(option) =>
+                                  handleFilterSelectChange(
+                                    "routeName",
+                                    option ? option.value : ""
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="col-md-12">
+                            <div className="mb-3">
+                              <label className="form-label">Status</label>
+
+                              <CommonSelect
+                                className="select"
+                                options={statusOption}
+                                value={filterData.status}
+                                onChange={(option) =>
+                                  handleFilterSelectChange(
+                                    "status",
+                                    option ? option.value : ""
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3 d-flex align-items-center justify-content-end">
+                        <Link
+                          to="#"
+                          className="btn btn-light me-3"
+                          onClick={handleResetFilter}
+                        >
+                          Reset
+                        </Link>
+
+                        <Link
+                          to="#"
+                          className="btn btn-primary"
+                          onClick={handleApplyClick}
+                        >
+                          Apply
+                        </Link>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="dropdown mb-3">
+                  <Link
+                    to="#"
+                    className="btn btn-outline-light bg-white dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                  >
+                    <i className="ti ti-sort-ascending-2 me-2" />
+                    Sort by A-Z{" "}
+                  </Link>
+
+                  <ul className="dropdown-menu p-3">
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Ascending
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Descending
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Recently Viewed
+                      </Link>
+                    </li>
+
+                    <li>
+                      <Link to="#" className="dropdown-item rounded-1">
+                        Recently Added
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
             <div className="card-body p-0 py-3">
               <Table
-                dataSource={transportRouteList}
+                dataSource={filterRouteList}
                 columns={columns}
                 Selection={true}
               />
@@ -193,10 +366,11 @@ const TransportRoutes = () => {
       </div>
 
       <TransportModal
-        onRouteAdded={fetchRoutes}
-        onRouteUpdated={fetchRoutes}
-        selectedRoute={selectedRoute}
+        onAdded={fetchRoutes}
+        onUpdated={fetchRoutes}
+        selectedItem={selectedRoute}
         clearSelected={() => setSelectedRoute(null)}
+        handleDelete={handleDelete}
       />
     </>
   );

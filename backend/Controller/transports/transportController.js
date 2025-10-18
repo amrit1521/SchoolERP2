@@ -6,7 +6,6 @@ export const addRotutes = async (req, res) => {
     const sql =
       "INSERT INTO transport_routes (routeName, status, addedOn) VALUES (?, ?, ?)";
     const [rows] = await db.query(sql, [routeName, status, addedOn]);
-    console.log("result: ", rows);
     return res.status(201).json({
       message: "Routes added successfully",
       success: true,
@@ -25,7 +24,6 @@ export const getAllTransportRoutes = async (req, res) => {
   try {
     const sql = "Select id, routeName,status, addedOn from transport_routes";
     const [rows] = await db.query(sql);
-    console.log("result: ", rows);
     if (rows.length < 0) {
       return res.status(200).json({
         message: "No Routes found.",
@@ -100,7 +98,7 @@ export const updateTransportRoutes = async (req, res) => {
     const sql = "UPDATE transport_routes SET routeName=?,status=? where id=?";
 
     const [rows] = await db.query(sql, [routeName, status, id]);
-    console.log("result: ", rows);
+    console.log("updated: ", rows);
     if (!rows) {
       return res.status(200).json({
         message: "No Routes Updated.",
@@ -133,8 +131,7 @@ export const deleteTransportRoutesById = async (req, res) => {
   try {
     const sql = "Delete from transport_routes where id=?";
     const [rows] = await db.query(sql, [id]);
-    console.log("result: ", rows);
-    if (rows) {
+    if (!rows) {
       return res.status(200).json({
         message: "No Routes found.",
         success: false,

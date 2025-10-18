@@ -9,28 +9,28 @@ import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
-import { addRoutes, udpateTransportRoutes } from "../../../service/api";
+import {
+  addRoutes,
+  getAllTransportRoutes,
+  udpateTransportRoutes,
+} from "../../../service/api";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 
-interface TransportRoute {
-  id: number;
-  routeName: string;
-  status: number;
-}
-
 interface TransportModalProps {
-  onRouteAdded: () => void;
-  onRouteUpdated: () => void;
-  selectedRoute: TransportRoute | null;
+  onAdded: () => void;
+  onUpdated: () => void;
+  selectedItem: any | null;
   clearSelected: () => void;
+  handleDelete: (id: number) => void;
 }
 
 const TransportModal: React.FC<TransportModalProps> = ({
-  onRouteAdded,
-  onRouteUpdated,
-  selectedRoute,
+  onAdded,
+  onUpdated,
+  selectedItem,
   clearSelected,
+  handleDelete,
 }) => {
   const today = new Date();
   const year = today.getFullYear();
@@ -48,18 +48,19 @@ const TransportModal: React.FC<TransportModalProps> = ({
     return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
   };
 
+  // routes modules:
   const [routeName, setRouteName] = useState("");
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (selectedRoute) {
-      setRouteName(selectedRoute.routeName || "");
-      setIsActive(selectedRoute.status === 1);
+    if (selectedItem) {
+      setRouteName(selectedItem.routeName || "");
+      setIsActive(selectedItem.status === 1);
     } else {
       resetForm();
     }
-  }, [selectedRoute]);
+  }, [selectedItem]);
 
   const resetForm = () => {
     setRouteName("");
@@ -89,8 +90,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
       const { data } = await addRoutes(payload);
       if (data.success) {
         toast.success(data.message || "Route added successfully");
-        resetForm(); // <-- reset form after submit
-        onRouteAdded();
+        resetForm();
+        onAdded();
         closeModal("add_routes");
       } else {
         toast.error(data.message || "Failed to add route");
@@ -104,15 +105,15 @@ const TransportModal: React.FC<TransportModalProps> = ({
 
   const handleUpdateRoutes = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm() || !selectedRoute) return;
+    if (!validateForm() || !selectedItem) return;
     setLoading(true);
     try {
       const payload = { routeName, status: isActive ? 1 : 0 };
-      const { data } = await udpateTransportRoutes(payload, selectedRoute.id);
+      const { data } = await udpateTransportRoutes(payload, selectedItem.id);
       if (data.success) {
         toast.success(data.message || "Route updated successfully");
         resetForm();
-        onRouteUpdated();
+        onUpdated();
         clearSelected();
         closeModal("edit_routes");
       } else {
@@ -125,12 +126,55 @@ const TransportModal: React.FC<TransportModalProps> = ({
     }
   };
 
+  const handleResetModalForm = () => {
+    clearSelected();
+  };
+
+  const handleDeleteRecord = () => {
+    handleDelete(selectedItem?.id);
+  };
+
   const closeModal = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
       const modal = (window as any).bootstrap?.Modal?.getInstance(el);
       modal?.hide();
     }
+  };
+
+  // pickup Points Module:
+  const [routeListOption, setRouteListOption] = useState<any[]>([]);
+  const [pickPointName, setPickPointName] = useState("");
+  const [selectedRotues, setSelectedRoutes] = useState<any>();
+  const [pickupStatus, setPickupStatus] = useState(false);
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        setRouteListOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load routes");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load routes");
+    }
+  };
+
+  useEffect(() => {
+    fetchRoutes();
+  }, []);
+
+  const validatePickUpForm = (): Boolean => {
+    return true;
+  };
+
+  const handleCreatePickupPoints = (e: React.FormEvent) => {
+    e.preventDefault();
+    // if (!validatePickUpForm() || !selectedItem) return;
+
+    console.log(pickPointName, selectedRotues?.value, pickupStatus);
   };
 
   return (
@@ -187,6 +231,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
@@ -253,6 +298,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
@@ -441,13 +487,28 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleCreatePickupPoints}>
                 <div className="modal-body">
                   <div className="row">
+                    <div className="mb-3">
+                      <label className="form-label">Select Route</label>
+
+                      <CommonSelect
+                        className="select"
+                        options={routeListOption}
+                        value={selectedRotues?.value}
+                        onChange={(opt) => setSelectedRoutes(opt)}
+                      />
+                    </div>
                     <div className="col-md-12">
                       <div className="mb-3">
                         <label className="form-label">Pickup Point</label>
-                        <input type="text" className="form-control" />
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={pickPointName}
+                          onChange={(e) => setPickPointName(e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="modal-satus-toggle d-flex align-items-center justify-content-between">
@@ -456,7 +517,13 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <p>Change the Status by toggle </p>
                       </div>
                       <div className="status-toggle modal-status">
-                        <input type="checkbox" id="user1" className="check" />
+                        <input
+                          type="checkbox"
+                          id="user1"
+                          className="check"
+                          checked={pickupStatus}
+                          onChange={(e) => setPickupStatus(e.target.checked)}
+                        />
                         <label htmlFor="user1" className="checktoggle">
                           {" "}
                         </label>
@@ -472,13 +539,13 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Add Pickup Point
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
@@ -1147,6 +1214,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-danger"
                     data-bs-dismiss="modal"
+                    onClick={handleDeleteRecord}
                   >
                     Yes, Delete
                   </Link>
