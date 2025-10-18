@@ -99,7 +99,6 @@ const Designation = () => {
     if (!formData.designation) {
       toast.warning("Designation is required !")
     }
-    console.log(formData)
     try {
 
       const apiCall = editId
@@ -138,7 +137,6 @@ const Designation = () => {
   // delete holiday------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
     e.preventDefault()
     try {
 

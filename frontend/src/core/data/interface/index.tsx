@@ -341,23 +341,23 @@ export interface Homework {
   section: string;
   className: string;
   subject: string;
-  homeworkDate: string;     // or Date if you parse it
-  submissionDate: string;   // or Date if you parse it
-  img_src: string | null;  // optional (some homework may not have file/image)
-  user_id: number;          // teacher who assigned homework
+  homeworkDate: string;     
+  submissionDate: string;   
+  img_src: string | null; 
+  user_id: number;    
   firstname: string;
   lastname: string;
 }
 
 export interface Teachers {
   id: number;
-  teacher_id: string;
+  teacher_id: number;
   firstname: string;
   lastname: string;
 }
 
 export interface HomeworkFormData {
-  className: string;
+  className: number |null;
   section: number | null;
   subject: number | null;
   homeworkDate: string;

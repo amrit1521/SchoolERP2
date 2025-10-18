@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 // import { classSyllabus } from "../../../core/data/json/class-syllabus";
 import {
   activeList,
-  allClass,
   classSection,
   classSylabus,
 } from "../../../core/common/selectoption/selectoption";
@@ -13,12 +12,13 @@ import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { getAllSection } from "../../../service/api";
+import { getAllSectionForAClass } from "../../../service/api";
 import { addSubjectGroup, allSubjectGroup, deleteGroup, editGroup, speGroup } from "../../../service/subjectApi";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { allRealClasses } from "../../../service/classApi";
 
 
 
@@ -38,23 +38,9 @@ const ClassSyllabus = () => {
 
 
 
-  const [sections, setSections] = useState<Section[]>([]);
+
   const [subGroups, setSubGroups] = useState<SubjectGroup[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-
-
-  // ✅ Generic fetch wrapper to reduce repetition
-  const fetchData = async <T,>(
-    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
-    setter: React.Dispatch<React.SetStateAction<T>>
-  ) => {
-    try {
-      const { data } = await apiFn();
-      if (data.success) setter(data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
 
   const fetchGroups = async () => {
@@ -75,27 +61,17 @@ const ClassSyllabus = () => {
   }
 
 
-
   useEffect(() => {
     fetchGroups()
-    fetchData(getAllSection, setSections);
 
   }, [])
 
-
-  const sectionOptions = useMemo(
-    () => sections.map((s) => ({ value: s.section, label: s.section })),
-    [sections]
-  );
-
   // add syllabus ------------------------------------------------------------------------
-  interface Section {
-    section: string;
-  }
+
 
   interface SyllabusForm {
-    className: string;
-    section: string;
+    className: number | null;
+    section: number | null;
     subjectGroup: string;
     status: string;
   }
@@ -106,16 +82,75 @@ const ClassSyllabus = () => {
     subjectGroup?: string;
   }
 
+  interface Option {
+    value: number;
+    label: string;
+  }
+
 
   // ---------------------- Add Syllabus Form ----------------------
   const [formData, setFormData] = useState<SyllabusForm>({
-    className: "",
-    section: "",
+    className: null,
+    section: null,
     subjectGroup: "",
     status: "1",
   });
   const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
+
+
+  // OPTIONS
+
+  const [classOptions, setClassOptions] = useState<Option[]>([])
+  const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+
+    }
+  };
+  const fetchSection = async () => {
+    try {
+      if (formData.className) {
+        const { data } = await getAllSectionForAClass(Number(formData.className));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+
+  useEffect(() => {
+    fetchClass()
+  }, [])
+
+  useEffect(() => {
+    if (formData.className) {
+      fetchSection()
+    }
+  }, [formData.className])
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, type, checked, value } = e.target;
@@ -174,8 +209,8 @@ const ClassSyllabus = () => {
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setFormData({
-      className: "",
-      section: "",
+      className: null,
+      section: null,
       subjectGroup: "",
       status: "1"
     });
@@ -209,8 +244,8 @@ const ClassSyllabus = () => {
         }
       }
       setFormData({
-        className: "",
-        section: "",
+        className: null,
+        section: null,
         subjectGroup: "",
         status: "1"
       })
@@ -554,7 +589,7 @@ const ClassSyllabus = () => {
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""
                             }`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt: any) =>
                             handleSelectChange("className", opt?.value || "")
@@ -667,7 +702,7 @@ const ClassSyllabus = () => {
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""
                             }`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt: any) =>
                             handleSelectChange("className", opt?.value || "")

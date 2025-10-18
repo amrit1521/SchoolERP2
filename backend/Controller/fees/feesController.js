@@ -606,13 +606,17 @@ exports.getFeesDeatilsSpecStudent = async (req, res) => {
         fm.totalAmount,
         fg.feesGroup,
         ft.name AS feesType,
-        st.class,
-        st.section
+        st.class_id,
+        st.section_id,
+        UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section
         FROM fees_assign sfa
         LEFT JOIN fees_master fm ON fm.id = sfa.fees_masterId
         LEFT JOIN fees_group fg ON fm.feesGroup = fg.id
         LEFT JOIN fees_type ft ON fm.feesType = ft.id
         LEFT JOIN students st ON sfa.student_rollnum = st.rollnum    
+        LEFT JOIN classes c ON st.class_id = c.id
+        LEFT JOIN sections se ON st.section_id = se.id
         WHERE sfa.student_rollnum = ?
        
     `;
@@ -649,8 +653,11 @@ exports.allAssignDetails = async (req, res) => {
       SELECT 
           fg.feesGroup AS feesGroup,
           ft.name AS feesType,
-          st.class,
-          st.section,
+          
+           st.class_id,
+        st.section_id,
+        UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section,
           st.gender,
           st.category,
           fm.totalAmount AS amount
@@ -659,8 +666,10 @@ exports.allAssignDetails = async (req, res) => {
       JOIN fees_master fm ON fm.id = fa.fees_masterId
       JOIN fees_group fg ON fg.id = fm.feesGroup
       JOIN fees_type ft ON ft.id = fm.feesType
-      GROUP BY fg.feesGroup, ft.name, st.class, st.section
-      ORDER BY fg.feesGroup, ft.name, st.class, st.section
+       LEFT JOIN classes c ON st.class_id = c.id
+        LEFT JOIN sections se ON st.section_id = se.id
+      GROUP BY fg.feesGroup, ft.name, c.class_name, se.section_name
+      ORDER BY fg.feesGroup, ft.name, c.class_name, se.section_name
     `;
 
     const [rows] = await db.query(sql);
@@ -769,16 +778,19 @@ exports.getFeesCollection = async (req, res) => {
         fm.dueDate,
         fm.totalAmount,
         st.admissionnum AS admNo,
-        st.class,
-        st.section,
+       
         st.stu_img,
         st.stu_id,
         us.firstname,
-        us.lastname
+        us.lastname,
+       UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section
         FROM fees_assign sfa
         LEFT JOIN fees_master fm ON fm.id = sfa.fees_masterId
         LEFT JOIN students st ON sfa.student_rollnum = st.rollnum 
         LEFT JOIN users us ON st.stu_id = us.id  
+        LEFT JOIN classes c ON st.class_id = c.id
+        LEFT JOIN sections se ON st.section_id = se.id
         ORDER BY sfa.id ASC 
     `;
 
@@ -818,13 +830,17 @@ exports.feesReport = async (req, res) => {
        
         fg.feesGroup,
         ft.name AS feesType,
-        st.class,
-        st.section
+        st.class_id,
+        st.section_id,
+       UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section
         FROM fees_assign sfa
         LEFT JOIN fees_master fm ON fm.id = sfa.fees_masterId
         LEFT JOIN fees_group fg ON fm.feesGroup = fg.id
         LEFT JOIN fees_type ft ON fm.feesType = ft.id
-        LEFT JOIN students st ON sfa.student_rollnum = st.rollnum       
+        LEFT JOIN students st ON sfa.student_rollnum = st.rollnum   
+        LEFT JOIN classes c ON st.class_id = c.id
+        LEFT JOIN sections se ON st.section_id = se.id    
         WHERE sfa.status="1"    
     `;
 

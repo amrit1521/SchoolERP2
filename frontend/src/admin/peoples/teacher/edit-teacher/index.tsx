@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect,useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
@@ -25,7 +25,7 @@ import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { deleteTeacherFile, editTeacher, getAllSection, getTeacherDataForEdit, Imageurl,  uploadTeacherFile } from "../../../../service/api";
+import { deleteTeacherFile, editTeacher, getAllSectionForAClass, getTeacherDataForEdit, Imageurl, uploadTeacherFile } from "../../../../service/api";
 import { allRealClasses } from "../../../../service/classApi";
 
 export interface TeacherData {
@@ -100,15 +100,12 @@ export interface TeacherData {
 
 }
 
-interface Classes {
-    id: number;
-    class_name: string;
+interface Option {
+    value: number;
+    label: string;
 }
 
-interface Section {
-    id: number;
-    section: string;
-}
+
 
 
 const EditTeacher = () => {
@@ -116,48 +113,6 @@ const EditTeacher = () => {
     const { teacher_id } = useParams()
     const routes = all_routes;
     const navigate = useNavigate()
-
-    // class and section for option 
-    const [sections, setSections] = useState<Section[]>([])
-    const [allClass, setAllClass] = useState<Classes[]>([])
-
-    const fetchData = async <T,>(
-        apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
-        setter: React.Dispatch<React.SetStateAction<T>>
-    ) => {
-        try {
-            const { data } = await apiFn();
-            if (data.success) setter(data.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-
-    const fetchSections = () => fetchData(getAllSection, setSections);
-    const fetchClasses = () => fetchData(allRealClasses, setAllClass)
-
-    useEffect(() => {
-        fetchClasses()
-        fetchSections()
-
-    }, []);
-
-
-    const sectionOptions = useMemo(
-        () =>
-            sections.map((s) => ({
-                value: s.id,
-                label: s.section,
-            })),
-        [sections]
-    );
-
-
-    const classOptions = useMemo(
-        () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
-        [allClass]
-    );
 
 
     const [teacherData, setTeacherData] = useState<TeacherData>({
@@ -678,6 +633,56 @@ const EditTeacher = () => {
 
         navigate(-1)
     }
+
+    // OPTIONS
+    const [classOptions, setClassOptions] = useState<Option[]>([])
+    const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+
+
+    const fetchClass = async () => {
+        try {
+            const { data } = await allRealClasses();
+            if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+                setClassOptions(
+                    data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+                );
+            } else {
+                setClassOptions([]);
+            }
+
+        } catch (error) {
+            console.log(error);
+            toast.error("Error to fetch classes !");
+
+        }
+    };
+    const fetchSection = async () => {
+        try {
+            if (teacherData.class) {
+                const { data } = await getAllSectionForAClass(Number(teacherData.class));
+                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                    setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+                } else {
+                    setSectionOptions([]);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Error to fetch section !");
+        }
+    }
+
+
+    useEffect(() => {
+        fetchClass()
+    }, [])
+
+    useEffect(() => {
+        if (teacherData.class) {
+            fetchSection()
+        }
+    }, [teacherData.class])
 
 
 

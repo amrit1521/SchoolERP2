@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 // import { classRoutine } from "../../../core/data/json/class-routine";
 import Table from "../../../core/common/dataTable/index";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
-  allClass,
   classSection,
   count,
   routinename,
@@ -15,11 +14,87 @@ import { TimePicker } from "antd";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { addClassRoutine, allClassRoom, allClassRoutine, deleteRoutine, editClassRoutine, speClassRoutine } from "../../../service/classApi";
-import { allTeacherForOption, getAllSection } from "../../../service/api";
+import { addClassRoutine, allClassRoom, allClassRoutine, allRealClasses, deleteRoutine, editClassRoutine, speClassRoutine } from "../../../service/classApi";
+import { allTeacherForOption, getAllSectionForAClass } from "../../../service/api";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+
+interface ClassRoutine {
+  id: number;
+  section: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+  className: string;
+  room_no: number;
+  subject: string;
+  firstname: string;
+  lastname: string;
+}
+
+
+// add
+interface RoutineFormData {
+  teacher: number | null;
+  className: number | null;
+  section: number | null;
+  day: string;
+  startTime: string;
+  endTime: string;
+  classRoom: string;
+  status: "1" | "0";
+}
+
+interface RoutineError {
+  teacher: string;
+  className: string;
+  section: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+  classRoom: string;
+}
+
+// Interfaces for other entities
+interface Teacher {
+  teacher_id: number;
+  firstname: string;
+  lastname: string;
+}
+
+
+interface Room {
+  id: number;
+  room_no: number;
+}
+
+interface ClassName {
+  id: number;
+  class_name: string;
+}
+
+
+const initailFormData: RoutineFormData = {
+  teacher: null,
+  className: null,
+  section: null,
+  day: "",
+  startTime: "",
+  endTime: "",
+  classRoom: "",
+  status: "1",
+}
+
+const initialErrorData = {
+  teacher: "",
+  className: "",
+  section: "",
+  day: "",
+  startTime: "",
+  endTime: "",
+  classRoom: "",
+}
 
 const ClassRoutine = () => {
   const routes = all_routes;
@@ -48,43 +123,18 @@ const ClassRoutine = () => {
     }
   };
 
-  interface ClassRoutine {
-    id: number;
-    section: string;
-    day: string;
-    startTime: string;
-    endTime: string;
-    className: string;
-    room_no: number;
-    subject: string;
-    firstname: string;
-    lastname: string;
-  }
-
-  // Interfaces for other entities
-  interface Teacher {
-    teacher_id: number;
-    firstname: string;
-    lastname: string;
-  }
-
-  interface Section {
-    section: string;
-  }
-
-  interface Room {
-    id: number;
-    room_no: number;
-  }
 
 
   const [allRoutine, setAllRoutine] = useState<ClassRoutine[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
+  const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [allclass, setallclass] = useState<ClassName[]>([])
+  const [routineForm, setRoutineForm] = useState<RoutineFormData>(initailFormData);
+  const [editId, setEditId] = useState<number | null>(null)
+  const [errors, setErrors] = useState<Partial<RoutineError>>(initialErrorData);
 
-  // ✅ Generic fetch wrapper to reduce repetition
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>
@@ -99,19 +149,43 @@ const ClassRoutine = () => {
 
   const fetchRoutines = async () => {
     setLoading(true);
-    await new Promise((res) => setTimeout(res, 500)); // optional delay
+    await new Promise((res) => setTimeout(res, 500));
     await fetchData(allClassRoutine, setAllRoutine);
     setLoading(false);
   };
 
+  const fetchSection = async () => {
+    try {
+      if (routineForm.className) {
+        const { data } = await getAllSectionForAClass(Number(routineForm.className));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
   useEffect(() => {
     fetchRoutines();
     fetchData(allClassRoom, setRooms);
-    fetchData(getAllSection, setSections);
     fetchData(allTeacherForOption, setTeachers);
+    fetchData(allRealClasses, setallclass);
   }, []);
 
-  // ✅ Memoized derived options
+  useEffect(() => {
+    if (routineForm.className) {
+      fetchSection()
+    }
+
+  }, [routineForm.className])
+
+
+
   const teacherOptions = useMemo(
     () =>
       teachers.map((t) => ({
@@ -120,48 +194,19 @@ const ClassRoutine = () => {
       })),
     [teachers]
   );
-
-  const sectionOptions = useMemo(
-    () => sections.map((s) => ({ value: s.section, label: s.section })),
-    [sections]
-  );
-
   const roomOptions = useMemo(
     () => rooms.map((r) => ({ value: String(r.id), label: String(r.room_no) })),
     [rooms]
   );
 
+  const classOptions = useMemo(
+    () => allclass.map((c) => ({ value: c.id, label: c.class_name })),
+    [allclass]
+  )
 
 
-  // add class routine -------------------------------------------------------------------------------
+  // add class routine ------------------------------------------------------------------------------
 
-  interface RoutineFormData {
-    teacher: string;
-    className: string;
-    section: string;
-    day: string;
-    startTime: string;
-    endTime: string;
-    classRoom: string;
-    status: "1" | "0";
-  }
-
-
-  // ---------------- STATE ----------------
-  const [routineForm, setRoutineForm] = useState<RoutineFormData>({
-    teacher: "",
-    className: "",
-    section: "",
-    day: "",
-    startTime: "",
-    endTime: "",
-    classRoom: "",
-    status: "1",
-  });
-  const [editId, setEditId] = useState<number | null>(null)
-  const [errors, setErrors] = useState<Partial<RoutineFormData>>({});
-
-  // ---------------- HANDLERS ----------------
   const handleRoutineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, type, checked, value } = e.target;
     setRoutineForm((prev) => ({
@@ -179,7 +224,7 @@ const ClassRoutine = () => {
   };
 
   const validateRoutine = () => {
-    let newErrors: Partial<RoutineFormData> = {};
+    let newErrors: Partial<RoutineError> = {};
     if (!routineForm.teacher) newErrors.teacher = "Teacher is required";
     if (!routineForm.className) newErrors.className = "Class is required";
     if (!routineForm.section) newErrors.section = "Section is required";
@@ -220,9 +265,6 @@ const ClassRoutine = () => {
   const handleRoutineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateRoutine()) return;
-
-    // console.log("Submitting routine:", routineForm);
-
     try {
 
       if (editId) {
@@ -243,24 +285,23 @@ const ClassRoutine = () => {
 
         }
       }
-     fetchRoutines()
-      setRoutineForm({
-        teacher: "",
-        className: "",
-        section: "",
-        day: "",
-        startTime: "",
-        endTime: "",
-        classRoom: "",
-        status: "1",
-      });
-      setErrors({});
+      fetchRoutines()
+      setRoutineForm(initailFormData);
+      setErrors(initialErrorData);
 
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
     }
   };
+
+  const handlecancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+
+    e.preventDefault()
+    setRoutineForm(initailFormData)
+    setErrors(initialErrorData);
+    setEditId(null)
+  }
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -466,8 +507,8 @@ const ClassRoutine = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={allClass}
-                                  defaultValue={allClass[0]}
+                                  options={classOptions}
+                                  // defaultValue={allClass[0]}
                                 />
                               </div>
                             </div>
@@ -477,7 +518,7 @@ const ClassRoutine = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={classSection}
+                                  options={sectionOptions}
                                   defaultValue={classSection[0]}
                                 />
                               </div>
@@ -590,6 +631,7 @@ const ClassRoutine = () => {
                 <h4 className="modal-title">Add Class Routine</h4>
                 <button
                   type="button"
+                  onClick={(e) => handlecancel(e)}
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
@@ -620,7 +662,7 @@ const ClassRoutine = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={routineForm.className}
                           onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
                         />
@@ -718,9 +760,10 @@ const ClassRoutine = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button type="button"
+                    onClick={(e) => handlecancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Add Class Routine
                   </button>
@@ -740,6 +783,7 @@ const ClassRoutine = () => {
                 <h4 className="modal-title">Edit Class Routine</h4>
                 <button
                   type="button"
+                  onClick={(e) => handlecancel(e)}
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
@@ -769,7 +813,7 @@ const ClassRoutine = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={routineForm.className}
                           onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
                         />
@@ -867,9 +911,10 @@ const ClassRoutine = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button type="button"
+                    onClick={(e) => handlecancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Edit Class Routine
                   </button>

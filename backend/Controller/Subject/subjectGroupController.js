@@ -16,7 +16,7 @@ exports.addSubjectGroup = async (req, res) => {
     const cleanSubjectGroup = subjectGroup.trim();
 
     const [existing] = await db.query(
-      "SELECT * FROM subject_group WHERE className=? AND section=? AND subjectGroup=?",
+      "SELECT id FROM subject_group WHERE className=? AND section=? AND subjectGroup=?",
       [className, section, cleanSubjectGroup]
     );
 
@@ -26,7 +26,7 @@ exports.addSubjectGroup = async (req, res) => {
         message: "This subject group already exists for the selected class and section!",
       });
     }
- 
+
     const [result] = await db.query(
       "INSERT INTO subject_group (className, section, subjectGroup, status) VALUES (?, ?, ?, ?)",
       [className, section, cleanSubjectGroup, status]
@@ -49,7 +49,22 @@ exports.addSubjectGroup = async (req, res) => {
 
 exports.getAllSubjectGroups = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM subject_group ORDER BY created_at DESC");
+
+    const sql = `
+     SELECT 
+     sg.id,
+     sg.subjectGroup,
+     sg.status,
+     c.class_name AS className,
+     se.section_name AS section
+     FROM subject_group sg
+     LEFT JOIN classes c ON sg.className = c.id
+     LEFT JOIN sections se ON sg.section  = se.id
+   
+
+    `
+
+    const [rows] = await db.query(sql);
     return res.status(200).json({
       success: true,
       count: rows.length,

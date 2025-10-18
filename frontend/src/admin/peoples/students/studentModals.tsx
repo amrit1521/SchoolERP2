@@ -320,8 +320,8 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   const [feesGroupOptions, setFeesGroupOptions] = useState<{ value: number; label: string }[]>([]);
   const [feesTypeOptions, setFeesTypeOptions] = useState<{ value: number; label: string }[]>([]);
   const [leaveOptions, setLeaveOptions] = useState<{ value: number; label: string }[]>([]);
-  const [typeResult,setTypeResult] = useState<any[]>([]);
-  const [groupResult,setGroupResult] = useState<any[]>([]);
+  // const [typeResult,setTypeResult] = useState<any[]>([]);
+  // const [groupResult,setGroupResult] = useState<any[]>([]);
 
 
   const fetchFeesOptions = async () => {
@@ -329,12 +329,12 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     try {
       const [groupRes, typeRes] = await Promise.all([allFeesGroup(), allFeesType()]);
       if (groupRes.data.success) {
-        console.log(groupRes,typeRes);
-        setGroupResult(groupRes.data.feesGroups);
+        // console.log(groupRes,typeRes);
+        // setGroupResult(groupRes.data.feesGroups);
         setFeesGroupOptions(groupRes.data.feesGroups.map((g: any) => ({ value: g.id, label: g.feesGroup })));
       }
       if (typeRes.data.success) {
-        setTypeResult(typeRes.data.feesTypes);
+        // setTypeResult(typeRes.data.feesTypes);
         setFeesTypeOptions(typeRes.data.feesTypes.map((t: any) => ({ value: t.id, label: t.name })));
       }
     } catch (error: any) {
@@ -342,9 +342,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       toast.error(error?.response?.data?.message || 'Failed to load fees options.');
     }
   };
-  useEffect(()=>{
-    setFeesTypeOptions(typeResult.filter(feetype => feetype.feesGroup === groupResult.filter((group:any)=>group.id === formData.feesGroup)[0].feesGroup).map((t: any) => ({ value: t.id, label: t.name })));
-  },[formData.feesGroup]);
+  // useEffect(()=>{
+  //   setFeesTypeOptions(typeResult.filter(feetype => feetype.feesGroup === groupResult.filter((group:any)=>group.id === formData.feesGroup)[0].feesGroup).map((t: any) => ({ value: t.id, label: t.name })));
+  // },[formData.feesGroup]);
+
+  //   console.log(feesTypeOptions)
 
 
   const fetchLeaveTypes = async () => {

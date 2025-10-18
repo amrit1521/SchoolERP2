@@ -8,10 +8,84 @@ import { category2 } from "../../core/common/selectoption/selectoption";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import React, { useState } from "react";
+
+
+interface ExpenseCategoryForm {
+  category: string;
+  description: string;
+}
+
+interface FormErrors {
+  category?: string;
+  description?: string;
+}
+
+
 
 const ExpensesCategory = () => {
   const data = expense_category_data;
   const routes = all_routes;
+
+
+  const [formData, setFormData] = useState<ExpenseCategoryForm>({
+    category: "",
+    description: "",
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error on change
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  // Custom validation function
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.category.trim()) {
+      newErrors.category = "Category is required";
+    } else if (formData.category.length < 3) {
+      newErrors.category = "Category must be at least 3 characters";
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (formData.description.length < 5) {
+      newErrors.description = "Description must be at least 5 characters";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submit
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    console.log("Form Data:", formData);
+    // API call or dispatch action here
+
+    // Reset form after submit
+    setFormData({ category: "", description: "" });
+  };
+
+
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setFormData({ category: "", description: "" });
+    setErrors({})
+
+
+  }
+
   const columns = [
     {
       title: "ID",
@@ -106,7 +180,7 @@ const ExpensesCategory = () => {
               </nav>
             </div>
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-            <TooltipOption />
+              <TooltipOption />
               <div className="mb-2">
                 <Link
                   to="#"
@@ -126,7 +200,7 @@ const ExpensesCategory = () => {
               <h4 className="mb-3">Expense Category List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                <PredefinedDateRanges />
+                  <PredefinedDateRanges />
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -204,7 +278,7 @@ const ExpensesCategory = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Expenses Category List */}
-                <Table dataSource={data} columns={columns} Selection={true} />
+              <Table dataSource={data} columns={columns} Selection={true} />
               {/* /Expenses Category List */}
             </div>
           </div>
@@ -219,6 +293,7 @@ const ExpensesCategory = () => {
               <h4 className="modal-title">Add Category</h4>
               <button
                 type="button"
+                onClick={(e) => handleCancel(e)}
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
@@ -226,33 +301,41 @@ const ExpensesCategory = () => {
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
                     <div className="mb-3">
-                      <label className="form-label">Category </label>
-                      <input type="text" className="form-control" />
+                      <label className="form-label">Category</label>
+                      <input
+                        type="text"
+                        name="category"
+                        className={`form-control ${errors.category ? "is-invalid" : ""}`}
+                        value={formData.category}
+                        onChange={handleChange}
+                      />
+                      {errors.category && <div className="invalid-feedback">{errors.category}</div>}
                     </div>
                     <div className="mb-0">
                       <label className="form-label">Description</label>
                       <textarea
+                        name="description"
                         rows={4}
-                        className="form-control"
-                        defaultValue={""}
+                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                        value={formData.description}
+                        onChange={handleChange}
                       />
+                      {errors.description && (
+                        <div className="invalid-feedback">{errors.description}</div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <Link
-                  to="#"
-                  className="btn btn-light me-2"
-                  data-bs-dismiss="modal"
-                >
+                <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                   Cancel
-                </Link>
+                </button>
                 <button type="submit" className="btn btn-primary">
                   Add Category
                 </button>

@@ -44,7 +44,6 @@ const Departments = () => {
     await new Promise((res) => setTimeout(res, 500))
     try {
       const { data } = await allDepartment()
-      console.log(data.data)
       if (data.success) {
         setDepartmentData(data.data)
       }
@@ -148,7 +147,6 @@ const Departments = () => {
 
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
     e.preventDefault()
     try {
 
