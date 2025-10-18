@@ -277,7 +277,7 @@ for (const link of parentLinks) {
     LEFT JOIN sections AS s ON s.id = hw.section_id
     LEFT JOIN class_subject AS cs ON cs.id = hw.subject
     LEFT JOIN users AS u ON u.id = hw.teacherId
-    WHERE status=1 AND hw.class_id = ? AND hw.section_id = ?`,
+    WHERE hw.status=1 AND hw.class_id = ? AND hw.section_id = ?`,
   [student.class_id, student.section_id]
 );
 
@@ -422,7 +422,7 @@ export const FreesPayment = async (req, res) => {
   `SELECT 
       COUNT(*) as total_homework
     FROM home_work AS hw
-    WHERE status=1 AND hw.class_id = ? AND hw.section_id = ?`,
+    WHERE hw.status=1 AND hw.class_id = ? AND hw.section_id = ?`,
   [student.class_id, student.section_id]
 );
 
