@@ -54,7 +54,6 @@ const CollectFees = () => {
 
   // types/StudentFeesRecord.ts
 
-  // API se aane wala data
   interface FeesCollectionDet {
     id: number;
     admNo: string;
@@ -97,7 +96,7 @@ const CollectFees = () => {
     setLoading(true);
     try {
       const { data } = await getFeesCollectionDet();
-      // console.log(data.feesdata)
+      
       if (data.success) {
         setFeesCollection(data.feesdata);
       }
@@ -134,7 +133,7 @@ const CollectFees = () => {
   }));
 
 
-console.log(rollnum)
+
   const columns = [
     {
       title: "Adm No",

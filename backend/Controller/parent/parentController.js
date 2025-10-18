@@ -18,8 +18,8 @@ exports.allParents = async (req, res) => {
         st.created_at AS Student_Add,
         u.firstname,
         u.lastname,
-        c.class_name AS class,
-        s.section_name AS section
+        UPPER(c.class_name) AS class,
+        UPPER( s.section_name) AS section
       FROM parents_info p
       LEFT JOIN students st ON p.user_id = st.stu_id
       LEFT JOIN users u ON st.stu_id = u.id  
@@ -57,8 +57,8 @@ exports.speParentData = async (req, res) => {
         p.created_at AS Parent_Add,
         st.stu_img,
         st.stu_id,
-       c.class_name AS class,
-        s.section_name AS section,
+        UPPER(c.class_name) AS class,
+        UPPER( s.section_name) AS section,
         st.gender,
         st.rollnum,
         st.admissiondate,
@@ -195,8 +195,8 @@ exports.allGuardian = async (req, res) => {
                 p.created_at AS Gua_Add,
                 st.stu_img,
                 st.stu_id,
-                c.class_name AS class,
-                 s.section_name AS section,
+                UPPER(c.class_name) AS class,
+                UPPER( s.section_name) AS section,
                  st.rollnum,
                 st.created_at AS Student_Add,
                 u.firstname,
@@ -230,8 +230,8 @@ exports.speGuardianData = async (req, res) => {
                 p.created_at AS Guardian_Add,
                 st.stu_img,
                 st.stu_id,
-                c.class_name AS class,
-                 s.section_name AS section,
+                UPPER(c.class_name) AS class,
+                UPPER( s.section_name) AS section,
                 st.gender,
                 st.rollnum,
                 st.admissiondate,

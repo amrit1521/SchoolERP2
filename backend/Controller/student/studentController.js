@@ -193,9 +193,9 @@ exports.allStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                c.class_name as class,
+                UPPER(c.class_name) as class,
                 s.class_id,
-                se.section_name as section,
+               UPPER( se.section_name) as section,
                 s.section_id,
                 s.gender,
                 s.dob,
@@ -250,8 +250,10 @@ exports.filterStudents = async (req, res) => {
                 s.admissionnum,
                 s.admissiondate,
                 s.rollnum,
-                s.class,
-                s.section,
+                UPPER(c.class_name) as class,
+                s.class_id,
+               UPPER( se.section_name) as section,
+                s.section_id,
                 s.gender,
                 s.dob,
                 s.bloodgp,
@@ -265,6 +267,8 @@ exports.filterStudents = async (req, res) => {
             FROM users u
             RIGHT JOIN students s
                 ON u.id = s.stu_id
+                  RIGHT JOIN classes  c ON c.id =  s.class_id
+          RIGHT JOIN sections se ON se.id = s.section_id
                 WHERE u.roll_id=3 AND class=? AND section=?
         `;
 
@@ -294,8 +298,8 @@ exports.filterStudentsForOption = async (req, res) => {
             RIGHT JOIN students s
             ON u.id = s.stu_id
             WHERE u.roll_id = 3 
-            AND s.class = ? 
-            AND s.section = ?;
+            AND s.class_id = ? 
+            AND s.section_id = ?;
 
         `;
 
@@ -361,7 +365,6 @@ exports.enableStudent = async (req, res) => {
 };
 
 
-
 exports.getStudentByRollnumForEdit = async (req, res) => {
   const { rollnum } = req.params;
 
@@ -374,7 +377,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
       SELECT 
         u.id AS user_id, u.firstname, u.lastname, u.status, u.mobile, u.email,
         s.id AS student_id, s.academicyear, s.admissionnum, s.admissiondate, s.rollnum, 
-        s.class, s.section, s.gender, s.dob, s.bloodgp, s.religion, s.caste, s.house, 
+         s.class_id AS class, s.section_id AS section, s.gender, s.dob, s.bloodgp, s.religion, s.caste, s.house, 
         s.stu_img, s.category, s.motherton, s.lanknown, s.curr_address, s.perm_address, 
         s.allergies, s.medications, s.prev_school, s.prev_school_address,s.stu_condition, s.medicalcert, 
         s.transfercert,
@@ -390,11 +393,11 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id = o.user_id
       LEFT JOIN parents_info p ON u.id = p.user_id
+     
       WHERE u.id = ?;
     `;
 
     const [rows] = await db.query(sql, [id]);
-
     return res.status(200).json({
       success: true,
       message: "Student details fetched successfully",
@@ -445,7 +448,7 @@ exports.updateStudent = async (req, res) => {
 
     await connection.query(
       `UPDATE students 
-       SET academicyear=?, admissionnum=?, admissiondate=?, rollnum=?, class=?, section=?, 
+       SET academicyear=?, admissionnum=?, admissiondate=?, rollnum=?, class_id=?, section_id=?, 
            gender=?, dob=?, bloodgp=?, religion=?, caste=?, house=?, stu_img=?, category=?, 
            motherton=?, lanknown=?, curr_address=?, perm_address=?, allergies=?, medications=?, 
            prev_school=?, prev_school_address=?, medicalcert=?, transfercert=? 
@@ -626,8 +629,10 @@ exports.specificDetailsStu = async (req, res) => {
         s.admissionnum,
         s.admissiondate,
         s.rollnum,
-        s.class,
-        s.section,
+        c.class_name as class,
+        s.class_id,
+        se.section_name as section,
+        s.section_id,
         s.gender,
         s.dob,
         s.bloodgp,
@@ -663,6 +668,8 @@ exports.specificDetailsStu = async (req, res) => {
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
       LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+      LEFT JOIN classes c ON s.class_id = c.id
+      LEFT JOIN sections se ON s.section_id = se.id
       WHERE s.rollnum = ?;
     `;
     const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`
@@ -715,7 +722,7 @@ exports.getTimeTable = async (req, res) => {
   try {
 
     const [studentRows] = await db.query(
-      `SELECT class, section FROM students WHERE stu_id = ?`,
+      `SELECT class_id, section_id FROM students WHERE stu_id = ?`,
       [id]
     );
 
@@ -730,8 +737,8 @@ exports.getTimeTable = async (req, res) => {
 
 
     const [timetableRows] = await db.query(
-      `SELECT * FROM timetable WHERE class = ? AND section = ? ORDER BY day, timefrom`,
-      [student.class, student.section]
+      `SELECT * FROM timetable WHERE class = ? AND section= ? ORDER BY day, timefrom`,
+      [student.class_id, student.section_id]
     );
 
     if (timetableRows.length === 0) {
@@ -760,8 +767,6 @@ exports.getTimeTable = async (req, res) => {
     });
   }
 };
-
-
 
 // get leave name , total , used and avilable
 
@@ -902,8 +907,10 @@ exports.studentReport = async (req, res) => {
     s.admissiondate ,     
     s.admissionnum ,
     s.rollnum ,
-    s.class ,
-    s.section,
+    c.class_name as class,
+    s.class_id,
+    se.section_name as section,
+    s.section_id,
     s.gender,
     s.dob,
     s.stu_img ,   
@@ -917,6 +924,8 @@ LEFT JOIN users u
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
     ON s.stu_id = father.user_id AND father.relation = 'Father'
+    LEFT JOIN classes c ON s.class_id = c.id
+    LEFT JOIN sections se ON s.section_id = se.id
 WHERE u.roll_id = 3
 
         `;
@@ -949,11 +958,15 @@ exports.getStuByToken = async (req, res) => {
         s.admissionnum,
         s.admissiondate,
         s.rollnum,
-        s.class,
-        s.section,
+        UPPER(c.class_name) as class,
+        s.class_id,
+        UPPER( se.section_name) as section,
+        s.section_id,
         s.stu_img
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+       LEFT JOIN classes c ON s.class_id = c.id
+    LEFT JOIN sections se ON s.section_id = se.id
       WHERE u.id = ?;
     `;
     const [student] = await db.query(sql, [userId]);
@@ -972,6 +985,34 @@ exports.getStuByToken = async (req, res) => {
     });
   }
 };
+
+// student for option
+exports.studentForOption = async (req, res) => {
+  try {
+
+    const sql = `
+      SELECT 
+      st.id,
+      st.rollnum,
+      u.id AS userId,
+      u.firstname,
+      u.lastname,
+      UPPER(c.class_name) AS class,
+      UPPER(se.section_name) AS section
+      FROM students st
+      LEFT JOIN users u ON st.stu_id = u.id AND roll_id=3
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections se ON st.section_id = se.id
+    `
+
+    const [rows] = await db.query(sql)
+    return res.status(200).json({ message: "Students for option fetched successfully!", success: true, data: rows })
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
+}
 
 
 

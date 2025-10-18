@@ -347,11 +347,15 @@ exports.getAllClassRoutines = async (req, res) => {
         crm.room_no,
         t.subject,
         u.firstname,
-        u.lastname
+        u.lastname,
+        UPPER(c.class_name) AS className,
+       UPPER( se.section_name) AS section
       FROM class_routine cr
       LEFT JOIN class_room crm ON cr.classRoom = crm.id
       LEFT JOIN teachers t ON cr.teacher = t.teacher_id
       LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN classes c ON cr.className = c.id
+      LEFT JOIN sections se ON cr.section = se.id
       ORDER BY cr.day, cr.startTime
     `;
 

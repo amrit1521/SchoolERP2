@@ -14,7 +14,7 @@ import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { DatePicker } from "antd";
 import dayjs from 'dayjs'
-import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSubject, Imageurl, speHomework } from "../../../service/api";
+import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSectionForAClass, getAllSubject, Imageurl, speHomework } from "../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
@@ -24,8 +24,8 @@ import { allRealClasses } from "../../../service/classApi";
 export interface Homework {
   id: number;
   className: string;
-  section: number;
-  subject: number;
+  section: string;
+  subject: string;
   homeworkDate: string;
   submissionDate: string;
   description: string;
@@ -43,7 +43,7 @@ export interface Teacher {
 
 export interface Section {
   id: number;
-  section: string;
+  section_name: string;
 }
 
 export interface Subject {
@@ -59,7 +59,7 @@ export interface classes {
 const ClassHomeWork = () => {
   const routes = all_routes;
 
-  // const data = classhomework;
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -69,9 +69,21 @@ const ClassHomeWork = () => {
 
 
 
-  // -------------------------
+
   // State
-  // -------------------------
+  const [formData, setFormData] = useState<HomeworkFormData>({
+    className: null,
+    section: null,
+    subject: null,
+    homeworkDate: "",
+    submissionDate: "",
+    teacherId: "",
+    status: "1",
+    attachments: "",
+    description: "",
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof HomeworkFormData, string>>>({});
+  const [editId, setEditId] = useState<number | null>(null)
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -79,9 +91,7 @@ const ClassHomeWork = () => {
   const [allClass, setAllClass] = useState<classes[]>([])
   const [loading, setLoading] = useState<boolean>(false);
 
-  // -------------------------
-  // Generic fetch wrapper
-  // -------------------------
+
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -113,17 +123,29 @@ const ClassHomeWork = () => {
       setLoading(false);
     }
   };
-  // -------------------------
-  // Fetch Functions
-  // -------------------------
+
+  const fetchSection = async () => {
+    try {
+      if (formData.className) {
+        const { data } = await getAllSectionForAClass(Number(formData.className));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSections(data.data);
+        } else {
+          setSections([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
   const fetchTeachers = () => fetchData(allTeacherForOption, setTeachers);
   const fetchSections = () => fetchData(getAllSection, setSections);
   const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
   const fetchClasses = () => fetchData(allRealClasses, setAllClass)
 
-  // -------------------------
-  // Effects
-  // -------------------------
+
   useEffect(() => {
 
     fetchTeachers();
@@ -133,14 +155,20 @@ const ClassHomeWork = () => {
     fetchClasses();
   }, []);
 
-  // -------------------------
+  useEffect(() => {
+    if (formData.className) {
+      fetchSection()
+    }
+  }, [formData.className])
+
+
   // Options (for selects)
-  // -------------------------
+
   const sectionOptions = useMemo(
     () =>
       sections.map((s) => ({
         value: s.id,
-        label: s.section,
+        label: s.section_name,
       })),
     [sections]
   );
@@ -186,19 +214,7 @@ const ClassHomeWork = () => {
   }))
 
   // add homework
-  const [formData, setFormData] = useState<HomeworkFormData>({
-    className: "",
-    section: null,
-    subject: null,
-    homeworkDate: "",
-    submissionDate: "",
-    teacherId: "",
-    status: "1",
-    attachments: "",
-    description: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof HomeworkFormData, string>>>({});
-  const [editId, setEditId] = useState<number | null>(null)
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
@@ -224,7 +240,7 @@ const ClassHomeWork = () => {
       [name]: date,
     }));
   };
-  // validation errors
+ 
 
 
   const validateForm = (): boolean => {
@@ -245,16 +261,14 @@ const ClassHomeWork = () => {
 
     setErrors(newErrors);
 
-    return Object.keys(newErrors).length === 0; // ✅ true if no errors
+    return Object.keys(newErrors).length === 0; 
   };
 
 
   // edit---------------------------
   const fetchHwById = async (id: number) => {
-    // console.log(id)
     try {
       const { data } = await speHomework(id)
-      // console.log(data)
       if (data.success) {
         setFormData({
           className: data.data.className,
@@ -275,14 +289,13 @@ const ClassHomeWork = () => {
       console.log(error)
     }
   }
-  // console.log(formData)
-
+ 
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setEditId(null)
     setFormData({
-      className: "",
+      className: null,
       section: null,
       subject: null,
       homeworkDate: "",
@@ -321,7 +334,7 @@ const ClassHomeWork = () => {
       }
       fetchHomeWorks();
       setFormData({
-        className: "",
+        className: null,
         section: null,
         subject: null,
         homeworkDate: "",
