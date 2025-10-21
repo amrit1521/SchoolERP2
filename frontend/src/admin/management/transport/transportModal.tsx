@@ -10,9 +10,11 @@ import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
 import {
+  addPickUpPoints,
   addRoutes,
   getAllTransportRoutes,
   udpateTransportRoutes,
+  updateTransportPickupPoints,
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
@@ -54,7 +56,10 @@ const TransportModal: React.FC<TransportModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (selectedItem) {
+    if (
+      selectedItem &&
+      Object.prototype.hasOwnProperty.call(selectedItem, "routeName")
+    ) {
       setRouteName(selectedItem.routeName || "");
       setIsActive(selectedItem.status === 1);
     } else {
@@ -166,15 +171,97 @@ const TransportModal: React.FC<TransportModalProps> = ({
     fetchRoutes();
   }, []);
 
-  const validatePickUpForm = (): Boolean => {
+  const validatePickUpForm = (): boolean => {
+    if (!pickPointName.trim()) {
+      toast.error("Pickup Point Name is required.");
+      return false;
+    }
+
+    // if (!selectedRotues || !selectedRotues.value) {
+    //   toast.error("Please select a route.");
+    //   return false;
+    // }
+
     return true;
   };
 
-  const handleCreatePickupPoints = (e: React.FormEvent) => {
-    e.preventDefault();
-    // if (!validatePickUpForm() || !selectedItem) return;
+  const resetPickUpForm = () => {
+    setPickPointName("");
+    setSelectedRoutes(null);
+    setPickupStatus(false);
+  };
 
-    console.log(pickPointName, selectedRotues?.value, pickupStatus);
+  const handleCreatePickupPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validatePickUpForm()) return;
+    try {
+      const date = new Date();
+      const options: any = { day: "2-digit", month: "long", year: "numeric" };
+      const payload = {
+        route_id: selectedRotues?.value,
+        pickPointName: pickPointName,
+        status: pickupStatus,
+        addedOn: date.toLocaleDateString("en-GB", options),
+      };
+      const { data } = await addPickUpPoints(payload);
+      if (data.success) {
+        toast.success(data.message || "Pick up Points added successfully");
+        resetPickUpForm();
+        onAdded();
+        closeModal("add_pickup");
+      } else {
+        toast.error(data.message || "Failed to load pick up points.");
+      }
+      console.log(pickPointName, selectedRotues?.value, pickupStatus);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error adding route");
+    }
+  };
+
+  useEffect(() => {
+    if (
+      selectedItem &&
+      Object.prototype.hasOwnProperty.call(selectedItem, "pickPointName")
+    ) {
+      setPickPointName(selectedItem.pickPointName || "");
+      setPickupStatus(selectedItem.status === 1);
+    } else {
+      resetPickUpForm();
+    }
+  }, [selectedItem]);
+
+  const handleUpdatePickupPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validatePickUpForm() || !selectedItem) return;
+    setLoading(true);
+    const date = new Date();
+    const options: any = { day: "2-digit", month: "long", year: "numeric" };
+    try {
+      const payload = {
+        pickPointName,
+        status: pickupStatus ? 1 : 0,
+        addedOn: date.toLocaleDateString("en-GB", options),
+      };
+      const { data } = await updateTransportPickupPoints(
+        payload,
+        selectedItem.id
+      );
+      if (data.success) {
+        toast.success(data.message || "Pick up Points updated successfully");
+        resetPickUpForm();
+        onAdded();
+        closeModal("edit_pickup");
+      } else {
+        toast.error(data.message || "Failed to update pick up points.");
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Error updating pick up points"
+      );
+    } finally {
+      setLoading(false);
+    }
+    resetPickUpForm();
   };
 
   return (
@@ -567,7 +654,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleUpdatePickupPoints}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
@@ -577,7 +664,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                           type="text"
                           className="form-control"
                           placeholder="Enter Pickup Point"
-                          defaultValue="2603 Wood Duck Drive Marquette, MI"
+                          value={pickPointName}
+                          onChange={(e) => setPickPointName(e.target.value)}
                         />
                       </div>
                     </div>
@@ -591,7 +679,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                           type="checkbox"
                           id="user2"
                           className="check"
-                          defaultChecked
+                          checked={pickupStatus}
+                          onChange={(e) => setPickupStatus(e.target.checked)}
                         />
                         <label htmlFor="user2" className="checktoggle">
                           {" "}
@@ -608,13 +697,14 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
+                    disabled={loading}
                   >
-                    Save Changes
-                  </Link>
+                    {loading ? "Saving..." : "Save Changes"}
+                  </button>
                 </div>
               </form>
             </div>

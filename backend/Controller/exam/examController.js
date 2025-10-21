@@ -1085,8 +1085,8 @@ exports.getExamResultAllStudents = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class_id:row.class_id,
-          section_id:row.section_id,
+          class_id: row.class_id,
+          section_id: row.section_id,
           class: row.class_name,
           section: row.section_name,
           img: row.stu_img || "assets/img/students/default.jpg",
@@ -1224,15 +1224,15 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class_id:row.class_id,
-          section_id:row.section_id,
+          class_id: row.class_id,
+          section_id: row.section_id,
           class: row.class_name,
           section: row.section_name,
-          father_name:row.father_name,
-          date_of_birth:row.dob,
-          address:row.perm_address,
-          academic_year:row.academicyear,
-          phone_num:row.phone_num,
+          father_name: row.father_name,
+          date_of_birth: row.dob,
+          address: row.perm_address,
+          academic_year: row.academicyear,
+          phone_num: row.phone_num,
           student_image: row.stu_img || "assets/img/students/default.jpg",
           examName: row.examName,
           subjects: {},
@@ -1245,7 +1245,7 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
         id: row.id,
         mark_obtained: row.mark_obtained || 0,
         max_mark: row.max_mark || 0,
-        grade_marks:row.grade,
+        grade_marks: row.grade,
       };
       //  else {
       //   studentsMap[key].subjects[subjKey] = {
@@ -1353,10 +1353,11 @@ exports.getExamResultUpdateList = async (req, res) => {
       section,
       examName,
     ]);
+    console.log("object: ", scheduleRows);
     if (!scheduleRows.length) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
-        message: "No data found for the given parameters",
+        message: "No student found for the selected class and section",
       });
     }
 

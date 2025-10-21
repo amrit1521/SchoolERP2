@@ -320,3 +320,13 @@ export const udpateTransportRoutes = (data: any, id: number) =>
   api.patch(`/transport/updatetransportroutes/${id}`, data);
 export const deleteTransportRoutesById = (id: number | null) =>
   api.delete(`/transport/deletetransportroutes/${id}`);
+
+export const addPickUpPoints = (data: object) =>
+  api.post("/transport/add-pickup-points", data);
+export const getAllPickupPoints = () => api.get("/transport/pickup-points");
+export const getTransportPickUpPointsById = (id: number | null) =>
+  api.get(`/transport/get-pickup-points/${id}`);
+export const updateTransportPickupPoints = (data: any, id: number) =>
+  api.patch(`/transport/update-pickup-points/${id}`, data);
+export const deletePickupPointById = (id: number | null) =>
+  api.delete(`/transport/delete-pickup-points/${id}`);

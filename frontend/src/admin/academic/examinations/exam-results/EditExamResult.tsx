@@ -4,7 +4,7 @@ import { all_routes } from "../../../router/all_routes";
 import { toast } from "react-toastify";
 import { Card, Input, Space, message } from "antd";
 import Table from "../../../../core/common/dataTable/index";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Spinner } from "../../../../spinner";
 import {
   SaveOutlined,
@@ -58,6 +58,7 @@ type MarksData = Record<string, Record<string, MarksEntry>>;
 export default function ExamMarkUpload() {
   const routes = all_routes;
   const location = useLocation();
+  const navigate = useNavigate();
   const {
     exam_name_id: examId,
     class: class_Name,
@@ -81,7 +82,13 @@ export default function ExamMarkUpload() {
           className,
           section,
         });
-        console.log(data);
+        console.log("data: ", data);
+        if (data.success == false) {
+          setStudents([]);
+          setSubjects([]);
+          toast.error(data.message);
+          navigate("/academic/exam-result");
+        }
         setStudents(data.data);
 
         const subjList = data.data[0]?.subject || [];
@@ -269,7 +276,7 @@ export default function ExamMarkUpload() {
       marks: subjects.map((sub) => ({
         subject_id: sub.subject_id,
         mark: parseInt(
-          marksData[stu.admissionNum]?.[sub.subject_id]?.mark?.toString()
+          marksData[stu.admissionNum]?.[sub.subject_id]?.mark?.toString() ?? "0"
         ),
         minMarks: sub.minMarks,
         maxMarks: sub.maxMarks,
@@ -353,13 +360,9 @@ export default function ExamMarkUpload() {
               sub.subject_id,
               sub.maxMarks.toString()
             );
-          } else if (numericValue < sub.minMarks) {
-            toast.error(`Marks cannot be less than ${sub.minMarks}`);
-            handleMarkChange(
-              record.admissionNum,
-              sub.subject_id,
-              sub.minMarks.toString()
-            );
+          } else if (numericValue < 0) {
+            toast.error(`Marks cannot be less than 0`);
+            handleMarkChange(record.admissionNum, sub.subject_id, "0");
           }
         };
 
