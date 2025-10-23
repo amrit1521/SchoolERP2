@@ -7,7 +7,7 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { DatePicker } from "antd";
 import {
   addPickUpPoints,
@@ -36,12 +36,12 @@ const TransportModal: React.FC<TransportModalProps> = ({
   clearSelected,
   handleDelete,
 }) => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based, so we add 1
-  const day = String(today.getDate()).padStart(2, "0");
-  const formattedDate = `${month}-${day}-${year}`;
-  const defaultValue = dayjs(formattedDate);
+  // const today = new Date();
+  // const year = today.getFullYear();
+  // const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based, so we add 1
+  // const day = String(today.getDate()).padStart(2, "0");
+  // const formattedDate = `${month}-${day}-${year}`;
+  // const defaultValue = dayjs(formattedDate);
 
   const getModalContainer = () => {
     const modalElement = document.getElementById("modal-datepicker");

@@ -666,8 +666,6 @@ exports.specificDetailsStu = async (req, res) => {
         p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
-      JOIN classes cl ON cl.id = s.class_id
-      JOIN sections se ON se.id = s.section_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
