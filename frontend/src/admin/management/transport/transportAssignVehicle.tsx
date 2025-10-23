@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
@@ -14,9 +14,23 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-// import TransportModal from "./transportModal";
+import TransportModal from "./transportModal";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { transportAssignData } from "../../../core/data/json/transport_assign";
+import {
+  deleteAssignedVehicleById,
+  getAllAssignedVehicles,
+} from "../../../service/api";
+import { toast } from "react-toastify";
+
+interface TransportAssignVehicleProps {
+  id: number;
+  routeName: string;
+  vehicleNo: string;
+  driver: string;
+  driverPhone: string;
+  status: number;
+}
 
 const TransportAssignVehicle = () => {
   const routes = all_routes;
@@ -27,37 +41,108 @@ const TransportAssignVehicle = () => {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+  const [allAssignedVehicles, setAllAssignedVehicles] = useState<
+    TransportAssignVehicleProps[]
+  >([]);
+  const [filteredAssignedVehicles, setFilteredAssignedVehicles] = useState<
+    TransportAssignVehicleProps[]
+  >([]);
+  const [selectedAssignedVehicle, setSelectedAssignedVehicle] =
+    useState<any>(null);
+
+  const fetchAssginedVehicle = async () => {
+    try {
+      const { data } = await getAllAssignedVehicles();
+      if (data.success) {
+        console.log("data: ", data);
+        setAllAssignedVehicles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            routeName: item.routeName,
+            vehicleNo: item.vehicle_no,
+            driver: item.driver_id,
+            driverPhone: item.driver_contact_no,
+            status: item.status,
+          }))
+        );
+        setFilteredAssignedVehicles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            routeName: item.routeName,
+            vehicleNo: item.vehicle_no,
+            driver: item.driver_id,
+            driverPhone: item.driver_contact_no,
+            status: item.status,
+          }))
+        );
+        // setPickupPointOption(
+        //   data.result.map((point: PickupPoint) => ({
+        //     value: point.id,
+        //     label: point.pickPointName,
+        //   }))
+        // );
+      } else {
+        toast.error(data.message || "Failed to fetch assigned vehicles");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch assigned vehicles"
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchAssginedVehicle();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    console.log("handleDelete Called: ", id);
+    try {
+      const { data } = await deleteAssignedVehicleById(id);
+      if (data.success) {
+        toast.success(data.message || "Assigned Vehicle deleted successfully");
+        fetchAssginedVehicle();
+      } else {
+        toast.error(data.message || "Failed to delete assigned vehicle");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Error deleting assigned vehicle."
+      );
+    }
+  };
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" className="link-primary">
-          {text}
+          AV0{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
     },
     {
       title: "Route",
-      dataIndex: "route",
+      dataIndex: "routeName",
       sorter: (a: TableData, b: TableData) => a.route.length - b.route.length,
     },
-    {
-      title: "Pickup Point",
-      dataIndex: "pickupPoint",
-      sorter: (a: TableData, b: TableData) =>
-        a.pickupPoint.length - b.pickupPoint.length,
-    },
+    // {
+    //   title: "Pickup Point",
+    //   dataIndex: "pickupPoint",
+    //   sorter: (a: TableData, b: TableData) =>
+    //     a.pickupPoint.length - b.pickupPoint.length,
+    // },
     {
       title: "Vehicle",
-      dataIndex: "vehicle",
+      dataIndex: "vehicleNo",
       sorter: (a: TableData, b: TableData) =>
         a.vehicle.length - b.vehicle.length,
     },
     {
       title: "Driver",
-      dataIndex: "name",
+      dataIndex: "driver",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
@@ -69,9 +154,11 @@ const TransportAssignVehicle = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to="#">{text}</Link>
+              <Link to="#">
+                {driverName.find((item) => item.value == text)?.label}
+              </Link>
             </p>
-            <span className="fs-12">{record.phone}</span>
+            <span className="fs-12">{record.driverPhone}</span>
           </div>
         </div>
       ),
@@ -81,17 +168,17 @@ const TransportAssignVehicle = () => {
     {
       title: "Status",
       dataIndex: "status",
-      render: (text: string) => (
+      render: (text: number) => (
         <>
-          {text === "Active" ? (
+          {text === 1 ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              {"Active"}
             </span>
           ) : (
             <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              {"Inactive"}
             </span>
           )}
         </>
@@ -102,7 +189,7 @@ const TransportAssignVehicle = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -121,6 +208,7 @@ const TransportAssignVehicle = () => {
                     to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#edit_assign_vehicle"
+                    onClick={() => setSelectedAssignedVehicle(record)}
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -132,6 +220,7 @@ const TransportAssignVehicle = () => {
                     to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
+                    onClick={() => setSelectedAssignedVehicle(record)}
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -328,7 +417,11 @@ const TransportAssignVehicle = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              <Table
+                dataSource={filteredAssignedVehicles}
+                columns={columns}
+                Selection={true}
+              />
               {/* /Student List */}
             </div>
           </div>
@@ -336,7 +429,13 @@ const TransportAssignVehicle = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {/* <TransportModal /> */}
+      <TransportModal
+        onAdded={fetchAssginedVehicle}
+        selectedItem={selectedAssignedVehicle}
+        handleDelete={() =>
+          selectedAssignedVehicle && handleDelete(selectedAssignedVehicle.id)
+        }
+      />
     </>
   );
 };

@@ -157,6 +157,9 @@ const TransportVehicle = () => {
     {
       title: "Made of Year",
       dataIndex: "madeofYear",
+      render: (text: string) => (
+        <span>{text ? new Date(text).getFullYear() : ""}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.madeofYear.length - b.madeofYear.length,
     },
