@@ -29,4 +29,11 @@ router.delete(
   transportController.deletePickupPoint
 );
 
+
+router.post("/add-vehicle", transportController.addVehicle);
+router.get("/all-vehicles", transportController.getAllVehicles);
+// router.get("/get-vehicle/:id", transportController.getVehicleById);
+router.patch("/update-vehicle/:id", transportController.updateVehicle);
+router.delete("/delete-vehicle/:id", transportController.deleteVehicleById);
+
 module.exports = router;

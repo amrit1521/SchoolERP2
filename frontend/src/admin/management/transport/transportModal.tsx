@@ -7,14 +7,16 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { DatePicker } from "antd";
 import {
   addPickUpPoints,
   addRoutes,
+  addVehicle,
   getAllTransportRoutes,
   udpateTransportRoutes,
   updateTransportPickupPoints,
+  updateVehicleById,
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
@@ -262,6 +264,137 @@ const TransportModal: React.FC<TransportModalProps> = ({
       setLoading(false);
     }
     resetPickUpForm();
+  };
+
+  // Add New Vehicle Module:
+  const [vehicleNo, setVehicleNo] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [madeOfYear, setMadeOfYear] = useState("");
+  const [registrationNo, setRegistrationNo] = useState("");
+  const [chassisNo, setChassisNo] = useState("");
+  const [seatCapacity, setSeatCapacity] = useState("");
+  const [gpsTrackingId, setGpsTrackingId] = useState("");
+  const [driver, setDriver] = useState<any>("");
+  const [driverLicense, setDriverLicense] = useState("");
+  const [driverContactNo, setDriverContactNo] = useState("");
+  const [driverAddress, setDriverAddress] = useState("");
+
+  const vehicleFormReset = () => {
+    setVehicleNo("");
+    setVehicleModel("");
+    setMadeOfYear("");
+    setRegistrationNo("");
+    setChassisNo("");
+    setSeatCapacity("");
+    setGpsTrackingId("");
+    setDriver("");
+    setDriverLicense("");
+    setDriverContactNo("");
+    setDriverAddress("");
+  };
+
+  const handleAddNewVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement the logic to add a new vehicle here
+    if (
+      !vehicleNo ||
+      !vehicleModel ||
+      !registrationNo ||
+      !driver ||
+      !driverLicense
+    ) {
+      alert("Please fill in all required fields!");
+      return;
+    }
+    const newVehicle = {
+      vehicleNo,
+      vehicleModel,
+      madeOfYear,
+      registrationNo,
+      chassisNo,
+      seatCapacity,
+      gpsTrackingId,
+      driver,
+      driverLicense,
+      driverContactNo,
+      driverAddress,
+      status: 1,
+    };
+    // : madeOfYear ? dayjs(madeOfYear).year() : undefined
+    console.log("New Vehicle Data: ", newVehicle);
+    try {
+      const { data } = await addVehicle(newVehicle);
+      if (data.success) {
+        toast.success(data.message || "Vehicle added successfully");
+        vehicleFormReset();
+        onAdded();
+        closeModal("add_vehicle");
+      } else {
+        toast.error(data.message || "Failed to add vehicle");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error adding vehicle");
+    }
+  };
+
+  useEffect(() => {
+    if (
+      selectedItem &&
+      Object.prototype.hasOwnProperty.call(selectedItem, "registrationNo") &&
+      Object.prototype.hasOwnProperty.call(selectedItem, "vehicleNo") &&
+      Object.prototype.hasOwnProperty.call(selectedItem, "vehicleModel")
+    ) {
+      setVehicleNo(selectedItem.vehicleNo || "");
+      setVehicleModel(selectedItem.vehicleModel || "");
+      setMadeOfYear(selectedItem.madeofYear || "");
+      setRegistrationNo(selectedItem.registrationNo || "");
+      setChassisNo(selectedItem.chassisNo || "");
+      setSeatCapacity(selectedItem.seatCapacity || "");
+      setGpsTrackingId(selectedItem.gpsTrackingId || "");
+      setDriver(String(selectedItem.driver) || "");
+      setDriverLicense(selectedItem.driverLicense || "");
+      setDriverContactNo(selectedItem.driverContactNo || "");
+      setDriverAddress(selectedItem.driverAddress || "");
+    } else {
+      vehicleFormReset();
+    }
+  }, [selectedItem]);
+
+  const handleUpdateVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedItem) return;
+    const updatedVehicle = {
+      vehicleNo,
+      vehicleModel,
+      madeOfYear,
+      registrationNo,
+      chassisNo,
+      seatCapacity,
+      gpsTrackingId,
+      driver,
+      driverLicense,
+      driverContactNo,
+      driverAddress,
+      status: 1,
+    };
+    console.log("Updated Vehicle Data: ", updatedVehicle);
+    try {
+      const { data } = await updateVehicleById(
+        updatedVehicle,
+        selectedItem?.id
+      );
+      if (data.success) {
+        toast.success(data.message || "Vehicle updated successfully");
+        vehicleFormReset();
+        onUpdated();
+        closeModal("edit_vehicle");
+      } else {
+        toast.error(data.message || "Failed to update vehicle");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error updating vehicle");
+    }
   };
 
   return (
@@ -623,6 +756,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
@@ -694,6 +828,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
@@ -905,7 +1040,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleAddNewVehicle}>
                 <div className="modal-body" id="modal-datepicker">
                   <div className="row">
                     <div className="col-md-12">
@@ -913,13 +1048,23 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Vehicle No</label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={vehicleNo}
+                              onChange={(e) => setVehicleNo(e.target.value)}
+                            />
                           </div>
                         </div>
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Vehicle Model</label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={vehicleModel}
+                              onChange={(e) => setVehicleModel(e.target.value)}
+                            />
                           </div>
                         </div>
                         <div className="col-md-6">
@@ -933,7 +1078,12 @@ const TransportModal: React.FC<TransportModalProps> = ({
                                   type: "mask",
                                 }}
                                 getPopupContainer={getModalContainer}
-                                defaultValue=""
+                                defaultValue={madeOfYear}
+                                onChange={(date) =>
+                                  setMadeOfYear(
+                                    dayjs(date).format("YYYY-MM-DD")
+                                  )
+                                }
                                 placeholder="16 May 2024"
                               />
                               <span className="cal-icon">
@@ -947,7 +1097,14 @@ const TransportModal: React.FC<TransportModalProps> = ({
                             <label className="form-label">
                               Registration No
                             </label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={registrationNo}
+                              onChange={(e) =>
+                                setRegistrationNo(e.target.value)
+                              }
+                            />
                           </div>
                         </div>
                         <div className="col-md-6">
@@ -957,19 +1114,31 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Chassis No"
+                              value={chassisNo}
+                              onChange={(e) => setChassisNo(e.target.value)}
                             />
                           </div>
                         </div>
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Seat Capacity</label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={seatCapacity}
+                              onChange={(e) => setSeatCapacity(e.target.value)}
+                            />
                           </div>
                         </div>
                       </div>
                       <div className="mb-3">
                         <label className="form-label">GPS Tracking ID</label>
-                        <input type="text" className="form-control" />
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={gpsTrackingId}
+                          onChange={(e) => setGpsTrackingId(e.target.value)}
+                        />
                       </div>
                       <hr />
                       <div className="mb-3">
@@ -980,14 +1149,20 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <CommonSelect
                           className="select"
                           options={driverName}
-                          defaultValue={undefined}
+                          value={driver}
+                          onChange={(opt) => setDriver(opt?.value || "")}
                         />
                       </div>
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Driver License</label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={driverLicense}
+                              onChange={(e) => setDriverLicense(e.target.value)}
+                            />
                           </div>
                         </div>
                         <div className="col-md-6">
@@ -995,14 +1170,26 @@ const TransportModal: React.FC<TransportModalProps> = ({
                             <label className="form-label">
                               Driver Contact No
                             </label>
-                            <input type="text" className="form-control" />
+                            <input
+                              type="text"
+                              className="form-control"
+                              value={driverContactNo}
+                              onChange={(e) =>
+                                setDriverContactNo(e.target.value)
+                              }
+                            />
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="mb-0">
                       <label className="form-label">Driver Address</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={driverAddress}
+                        onChange={(e) => setDriverAddress(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1011,16 +1198,17 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Add New Vehicle
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
@@ -1047,7 +1235,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleUpdateVehicle}>
                 <div className="modal-body" id="modal-datepicker2">
                   <div className="row">
                     <div className="col-md-12">
@@ -1059,7 +1247,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Vehicle No"
-                              defaultValue={8930}
+                              value={vehicleNo}
+                              onChange={(e) => setVehicleNo(e.target.value)}
                             />
                           </div>
                         </div>
@@ -1070,7 +1259,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Vehicle Model"
-                              defaultValue="Scania"
+                              value={vehicleModel}
+                              onChange={(e) => setVehicleModel(e.target.value)}
                             />
                           </div>
                         </div>
@@ -1085,8 +1275,16 @@ const TransportModal: React.FC<TransportModalProps> = ({
                                   type: "mask",
                                 }}
                                 getPopupContainer={getModalContainer2}
-                                defaultValue={defaultValue}
-                                placeholder="16 May 2024"
+                                defaultValue={
+                                  madeOfYear
+                                    ? dayjs(madeOfYear).format("DD-MM-YYYY")
+                                    : null
+                                }
+                                onChange={(date) =>
+                                  setMadeOfYear(
+                                    dayjs(date).format("YYYY-MM-DD")
+                                  )
+                                }
                               />
                               <span className="cal-icon">
                                 <i className="ti ti-calendar" />
@@ -1103,7 +1301,10 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Registration No"
-                              defaultValue="US1A3545"
+                              value={registrationNo}
+                              onChange={(e) =>
+                                setRegistrationNo(e.target.value)
+                              }
                             />
                           </div>
                         </div>
@@ -1113,7 +1314,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                             <input
                               type="text"
                               className="form-control"
-                              defaultValue={32546665456}
+                              value={chassisNo}
+                              onChange={(e) => setChassisNo(e.target.value)}
                             />
                           </div>
                         </div>
@@ -1124,6 +1326,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Seat Capacity"
+                              value={seatCapacity}
+                              onChange={(e) => setSeatCapacity(e.target.value)}
                             />
                           </div>
                         </div>
@@ -1134,7 +1338,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                           type="text"
                           className="form-control"
                           placeholder="Enter GPS Tracking ID"
-                          defaultValue="GPS7899456689"
+                          value={gpsTrackingId}
+                          onChange={(e) => setGpsTrackingId(e.target.value)}
                         />
                       </div>
                       <hr />
@@ -1146,7 +1351,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <CommonSelect
                           className="select"
                           options={driverName}
-                          // defaultValue={driverName[1]}
+                          value={driver}
+                          onChange={(opt) => setDriver(opt?.value || "")}
                         />
                       </div>
                       <div className="row">
@@ -1157,7 +1363,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Driver License"
-                              defaultValue="LC7899456689"
+                              value={driverLicense}
+                              onChange={(e) => setDriverLicense(e.target.value)}
                             />
                           </div>
                         </div>
@@ -1170,7 +1377,10 @@ const TransportModal: React.FC<TransportModalProps> = ({
                               type="text"
                               className="form-control"
                               placeholder="Enter Driver Contact No"
-                              defaultValue="+1 64044 74890"
+                              value={driverContactNo}
+                              onChange={(e) =>
+                                setDriverContactNo(e.target.value)
+                              }
                             />
                           </div>
                         </div>
@@ -1182,7 +1392,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         type="text"
                         className="form-control"
                         placeholder="Enter Driver Address"
-                        defaultValue="2233 Wood Street, Slidell, LA"
+                        value={driverAddress}
+                        onChange={(e) => setDriverAddress(e.target.value)}
                       />
                     </div>
                   </div>
@@ -1192,16 +1403,17 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={handleResetModalForm}
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Save Vehicle
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>

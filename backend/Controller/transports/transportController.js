@@ -57,7 +57,6 @@ export const getTransportRoutesById = async (req, res) => {
     const sql =
       "Select id,routeName,status,addedOn from transport_routes where id=?";
     const [rows] = await db.query(sql, [id]);
-    console.log("result: ", rows);
     if (!rows) {
       return res.status(200).json({
         message: "No Routes found.",
@@ -98,7 +97,6 @@ export const updateTransportRoutes = async (req, res) => {
     const sql = "UPDATE transport_routes SET routeName=?,status=? where id=?";
 
     const [rows] = await db.query(sql, [routeName, status, id]);
-    console.log("updated: ", rows);
     if (!rows) {
       return res.status(200).json({
         message: "No Routes Updated.",
@@ -300,6 +298,210 @@ export const deletePickupPoint = async (req, res) => {
     return res.status(200).json({
       message: "Pickup point deleted successfully",
       success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// vehicle modules api:
+export const addVehicle = async (req, res) => {
+  const {
+    vehicleNo,
+    vehicleModel,
+    madeOfYear,
+    registrationNo,
+    chassisNo,
+    seatCapacity,
+    gpsTrackingId,
+    driver,
+    driverLicense,
+    driverContactNo,
+    driverAddress,
+    status,
+  } = req.body;
+
+  try {
+    const sql =
+      "INSERT INTO vehicle_info (vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id, driver_license, driver_contact_no, driver_address, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const [rows] = await db.query(sql, [
+      vehicleNo,
+      vehicleModel,
+      madeOfYear,
+      registrationNo,
+      chassisNo,
+      seatCapacity,
+      gpsTrackingId,
+      driver,
+      driverLicense,
+      driverContactNo,
+      driverAddress,
+      status,
+    ]);
+    return res.status(201).json({
+      message: "Vehicle added successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+export const getAllVehicles = async (req, res) => {
+  try {
+    const sql =
+      "Select id, vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id, driver_license, driver_contact_no, driver_address, status from vehicle_info";
+    const [rows] = await db.query(sql);
+    if (rows.length < 0) {
+      return res.status(200).json({
+        message: "No Vehicles found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Vehicles fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getVehicleById = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(200).json({
+      message: "Vehicle Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql =
+      "Select id, vehicleNo, vehicleModel, madeOfYear, registrationNo, chassisNo, seatCapacity, status, addedOn from vehicle_info where id=?";
+    const [rows] = await db.query(sql, [id]);
+    if (!rows) {
+      return res.status(200).json({
+        message: "No Vehicle found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Vehicle fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+export const updateVehicle = async (req, res) => {
+  const {
+    vehicleNo,
+      vehicleModel,
+      madeOfYear,
+      registrationNo,
+      chassisNo,
+      seatCapacity,
+      gpsTrackingId,
+      driver,
+      driverLicense,
+      driverContactNo,
+      driverAddress,
+      status,
+  } = req.body;
+  const { id } = req.params;
+  if (!id) {
+    return res.status(200).json({
+      message: "Vehicle Id not passed.",
+      success: false,
+    });
+  }
+  if (!vehicleNo || !vehicleModel) {
+    return res.status(200).json({
+      message: "Not valid Data.",
+      success: false,
+    });
+  }
+  try {
+    const sql =
+      "UPDATE vehicle_info SET vehicle_no=?, vehicle_model=?, made_of_year=?, registration_no=?, chassis_no=?, seat_capacity=?,gps_tracking_id=?,driver_id=?,driver_license=?,driver_contact_no=?,driver_address=?, status=? where id=?";
+    const [rows] = await db.query(sql, [
+      vehicleNo,
+      vehicleModel,
+      madeOfYear,
+      registrationNo,
+      chassisNo,
+      seatCapacity,
+      gpsTrackingId,
+      driver,
+      driverLicense,
+      driverContactNo,
+      driverAddress,
+      status,
+      id,
+    ]);
+    if (!rows) {
+      return res.status(200).json({
+        message: "No Vehicle Updated.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(201).json({
+      message: "Vehicle updated successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const deleteVehicleById = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(200).json({
+      message: "Vehicle Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql = "Delete from vehicle_info where id=?";
+    const [rows] = await db.query(sql, [id]);
+    if (!rows) {
+      return res.status(200).json({
+        message: "No Vehicle found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Vehicle deleted successfully",
+      success: true,
+      result: rows,
     });
   } catch (error) {
     return res.status(500).json({

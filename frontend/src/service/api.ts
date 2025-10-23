@@ -330,3 +330,12 @@ export const updateTransportPickupPoints = (data: any, id: number) =>
   api.patch(`/transport/update-pickup-points/${id}`, data);
 export const deletePickupPointById = (id: number | null) =>
   api.delete(`/transport/delete-pickup-points/${id}`);
+
+export const addVehicle = (data: object) =>
+  api.post("/transport/add-vehicle", data);
+export const getAllVehicle = () =>
+  api.get("/transport/all-vehicles");
+export const updateVehicleById = (data:object,id:number) =>
+  api.patch(`/transport/update-vehicle/${id}`,data);
+export const deleteVehicleById = (id:number) =>
+  api.delete(`/transport/delete-vehicle/${id}`);

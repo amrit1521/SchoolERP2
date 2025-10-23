@@ -14,10 +14,7 @@ import {
   deletePickupPointById,
 } from "../../../service/api"; // Implement these API methods
 
-import {
-  PickupPoint2,
-  status as statusOptions,
-} from "../../../core/common/selectoption/selectoption";
+import { status as statusOptions } from "../../../core/common/selectoption/selectoption";
 
 interface PickupPoint {
   id: number;
@@ -33,6 +30,9 @@ const TransportPickupPoints = () => {
   const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
   const [filteredPickupPoints, setFilteredPickupPoints] = useState<
     PickupPoint[]
+  >([]);
+  const [pickupPointOption, setPickupPointOption] = useState<
+    { value: number; label: string }[]
   >([]);
   const [selectedPickupPoint, setSelectedPickupPoint] =
     useState<PickupPoint | null>(null);
@@ -52,6 +52,12 @@ const TransportPickupPoints = () => {
         console.log("data: ", data);
         setPickupPoints(data.result);
         setFilteredPickupPoints(data.result);
+        setPickupPointOption(
+          data.result.map((point: PickupPoint) => ({
+            value: point.id,
+            label: point.pickPointName,
+          }))
+        );
       } else {
         toast.error(data.message || "Failed to fetch pickup points");
       }
@@ -82,12 +88,13 @@ const TransportPickupPoints = () => {
 
   const handleApplyFilter = () => {
     let filtered = pickupPoints;
-
     if (filters.pickupPoint !== null) {
       filtered = filtered.filter((e) => e.id === filters.pickupPoint);
     }
     if (filters.status !== null) {
-      filtered = filtered.filter((e) => e.status === filters.status);
+      filtered = filtered.filter(
+        (e) => parseInt(e.status) === parseInt(filters.status || "0")
+      );
     }
 
     setFilteredPickupPoints(filtered);
@@ -248,7 +255,7 @@ const TransportPickupPoints = () => {
                         <div className="mb-3">
                           <label className="form-label">Pickup Point</label>
                           <CommonSelect
-                            options={PickupPoint2}
+                            options={pickupPointOption}
                             value={filters.pickupPoint}
                             onChange={(option) =>
                               handleFilterChange(
