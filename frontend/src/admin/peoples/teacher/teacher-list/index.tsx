@@ -430,7 +430,7 @@ const TeacherList = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TeacherModal />
+       <TeacherModal onAdd={()=>{}}  teacherId={""}/>
     </>
   );
 };

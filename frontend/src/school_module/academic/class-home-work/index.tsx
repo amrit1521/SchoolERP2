@@ -95,7 +95,7 @@ const ClassHomeWork = () => {
 
   // add homework
   const [formData, setFormData] = useState<HomeworkFormData>({
-    className: "",
+    className: 0,
     section: 0,
     subject: 0,
     homeworkDate: "",
@@ -151,7 +151,7 @@ const ClassHomeWork = () => {
         await fethcHomeWorks()
         handleModalPopUp('add_home_work')
         setFormData({
-          className: "",
+          className: 0,
           // i write 0 for only error fix to deploy on render
           section: 0,
           subject: 0,
