@@ -4,6 +4,8 @@ import db from "./config/db.js";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import studentRoutes from "./routes/student.routes.js";
+import parentRoutes from "./routes/parent.routes.js";
+import globalRoutes from "./routes/global.routes.js";
 // import parentRoutes from "./routes/parent.routes.js";
 // import homeworkRoutes from "./routes/homework.routes.js";
 // import examRoutes from "./routes/exam.routes.js";
@@ -21,7 +23,11 @@ db.getConnection()
 
 
 app.use("/api/auth", authRoutes);
+app.use("/api/global", globalRoutes);
+
 app.use("/api/student", studentRoutes);
+app.use("/api/parent", parentRoutes);
+
 // app.use("/api/parent", parentRoutes);
 // app.use("/api/homework", homeworkRoutes);
 // app.use("/api/exam", examRoutes);

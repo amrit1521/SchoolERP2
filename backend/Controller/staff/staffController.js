@@ -49,7 +49,7 @@ exports.addStaff = async (req, res) => {
         data.primarycont,
         data.email,
         hashPassword,
-        4, // staff type
+        4,
         data.status || '1',
         "staff",
         new Date(),

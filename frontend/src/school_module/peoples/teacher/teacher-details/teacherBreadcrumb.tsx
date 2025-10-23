@@ -3,7 +3,7 @@ import { all_routes } from "../../../router/all_routes";
 import type React from "react";
 
 type Props = {
-  teacher_id: string;
+  teacher_id?: string;
 };
 
 const TeacherBreadcrumb: React.FC<Props> = ({ teacher_id }) => {

@@ -123,7 +123,7 @@ const ScheduleClasses = () => {
 
     try {
       const { data } = await speClassSchedule(id)
-      console.log(data)
+      // console.log(data)
       if (data.success) {
         setFormData({
           className: data.data.className,
@@ -193,7 +193,7 @@ const ScheduleClasses = () => {
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+    // console.log(id)
     try {
 
       const { data } = await deleteClassSchedule(id)

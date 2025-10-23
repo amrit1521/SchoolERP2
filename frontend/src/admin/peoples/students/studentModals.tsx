@@ -318,17 +318,13 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   // }, [id])
   // sir ke kehne per comment kiya h maine ye
 
-  const [feesGroupOptions, setFeesGroupOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
-  const [feesTypeOptions, setFeesTypeOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
-  const [leaveOptions, setLeaveOptions] = useState<
-    { value: number; label: string }[]
-  >([]);
-  const [typeResult, setTypeResult] = useState<any[]>([]);
-  const [groupResult, setGroupResult] = useState<any[]>([]);
+
+  const [feesGroupOptions, setFeesGroupOptions] = useState<{ value: number; label: string }[]>([]);
+  const [feesTypeOptions, setFeesTypeOptions] = useState<{ value: number; label: string }[]>([]);
+  const [leaveOptions, setLeaveOptions] = useState<{ value: number; label: string }[]>([]);
+  // const [typeResult,setTypeResult] = useState<any[]>([]);
+  // const [groupResult,setGroupResult] = useState<any[]>([]);
+
 
   const fetchFeesOptions = async () => {
     try {
@@ -337,23 +333,13 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
         allFeesType(),
       ]);
       if (groupRes.data.success) {
-        console.log(groupRes, typeRes);
-        setGroupResult(groupRes.data.feesGroups);
-        setFeesGroupOptions(
-          groupRes.data.feesGroups.map((g: any) => ({
-            value: g.id,
-            label: g.feesGroup,
-          }))
-        );
+        // console.log(groupRes,typeRes);
+        // setGroupResult(groupRes.data.feesGroups);
+        setFeesGroupOptions(groupRes.data.feesGroups.map((g: any) => ({ value: g.id, label: g.feesGroup })));
       }
       if (typeRes.data.success) {
-        setTypeResult(typeRes.data.feesTypes);
-        setFeesTypeOptions(
-          typeRes.data.feesTypes.map((t: any) => ({
-            value: t.id,
-            label: t.name,
-          }))
-        );
+        // setTypeResult(typeRes.data.feesTypes);
+        setFeesTypeOptions(typeRes.data.feesTypes.map((t: any) => ({ value: t.id, label: t.name })));
       }
     } catch (error: any) {
       console.error(error);
@@ -362,19 +348,12 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       );
     }
   };
-  useEffect(() => {
-    setFeesTypeOptions(
-      typeResult
-        .filter(
-          (feetype) =>
-            feetype.feesGroup ===
-            groupResult.filter(
-              (group: any) => group.id === formData.feesGroup
-            )[0].feesGroup
-        )
-        .map((t: any) => ({ value: t.id, label: t.name }))
-    );
-  }, [formData.feesGroup]);
+  // useEffect(()=>{
+  //   setFeesTypeOptions(typeResult.filter(feetype => feetype.feesGroup === groupResult.filter((group:any)=>group.id === formData.feesGroup)[0].feesGroup).map((t: any) => ({ value: t.id, label: t.name })));
+  // },[formData.feesGroup]);
+
+  //   console.log(feesTypeOptions)
+
 
   const fetchLeaveTypes = async () => {
     try {

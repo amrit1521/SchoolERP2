@@ -10,8 +10,7 @@ import {
   PickupPoint,
   VehicleNumber,
   academicYear,
-  allClass,
-  allSection,
+ 
   bloodGroup,
   cast,
   gender,
@@ -28,8 +27,9 @@ import {
 import CommonSelect from "../../../../core/common/commonSelect";
 import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
-import { addStundent, deleteFile, uploadStudentFile } from '../../../../service/api'
+import { addStundent, deleteFile, getAllSectionForAClass, uploadStudentFile } from '../../../../service/api'
 import { toast } from 'react-toastify'
+import { allRealClasses } from "../../../../service/classApi";
 
 
 export interface StudentData {
@@ -40,8 +40,8 @@ export interface StudentData {
   status: string;
   firstname: string;
   lastname: string;
-  class: string;
-  section: string;
+  class: number | null;
+  section: number | null;
   gender: string;
   dob: string;
   bloodgp: string;
@@ -177,8 +177,8 @@ const AddStudent = () => {
     status: '',
     firstname: '',
     lastname: '',
-    class: '',
-    section: '',
+    class: null,
+    section: null,
     gender: '',
     dob: '',
     bloodgp: '',
@@ -462,10 +462,10 @@ const AddStudent = () => {
 
     setErrors(newErrors);
 
-    Object.entries(newErrors).forEach(([_, errorMsg]) => {
-      toast.error(`${errorMsg}`);
+    // Object.entries(newErrors).forEach(([_, errorMsg]) => {
+    //   toast.error(`${errorMsg}`);
 
-    });
+    // });
 
 
     return Object.keys(newErrors).length === 0;
@@ -527,8 +527,8 @@ const AddStudent = () => {
           status: '',
           firstname: '',
           lastname: '',
-          class: '',
-          section: '',
+          class: null,
+          section: null,
           gender: '',
           dob: '',
           bloodgp: '',
@@ -609,8 +609,8 @@ const AddStudent = () => {
       status: '',
       firstname: '',
       lastname: '',
-      class: '',
-      section: '',
+      class: null,
+      section: null,
       gender: '',
       dob: '',
       bloodgp: '',
@@ -675,6 +675,54 @@ const AddStudent = () => {
     navigate(-1)
   }
 
+  const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
+  const [sectionOptions , setSectionOptions] =  useState<{ value: number, label: string }[]>([])
+
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+
+    }
+  };
+  const fetchSection = async () => {
+    try {
+      if (studentData.class) {
+        const { data } = await getAllSectionForAClass(Number(studentData.class));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions( data.data.map((e: any) => ({ value: e.id, label: e.section_name})) );
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+
+  useEffect(() => {
+    fetchClass()
+  }, [])
+
+  useEffect(() => {
+    if (studentData.class) {
+         fetchSection()
+    }
+  }, [studentData.class])
 
 
 
@@ -891,7 +939,7 @@ const AddStudent = () => {
                           <label className="form-label">Class</label><span className="text-danger"> *</span>
                           <CommonSelect
                             className={`select `}
-                            options={allClass}
+                            options={classOptions}
                             value={studentData.class}
                             onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                           />
@@ -906,8 +954,8 @@ const AddStudent = () => {
                         <div className="mb-3">
                           <label className="form-label">Section</label><span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${errors.section ? "is-invalid" : ""}`}
-                            options={allSection}
+                            className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
+                            options={sectionOptions}
                             value={studentData.section}
                             onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                           />

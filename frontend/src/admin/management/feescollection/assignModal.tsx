@@ -134,7 +134,7 @@ const AssignModal = ({ addModal, setAddModal, editModal, setEditModal }: any) =>
 
   const handleApplyClick = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(filterData)
+  
     try {
       const { data } = await filterStudents(filterData)
       console.log(data)

@@ -486,7 +486,7 @@ const FeesModal: React.FC<Props> = ({ onAction, editId, deleteId, type }) => {
     setLoading(true)
     try {
       const { data } = await speFeesMaster(id)
-      console.log(data)
+    
       if (data.success) {
         setFeesMasterForm({
           feesGroup: data.data.feesGroup,

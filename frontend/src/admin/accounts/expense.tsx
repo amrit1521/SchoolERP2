@@ -13,10 +13,33 @@ import {
 import type { TableData } from "../../core/data/interface";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { useEffect} from "react";
+import { expCatForOpt } from "../../service/accounts";
 
 const Expense = () => {
   const data = expense_data;
   const routes = all_routes;
+
+  // const [expcatopt , setexpopt] = useState<{value:number , label:string}[]>([])
+  
+  const fetchExpCatForOpt = async()=>{
+
+    try {
+
+      const {data} = await expCatForOpt()
+      if(data.success){
+        // setexpopt()
+      }
+      
+    } catch (error) {
+       console.log(error)
+    }
+  }
+
+  useEffect(()=>{
+         fetchExpCatForOpt()
+  } , [])
+
   const columns = [
     {
       title: "ID",

@@ -1,7 +1,7 @@
 
 
 import Table from "../../../../core/common/dataTable/index";
-import { staffpayroll } from "../../../../core/data/json/staff-payroll";
+// import { staffpayroll } from "../../../../core/data/json/staff-payroll";
 import type { TableData } from "../../../../core/data/interface";
 import { Link, useParams } from "react-router-dom";
 import { all_routes } from "../../../router/all_routes";
@@ -9,56 +9,249 @@ import React, { useEffect, useState } from "react";
 import { speStaffDetails } from "../../../../service/staff";
 import { Imageurl } from "../../../../service/api";
 import Skeleton from "react-loading-skeleton";
-import dayjs from 'dayjs'
+import dayjs, { Dayjs } from 'dayjs'
+import { DatePicker } from "antd";
+import { toast } from "react-toastify";
+import { applySalary, salaryDeatilsTeacherStaff, speSalaryDetails } from "../../../../service/salaryPayment";
+import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import { Spinner } from "../../../../spinner";
+
+// satff salary details
+export interface PaidSalaryRecord {
+  id: number;
+  salary_month: string;
+  payment_method: string;
+  paid_date: string;
+  net_salary: number;
+}
+
+export interface SpeSalary {
+  id: number | null;
+  employee_id: number | null;
+  name: string;
+  salary_month: string;
+  status: "0" | "1";
+  payment_method: string;
+  paid_date: string;
+  apply_date: string;
+  notes: string;
+  net_salary: string;
+  status_label: "Generated" | "Paid";
+  role_name: string;
+}
+
+
+export interface Total {
+  total_gross_salary: string;
+  total_net_salary: string;
+  total_deductions: string;
+  total_earnings: string;
+}
+
 
 const StaffPayRoll = () => {
   const routes = all_routes;
-  const data = staffpayroll;
+  // const data = staffpayroll;
 
   const { staffid } = useParams()
 
-  const [staffData, setStaffData] = useState<any>({})
-  const [loading, setLoading] = useState<boolean>(false)
 
-  const fetchStaff = async (staffid: number) => {
-    setLoading(true)
-    await new Promise((res) => setTimeout(res, 400))
+  const [staffData, setStaffData] = useState<any>({});
+  const [salaryData, setSalaryData] = useState<PaidSalaryRecord[]>([]);
+  const [totals, setTotals] = useState<Total>({
+    total_gross_salary: "",
+    total_net_salary: "",
+    total_deductions: "",
+    total_earnings: "",
+  })
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchStaffAndSalary = async (staffid: number) => {
+    setLoading(true);
+
+    try {
+      // Optional delay if needed
+      await new Promise((res) => setTimeout(res, 400));
+
+
+      const [staffRes, salaryRes] = await Promise.all([
+        speStaffDetails(staffid),
+        salaryDeatilsTeacherStaff(staffid),
+      ]);
+
+
+      // Update staff data
+      if (staffRes.data.success) {
+        setStaffData(staffRes.data.data);
+
+      }
+
+      // Update salary data
+      if (salaryRes.data.success) {
+        setSalaryData(salaryRes.data.data);
+        setTotals(salaryRes.data.totals)
+      }
+
+    } catch (error) {
+      console.error("Error fetching staff or salary:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tableData = salaryData.map((item) => (
+    {
+      id: item.id,
+      salaryFor: dayjs(item.salary_month).format('MMM YYYY'),
+      date: dayjs(item.paid_date).format('DD MMM YYYY'),
+      paymentMethod: item.payment_method,
+      netSalary: item.net_salary
+
+
+    }
+  ))
+  useEffect(() => {
+    if (staffid) {
+      fetchStaffAndSalary(Number(staffid));
+    }
+  }, [staffid]);
+
+
+  // apply salary 
+  interface ApplySalaryForm {
+    salary_month: string;
+    apply_date: string | null;
+    notes: string;
+    type: string;
+  }
+
+  interface FormErrors {
+    salary_month?: string;
+    apply_date?: string;
+    notes?: string;
+  }
+
+
+  const [formData, setFormData] = useState<ApplySalaryForm>({
+    salary_month: "",
+    apply_date: null,
+    notes: "",
+    type: "staff"
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+
+  const disabledPastDate = (current: Dayjs) => {
+    return current && current < dayjs().startOf("day");
+  };
+
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (
+    name: keyof ApplySalaryForm,
+    dateString: string
+  ) => {
+    setFormData((prev) => ({ ...prev, [name]: dateString }));
+  };
+
+  const handleMonthChange = (name: keyof ApplySalaryForm,
+    dateString: string) => {
+    setFormData((prev) => ({ ...prev, [name]: dateString }));
+  };
+
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.salary_month) newErrors.salary_month = "Salary month is required.";
+    if (!formData.apply_date) newErrors.apply_date = "Apply date is required.";
+    if (formData.notes.length > 200) newErrors.notes = "Notes cannot exceed 200 characters.";
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
     try {
 
-      const { data } = await speStaffDetails(staffid)
-      // console.log(data)
+      const { data } = await applySalary(formData, Number(staffid))
       if (data.success) {
-        setStaffData(data.data)
+        toast.success(data.message)
+        setFormData({ salary_month: "", apply_date: null, notes: "", type: "staff" });
+        handleModalPopUp('apply_salary')
+      }
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+
+
+  };
+
+  const cancelApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+
+    e.preventDefault()
+    setFormData({ salary_month: "", apply_date: null, notes: "", type: "staff" });
+  }
+
+
+  // view payslip 
+  // pay salary functions
+  const [spePayroll, setSpePayroll] = useState<SpeSalary>({
+    id: null,
+    employee_id: null,
+    name: "",
+    salary_month: "",
+    status: "0",
+    payment_method: "",
+    paid_date: "",
+    apply_date: "",
+    notes: "",
+    status_label: "Generated",
+    role_name: "",
+    net_salary: "",
+  })
+  const [loading2, setLoading2] = useState<boolean>(false)
+
+  const payrollDetails = async (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
+    e.preventDefault()
+    setLoading2(true)
+    try {
+
+      const { data } = await speSalaryDetails(id)
+      if (data.success) {
+        setSpePayroll(data.data)
       }
 
     } catch (error) {
       console.log(error)
     } finally {
-      setLoading(false)
+      setLoading2(false)
     }
-
   }
 
-  useEffect(() => {
-    if (staffid) {
-      fetchStaff(Number(staffid))
-    }
-
-  }, [staffid])
- 
 
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: (record: any) => (
+      render: (id: number) => (
         <>
           <Link to="#" className="link-primary">
-            {record.id}
+            {id}
           </Link>
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
 
     {
@@ -75,6 +268,9 @@ const StaffPayRoll = () => {
     {
       title: "Payment Method",
       dataIndex: "paymentMethod",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.paymentMethod.length - b.paymentMethod.length,
     },
@@ -87,16 +283,24 @@ const StaffPayRoll = () => {
     {
       title: "",
       dataIndex: "view",
-      render: (text: string) => (
+      render: (_: any, record: any) => (
         <>
-          <Link to="#" className="btn btn-light add-fee">
-            {text}
-          </Link>
+          <button
+            onClick={(e) => payrollDetails(e, record.id)}
+            data-bs-target="#view_payslip"
+            data-bs-toggle="modal"
+            className="btn btn-primary d-inline-flex align-items-center "
+          >
+
+            View Payslip
+          </button>
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.view.length - b.view.length,
+      sorter: false,
     },
   ];
+
+
   return (
     <div>
       <>
@@ -147,7 +351,7 @@ const StaffPayRoll = () => {
                       <div className="card-header">
                         <div className="d-flex align-items-center row-gap-3">
                           <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                            <Skeleton  width={80} height={80} />
+                            <Skeleton width={80} height={80} />
                           </div>
                           <div>
                             <span className="badge badge-soft-success d-inline-flex align-items-center mb-1">
@@ -304,13 +508,7 @@ const StaffPayRoll = () => {
                       </div>
                     </div>)
                 }
-
-
-
-
               </div>
-
-
               <div className="col-xxl-9 col-lg-8">
                 <div className="row">
                   <div className="col-md-12">
@@ -346,70 +544,111 @@ const StaffPayRoll = () => {
                   </div>
                 </div>
                 <div className="students-leaves-tab">
-                  <div className="row">
-                    <div className="col-md-6 col-xxl-3 d-flex">
-                      <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
-                        <div className="ms-2">
-                          <p className="mb-1">Total Net Salary</p>
-                          <h5>5,55,410</h5>
+
+
+                  {loading ? (
+                    // 🔹 Skeleton Loader
+                    <div className="row">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div className="col-md-6 col-xxl-3 d-flex" key={i}>
+                          <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
+                            <div className="ms-2 w-100">
+                              <div
+                                className="skeleton-line mb-2"
+                                style={{ width: "60%", height: "16px" }}
+                              ></div>
+                              <div
+                                className="skeleton-line"
+                                style={{ width: "40%", height: "22px" }}
+                              ></div>
+                            </div>
+                            <div
+                              className="skeleton-circle me-2"
+                              style={{
+                                width: "50px",
+                                height: "50px",
+                                borderRadius: "50%",
+                              }}
+                            ></div>
+                          </div>
                         </div>
-                        <span className="avatar avatar-lg bg-secondary-transparent rounded me-2 flex-shrink-0 text-secondary">
-                          <i className="ti ti-user-dollar fs-24" />
-                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    // 🔹 Actual Data
+                    <div className="row">
+                      <div className="col-md-6 col-xxl-3 d-flex">
+                        <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
+                          <div className="ms-2">
+                            <p className="mb-1">Total Net Salary</p>
+                            <h5>{totals.total_net_salary}</h5>
+                          </div>
+                          <span className="avatar avatar-lg bg-secondary-transparent rounded me-2 flex-shrink-0 text-secondary">
+                            <i className="ti ti-user-dollar fs-24" />
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="col-md-6 col-xxl-3 d-flex">
+                        <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
+                          <div className="ms-2">
+                            <p className="mb-1">Total Gross Salary</p>
+                            <h5>{totals.total_gross_salary}</h5>
+                          </div>
+                          <span className="avatar avatar-lg bg-warning-transparent rounded me-2 flex-shrink-0 text-warning">
+                            <i className="ti ti-map-dollar fs-24" />
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="col-md-6 col-xxl-3 d-flex">
+                        <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
+                          <div className="ms-2">
+                            <p className="mb-1">Total Earning</p>
+                            <h5>{totals.total_earnings}</h5>
+                          </div>
+                          <span className="avatar avatar-lg bg-success-transparent rounded me-2 flex-shrink-0 text-success">
+                            <i className="ti ti-arrow-big-up-lines fs-24" />
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="col-md-6 col-xxl-3 d-flex">
+                        <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
+                          <div className="ms-2">
+                            <p className="mb-1">Total Deduction</p>
+                            <h5>{totals.total_deductions}</h5>
+                          </div>
+                          <span className="avatar avatar-lg bg-danger-transparent rounded me-2 flex-shrink-0 text-danger">
+                            <i className="ti ti-arrow-big-down-lines fs-24" />
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-md-6 col-xxl-3 d-flex">
-                      <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
-                        <div className="ms-2">
-                          <p className="mb-1">Total Gross Salary</p>
-                          <h5>5,58,380</h5>
-                        </div>
-                        <span className="avatar avatar-lg bg-warning-transparent rounded me-2 flex-shrink-0 text-warning">
-                          <i className="ti ti-map-dollar fs-24" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-md-6 col-xxl-3 d-flex">
-                      <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
-                        <div className="ms-2">
-                          <p className="mb-1">Total Earning</p>
-                          <h5>2,500</h5>
-                        </div>
-                        <span className="avatar avatar-lg bg-success-transparent rounded me-2 flex-shrink-0 text-success">
-                          <i className="ti ti-arrow-big-up-lines fs-24" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-md-6 col-xxl-3 d-flex">
-                      <div className="d-flex align-items-center justify-content-between rounded border p-3 mb-3 flex-fill">
-                        <div className="ms-2">
-                          <p className="mb-1">Total Deduction</p>
-                          <h5>2,500</h5>
-                        </div>
-                        <span className="avatar avatar-lg bg-danger-transparent rounded me-2 flex-shrink-0 text-danger">
-                          <i className="ti ti-arrow-big-down-lines fs-24" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
+
                   <div className="card">
                     <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
                       <h4 className="mb-3">Payroll</h4>
                       <Link
                         to="#"
+                        data-bs-target="#apply_salary"
+                        data-bs-toggle="modal"
                         className="btn btn-primary d-inline-flex align-items-center mb-3"
                       >
                         <i className="ti ti-calendar-event me-2" />
-                        Apply Payroll
+                        Apply Salary
                       </Link>
                     </div>
                     <div className="card-body p-0 py-3">
                       {/* Payroll List */}
-                      <Table
-                        columns={columns}
-                        dataSource={data}
-                        Selection={true}
-                      />
+                      {
+                        loading ? <Spinner /> : (<Table
+                          columns={columns}
+                          dataSource={tableData}
+                          Selection={true}
+                        />)
+                      }
                       {/* /Payroll List */}
                     </div>
                   </div>
@@ -419,6 +658,150 @@ const StaffPayRoll = () => {
           </div>
         </div>
         {/* /Page Wrapper */}
+
+        {/* apply salary */}
+        <div className="modal fade" id="apply_salary" tabIndex={-1}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Apply Salary</h4>
+                <button type="button" onClick={(e) => cancelApply(e)} className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12 mb-3">
+                      <label className="form-label">Salary Month</label>
+                      <DatePicker
+                        picker="month"
+                        className="form-control datetimepicker"
+                        format="MMM YYYY"
+                        placeholder="Select Month"
+                        value={formData.salary_month ? dayjs(formData.salary_month, "DD MMM YYYY") : null}
+                        onChange={(date) => handleMonthChange("salary_month", date ? dayjs(date).format("DD MMM YYYY") : "")}
+                      />
+                      {errors.salary_month && <small className="text-danger">{errors.salary_month}</small>}
+                    </div>
+
+                    <div className="col-md-12 mb-3">
+                      <label className="form-label">Apply Date</label>
+                      <DatePicker
+                        disabledDate={disabledPastDate}
+                        className="form-control datetimepicker"
+                        format="DD MMM YYYY"
+                        value={formData.apply_date ? dayjs(formData.apply_date, "DD MMM YYYY") : null}
+                        placeholder="Select Date"
+                        onChange={(date) => handleDateChange("apply_date", date ? dayjs(date).format("DD MMM YYYY") : "")}
+                      />
+                      {errors.apply_date && (<div className="text-danger" style={{ fontSize: "11px" }}>{errors.apply_date}</div>)}
+
+                    </div>
+
+                    {/* Notes */}
+                    <div className="col-md-12 mb-3">
+                      <label className="form-label">Notes</label>
+                      <textarea
+                        name="notes"
+                        className="form-control"
+                        rows={2}
+                        value={formData.notes}
+                        onChange={handleChange}
+                      >
+
+                      </textarea>
+                      {errors.notes && <small className="text-danger">{errors.notes}</small>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" onClick={(e) => cancelApply(e)} className="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" className="btn btn-primary">Apply Salary</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {/* apply salary */}
+
+        {/* Payslip Modal */}
+        <div className="modal fade" id="view_payslip">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content shadow-lg border-0 rounded-4">
+
+              {/* Header */}
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Payslip</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                />
+              </div>
+
+              {loading2 ? (
+                <Spinner />
+              ) : (
+                <form>
+                  <div className="modal-body pt-2">
+
+                    {/* Employee Info Card */}
+                    <div className="p-4 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: '#ffffff' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-secondary">Employee Information</h6>
+                        <span className={`badge ${spePayroll.status === '1' ? 'badge-soft-success' : 'badge-soft-danger'}`}>
+                          <i className="ti ti-circle-filled me-2" />
+                          {spePayroll.status_label}
+                        </span>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied By</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">ID</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.employee_id}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Role</small>
+                          <p className="mb-0 text-capitalize fw-semibold">{spePayroll.role_name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">For Month</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.salary_month).format('MMMM')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied On</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.apply_date).format('DD MMM YYYY')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Paid On</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.paid_date).format('DD MMM YYYY')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Paid Amount</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.net_salary}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Payment Method</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.payment_method}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* /Payslip Modal */}
+
+
       </>
     </div>
   );

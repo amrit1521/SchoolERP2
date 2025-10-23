@@ -13,7 +13,7 @@ import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 // import { hostelListData } from "../../../core/data/json/hostelListData";
 import { toast } from "react-toastify";
-import { addHostel, allHostel, deleteHostel } from "../../../service/hostel";
+import { addHostel, allHostel, deleteHostel, editHostel, speHostel } from "../../../service/hostel";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { Spinner } from "../../../spinner";
 
@@ -98,7 +98,8 @@ const HostelList = () => {
     address: "",
     description: "",
   });
-  
+  const [editId, setEditId] = useState<number | null>(null)
+
 
 
   const handleChange = (
@@ -115,6 +116,26 @@ const HostelList = () => {
     setErrors((prev) => ({ ...prev, hostelType: "" }));
   };
 
+
+  const fetchHostelById = async (id: number) => {
+    if (!id) return
+    try {
+      const { data } = await speHostel(id)
+      if (data.success) {
+        const res = data.data
+        setFormData({
+          hostelName: res.hostelName,
+          hostelType: res.hostelType,
+          intake: res.intake,
+          address: res.address,
+          description: res.description,
+        })
+        setEditId(id)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: HostelFormErrors = {
@@ -158,13 +179,26 @@ const HostelList = () => {
 
     try {
 
-      const { data } = await addHostel(formData)
-      if (data.success) {
-        toast.success(data.message)
-        setFormData(initialFormData)
-        fetchHostels()
-        handleModalPopUp('add_hostel')
+      if (editId) {
+        const { data } = await editHostel(formData, editId)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('edit_hostel')
+          setEditId(null)
+        }
+
+      } else {
+        const { data } = await addHostel(formData)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('add_hostel')
+
+        }
       }
+
+      setFormData(initialFormData)
+      fetchHostels()
+
 
     } catch (error: any) {
       console.log(error)
@@ -276,15 +310,15 @@ const HostelList = () => {
               </Link>
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
+                    onClick={() => fetchHostelById(record.id)}
                     data-bs-toggle="modal"
                     data-bs-target="#edit_hostel"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button
@@ -708,7 +742,7 @@ const HostelList = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Add Hostel
+                  Edit Hostel
                 </button>
               </div>
             </form>

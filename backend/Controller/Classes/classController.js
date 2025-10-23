@@ -11,7 +11,7 @@ exports.addClass = async (req, res) => {
         .json({ message: "All fields are required!", success: false });
     }
 
-    const sql = `INSERT INTO classes (className, section, noOfStudents, noOfSubjects, status) VALUES (?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO class_info (class_id, section_id, noOfStudents, noOfSubjects, status) VALUES (?, ?, ?, ?, ?)`;
     await db.query(sql, [
       className,
       section,
@@ -34,7 +34,18 @@ exports.addClass = async (req, res) => {
 
 exports.getClasses = async (req, res) => {
   try {
-    const sql = `SELECT * FROM classes `;
+    const sql = `SELECT 
+    ci.id,
+    ci.noOfStudents,
+    ci.noOfSubjects,
+    ci.status,
+    c.class_name AS className,
+    s.section_name AS section
+    FROM class_info ci
+    LEFT JOIN classes c ON ci.class_id = c.id
+    LEFT JOIN sections s ON ci.section_id = s.id
+    ORDER BY ci.id ASC
+    `;
 
 
 
@@ -56,7 +67,7 @@ exports.getClasses = async (req, res) => {
 exports.getClassById = async (req, res) => {
   const { id } = req.params;
   try {
-    const sql = `SELECT * FROM classes WHERE id=?
+    const sql = `SELECT id , class_id AS className , section_id AS section , noOfStudents , noOfSubjects , status FROM class_info WHERE id=?
     `;
 
     const [rows] = await db.query(sql, [id]);
@@ -84,7 +95,7 @@ exports.updateClass = async (req, res) => {
   console.log(id, req.body)
 
   try {
-    const sql = `UPDATE classes SET className=?, section=?, noOfStudents=?, noOfSubjects=?, status=? WHERE id=?`;
+    const sql = `UPDATE class_info SET class_id=?, section_id=?, noOfStudents=?, noOfSubjects=?, status=? WHERE id=?`;
     const [result] = await db.query(sql, [
       className,
       section,
@@ -116,7 +127,7 @@ exports.deleteClass = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const sql = `DELETE FROM classes WHERE id=?`;
+    const sql = `DELETE FROM class_info WHERE id=?`;
     const [result] = await db.query(sql, [id]);
 
     if (result.affectedRows === 0) {
@@ -234,7 +245,7 @@ exports.deleteClassRoom = async (req, res) => {
   try {
     const { id } = req.params;
 
-    
+
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({
         success: false,
@@ -244,7 +255,7 @@ exports.deleteClassRoom = async (req, res) => {
 
 
     const [rows] = await db.query("SELECT * FROM class_room WHERE id = ?", [id]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -321,7 +332,7 @@ exports.addClassRoutine = async (req, res) => {
 };
 
 
-// ✅ READ ALL with JOINs
+
 exports.getAllClassRoutines = async (req, res) => {
   try {
 
@@ -336,11 +347,15 @@ exports.getAllClassRoutines = async (req, res) => {
         crm.room_no,
         t.subject,
         u.firstname,
-        u.lastname
+        u.lastname,
+        UPPER(c.class_name) AS className,
+       UPPER( se.section_name) AS section
       FROM class_routine cr
       LEFT JOIN class_room crm ON cr.classRoom = crm.id
       LEFT JOIN teachers t ON cr.teacher = t.teacher_id
       LEFT JOIN users u ON t.user_id = u.id
+      LEFT JOIN classes c ON cr.className = c.id
+      LEFT JOIN sections se ON cr.section = se.id
       ORDER BY cr.day, cr.startTime
     `;
 
@@ -456,7 +471,7 @@ exports.addSchedule = async (req, res) => {
     const conflict = existing.some((s) => {
       const sStart = toMinutes(s.startTime);
       const sEnd = toMinutes(s.endTime);
-      return newStart < sEnd && newEnd > sStart; 
+      return newStart < sEnd && newEnd > sStart;
     });
 
     if (conflict) {
@@ -568,6 +583,20 @@ exports.deleteSchedule = async (req, res) => {
   }
 };
 
+
+
+// class for option master
+exports.getAllClassForOption = async (req, res) => {
+  try {
+    const sql = `SELECT id , class_name FROM classes`
+    const [rows] = await db.query(sql)
+
+    return res.status(200).json({ message: "All classes fetched successfully !", success: true, data: rows })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
+}
 
 
 

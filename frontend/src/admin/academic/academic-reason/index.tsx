@@ -103,7 +103,7 @@ const AcademicReason = () => {
 
     try {
       const { data } = await speReason(id)
-      console.log(data)
+      // console.log(data) 
       if (data.success) {
         setReasonForm({
           reasonName: data.data.reasonName,
