@@ -144,10 +144,11 @@ const [userRows] = await db.query(
 
  
     const [home_work] = await db.query(
-      `SELECT hw.id,c.class_name,s.section_name,hw.subject,hw.teacherId,hw.homeworkDate,hw.submissionDate,hw.attachements,hw.description,cs.name as subject FROM home_work as hw
+      `SELECT hw.id,c.class_name,s.section_name,hw.subject,hw.teacherId,hw.homeworkDate,hw.submissionDate,hw.attachements,hw.description,cs.name as subject,u.firstname,u.lastname FROM home_work as hw
         LEFT JOIN classes AS c ON c.id = hw.class_id
        LEFT JOIN sections AS s ON s.id = hw.section_id
        LEFT JOIN class_subject AS cs On cs.id = hw.subject
+          LEFT JOIN users AS u ON u.id = hw.teacherId
        WHERE hw.class_id = ? AND hw.section_id = ?`,
       [studentClass, section]
     );
