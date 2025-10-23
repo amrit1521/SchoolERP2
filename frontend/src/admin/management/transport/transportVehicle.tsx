@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
@@ -17,30 +17,134 @@ import TransportModal from "./transportModal";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { transportVehicles } from "../../../core/data/json/transport_vehicle";
 import { Link } from "react-router-dom";
+import { deleteVehicleById, getAllVehicle } from "../../../service/api";
+import { toast } from "react-toastify";
+
+interface TransportVehicleProps {
+  id: number;
+  vehicleNo: string;
+  vehicleModel: string;
+  madeofYear: string;
+  registrationNo: string;
+  chassisNo: string;
+  seatCapacity: number;
+  gpsTrackingId: string;
+  driver: number;
+  driverLicense: string;
+  driverContactNo: string;
+  driverAddress: string;
+  status: number;
+}
 
 const TransportVehicle = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const data = transportVehicles;
+  const [vehicleDetails, setVehicleDetails] = useState<TransportVehicleProps[]>(
+    []
+  );
+  const [filterVehicleDetails, setFilterVehicleDetails] = useState<
+    TransportVehicleProps[]
+  >([]);
+  const [selectedVehicleInfo, setSelecteVehicleInfo] =
+    useState<TransportVehicleProps | null>(null);
+
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const fetchVehicleDetails = async () => {
+    try {
+      const { data } = await getAllVehicle();
+      if (data.success) {
+        console.log("data: ", data);
+        setVehicleDetails(
+          data.result.map((item: any) => ({
+            id: item.id,
+            vehicleNo: item.vehicle_no,
+            vehicleModel: item.vehicle_model,
+            madeofYear: item.made_of_year,
+            registrationNo: item.registration_no,
+            chassisNo: item.chassis_no,
+            seatCapacity: item.seat_capacity,
+            gpsTrackingId: item.gps_tracking_id,
+            driver: item.driver_id,
+            driverLicense: item.driver_license,
+            driverContactNo: item.driver_contact_no,
+            driverAddress: item.driver_address,
+            status: item.status,
+          }))
+        );
+        setFilterVehicleDetails(
+          data.result.map((item: any) => ({
+            id: item.id,
+            vehicleNo: item.vehicle_no,
+            vehicleModel: item.vehicle_model,
+            madeofYear: item.made_of_year,
+            registrationNo: item.registration_no,
+            chassisNo: item.chassis_no,
+            seatCapacity: item.seat_capacity,
+            gpsTrackingId: item.gps_tracking_id,
+            driver: item.driver_id,
+            driverLicense: item.driver_license,
+            driverContactNo: item.driver_contact_no,
+            driverAddress: item.driver_address,
+            status: item.status,
+          }))
+        );
+        // setPickupPointOption(
+        //   data.result.map((point: PickupPoint) => ({
+        //     value: point.id,
+        //     label: point.pickPointName,
+        //   }))
+        // );
+      } else {
+        toast.error(data.message || "Failed to fetch vehicle details");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch vehicle details"
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicleDetails();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    console.log("handleDelete Called: ", id);
+    try {
+      const { data } = await deleteVehicleById(id);
+      if (data.success) {
+        toast.success(data.message || "Vehicle Info deleted successfully");
+        fetchVehicleDetails();
+      } else {
+        toast.error(data.message || "Failed to delete vehicle Info");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Error deleting vehicle Info."
+      );
+    }
+  };
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" className="link-primary">
-          {text}
+          BB0{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
     },
     {
       title: "Vehicle No",
-      dataIndex: "phone",
+      dataIndex: "vehicleNo",
       sorter: (a: TableData, b: TableData) =>
         a.vehicleNo.length - b.vehicleNo.length,
     },
@@ -73,12 +177,12 @@ const TransportVehicle = () => {
     },
     {
       title: "GPS Device ID",
-      dataIndex: "gps",
+      dataIndex: "gpsTrackingId",
       sorter: (a: TableData, b: TableData) => a.gps.length - b.gps.length,
     },
     {
       title: " ",
-      dataIndex: "phone",
+      dataIndex: "driverContactNo",
       render: () => (
         <Link
           to="#"
@@ -92,7 +196,7 @@ const TransportVehicle = () => {
     },
     {
       title: "Driver",
-      dataIndex: "name",
+      dataIndex: "driver",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
@@ -104,9 +208,11 @@ const TransportVehicle = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to="#">{text}</Link>
+              <Link to="#">
+                {driverName.find((item) => item.value == text)?.label}
+              </Link>
             </p>
-            <span className="fs-12">{record.phone}</span>
+            <span className="fs-12">{record.driverContactNo}</span>
           </div>
         </div>
       ),
@@ -116,17 +222,17 @@ const TransportVehicle = () => {
     {
       title: "Status",
       dataIndex: "status",
-      render: (text: string) => (
+      render: (text: number) => (
         <>
-          {text === "Active" ? (
+          {text === 1 ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              {"Active"}
             </span>
           ) : (
             <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              {"Inactive"}
             </span>
           )}
         </>
@@ -137,7 +243,7 @@ const TransportVehicle = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -156,6 +262,7 @@ const TransportVehicle = () => {
                     to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#edit_vehicle"
+                    onClick={() => setSelecteVehicleInfo(record)}
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -167,6 +274,7 @@ const TransportVehicle = () => {
                     to="#"
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
+                    onClick={() => setSelecteVehicleInfo(record)}
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -371,7 +479,11 @@ const TransportVehicle = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              <Table
+                dataSource={filterVehicleDetails}
+                columns={columns}
+                Selection={true}
+              />
               {/* /Student List */}
             </div>
           </div>
@@ -379,7 +491,15 @@ const TransportVehicle = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TransportModal />
+      <TransportModal
+        onAdded={fetchVehicleDetails}
+        onUpdated={fetchVehicleDetails}
+        selectedItem={selectedVehicleInfo}
+        clearSelected={() => setSelecteVehicleInfo(null)}
+        handleDelete={() =>
+          selectedVehicleInfo && handleDelete(selectedVehicleInfo.id)
+        }
+      />
     </>
   );
 };

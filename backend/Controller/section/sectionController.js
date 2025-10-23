@@ -190,6 +190,41 @@ exports.editSpecificSection = async (req, res) => {
 };
 
 
+exports.getSectionSpecClass = async (req,res) => {
+  try{
+    const id = Number(req.params.id);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid class ID",
+      });
+    }
+
+    const [rows] = await db.query(`SELECT id, section_name, status FROM sections WHERE class_id = ?`, [id]);
+    
+    if (rows.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message: "Section not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+
+  } catch (error) {
+    console.error("Error in accessingSection:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to access section",
+      error: error.message,
+    });
+  }
+}
+
+
 exports.deleteSection = async (req, res) => {
   try {
     const id = Number(req.params.id);

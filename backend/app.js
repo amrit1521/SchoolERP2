@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 
 app.use(cors({
   origin: process.env.CORS_URL,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE",'PATCH'],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
@@ -53,6 +53,7 @@ app.use('/api/depart',require('./routes/department/departmentRoutes') )
 app.use('/api/designation',require('./routes/designation/designationRoutes') )
 app.use('/api/staff' , require('./routes/staff/staffRoutes'))
 app.use('/api/hostel' , require('./routes/hostel/hostelListRoutes'))
+app.use('/api/transport' , require('./routes/transports/transports.routes'))
 app.use('/api/salary' , require('./routes/payment_salary/paymentSalaryRoutes'))
 app.use('/api/sport' , require('./routes/sports/sportsRoutes'))
 app.use('/api/account' , require('./routes/accounts/accountsRoutes'))
