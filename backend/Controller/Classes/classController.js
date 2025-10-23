@@ -600,3 +600,26 @@ exports.getAllClassForOption = async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+// class for option master
+exports.getAllClassForOption = async (req, res) => {
+  try {
+    const sql = `SELECT id , class_name FROM classes`
+    const [rows] = await db.query(sql)
+ 
+    return res.status(200).json({ message: "All classes fetched successfully !", success: true, data: rows })
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
+}
+ 

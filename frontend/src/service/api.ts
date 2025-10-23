@@ -48,6 +48,8 @@ export const addLeave = (data: object) => api.post("/leave/addleave", data);
 
 // class section---------------------------
 export const getAllSection = () => api.get("/section");
+export const getAllSectionForAClass = (id: number) =>
+  api.get(`/section/speclass/${id}`);
 export const addClassSection = (data: object) => api.post("/section", data);
 export const deleteSection = (id: any) => api.delete(`/section/${id}`);
 export const speSection = (id: any) => api.get(`/section/${id}`);
@@ -59,7 +61,8 @@ export const addSubject = (data: object) => api.post("/subject/addsubject", data
 export const getAllSubject = () => api.get("/subject");
 export const deleteSubject = (id: number) => api.delete(`/subject/deletesubject/${id}`);
 export const speSubject = (id: number) => api.get(`/subject/spesubject/${id}`);
-export const editSubject = (data: object, id: number) => api.put(`/subject/editsubject/${id}`, data);
+export const editSubject = (data: object, id: number) =>
+  api.put(`/subject/editsubject/${id}`, data);
 
 // table routes-----------------------------
 export const addTimeTable = (data: object) => api.post("/table/addtimetable", data);
@@ -84,8 +87,10 @@ export const markAttendance = (data: object) => api.post("/attendance/markstuatt
 export const getStuAttendanceData = (rollnum: any) => api.get(`/attendance/getstuattendance/${rollnum}`);
 
 //teacher attendance ---------------------
-export const allTeacherForAttendance = () => api.get('/teacher/allteacherforattendance');
-export const markTeacherAttendance = (data: any) => api.post('/attendance/markteacherattendance', data);
+export const allTeacherForAttendance = () =>
+  api.get("/teacher/allteacherforattendance");
+export const markTeacherAttendance = (data: any) =>
+  api.post("/attendance/markteacherattendance", data);
 
 // student fees ------------------------------
 export const studentDetForFees = (id: any) => api.get(`/fees/studetforfees/${id}`);
@@ -140,10 +145,18 @@ export const speGrade = (id: number) => api.get(`/exam/spegrade/${id}`);
 export const editGrade = (data: object, id: number) => api.put(`/exam/editgrade/${id}`, data);
 
 // exam result
-export const addExamResult = (data: object) => api.post("/exam/addresult", data);
-export const addExamResult2 = (data: object) => api.post("/exam/addresult2", data);
-export const getExamResult = (rollnum: number) => api.get(`/exam/getresult/${rollnum}`);
-export const getExamResultAllStudents = () => api.get("/exam/getstudentsexamresult");
+export const getAllExamNameForAStud = (rollnum: number) =>
+  api.get(`/exam/examNameforastudent/${rollnum}`);
+export const addExamResult = (data: object) =>
+  api.post("/exam/addresult", data);
+export const addExamResult2 = (data: object) =>
+  api.post("/exam/addresult2", data);
+export const getExamResult = (rollnum: number) =>
+  api.get(`/exam/getresult/${rollnum}`);
+export const getExamResultAllStudents = () =>
+  api.get("/exam/getstudentsexamresult");
+export const getResultAllStudentsOfClass = (id: number) =>
+  api.get(`/exam/getexamresultforclass/${id}`);
 export const speMark = (id: number) => api.get(`/exam/spemark/${id}`);
 export const editMark = (data: object, id: number) => api.put(`/exam/editmark/${id}`, data);
 export const getSpeExamResult = (data: object) => api.post("/exam/getspeexamresult", data);
@@ -197,5 +210,37 @@ export const editHomework = (data: object, id: number) => api.put(`/homework/edi
 
 // auth =====================================================================
 export const login = (data: object) => api.post("/auth/login", data);
-export const forgotPassword = (email: object) => api.post("/auth/forgot-password", email);
-export const resetPassword = (data: object) => api.post("/auth/reset-password", data);
+export const forgotPassword = (email: object) =>
+  api.post("/auth/forgot-password", email);
+export const resetPassword = (data: object) =>
+  api.post("/auth/reset-password", data);
+
+// transport =================================================================
+export const addRoutes = (data: object) =>
+  api.post("/transport/addroutes", data);
+export const getAllTransportRoutes = () => api.get("/transport/getallroutes");
+export const getTransportRoutesById = (id: number | null) =>
+  api.get(`/transport/gettranportroutesbyId/${id}`);
+export const udpateTransportRoutes = (data: any, id: number) =>
+  api.patch(`/transport/updatetransportroutes/${id}`, data);
+export const deleteTransportRoutesById = (id: number | null) =>
+  api.delete(`/transport/deletetransportroutes/${id}`);
+
+export const addPickUpPoints = (data: object) =>
+  api.post("/transport/add-pickup-points", data);
+export const getAllPickupPoints = () => api.get("/transport/pickup-points");
+export const getTransportPickUpPointsById = (id: number | null) =>
+  api.get(`/transport/get-pickup-points/${id}`);
+export const updateTransportPickupPoints = (data: any, id: number) =>
+  api.patch(`/transport/update-pickup-points/${id}`, data);
+export const deletePickupPointById = (id: number | null) =>
+  api.delete(`/transport/delete-pickup-points/${id}`);
+
+export const addVehicle = (data: object) =>
+  api.post("/transport/add-vehicle", data);
+export const getAllVehicle = () =>
+  api.get("/transport/all-vehicles");
+export const updateVehicleById = (data:object,id:number) =>
+  api.patch(`/transport/update-vehicle/${id}`,data);
+export const deleteVehicleById = (id:number) =>
+  api.delete(`/transport/delete-vehicle/${id}`);

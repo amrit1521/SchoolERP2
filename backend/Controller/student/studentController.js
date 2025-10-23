@@ -56,7 +56,7 @@ exports.addStudent = async (req, res) => {
 
     await connection.query(
       `INSERT INTO students (
-        stu_id, academicyear, admissionnum, admissiondate, rollnum, class, section,
+        stu_id, academicyear, admissionnum, admissiondate, rollnum, class_id, section_id,
         gender, dob, bloodgp, house, religion, category, caste, motherton, lanknown,
         stu_img, curr_address, perm_address, prev_school, prev_school_address,
         medicalcert, transfercert, stu_condition, allergies, medications
@@ -389,6 +389,8 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
         p.address AS parent_address, p.img_src AS parent_img, p.guardian_Is
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id = o.user_id
@@ -664,6 +666,8 @@ exports.specificDetailsStu = async (req, res) => {
         p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id=o.user_id
@@ -920,6 +924,8 @@ exports.studentReport = async (req, res) => {
     father.name AS father_name,
     father.img_src AS father_img 
 FROM students s
+JOIN classes cl ON cl.id = s.class_id
+JOIN sections se ON se.id = s.section_id
 LEFT JOIN users u 
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 

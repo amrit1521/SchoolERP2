@@ -6,17 +6,19 @@ import Table from "../../../../core/common/dataTable/index";
 import { Link, useNavigate } from "react-router-dom";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
-import {
-  allClass,
-  classSection,
-} from "../../../../core/common/selectoption/selectoption";
 import { all_routes } from "../../../router/all_routes";
+import html2pdf from "html2pdf.js";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import ReactDOM from "react-dom/client";
 // import TooltipOption from "../../../../core/common/tooltipOption";
 import {
   // addExamResult,
   // allExamData,
   // editMark,
   examNameForOption,
+  getAllSectionForAClass,
+  getResultAllStudentsOfClass,
   // examSubjectForOption,
   // filterStudentsForOption,
   // getAllSection,
@@ -29,6 +31,13 @@ import { toast } from "react-toastify";
 // import { CiEdit } from "react-icons/ci";
 // import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
+import { allRealClasses } from "../../../../service/classApi";
+import {
+  DemoPdfTemplate1,
+  DemoTemplate2,
+  PdfTemplate1,
+  PdfTemplate2,
+} from "./resultTemplate";
 
 export interface SubjectResult {
   id: number;
@@ -105,7 +114,7 @@ const ExamResult = () => {
   //   []
   // );
   const [loading, setLoading] = useState<boolean>(false);
-
+  const [allClass, setAllClass] = useState<any[]>([]);
   // const [selectedClass, setSelectedClass] = useState("");
   // const [selectedSection, setSelectedSection] = useState("");
   // const [examOptions, setExamOptions] = useState<
@@ -118,17 +127,228 @@ const ExamResult = () => {
   const [selectedExams, setSelectedExams] = useState<
     Record<number, { value: number; label: string }>
   >({});
+  const [allSections, setAllSections] = useState<any[]>([]);
   const navigate = useNavigate();
 
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    null
+  );
+  const [selectedResultClass, setSelectedResultClass] = useState<number | null>(
+    null
+  );
+  const [modalStudentItem, setModalStudentItem] = useState<any[]>([]);
+
+  const templateConfigs = [
+    {
+      id: 1,
+      label: "t-1",
+      component: PdfTemplate1,
+      componentDemo: DemoPdfTemplate1,
+      badge: "primary",
+    },
+    {
+      id: 2,
+      label: "t-2",
+      component: PdfTemplate2,
+      componentDemo: DemoTemplate2,
+      badge: "success",
+    },
+    // {
+    //   id: 3,
+    //   label: "t-3",
+    //   component: Template3,
+    //   badge: "info",
+    // },
+  ];
+
+  const fetchClass = async () => {
+    try {
+      setLoading(true);
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        const { data } = await getAllSectionForAClass(id);
+        const options: any[] = [];
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          options.push(
+            ...data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+          setAllSections((prev) => {
+            const existingIndex = prev.findIndex(
+              (section) => section.id === id
+            );
+            if (existingIndex !== -1) {
+              return prev;
+            } else {
+              return [...prev, { id, sections: options }];
+            }
+          });
+        }
+        return options;
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
+
   useEffect(() => {
-    const rows = allClass.map((cls, index) => ({
-      key: index,
-      class: cls.value,
-      section: "",
-      examName: "",
-    }));
-    setResultData2(rows);
+    fetchClass();
   }, []);
+
+  const fetchRows = async () => {
+    if (allClass.length !== 0) {
+      const rows = await Promise.all(
+        allClass.map(async (cls) => ({
+          key: cls.value,
+          class: cls.label,
+          section: null,
+          examName: "",
+          allSection: await fetchSections(cls.value),
+        }))
+      );
+      setResultData2(rows);
+    }
+  };
+
+  useEffect(() => {
+    fetchRows();
+  }, [allClass]);
+
+  const fetchStudentResultForClass = async (id: number) => {
+    try {
+      const { data } = await getResultAllStudentsOfClass(id);
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setModalStudentItem([...data.data]);
+        setSelectedResultClass(id);
+        setIsModalVisible(true);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch studentResultData !");
+    }
+  };
+
+  const handleDownloadTemplate = async (classNumber: number) => {
+    if (!selectedTemplateId || !modalStudentItem?.length) return;
+
+    const selectedTemplate = templateConfigs.find(
+      (t) => t.id === selectedTemplateId
+    );
+    if (!selectedTemplate) return;
+    const TemplateComponent = selectedTemplate.component;
+
+    const studentsInClass = modalStudentItem.filter(
+      (s) => s.class_id === classNumber
+    );
+
+    const studentsGrouped = studentsInClass.reduce((acc: any, student) => {
+      const key = student.admissionNo;
+      if (!acc[key]) acc[key] = { studentItem: student, exams: [] };
+      acc[key].exams.push({
+        exam_name: student.examName,
+        subjects: Object.entries(student.subjects).map(([name, val]: any) => ({
+          subject_name: name,
+          mark_obtained: val.mark_obtained,
+          max_mark: val.max_mark,
+          grade: student.grade,
+          result: student.result,
+        })),
+      });
+      return acc;
+    }, {});
+    console.log("studentsGrouped: ", modalStudentItem, classNumber);
+    const filteredStudents: any[] = Object.values(studentsGrouped).filter(
+      (s: any) =>
+        s.exams.some((e: any) => e.exam_name === "Semester1") &&
+        s.exams.some((e: any) => e.exam_name === "Semester2")
+    );
+
+    if (!filteredStudents.length) {
+      alert("No students found with both Semester1 & Semester2 exams.");
+      return;
+    }
+
+    const zip = new JSZip();
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "-9999px";
+    container.style.left = "-9999px";
+    document.body.appendChild(container);
+
+    for (let i = 0; i < filteredStudents.length; i++) {
+      const { studentItem, exams } = filteredStudents[i];
+
+      const mappedStudentItem = {
+        ...studentItem,
+        firstname: studentItem.studentName.split(" ")[0],
+        lastname: studentItem.studentName.split(" ")[1] || "",
+        stud_admNo: studentItem.admissionNo,
+        student_image: studentItem.student_image,
+      };
+
+      container.innerHTML = "";
+      const tempDiv = document.createElement("div");
+      container.appendChild(tempDiv);
+
+      const root = ReactDOM.createRoot(tempDiv);
+      root.render(
+        <TemplateComponent studentItem={mappedStudentItem} exam={exams} />
+      );
+
+      await new Promise((r) => setTimeout(r, 800));
+
+      await Promise.all(
+        Array.from(tempDiv.querySelectorAll("img")).map((img: any) => {
+          return new Promise((resolve) => {
+            if (img.complete) return resolve(true);
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+
+      const pdfBlob = await html2pdf()
+        .set({
+          margin: 10,
+          html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(tempDiv)
+        .output("blob");
+
+      zip.file(`Result-${mappedStudentItem.stud_admNo}.pdf`, pdfBlob);
+      root.unmount();
+    }
+
+    document.body.removeChild(container);
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    saveAs(
+      zipBlob,
+      `SemesterResults-Class${classNumber}-${selectedTemplate.label}.zip`
+    );
+  };
 
   // const fetchResult = async () => {
   //   setLoading(true);
@@ -400,14 +620,20 @@ const ExamResult = () => {
       dataIndex: "section",
       render: (_: any, record: any, index: number) => (
         <CommonSelect
-          options={classSection}
+          options={
+            record?.allSection
+              ? record.allSection.map((e: any) => ({
+                  value: e.value,
+                  label: e.label.toUpperCase(),
+                }))
+              : []
+          }
           value={record.section ? record.section.value : null}
           onChange={(opt: any) => {
             const newData = [...resultData2];
             newData[index].section = opt.value;
             setResultData2(newData);
-
-            fetchExamForOption2(record.class, opt.value, index);
+            fetchExamForOption2(record.key, opt.value, index);
           }}
         />
       ),
@@ -425,7 +651,6 @@ const ExamResult = () => {
             value={selectedExam?.value}
             onChange={(opt: any) => {
               const newData = [...resultData2];
-              console.log(opt);
               newData[index].examName = opt.label;
               setResultData2(newData);
               return setSelectedExams((prev) => ({
@@ -452,6 +677,21 @@ const ExamResult = () => {
         </button>
       ),
     },
+    {
+      title: "Download Result",
+      render: (_: any, record: any) => (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            fetchStudentResultForClass(record.key);
+          }}
+          // disabled={!selectedExams.hasOwnProperty(index)}
+        >
+          Download Result
+        </button>
+      ),
+    },
   ];
   // const [formData, setformdata] = useState<AddResult>(initialFormData);
   // const [errors, setErrors] = useState<any>({});
@@ -472,17 +712,11 @@ const ExamResult = () => {
   const handleAddResult2 = (index: number) => {
     const selectedExam = selectedExams[index];
     const rowData = resultData2[index];
-    console.log(
-      "Adding result for row:",
-      rowData,
-      "Selected Exam:",
-      selectedExam
-    );
     // setShowExamMarkUpload(true);
     navigate("/academic/update-exam-result", {
       state: {
         exam_name_id: selectedExam?.value,
-        class: rowData?.class,
+        class: rowData?.key,
         section: rowData?.section,
       },
     });
@@ -524,8 +758,8 @@ const ExamResult = () => {
   // };
 
   const fetchExamForOption2 = async (
-    cls: string,
-    section: string,
+    cls: number,
+    section: number,
     rowIndex: number
   ) => {
     try {
@@ -779,8 +1013,8 @@ const ExamResult = () => {
   // );
 
   interface FilterData {
-    class: string;
-    section: string;
+    class: number | null;
+    section: number | null;
     exam_type: number | null;
   }
 
@@ -823,14 +1057,15 @@ const ExamResult = () => {
 
   //handling filter
   const [filterData, setFilterData] = useState<FilterData>({
-    class: "",
-    section: "",
+    class: null,
+    section: null,
     exam_type: null,
   });
+  const [sectionOptions, setSectionOptions] = useState<any[]>([]);
   const [isApplyDisabled, setIsApplyDisabled] = useState(true);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchExamOptions = async (cls: string, section: string) => {
+  const fetchExamOptions = async (cls: number, section: number) => {
     try {
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
@@ -853,7 +1088,11 @@ const ExamResult = () => {
   ) => {
     setFilterData((prev) => {
       const updated = { ...prev, [name]: value } as FilterData;
-      if (name === "class" || name === "section") {
+      if (name === "class") {
+        setSectionOptions(
+          allSections.filter((section) => section.id == value)[0]?.sections
+        );
+      } else if (name === "section") {
         updated.exam_type = null;
         if (updated.class && updated.section) {
           fetchExamOptions(updated.class, updated.section);
@@ -890,8 +1129,9 @@ const ExamResult = () => {
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "", exam_type: null });
-    setExamOptionsMap([]);
+    setFilterData({ class: null, section: null, exam_type: null });
+    setExamOptions([]);
+    console.log(filterData);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");
   };
@@ -969,6 +1209,7 @@ const ExamResult = () => {
                               <CommonSelect
                                 className="select"
                                 options={allClass}
+                                value={filterData.class}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "class",
@@ -981,7 +1222,15 @@ const ExamResult = () => {
                               <label className="form-label">Section</label>
                               <CommonSelect
                                 className="select"
-                                options={classSection}
+                                options={
+                                  sectionOptions
+                                    ? sectionOptions.map((e: any) => ({
+                                        value: e.value,
+                                        label: e.label.toUpperCase(),
+                                      }))
+                                    : []
+                                }
+                                value={filterData.section}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "section",
@@ -994,7 +1243,8 @@ const ExamResult = () => {
                               <label className="form-label">Exam Type</label>
                               {/* <CommonSelect
                                 className="select"
-                                options={examOptionsMap}
+                                options={examOptions}
+                                value={filterData.exam_type}
                                 onChange={(option) =>
                                   handleFilterSelectChange(
                                     "exam_type",
@@ -1474,6 +1724,113 @@ const ExamResult = () => {
           </div>
         </div> */}
         {/* /Add Home Work */}
+        {isModalVisible && modalStudentItem && (
+          <div
+            className="modal show d-block"
+            tabIndex={-1}
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog modal-xl modal-dialog-scrollable">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Choose a Result Template</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setIsModalVisible(false);
+                      setSelectedTemplateId(null);
+                    }}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="row">
+                    {templateConfigs.map((template) => (
+                      <div className="col-lg-6 col-xl-5 mb-4" key={template.id}>
+                        <div
+                          className="border p-3 h-100 d-flex flex-column bg-light rounded position-relative"
+                          style={{
+                            minHeight: "500px",
+                            maxHeight: "600px",
+                            cursor: "pointer",
+                            overflow: "hidden",
+                          }}
+                          onClick={() => setSelectedTemplateId(template.id)}
+                        >
+                          <div
+                            className="demo-wrapper"
+                            style={{
+                              flex: "1 1 auto",
+                              display: "flex",
+                              alignItems: "flex-start",
+                              justifyContent: "center",
+                              overflow: "auto",
+                              padding: "10px",
+                              background: "#fff",
+                              borderRadius: "6px",
+                              scrollbarWidth: "thin",
+                            }}
+                          >
+                            <div
+                              style={{
+                                transform: "scale(0.7)",
+                                transformOrigin: "top center",
+                                width: "fit-content",
+                                minWidth: "100%",
+                              }}
+                            >
+                              <template.componentDemo />
+                            </div>
+                          </div>
+
+                          <div className="mt-auto d-flex justify-content-end pt-2">
+                            <button
+                              type="button"
+                              className={`btn ${
+                                selectedTemplateId === template.id
+                                  ? "btn-success"
+                                  : "btn-outline-primary"
+                              } btn-sm`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTemplateId(template.id);
+                              }}
+                            >
+                              {selectedTemplateId === template.id
+                                ? "✓ Selected"
+                                : "Select This"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="modal-footer d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsModalVisible(false);
+                      setSelectedTemplateId(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={!selectedTemplateId}
+                    onClick={() => handleDownloadTemplate(selectedResultClass!)}
+                  >
+                    Download Selected
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     </div>
   );
