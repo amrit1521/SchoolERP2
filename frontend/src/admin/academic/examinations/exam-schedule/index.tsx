@@ -44,7 +44,7 @@ export interface Subject {
   name: string;
 }
 
-interface Room {
+export interface Room {
   id: number;
   room_no: number;
 }

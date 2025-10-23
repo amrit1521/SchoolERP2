@@ -2,9 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // import { classhomework } from "../../../core/data/json/class_home_work";
 import Table from "../../../core/common/dataTable/index";
 import {
-  allClass,
-  classSection,
-  classSylabus,
   language,
   weak,
 } from "../../../core/common/selectoption/selectoption";
@@ -17,21 +14,18 @@ import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { DatePicker } from "antd";
 import dayjs from 'dayjs'
-import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSubject, Imageurl, speHomework } from "../../../service/api";
+import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSectionForAClass, getAllSubject, Imageurl, speHomework } from "../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { allRealClasses } from "../../../service/classApi";
 
-export interface Teacher {
-  teacher_id: number;
-  firstname: string;
-  lastname: string;
-}
+
 
 export interface Homework {
   id: number;
   className: string;
-  section: number;
-  subject: number;
+  section: string;
+  subject: string;
   homeworkDate: string;
   submissionDate: string;
   description: string;
@@ -41,9 +35,15 @@ export interface Homework {
   img_src?: string;
 }
 
+export interface Teacher {
+  teacher_id: number;
+  firstname: string;
+  lastname: string;
+}
+
 export interface Section {
   id: number;
-  section: string;
+  section_name: string;
 }
 
 export interface Subject {
@@ -51,10 +51,15 @@ export interface Subject {
   name: string;
 }
 
+export interface classes {
+  id: number,
+  class_name: string;
+}
+
 const ClassHomeWork = () => {
   const routes = all_routes;
 
-  // const data = classhomework;
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -64,18 +69,29 @@ const ClassHomeWork = () => {
 
 
 
-  // -------------------------
+
   // State
-  // -------------------------
+  const [formData, setFormData] = useState<HomeworkFormData>({
+    className: null,
+    section: null,
+    subject: null,
+    homeworkDate: "",
+    submissionDate: "",
+    teacherId: "",
+    status: "1",
+    attachments: "",
+    description: "",
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof HomeworkFormData, string>>>({});
+  const [editId, setEditId] = useState<number | null>(null)
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [allClass, setAllClass] = useState<classes[]>([])
   const [loading, setLoading] = useState<boolean>(false);
 
-  // -------------------------
-  // Generic fetch wrapper
-  // -------------------------
+
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -107,32 +123,52 @@ const ClassHomeWork = () => {
       setLoading(false);
     }
   };
-  // -------------------------
-  // Fetch Functions
-  // -------------------------
+
+  const fetchSection = async () => {
+    try {
+      if (formData.className) {
+        const { data } = await getAllSectionForAClass(Number(formData.className));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSections(data.data);
+        } else {
+          setSections([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
   const fetchTeachers = () => fetchData(allTeacherForOption, setTeachers);
   const fetchSections = () => fetchData(getAllSection, setSections);
-  const fetchSubjects = () => fetchData(getAllSubject, setSubjects)
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
+  const fetchClasses = () => fetchData(allRealClasses, setAllClass)
 
-  // -------------------------
-  // Effects
-  // -------------------------
+
   useEffect(() => {
 
     fetchTeachers();
     fetchSections();
     fetchSubjects()
     fetchHomeWorks();
+    fetchClasses();
   }, []);
 
-  // -------------------------
+  useEffect(() => {
+    if (formData.className) {
+      fetchSection()
+    }
+  }, [formData.className])
+
+
   // Options (for selects)
-  // -------------------------
+
   const sectionOptions = useMemo(
     () =>
       sections.map((s) => ({
         value: s.id,
-        label: s.section,
+        label: s.section_name,
       })),
     [sections]
   );
@@ -141,7 +177,7 @@ const ClassHomeWork = () => {
   const teacherOptions = useMemo(
     () =>
       teachers.map((t) => ({
-        value: t.teacher_id,
+        value: Number(t.teacher_id),
         label: `${t.firstname} ${t.lastname}`,
       })),
     [teachers]
@@ -159,6 +195,11 @@ const ClassHomeWork = () => {
     [subjects]
   )
 
+  const classOptions = useMemo(
+    () => allClass.map((c) => ({ value: c.id, label: String(c.class_name) })),
+    [allClass]
+  );
+
   const tableData = homeworks.map((hw) => ({
     key: hw.id,
     id: hw.id,
@@ -173,19 +214,7 @@ const ClassHomeWork = () => {
   }))
 
   // add homework
-  const [formData, setFormData] = useState<HomeworkFormData>({
-    className: "",
-    section: null,
-    subject: null,
-    homeworkDate: "",
-    submissionDate: "",
-    teacherId: "",
-    status: "1",
-    attachments: "",
-    description: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof HomeworkFormData, string>>>({});
-  const [editId, setEditId] = useState<number | null>(null)
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
@@ -211,7 +240,7 @@ const ClassHomeWork = () => {
       [name]: date,
     }));
   };
-  // validation errors
+ 
 
 
   const validateForm = (): boolean => {
@@ -223,20 +252,23 @@ const ClassHomeWork = () => {
     if (!formData.teacherId) newErrors.teacherId = "Teacher is required";
     if (!formData.homeworkDate) newErrors.homeworkDate = "Homework date is required";
     if (!formData.submissionDate) newErrors.submissionDate = "Submission date is required";
+    if (!formData.attachments)
+      newErrors.attachments = "Attachment is required !"
+    else if (formData.attachments.length < 6)
+      newErrors.attachments = "Attachment must be at least 6 chracters !"
     if (!formData.description) newErrors.description = "Description is required";
+    else if (formData.description.length < 6) newErrors.description = "Description must be at least 10 chracters !"
 
     setErrors(newErrors);
 
-    return Object.keys(newErrors).length === 0; // ✅ true if no errors
+    return Object.keys(newErrors).length === 0; 
   };
 
 
   // edit---------------------------
   const fetchHwById = async (id: number) => {
-    // console.log(id)
     try {
       const { data } = await speHomework(id)
-      // console.log(data)
       if (data.success) {
         setFormData({
           className: data.data.className,
@@ -257,14 +289,13 @@ const ClassHomeWork = () => {
       console.log(error)
     }
   }
-  // console.log(formData)
-
+ 
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setEditId(null)
     setFormData({
-      className: "",
+      className: null,
       section: null,
       subject: null,
       homeworkDate: "",
@@ -303,7 +334,7 @@ const ClassHomeWork = () => {
       }
       fetchHomeWorks();
       setFormData({
-        className: "",
+        className: null,
         section: null,
         subject: null,
         homeworkDate: "",
@@ -323,7 +354,7 @@ const ClassHomeWork = () => {
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
+    // console.log(id)
     e.preventDefault()
     try {
 
@@ -459,7 +490,7 @@ const ClassHomeWork = () => {
       ),
     },
   ];
-  
+
   return (
     <div>
       <>
@@ -540,7 +571,7 @@ const ClassHomeWork = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={classSylabus}
+                                  options={classOptions}
                                 />
                               </div>
                             </div>
@@ -550,7 +581,7 @@ const ClassHomeWork = () => {
 
                                 <CommonSelect
                                   className="select"
-                                  options={classSection}
+                                  options={classOptions}
                                 />
                               </div>
                             </div>
@@ -658,7 +689,7 @@ const ClassHomeWork = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
                             handleSelectChange("className", opt?.value || "")
@@ -799,8 +830,11 @@ const ClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className="form-control"
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""}`}
                         />
+                        {errors.attachments && (
+                          <div className="invalid-feedback">{errors.attachments}</div>
+                        )}
                       </div>
 
                       {/* Description */}
@@ -881,7 +915,7 @@ const ClassHomeWork = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className={`select ${errors.className ? "is-invalid" : ""}`}
-                          options={allClass}
+                          options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
                             handleSelectChange("className", opt?.value || "")
@@ -1022,8 +1056,12 @@ const ClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className="form-control"
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""
+                            }`}
                         />
+                        {errors.attachments && (
+                          <div className="invalid-feedback">{errors.attachments}</div>
+                        )}
                       </div>
 
                       {/* Description */}

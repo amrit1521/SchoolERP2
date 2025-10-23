@@ -57,7 +57,7 @@ const FeesAssign = () => {
     setLoading(true)
     try {
       const { data } = await getAllFeeAssignDetails()
-      console.log(data.assignDetails)
+      
       setFeesAssignDetails(data.assignDetails)
     } catch (error: any) {
       console.log(error)

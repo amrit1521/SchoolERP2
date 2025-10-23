@@ -14,15 +14,17 @@ exports.allParents = async (req, res) => {
         p.created_at AS Parent_Add,
         st.stu_img,
         st.stu_id,
-        st.section,
-        st.class,
         st.rollnum,
         st.created_at AS Student_Add,
         u.firstname,
-        u.lastname
+        u.lastname,
+        UPPER(c.class_name) AS class,
+        UPPER( s.section_name) AS section
       FROM parents_info p
       LEFT JOIN students st ON p.user_id = st.stu_id
-      LEFT JOIN users u ON st.stu_id = u.id   
+      LEFT JOIN users u ON st.stu_id = u.id  
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id
       WHERE p.relation = "Father"
     `;
         const [result] = await db.query(sql);
@@ -55,8 +57,8 @@ exports.speParentData = async (req, res) => {
         p.created_at AS Parent_Add,
         st.stu_img,
         st.stu_id,
-        st.class,
-        st.section,
+        UPPER(c.class_name) AS class,
+        UPPER( s.section_name) AS section,
         st.gender,
         st.rollnum,
         st.admissiondate,
@@ -68,6 +70,8 @@ exports.speParentData = async (req, res) => {
       FROM parents_info p
       LEFT JOIN students st ON p.user_id = st.stu_id
       LEFT JOIN users u ON st.stu_id = u.id   
+       LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id
       WHERE p.id = ? AND p.relation = "Father"
     `;
         const [result] = await db.query(sql, [parentId]);
@@ -191,15 +195,18 @@ exports.allGuardian = async (req, res) => {
                 p.created_at AS Gua_Add,
                 st.stu_img,
                 st.stu_id,
-                st.section,
-                st.class,
+                UPPER(c.class_name) AS class,
+                UPPER( s.section_name) AS section,
                  st.rollnum,
                 st.created_at AS Student_Add,
                 u.firstname,
                 u.lastname
             FROM parents_info p
             LEFT JOIN students st ON p.user_id = st.stu_id
-            LEFT JOIN users u ON st.stu_id = u.id   
+            LEFT JOIN users u ON st.stu_id = u.id 
+            LEFT JOIN classes c ON st.class_id = c.id
+            LEFT JOIN sections s ON st.section_id = s.id
+
             WHERE p.relation = "Guardian"
         `;
         const [result] = await db.query(sql);
@@ -223,8 +230,8 @@ exports.speGuardianData = async (req, res) => {
                 p.created_at AS Guardian_Add,
                 st.stu_img,
                 st.stu_id,
-                st.class,
-                st.section,
+                UPPER(c.class_name) AS class,
+                UPPER( s.section_name) AS section,
                 st.gender,
                 st.rollnum,
                 st.admissiondate,
@@ -235,7 +242,9 @@ exports.speGuardianData = async (req, res) => {
                 u.status
             FROM parents_info p
             LEFT JOIN students st ON p.user_id = st.stu_id
-            LEFT JOIN users u ON st.stu_id = u.id   
+            LEFT JOIN users u ON st.stu_id = u.id 
+             LEFT JOIN classes c ON st.class_id = c.id
+            LEFT JOIN sections s ON st.section_id = s.id  
             WHERE p.id = ? AND p.relation = "Guardian"
         `;
         const [result] = await db.query(sql, [guaId]);

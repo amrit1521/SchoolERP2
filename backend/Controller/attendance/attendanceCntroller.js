@@ -165,6 +165,7 @@ exports.getStaffAttendanceData = async (req, res) => {
   }
 };
 
+  
 exports.getTeacherAttendanceData = async (req, res) => {
   try {
     const {teacher_id} =req.params;

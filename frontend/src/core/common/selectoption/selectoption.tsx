@@ -519,14 +519,19 @@ export const classSylabus = [
   { value: "II", label: "II" },
   { value: "III", label: "III" },
 ];
+
+
 export const classSection = [
 
-  { value: "A", label: "A" },
-  { value: "B", label: "B" },
-  { value: "C", label: "C" },
-  { value: "D", label: "D" },
-  { value: "E", label: "E" },
+  { value: "a", label: "A" },
+  { value: "b", label: "B" },
+  { value: "c", label: "C" },
+  { value: "d", label: "D" },
+  { value: "e", label: "E" },
 ];
+
+
+
 export const language = [
 
   { value: "English", label: "English" },
@@ -1059,8 +1064,10 @@ export const roomtype = [
   { value: '4', label: 'Two Bed AC' }
 ];
 export const bedcount = [
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
 ];
 export const moreFilterSport = [
   { value: 'ID', label: 'ID' },

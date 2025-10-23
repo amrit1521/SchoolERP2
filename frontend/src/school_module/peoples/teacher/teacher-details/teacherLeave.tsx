@@ -3,7 +3,7 @@ import { all_routes } from "../../../router/all_routes";
 import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
 // import { leaveData } from "../../../../core/data/json/leaveData";
-import { Attendance } from "../../../../core/data/json/attendance";
+// import { Attendance } from "../../../../core/data/json/attendance";
 import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import TeacherModal from "../teacherModal";
@@ -29,7 +29,7 @@ export interface LeaveInform {
 const TeacherLeave = () => {
   const routes = all_routes;
   // const data = leaveData;
-  const data2 = Attendance;
+  // const data2 = Attendance;
   const { teacher_id } = useParams();
   // console.log(typeof userId)
 

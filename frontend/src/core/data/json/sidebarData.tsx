@@ -208,7 +208,7 @@ export const SidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "All Classes", link: routes.classes },
+          { label: "Classes&sections", link: routes.classes },
           { label: "Schedule", link: routes.sheduleClasses },
         ],
       },
@@ -1375,7 +1375,7 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "All Classes", link: routes.classes },
+          { label: "Classes&sections", link: routes.classes },
           { label: "Schedule", link: routes.sheduleClasses },
         ],
       },

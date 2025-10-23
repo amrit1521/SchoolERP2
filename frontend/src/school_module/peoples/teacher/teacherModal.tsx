@@ -11,8 +11,8 @@ import { addLeave, getAllLeaveTypeData } from "../../../service/api";
 import { useEffect, useState } from "react";
 
 type props = {
-  onAdd: () => void;
-  teacherId: string;
+  onAdd?: () => void;
+  teacherId?: string;
 };
 export interface ApplyLeave {
   idOrRollNum: number | string | null;
@@ -130,6 +130,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
 
   const handleLeaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!teacherId || !onAdd) return;
     const updatedForm = { ...applayLeaveForm, idOrRollNum: teacherId };
     const errors = validateLeaveForm(updatedForm);
 

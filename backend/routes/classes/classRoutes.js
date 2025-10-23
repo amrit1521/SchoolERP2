@@ -40,4 +40,7 @@ router.put('/editschedule/:id' , classController.updateSchedule)
 router.get('/allrealclasses' ,classController.getAllClassForOption)
 
 
+
+
+
 module.exports = router

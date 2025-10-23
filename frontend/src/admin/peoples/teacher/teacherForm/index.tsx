@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
@@ -12,13 +12,11 @@ import {
   PickupPoint,
   Shift,
   VehicleNumber,
-  allClass,
   allSubject,
   bloodGroup,
   gender,
   roomNO,
   route,
-  sections,
   status,
 
 } from "../../../../core/common/selectoption/selectoption";
@@ -27,7 +25,8 @@ import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { addTeacher, deleteTeacherFile, uploadTeacherFile } from "../../../../service/api";
+import { addTeacher, deleteTeacherFile,  getAllSectionForAClass, uploadTeacherFile } from "../../../../service/api";
+import { allRealClasses } from "../../../../service/classApi";
 
 const TeacherForm = () => {
   const routes = all_routes;
@@ -306,13 +305,13 @@ const TeacherForm = () => {
     setTeacherData((prev) => ({ ...prev, [name]: dateString }));
   };
 
-  // Handle for CommonSelect
+
   const handleSelectChange = (name: keyof TeacherData, value: string | number) => {
     setTeacherData((prev) => ({ ...prev, [name]: value }));
   };
 
 
-  // Generic tag handler
+
   const handleTagsChange = (field: keyof typeof teacherData, tags: string[]) => {
     setTeacherData((prev) => ({
       ...prev,
@@ -320,7 +319,7 @@ const TeacherForm = () => {
     }));
   };
 
-  // Validation function
+
   const validateTeacherData = (data: TeacherData) => {
     const errors: Partial<Record<keyof TeacherData, string>> = {};
 
@@ -334,10 +333,10 @@ const TeacherForm = () => {
     // if (data.password !== data.conpassword) errors.password = "Password and confirm password do not match";
 
     if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
-    if (!data.fromclass.trim()) errors.fromclass = "From Class is required";
-    if (!data.toclass.trim()) errors.toclass = "To Class is required";
-    if (!data.class.trim()) errors.class = "Class is required";
-    if (!data.section?.trim()) errors.section = "Section is required";
+    if (!data.fromclass) errors.fromclass = "From Class is required";
+    if (!data.toclass) errors.toclass = "To Class is required";
+    if (!data.class) errors.class = "Class is required";
+    if (!data.section) errors.section = "Section is required";
     if (!data.subject.trim()) errors.subject = "Subject is required";
     if (!data.gender.trim()) errors.gender = "Gender is required";
     if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
@@ -576,6 +575,60 @@ const TeacherForm = () => {
 
   }
 
+
+  // options
+
+  const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
+  const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([])
+
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+
+    }
+  };
+  const fetchSection = async () => {
+    try {
+      if (teacherData.class) {
+        const { data } = await getAllSectionForAClass(Number(teacherData.class));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+
+  useEffect(() => {
+    fetchClass()
+  }, [])
+
+  useEffect(() => {
+    if (teacherData.class) {
+      fetchSection()
+    }
+  }, [teacherData.class])
+
+
+
   return (
     <>
       {/* Page Wrapper */}
@@ -700,7 +753,7 @@ const TeacherForm = () => {
                             <label className="form-label">From Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.fromclass}
                               onChange={(option) => handleSelectChange("fromclass", option ? option.value : "")}
                             />
@@ -714,7 +767,7 @@ const TeacherForm = () => {
                             <label className="form-label">To Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.toclass}
                               onChange={(option) => handleSelectChange("toclass", option ? option.value : "")}
                             />
@@ -729,7 +782,7 @@ const TeacherForm = () => {
                             <label className="form-label">Class</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
-                              options={allClass}
+                              options={classOptions}
                               value={teacherData.class}
                               onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                             />
@@ -743,7 +796,7 @@ const TeacherForm = () => {
                             <label className="form-label">Section</label><span className="text-danger"> *</span>
                             <CommonSelect
                               className="select text-capitalize"
-                              options={sections}
+                              options={sectionOptions}
                               value={teacherData.section}
                               onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                             />

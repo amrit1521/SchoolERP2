@@ -10,8 +10,6 @@ import {
     PickupPoint,
     VehicleNumber,
     academicYear,
-    allClass,
-    allSection,
     bloodGroup,
     cast,
     gender,
@@ -28,8 +26,9 @@ import {
 import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
-import { deleteFile, editStudent, Imageurl, stuDataForEdit, uploadStudentFile } from '../../../../service/api'
+import { deleteFile, editStudent, getAllSectionForAClass, Imageurl, stuDataForEdit, uploadStudentFile } from '../../../../service/api'
 import { toast } from 'react-toastify'
+import { allRealClasses } from "../../../../service/classApi";
 
 
 export interface StudentData {
@@ -192,19 +191,19 @@ const EditStudent = () => {
                     motherton: student.motherton || '',
                     lanknown: student.lanknown ? JSON.parse(student.lanknown) : [],
 
-                    // Father
+                 
                     fat_name: parentMap['father']?.name || '',
                     fat_email: parentMap['father']?.email || '',
                     fat_phone: parentMap['father']?.phone_num || '',
                     fat_occu: parentMap['father']?.occuption || '',
 
-                    // Mother
+                  
                     mot_name: parentMap['mother']?.name || '',
                     mot_email: parentMap['mother']?.email || '',
                     mot_phone: parentMap['mother']?.phone_num || '',
                     mot_occu: parentMap['mother']?.occuption || '',
 
-                    // Guardian
+                 
                     gua_name: parentMap['guardian']?.name || '',
                     gua_relation: parentMap['guardian']?.relation_det || '',
                     gua_phone: parentMap['guardian']?.phone_num || '',
@@ -231,7 +230,7 @@ const EditStudent = () => {
                     medications: student.medications ? JSON.parse(student.medications) : []
                 });
 
-                // ✅ Set images by mapping
+             
                 setStuImg(student.stu_img);
                 setStuimgpath(student.stu_img || '');
 
@@ -593,13 +592,11 @@ const EditStudent = () => {
             //   console.log(key, value);
             // }
 
-            // Send request
+
             const res = await editStudent(formData, Number(rollnum));
 
             if (res.data.success) {
                 toast.success(res.data.message);
-
-                // Reset form
                 setStudentData({
                     academicyear: '',
                     admissionnum: '',
@@ -774,6 +771,55 @@ const EditStudent = () => {
         navigate(-1)
 
     }
+
+    const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
+    const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([])
+
+
+    const fetchClass = async () => {
+        try {
+            const { data } = await allRealClasses();
+            if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+                setClassOptions(
+                    data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+                );
+            } else {
+                setClassOptions([]);
+            }
+
+        } catch (error) {
+            console.log(error);
+            toast.error("Error to fetch classes !");
+
+        }
+    };
+    const fetchSection = async () => {
+        try {
+            if (studentData.class) {
+                const { data } = await getAllSectionForAClass(Number(studentData.class));
+                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                    setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+                } else {
+                    setSectionOptions([]);
+                }
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Error to fetch section !");
+        }
+    }
+
+
+    useEffect(() => {
+        fetchClass()
+    }, [])
+
+    useEffect(() => {
+        if (studentData.class) {
+            fetchSection()
+        }
+    }, [studentData.class])
 
     return (
         <>
@@ -997,7 +1043,7 @@ const EditStudent = () => {
                                                     <label className="form-label">Class</label><span className="text-danger"> *</span>
                                                     <CommonSelect
                                                         className={`select ${errors.class ? "is-invalid" : ""}`}
-                                                        options={allClass}
+                                                        options={classOptions}
                                                         value={studentData.class}
                                                         onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                                                     />
@@ -1013,7 +1059,7 @@ const EditStudent = () => {
                                                     <label className="form-label">Section</label><span className="text-danger"> *</span>
                                                     <CommonSelect
                                                         className={`select ${errors.section ? "is-invalid" : ""}`}
-                                                        options={allSection}
+                                                        options={sectionOptions}
                                                         value={studentData.section}
                                                         onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                                                     />

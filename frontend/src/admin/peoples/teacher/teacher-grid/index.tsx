@@ -418,7 +418,10 @@ const TeacherGrid = () => {
       </div>
       {/* /Delete Modal */}
       {/* /Page Wrapper */}
-      <TeacherModal />
+      <TeacherModal onAdd={()=>{}}  teacherId={""}/>
+      {/* <TeacherModal  /> */}
+
+
     </>
 
   )

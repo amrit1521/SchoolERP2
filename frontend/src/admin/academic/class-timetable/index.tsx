@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
   // classduration,
-  classSection,
+  
   // classSylabus,
   language,
   // period,
@@ -11,18 +11,19 @@ import {
   teacher,
   Time,
   Timeto,
-  allClass,
+
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { addTimeTable, filterTimeTable, getTimeTable } from "../../../service/api";
+import { addTimeTable, filterTimeTable, getAllSectionForAClass, getTimeTable } from "../../../service/api";
 // allTeacherForOption
 import { toast } from "react-toastify";
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { allRealClasses } from "../../../service/classApi";
 
 const ClassTimetable = () => {
   const routes = all_routes;
@@ -104,8 +105,8 @@ const ClassTimetable = () => {
   interface TimeTable {
     day: string;
     subject: string;
-    class: string;
-    section: string;
+    class: number |null;
+    section: number |null;
     teacher: string;
     timefrom: string;
     timeto: string;
@@ -114,8 +115,8 @@ const ClassTimetable = () => {
   const [tableData, setTableData] = useState<TimeTable>({
     day: "Monday",
     subject: "",
-    class: "",
-    section: "",
+    class: null,
+    section: null,
     teacher: "",
     timefrom: "",
     timeto: "",
@@ -131,7 +132,7 @@ const ClassTimetable = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    console.log(name, value)
+    // console.log(name, value)
     setTableData((prev) => ({
       ...prev,
       [name]: value,
@@ -142,7 +143,7 @@ const ClassTimetable = () => {
     e.preventDefault();
     try {
       const res = await addTimeTable(tableData);
-      console.log(res)
+      // console.log(res)
       if (res.data.success) {
         toast.success(res.data.message)
         fetchTimeTable()
@@ -176,7 +177,7 @@ const ClassTimetable = () => {
     await new Promise((res) => setTimeout(res, 600))
     try {
       const { data } = await getTimeTable()
-      console.log(data)
+      // console.log(data)
       if (data.success) {
         setTimeTable(data.timetable)
         setTimeTablefilter(data.timetable)
@@ -210,13 +211,13 @@ const ClassTimetable = () => {
 
   // Filter
   interface FilterData {
-    class: string;
-    section: string;
+    class: number | null;
+    section: number | null;
   }
 
   const [filterData, setFilterData] = useState<FilterData>({
-    class: "",
-    section: "",
+    class: null,
+    section: null,
   });
 
   const handleFilterSelectChange = (name: keyof FilterData, value: string | number) => {
@@ -225,24 +226,24 @@ const ClassTimetable = () => {
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
 
-  const handleApplyClick = async(e: React.FormEvent) => {
+  const handleApplyClick = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(filterData)
-   try {
-     const {data} = await filterTimeTable(filterData)
-    console.log(data)
-    if(data.success){
+    // console.log(filterData)
+    try {
+      const { data } = await filterTimeTable(filterData)
+      // console.log(data)
+      if (data.success) {
         setTimeTablefilter(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
     }
-    
-   } catch (error) {
-     console.log(error)
-   }
   };
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "" });
+    setFilterData({ class: null, section: null });
     setTimeTablefilter(timeTable);
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
@@ -250,7 +251,61 @@ const ClassTimetable = () => {
   };
 
 
+  // OPTIONS
 
+  interface Option {
+    value: number;
+    label: string;
+  }
+
+  const [classOptions, setClassOptions] = useState<Option[]>([])
+  const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+
+    }
+  };
+  const fetchSection = async () => {
+    try {
+      if (tableData.class) {
+        const { data } = await getAllSectionForAClass(Number(tableData.class));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+
+  useEffect(() => {
+    fetchClass()
+  }, [])
+
+  useEffect(() => {
+    if (tableData.class) {
+      fetchSection()
+    }
+  }, [tableData.class])
 
 
   return (
@@ -321,7 +376,7 @@ const ClassTimetable = () => {
                               <label className="form-label">Class</label>
                               <CommonSelect
                                 className="select"
-                                options={allClass}
+                                options={classOptions}
                                 onChange={(option) => handleFilterSelectChange('class', option ? option.value : "")}
                               />
                             </div>
@@ -331,7 +386,7 @@ const ClassTimetable = () => {
                               <label className="form-label">Section</label>
                               <CommonSelect
                                 className="select"
-                                options={classSection}
+                                options={sectionOptions}
                                 onChange={(option) => handleFilterSelectChange('section', option ? option.value : "")}
                               />
                             </div>
@@ -541,7 +596,7 @@ const ClassTimetable = () => {
                         <label className="form-label">Class</label>
                         <CommonSelect
                           className="select"
-                          options={allClass}
+                          options={classOptions}
                           onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                         />
                       </div>
@@ -551,7 +606,7 @@ const ClassTimetable = () => {
                         <label className="form-label">Section</label>
                         <CommonSelect
                           className="select"
-                          options={classSection}
+                          options={sectionOptions}
                           onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                         />
                       </div>
@@ -648,7 +703,7 @@ const ClassTimetable = () => {
                         <div>
                           <Link
                             to="#"
-                            className="btn btn-primary add-new-timetable"
+                            className="btn btn-primary add-new-timetable d-none"
                             onClick={addNewContent}
                           >
                             <i className="ti ti-square-rounded-plus-filled me-2" />

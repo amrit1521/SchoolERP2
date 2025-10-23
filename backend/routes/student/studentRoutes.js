@@ -33,7 +33,8 @@ router.get('/timetable/:rollnum', studentController.getTimeTable)
 
 router.get('/leavedata/:rollnum', studentController.getStuLeaveData)
 
-
+// for option
+router.get('/stuforoption'  ,studentController.studentForOption)
 
 // file upload and delete
 router.post('/upload', upload.single('stufile'), fileController.uploadFile);

@@ -112,9 +112,9 @@ const IssueBook = () => {
     {
       title: "Due Date",
       dataIndex: "dueDate",
-      render:(text:any)=>(
-                 <span>{dayjs(text).format('DD MMM YYYY')}</span>
-            ),
+      render: (text: any) => (
+        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.dueDate.length - b.dueDate.length,
     },
@@ -136,7 +136,7 @@ const IssueBook = () => {
               <p className="text-dark mb-0">
                 <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
               </p>
-              <span className="fs-12">{record.class},{record.section}</span>
+              <span className="fs-12 text-capitalize">{record.class}-{record.section}</span>
             </div>
           </div>
         </>
@@ -168,13 +168,13 @@ const IssueBook = () => {
     {
       title: "Action",
       dataIndex: "rollnum",
-      render: (id:number) => (
+      render: (id: number) => (
         <div className="d-flex align-items-center gap-1">
           <Link
             to={`${routes.studentLibrary}/${id}`}
             className="btn btn-light add-fee"
-            // data-bs-toggle="modal"
-            // data-bs-target="#book_details"
+          // data-bs-toggle="modal"
+          // data-bs-target="#book_details"
           >
             View Details
           </Link>
