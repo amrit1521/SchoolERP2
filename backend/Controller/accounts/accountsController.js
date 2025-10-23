@@ -51,7 +51,7 @@ exports.addExpenseCategory = async (req, res) => {
 exports.getExpenseCategories = async (req, res) => {
     try {
         const [rows] = await db.query(
-            "SELECT id, category, description, created_at, updated_at FROM expense_category ORDER BY id ASC"
+            "SELECT id, category, description FROM expense_category ORDER BY id ASC"
         );
         return res.status(200).json({ success: true, data: rows });
     } catch (error) {
@@ -69,7 +69,7 @@ exports.getExpenseCategoryById = async (req, res) => {
     const { id } = req.params;
     try {
         const [rows] = await db.query(
-            "SELECT id, category, description, created_at, updated_at FROM expense_category WHERE id = ?",
+            "SELECT category, description FROM expense_category WHERE id = ?",
             [id]
         );
 
@@ -152,3 +152,28 @@ exports.deleteExpenseCategory = async (req, res) => {
         });
     }
 };
+
+exports.expCatForOption = async (req, res) => {
+
+    try {
+
+        const sql = `
+        SELECT 
+        id,
+        category
+        FROM 
+        expense_category
+        `
+        const [rows] = await db.query(sql)
+
+        return res.status(200).json({
+            message: "Expense categories fetched successfully for option!",
+            success: true,
+            data: rows,
+        });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "internal server error ", success: false, error: error.message })
+    }
+}

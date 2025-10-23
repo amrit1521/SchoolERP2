@@ -6,6 +6,7 @@ router.post('/addexpcat' , accountController.addExpenseCategory)
 router.get('/getexpcat' , accountController.getExpenseCategories)
 router.delete('/delexpcat/:id' , accountController.deleteExpenseCategory)
 router.get('/speexpcat/:id' , accountController.getExpenseCategoryById)
-router.get('/editexpcat/:id' , accountController.updateExpenseCategory)
+router.put('/editexpcat/:id' , accountController.updateExpenseCategory)
+router.get('/expoption' , accountController.expCatForOption)
 
 module.exports = router

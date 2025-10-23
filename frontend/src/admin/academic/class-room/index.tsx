@@ -658,7 +658,7 @@ const ClassRoom = () => {
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
+                    You want to delete  marked item, this cant be undone
                     once you delete.
                   </p>
                   {
