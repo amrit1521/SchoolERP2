@@ -17,8 +17,9 @@ import {
   getAllAssignedVehicles,
   getAllTransportRoutes,
   getAllVehicle,
-  getTransportRoutesByRouteId,
+  // getTransportRoutesByRouteId,
   udpateTransportRoutes,
+  updateAssignedVehicle,
   updateTransportPickupPoints,
   updateVehicleById,
 } from "../../../service/api";
@@ -405,7 +406,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
   };
 
   // transport vehicle assign module:
-  const [selectAssignRoute, setSelectAssignRoute] = useState<any>(null);
   // const [assignedPickupPointsOptions, setAssignedPickupPointsOptions] =
   //   useState<any[]>([]);
   // const [selectedPickupPoint, setSelectedPickupPoint] = useState<any>(null);
@@ -428,6 +428,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
   //     );
   //   }
   // };
+  const [selectAssignRoute, setSelectAssignRoute] = useState<any>(null);
   const [vehicleOption, setVehicleOption] = useState<any[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [isVehicleAssigned, setIsVehicleAssigned] = useState(false);
@@ -437,12 +438,21 @@ const TransportModal: React.FC<TransportModalProps> = ({
       const result = await getAllAssignedVehicles();
       console.log("All Vehicles: ", data);
       if (data.success) {
-        const unassignedVehicles = data.result.filter(
-          (vehicle: any) =>
-            !result.data.result.some(
-              (assigned: any) => assigned.vehicle_no === vehicle.vehicle_no
+        const unassignedVehicles = selectedItem?.routeId
+          ? data.result.filter(
+              (vehicle: any) =>
+                !result.data.result.some(
+                  (assigned: any) =>
+                    assigned.vehicle_no === vehicle.vehicle_no &&
+                    assigned.route_id !== selectAssignRoute?.value
+                )
             )
-        );
+          : data.result.filter(
+              (vehicle: any) =>
+                !result.data.result.some(
+                  (assigned: any) => assigned.vehicle_no === vehicle.vehicle_no
+                )
+            );
         console.log("unassigned Vehicles: ", unassignedVehicles);
         setVehicleOption(
           unassignedVehicles.map((v: any) => ({
@@ -460,34 +470,40 @@ const TransportModal: React.FC<TransportModalProps> = ({
 
   useEffect(() => {
     if (selectAssignRoute?.value) {
-      // fetchPickupPointsByRouteId();
       fetchAllVehicles();
+    } else {
+      vehicleAssignedFormReset();
     }
   }, [selectAssignRoute?.value]);
 
   const vehicleAssignedFormReset = () => {
-    setSelectAssignRoute(null);
-    setSelectedVehicle(null);
+    setSelectAssignRoute({ value: null, label: null });
+    setSelectedVehicle({ value: null, label: null });
     setIsVehicleAssigned(false);
   };
 
   const handleAssignedVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectAssignRoute || !selectedVehicle) {
+
+    if (!selectAssignRoute?.value || !selectedVehicle?.value) {
       toast.error("Please select both route and vehicle.");
       return;
     }
+
     try {
       const payload = {
         route_id: selectAssignRoute.value,
         vehicle_id: selectedVehicle.value,
         status: isVehicleAssigned ? 1 : 0,
       };
+
       const { data } = await assignVehicleToRoute(payload);
+
       if (data.success) {
         toast.success(data.message || "Vehicle assigned successfully");
         onAdded();
         closeModal("add_assign_vehicle");
+        vehicleAssignedFormReset();
       } else {
         toast.error(data.message || "Failed to assign vehicle");
       }
@@ -497,16 +513,66 @@ const TransportModal: React.FC<TransportModalProps> = ({
   };
 
   useEffect(() => {
-    if (
-      selectedItem &&
-      Object.prototype.hasOwnProperty.call(selectedItem, "registrationNo") &&
-      Object.prototype.hasOwnProperty.call(selectedItem, "vehicleNo") &&
-      Object.prototype.hasOwnProperty.call(selectedItem, "vehicleModel")
-    ) {
+    console.log("selecteItem", selectedItem);
+    if (selectedItem && selectedItem.routeId && selectedItem.vehicleId) {
+      setSelectAssignRoute({
+        value: selectedItem.routeId,
+        label: selectedItem.routeName || "",
+      });
+      setSelectedVehicle({
+        value: selectedItem.vehicleId,
+        label: selectedItem.vehicleNo || "",
+      });
+      setIsVehicleAssigned(selectedItem.status === 1);
     } else {
       vehicleAssignedFormReset();
     }
   }, [selectedItem]);
+
+  useEffect(() => {
+    const handleModalClose = () => {
+      vehicleAssignedFormReset();
+    };
+
+    window.addEventListener("modalClosed:add_assign_vehicle", handleModalClose);
+
+    return () => {
+      window.removeEventListener(
+        "modalClosed:add_assign_vehicle",
+        handleModalClose
+      );
+    };
+  }, []);
+
+  const handleUpdateAssignedVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectAssignRoute?.value || !selectedVehicle?.value) {
+      toast.error("Please select both route and vehicle.");
+      return;
+    }
+
+    try {
+      const payload = {
+        route_id: selectAssignRoute.value,
+        vehicle_id: selectedVehicle.value,
+        status: isVehicleAssigned ? 1 : 0,
+      };
+
+      const { data } = await updateAssignedVehicle(payload, selectedItem?.id);
+
+      if (data.success) {
+        toast.success(data.message || "Vehicle updated successfully");
+        onUpdated();
+        closeModal("add_assign_vehicle");
+        vehicleAssignedFormReset();
+      } else {
+        toast.error(data.message || "Failed to update vehicle");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error updating vehicle");
+    }
+  };
 
   return (
     <>
@@ -658,6 +724,10 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
+                  onClick={() => {
+                    handleResetModalForm();
+                    vehicleAssignedFormReset();
+                  }}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -721,13 +791,17 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={() => {
+                      handleResetModalForm();
+                      vehicleAssignedFormReset();
+                    }}
                   >
                     Cancel
-                  </Link>
+                  </button>
                   <button
                     type="submit"
                     data-bs-dismiss="modal"
@@ -752,11 +826,15 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
+                  onClick={() => {
+                    handleResetModalForm();
+                    vehicleAssignedFormReset();
+                  }}
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleUpdateAssignedVehicle}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
@@ -764,7 +842,9 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <label className="form-label">Select Route</label>
                         <CommonSelect
                           className="select"
-                          options={routeListOption}
+                          options={routeListOption.filter(
+                            (e) => e.value === selectAssignRoute?.value
+                          )}
                           value={selectAssignRoute?.value}
                           onChange={(opt) => setSelectAssignRoute(opt)}
                         />
@@ -798,8 +878,16 @@ const TransportModal: React.FC<TransportModalProps> = ({
                             />
                           </span>
                           <div>
-                            <h5>Thomas</h5>
-                            <span>+1 64044 748904</span>
+                            <h5>
+                              {
+                                driverName.find(
+                                  (item) => item.value == selectedItem?.driver
+                                )?.label
+                              }
+                            </h5>
+                            <span>
+                              {selectedItem ? selectedItem?.driverPhone : ""}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -832,16 +920,20 @@ const TransportModal: React.FC<TransportModalProps> = ({
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={() => {
+                      handleResetModalForm();
+                      vehicleAssignedFormReset();
+                    }}
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     data-bs-dismiss="modal"
                     className="btn btn-primary"
                   >
                     Assign Now
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
