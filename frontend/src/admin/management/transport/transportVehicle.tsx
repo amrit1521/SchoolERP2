@@ -15,7 +15,7 @@ import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 import TransportModal from "./transportModal";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { transportVehicles } from "../../../core/data/json/transport_vehicle";
+// import { transportVehicles } from "../../../core/data/json/transport_vehicle";
 import { Link } from "react-router-dom";
 import { deleteVehicleById, getAllVehicle } from "../../../service/api";
 import { toast } from "react-toastify";
@@ -39,7 +39,7 @@ interface TransportVehicleProps {
 const TransportVehicle = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const data = transportVehicles;
+  // const data = transportVehicles;
   const [vehicleDetails, setVehicleDetails] = useState<TransportVehicleProps[]>(
     []
   );
@@ -54,7 +54,7 @@ const TransportVehicle = () => {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-
+  console.log(vehicleDetails ? "" : "");
   const fetchVehicleDetails = async () => {
     try {
       const { data } = await getAllVehicle();

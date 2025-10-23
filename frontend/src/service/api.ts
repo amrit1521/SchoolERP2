@@ -54,7 +54,6 @@ export const addClassSection = (data: object) => api.post("/section", data);
 export const deleteSection = (id: any) => api.delete(`/section/${id}`);
 export const speSection = (id: any) => api.get(`/section/${id}`);
 export const editSection = (data: object, id: any) => api.put(`/section/${id}`, data);
-export const getAllSectionForAClass = (id: number) =>api.get(`/section/speclass/${id}`);
 
 // class sbject-----------------------------
 export const addSubject = (data: object) => api.post("/subject/addsubject", data);
