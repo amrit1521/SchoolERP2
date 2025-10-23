@@ -220,6 +220,8 @@ export const addRoutes = (data: object) =>
 export const getAllTransportRoutes = () => api.get("/transport/getallroutes");
 export const getTransportRoutesById = (id: number | null) =>
   api.get(`/transport/gettranportroutesbyId/${id}`);
+export const getTransportRoutesByRouteId = (id: number | null) =>
+  api.get(`/transport/getpickup-points-by-route/${id}`);
 export const udpateTransportRoutes = (data: any, id: number) =>
   api.patch(`/transport/updatetransportroutes/${id}`, data);
 export const deleteTransportRoutesById = (id: number | null) =>
@@ -243,3 +245,11 @@ export const updateVehicleById = (data:object,id:number) =>
   api.patch(`/transport/update-vehicle/${id}`,data);
 export const deleteVehicleById = (id:number) =>
   api.delete(`/transport/delete-vehicle/${id}`);
+
+
+export const assignVehicleToRoute = (data: object) =>
+  api.post("/transport/assign-vehicle", data);
+export const getAllAssignedVehicles = () =>
+  api.get("/transport/all-assigned-vehicles");
+export const deleteAssignedVehicleById = (id:number) =>
+  api.delete(`/transport/delete-assigned-vehicle/${id}`);
