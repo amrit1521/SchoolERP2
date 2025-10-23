@@ -763,8 +763,7 @@ const ExamResult = () => {
     rowIndex: number
   ) => {
     try {
-      
-      setLoading(false)
+      setLoading(false);
       const { data } = await examNameForOption({ class: cls, section });
       let options: { value: number; label: string }[] = [];
 
@@ -1130,7 +1129,7 @@ const ExamResult = () => {
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
     setFilterData({ class: null, section: null, exam_type: null });
-    setExamOptions([]);
+    // setExamOptions([]);
     console.log(filterData);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");

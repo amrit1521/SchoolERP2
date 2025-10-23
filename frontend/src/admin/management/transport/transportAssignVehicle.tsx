@@ -14,7 +14,7 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-import TransportModal from "./transportModal";
+// import TransportModal from "./transportModal";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { transportAssignData } from "../../../core/data/json/transport_assign";
 
@@ -336,7 +336,7 @@ const TransportAssignVehicle = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TransportModal />
+      {/* <TransportModal /> */}
     </>
   );
 };
