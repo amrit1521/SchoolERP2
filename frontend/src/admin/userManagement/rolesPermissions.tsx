@@ -1,4 +1,3 @@
-
 import { rolesPermissionsData } from "../../core/data/json/rolesPermissions";
 import Table from "../../core/common/dataTable/index";
 import type { TableData } from "../../core/data/interface";
@@ -6,14 +5,114 @@ import PredefinedDateRanges from "../../core/common/datePicker";
 import { Link } from "react-router-dom";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { useMemo, useState } from "react";
+import {
+  createRoles,
+  deleteRolesById,
+  getAllRoles,
+  updateRoles,
+} from "../../service/api";
+import { toast } from "react-toastify";
+
+interface Roles {
+  id: number;
+  roleName: string;
+  description: string;
+  createdOn: string;
+}
 
 const RolesPermissions = () => {
-  const routes = all_routes
-  const data = rolesPermissionsData;
+  const routes = all_routes;
+  // const data = rolesPermissionsData;
+  const [allRoles, setAllRoles] = useState<Roles[]>([]);
+  const [roleName, setRoleName] = useState<string>("");
+  const [roleDescription, setRoleDescription] = useState<string>("");
+  const [roleId, setRoleId] = useState<number | null>(null);
+  const fetchRoles = async () => {
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+        console.log("roles data: ", data.result);
+        setAllRoles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            roleName: item.role_name,
+            description: item.description,
+            createdOn: item.created_at,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  useMemo(() => {
+    fetchRoles();
+  }, []);
+
+  const handleCreateRoles = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        role_name: roleName,
+        description: roleDescription,
+      };
+      const { data } = await createRoles(payload);
+      if (data.success) {
+        toast.success(data.message || "role created Scuccessfully.");
+        fetchRoles();
+      } else {
+        toast.error(data.message || "roles creation failed.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create roles");
+    }
+  };
+
+  const handleUpdateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("update Data: ", roleName, roleDescription, roleId);
+    try {
+      const payload = {
+        role_name: roleName,
+        description: roleDescription,
+      };
+      const { data } = await updateRoles(payload, roleId);
+      if (data.success) {
+        toast.success(data.message || "role udpated Scuccessfully.");
+        fetchRoles();
+      } else {
+        toast.error(data.message || "roles udpation failed.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update roles");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      console.log("deleteId: ", roleId);
+      const { data } = await deleteRolesById(roleId);
+      if (data.success) {
+        fetchRoles();
+        setRoleId(null);
+        toast.success(data.message || "roles deleted successfully");
+      } else {
+        toast.error(data.message || "Failed to delete roles");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Error deleting roles.");
+    }
+  };
+
   const columns = [
     {
       title: "Role Name",
       dataIndex: "roleName",
+      render: (_: any, record: any) => {
+        return <span className="text-capitalize">{record.roleName}</span>;
+      },
       sorter: (a: TableData, b: TableData) =>
         a.roleName.length - b.roleName.length,
     },
@@ -21,13 +120,22 @@ const RolesPermissions = () => {
     {
       title: "Created On",
       dataIndex: "createdOn",
+      render: (_: any, record: any) => {
+        const date = new Date(record.createdOn);
+        const formatted = date.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        return <span>{formatted}</span>;
+      },
       sorter: (a: TableData, b: TableData) =>
         a.createdOn.length - b.createdOn.length,
     },
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <Link
@@ -35,11 +143,17 @@ const RolesPermissions = () => {
               className="btn btn-outline-light bg-white btn-icon d-flex align-items-center justify-content-center rounded-circle  p-0 me-2"
               data-bs-toggle="modal"
               data-bs-target="#edit_role"
+              onClick={() => {
+                setRoleName(record.roleName);
+                setRoleDescription(record.description);
+                setRoleId(record.id);
+              }}
             >
               <i className="ti ti-edit-circle text-primary" />
             </Link>
             <Link
               to={routes.permissions}
+              state={{ roleId: record.id }}
               className="btn btn-outline-light bg-white btn-icon d-flex align-items-center justify-content-center rounded-circle  p-0 me-2"
             >
               <i className="ti ti-shield text-skyblue" />
@@ -49,6 +163,9 @@ const RolesPermissions = () => {
               className="btn btn-outline-light bg-white btn-icon d-flex align-items-center justify-content-center rounded-circle p-0 me-3"
               data-bs-toggle="modal"
               data-bs-target="#delete-modal"
+              onClick={() => {
+                setRoleId(record.id);
+              }}
             >
               <i className="ti ti-trash-x text-danger" />
             </Link>
@@ -82,7 +199,7 @@ const RolesPermissions = () => {
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-              <TooltipOption />
+                <TooltipOption />
                 <div className="mb-2">
                   <Link
                     to="#"
@@ -141,7 +258,11 @@ const RolesPermissions = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Role Permission List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+                <Table
+                  columns={columns}
+                  dataSource={allRoles}
+                  Selection={true}
+                />
                 {/* /Role Permission List */}
               </div>
             </div>
@@ -164,13 +285,29 @@ const RolesPermissions = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form >
+              <form onSubmit={handleCreateRoles}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
+                      <div className="mb-2">
+                        <label className="col-form-label">Role Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={roleName}
+                          onChange={(e) => setRoleName(e.target.value)}
+                        />
+                      </div>
                       <div className="mb-0">
-                        <label className="form-label">Role Name</label>
-                        <input type="text" className="form-control" />
+                        <label className="col-form-label">
+                          Role Description
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={roleDescription}
+                          onChange={(e) => setRoleDescription(e.target.value)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -180,12 +317,20 @@ const RolesPermissions = () => {
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={() => {
+                      setRoleName("");
+                      setRoleDescription("");
+                    }}
                   >
                     Cancel
                   </Link>
-                  <Link to="#" className="btn btn-primary" data-bs-dismiss="modal">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    data-bs-dismiss="modal"
+                  >
                     Add Role
-                  </Link>
+                  </button>
                 </div>
               </form>
             </div>
@@ -203,20 +348,37 @@ const RolesPermissions = () => {
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
+                  onClick={() => {
+                    setRoleName("");
+                    setRoleDescription("");
+                    setRoleId(null);
+                  }}
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form >
+              <form>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
-                      <div className="mb-0">
+                      <div className="mb-2">
                         <label className="col-form-label">Role Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          defaultValue="Admin"
+                          value={roleName}
+                          onChange={(e) => setRoleName(e.target.value)}
+                        />
+                      </div>
+                      <div className="mb-0">
+                        <label className="col-form-label">
+                          Role Description
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={roleDescription}
+                          onChange={(e) => setRoleDescription(e.target.value)}
                         />
                       </div>
                     </div>
@@ -227,10 +389,20 @@ const RolesPermissions = () => {
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={() => {
+                      setRoleName("");
+                      setRoleDescription("");
+                      setRoleId(null);
+                    }}
                   >
                     Cancel
                   </Link>
-                  <Link to="#" className="btn btn-primary" data-bs-dismiss="modal">
+                  <Link
+                    to="#"
+                    className="btn btn-primary"
+                    data-bs-dismiss="modal"
+                    onClick={handleUpdateRole}
+                  >
                     Save Changes
                   </Link>
                 </div>
@@ -243,7 +415,7 @@ const RolesPermissions = () => {
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <form >
+              <form>
                 <div className="modal-body text-center">
                   <span className="delete-icon">
                     <i className="ti ti-trash-x" />
@@ -258,10 +430,16 @@ const RolesPermissions = () => {
                       to="#"
                       className="btn btn-light me-3"
                       data-bs-dismiss="modal"
+                      onClick={() => setRoleId(null)}
                     >
                       Cancel
                     </Link>
-                    <Link to="#" className="btn btn-danger" data-bs-dismiss="modal">
+                    <Link
+                      to="#"
+                      className="btn btn-danger"
+                      data-bs-dismiss="modal"
+                      onClick={handleDelete}
+                    >
                       Yes, Delete
                     </Link>
                   </div>
