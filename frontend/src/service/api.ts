@@ -20,14 +20,22 @@ export const api2 = axios.create({
 
 //user apis-------------------
 export const allUsers = () => api.get("/user/all-users");
-export const deleteUsersById = (id:number) => api.delete(`/user/delete-users/${id}`);
+export const deleteUsersById = (id: number) =>
+  api.delete(`/user/delete-users/${id}`);
 export const getAllRoles = () => api.get("/user/all-roles");
-export const updateRoles = (data:object,id:number|null) =>api.patch(`/user/update-roles/${id}`,data);
-export const createRoles = (data:object) =>api.post(`/user/create-roles`,data);
-export const deleteRolesById = (id:number|null) => api.delete(`/user/delete-roles/${id}`);
-export const savePermissions = (data:object) => api.post('/user/save-permission',data);
+export const updateRoles = (data: object, id: number | null) =>
+  api.patch(`/user/update-roles/${id}`, data);
+export const createRoles = (data: object) =>
+  api.post(`/user/create-roles`, data);
+export const deleteRolesById = (id: number | null) =>
+  api.delete(`/user/delete-roles/${id}`);
+export const savePermissions = (data: object) =>
+  api.post("/user/save-permission", data);
+export const getAllRolePermissions = (id: number) =>
+  api.get(`/user/role-permission/${id}`);
 
-export const addModules = (data:object) => api.post('/user/create-module',data);
+export const addModules = (data: any) => api.post("/user/create-module", data);
+export const getAllModules = () => api.get("/user/all-module");
 
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);

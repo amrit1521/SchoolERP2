@@ -177,16 +177,23 @@ export const deleteRoleById = async (req, res) => {
 export const savePermissions = async (req, res) => {
   const { role_id, permissions } = req.body;
 
-  if (!role_id && !Array.isArray(permissions) || permissions.length === 0) {
+  if ((!role_id && !Array.isArray(permissions)) || permissions.length === 0) {
     return res.status(400).json({
       message: "Invalid or missing data",
       success: false,
     });
   }
-  console.log('permssion: ',permissions,role_id);
+  console.log("permssion: ", permissions, role_id);
   try {
     for (const perm of permissions) {
-      const { id:module_id, created, view, edit, delete: del, allowAll } = perm;
+      const {
+        id: module_id,
+        created,
+        view,
+        edit,
+        delete: del,
+        allowAll,
+      } = perm;
 
       const [existing] = await db.execute(
         "SELECT id FROM role_module_permissions WHERE role_id = ? AND module_id = ?",
@@ -240,39 +247,89 @@ export const savePermissions = async (req, res) => {
   }
 };
 
-
-
-
-
-//addModule:
-export const addModule = (req,res) => {
-  const {name,slug} = req.body;
-  if(!name && !slug){
-    return res.status(200).json({
-      message: "Invalid or missing data",
-      success: false,
-    });
-  }
-  try{
-    const sql = 'Insert INTO modules (name,slug) VALUES (?,?)';
-    const [rows] = db.execute(sql,[name,slug]);
-    if (!rows) {
+export const getAllPermissionByRoleId = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const sql = "Select * from role_module_permissions where role_id=?";
+    const [rows] = await db.execute(sql, [id]);
+    if (rows.length < 0) {
       return res.status(200).json({
-        message: "No modules found",
+        message: "No permission found",
         success: false,
-        result: rows,
       });
     }
-    return res.status(201).json({
-      message: "modules created successfully.",
+
+    return res.status(200).json({
+      message: "permission fetched successfully.",
       success: true,
       result: rows,
     });
-  }catch (error) {
+  } catch (error) {
     return res.status(500).json({
       message: "Internal server error",
       success: false,
       error: error.message,
     });
   }
-}
+};
+
+//addModule:
+export const addModule = async (req, res) => {
+  const { name, slug } = req.body;
+
+  if (!name || !slug) {
+    return res.status(400).json({
+      message: "Invalid or missing data",
+      success: false,
+    });
+  }
+  try {
+    const sql = "INSERT INTO modules (name, slug) VALUES (?, ?)";
+    const [result] = await db.execute(sql, [name, slug]);
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Failed to create module",
+        success: false,
+      });
+    }
+
+    return res.status(201).json({
+      message: "Module created successfully.",
+      success: true,
+      result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getAllModule = async (req, res) => {
+  try {
+    const sql = "SELECT id,name from modules";
+    const [rows] = await db.execute(sql);
+
+    if (rows.length <= 0) {
+      return res.status(400).json({
+        message: "No module found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Module fetched successfully.",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
