@@ -1,4 +1,4 @@
-import { rolesPermissionsData } from "../../core/data/json/rolesPermissions";
+// import { rolesPermissionsData } from "../../core/data/json/rolesPermissions";
 import Table from "../../core/common/dataTable/index";
 import type { TableData } from "../../core/data/interface";
 import PredefinedDateRanges from "../../core/common/datePicker";
