@@ -32,6 +32,7 @@ app.use((err, req, res, next) => {
 
 
 // routes
+app.use('/api/user', require('./routes/users/users.routes'));
 app.use('/api/stu', require('./routes/student/studentRoutes'));
 app.use('/api/table', require('./routes/timeTable/timetableRoutes'))
 app.use('/api/section', require('./routes/classSection/sectionRoutes'))

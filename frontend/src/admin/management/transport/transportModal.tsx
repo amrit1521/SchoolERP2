@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import {
   driverName,
-  PickupPoint2,
-  routesList,
-  VehicleNumber,
+  // PickupPoint2,
+  // routesList,
+  // VehicleNumber,
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
@@ -162,7 +162,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
   const fetchRoutes = async () => {
     try {
       const { data } = await getAllTransportRoutes();
-      console.log("all Routes: ", data);
       if (data.success) {
         setRouteListOption(
           data.result
@@ -222,7 +221,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
       } else {
         toast.error(data.message || "Failed to load pick up points.");
       }
-      console.log(pickPointName, selectedRotues?.value, pickupStatus);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Error adding route");
     }
@@ -329,7 +327,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
       status: 1,
     };
     // : madeOfYear ? dayjs(madeOfYear).year() : undefined
-    console.log("New Vehicle Data: ", newVehicle);
     try {
       const { data } = await addVehicle(newVehicle);
       if (data.success) {
@@ -386,7 +383,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
       driverAddress,
       status: 1,
     };
-    console.log("Updated Vehicle Data: ", updatedVehicle);
     try {
       const { data } = await updateVehicleById(
         updatedVehicle,
@@ -436,7 +432,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
     try {
       const { data } = await getAllVehicle();
       const result = await getAllAssignedVehicles();
-      console.log("All Vehicles: ", data);
       if (data.success) {
         const unassignedVehicles = selectedItem?.routeId
           ? data.result.filter(
@@ -453,7 +448,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
                   (assigned: any) => assigned.vehicle_no === vehicle.vehicle_no
                 )
             );
-        console.log("unassigned Vehicles: ", unassignedVehicles);
         setVehicleOption(
           unassignedVehicles.map((v: any) => ({
             value: v.id,
@@ -513,8 +507,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
   };
 
   useEffect(() => {
-    console.log("selecteItem", selectedItem);
-    if (selectedItem && selectedItem.routeId && selectedItem.vehicleId) {
+    if (selectedItem && selectedItem?.routeId && selectedItem?.vehicleId) {
       setSelectAssignRoute({
         value: selectedItem.routeId,
         label: selectedItem.routeName || "",
