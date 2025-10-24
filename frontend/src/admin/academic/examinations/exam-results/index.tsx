@@ -117,9 +117,9 @@ const ExamResult = () => {
   const [allClass, setAllClass] = useState<any[]>([]);
   // const [selectedClass, setSelectedClass] = useState("");
   // const [selectedSection, setSelectedSection] = useState("");
-  // const [examOptions, setExamOptions] = useState<
-  //   { value: number; label: string }[]
-  // >([]);
+  const [examOptions, setExamOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
   const [resultData2, setResultData2] = useState<any[]>([]);
   const [examOptionsMap, setExamOptionsMap] = useState<
     Record<number, { value: number; label: string }[]>
@@ -763,7 +763,6 @@ const ExamResult = () => {
     rowIndex: number
   ) => {
     try {
-      setLoading(false);
       const { data } = await examNameForOption({ class: cls, section });
       let options: { value: number; label: string }[] = [];
 
@@ -1068,11 +1067,11 @@ const ExamResult = () => {
     try {
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
-        setExamOptionsMap(
+        setExamOptions(
           data.data.map((e: any) => ({ value: e.id, label: e.examName }))
         );
       } else {
-        setExamOptionsMap([]);
+        setExamOptions([]);
         toast.warning("No exams found for this class & section.");
       }
     } catch (error) {
@@ -1095,7 +1094,7 @@ const ExamResult = () => {
         updated.exam_type = null;
         if (updated.class && updated.section) {
           fetchExamOptions(updated.class, updated.section);
-        } else setExamOptionsMap([]);
+        } else setExamOptions([]);
       }
       return updated;
     });
@@ -1129,7 +1128,7 @@ const ExamResult = () => {
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
     setFilterData({ class: null, section: null, exam_type: null });
-    // setExamOptions([]);
+    setExamOptions([]);
     console.log(filterData);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");
@@ -1240,7 +1239,7 @@ const ExamResult = () => {
                             </div>
                             <div className="col-md-6">
                               <label className="form-label">Exam Type</label>
-                              {/* <CommonSelect
+                              <CommonSelect
                                 className="select"
                                 options={examOptions}
                                 value={filterData.exam_type}
@@ -1250,7 +1249,7 @@ const ExamResult = () => {
                                     option ? option.value : ""
                                   )
                                 }
-                              /> */}
+                              />
                             </div>
                           </div>
                         </div>

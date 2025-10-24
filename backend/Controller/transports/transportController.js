@@ -245,6 +245,36 @@ export const getPickupPointById = async (req, res) => {
   }
 };
 
+export const getPickupPointByRouteId = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM transport_pickupPoints WHERE route_id = ?",
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "Pickup point not found",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Pickup point fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 export const updatePickupPoint = async (req, res) => {
   const { id } = req.params;
   const { pickPointName, status, addedOn } = req.body;
@@ -416,17 +446,17 @@ export const getVehicleById = async (req, res) => {
 export const updateVehicle = async (req, res) => {
   const {
     vehicleNo,
-      vehicleModel,
-      madeOfYear,
-      registrationNo,
-      chassisNo,
-      seatCapacity,
-      gpsTrackingId,
-      driver,
-      driverLicense,
-      driverContactNo,
-      driverAddress,
-      status,
+    vehicleModel,
+    madeOfYear,
+    registrationNo,
+    chassisNo,
+    seatCapacity,
+    gpsTrackingId,
+    driver,
+    driverLicense,
+    driverContactNo,
+    driverAddress,
+    status,
   } = req.body;
   const { id } = req.params;
   if (!id) {
@@ -500,6 +530,121 @@ export const deleteVehicleById = async (req, res) => {
     }
     return res.status(200).json({
       message: "Vehicle deleted successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+// transport vehicle assignment modules api:
+
+export const assignVehicleToRoute = async (req, res) => {
+  const { route_id, vehicle_id, status } = req.body;
+  try {
+    const sql = `INSERT INTO transport_vehicle_assigned (route_id, vehicle_id, status)
+                VALUES (?,?,?);`;
+    const [rows] = await db.query(sql, [route_id, vehicle_id, status]);
+    return res.status(201).json({
+      message: "Vehicle assigned to route successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getAllAssignedVehicles = async (req, res) => {
+  try {
+    const sql = `
+      SELECT tva.id, tr.routeName, tr.id as route_id, vi.vehicle_no, vi.vehicle_model, vi.id as vehicle_id, vi.driver_id, vi.driver_contact_no, tva.status
+      FROM transport_vehicle_assigned tva
+      JOIN transport_routes tr ON tva.route_id = tr.id 
+      JOIN vehicle_info vi ON tva.vehicle_id = vi.id
+      ORDER BY tva.id ASC;
+    `;
+    const [rows] = await db.query(sql);
+    // JOIN transport_pickupPoints tpp ON tva.pickup_point_id = tpp.id
+    if (rows.length < 0) {
+      return res.status(200).json({
+        message: "No Assigned vehicles found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Assigned vehicles fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const updateAssignedVehicle = async (req, res) => {
+  const { id } = req.params;
+  const { route_id, vehicle_id, status } = req.body;
+  try {
+    const sql = `UPDATE transport_vehicle_assigned
+                SET route_id = ?, vehicle_id = ?, status = ?
+                WHERE id = ?;`;
+    const [rows] = await db.query(sql, [route_id, vehicle_id, status, id]);
+    if (!rows) {
+      return res.status(200).json({
+        message: "No Assigned Vehicle found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Assigned Vehicle updated successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const deleteAssignedVehicleById = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(200).json({
+      message: "Assigned Vehicle Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql = "Delete from transport_vehicle_assigned where id=?";
+    const [rows] = await db.query(sql, [id]);
+    if (!rows) {
+      return res.status(200).json({
+        message: "No Vehicle assigned found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Vehicle assigned deleted successfully",
       success: true,
       result: rows,
     });
