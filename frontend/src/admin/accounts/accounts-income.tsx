@@ -76,6 +76,8 @@ const AccountsIncome = () => {
   const [formData, setFormData] = useState<IncomeFormData>(initialData);
   const [errors, setErrors] = useState<IncomeFormErrors>({});
   const [editId, setEditId] = useState<number | null>(null);
+   const [genLoading  , setGenLoading] = useState<boolean>(false)
+    const [genId , setGenId] = useState<number|null>(null)
 
 
   const fetchAllIncome = async () => {
@@ -227,6 +229,8 @@ const AccountsIncome = () => {
 
 
   const generateInv = async (id: number) => {
+    setGenId(id)
+    setGenLoading(true)
     try {
       const { data } = await genIncomeInv(id);
 
@@ -244,6 +248,8 @@ const AccountsIncome = () => {
       // console.log("Invoice downloaded successfully!");
     } catch (error) {
       console.error("Error generating invoice:", error);
+    }finally{
+      setGenLoading(false)
     }
   };
 
@@ -325,7 +331,7 @@ const AccountsIncome = () => {
       dataIndex: "inv",
       render: (_: any, record: any) => (
         <>
-          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">Gen-Invoice</button>
+          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId===record.id&&genLoading?'Generating...':'Gen-Invoice'}</button>
         </>
       ),
     },
