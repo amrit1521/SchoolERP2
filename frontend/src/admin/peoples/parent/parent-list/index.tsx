@@ -372,7 +372,7 @@ const ParentList = () => {
       dataIndex: "id",
       render: (text: number) => (
         <div  onClick={() => setShow(true)} className="link-primary">
-          {text}
+          PRT{text}
         </div>
       ),
       sorter: (a: TableData, b: TableData) => a.id - b.id,

@@ -587,7 +587,7 @@ const ParentGrid = () => {
                           className="link-primary"
                           onClick={() => setShow(true)}
                         >
-                          {parent.id}
+                          PRT{parent.id}
                         </Link>
                         <div className="d-flex align-items-center">
                           <div className="dropdown">

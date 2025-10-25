@@ -212,7 +212,7 @@ const ClassRoom = () => {
       render: (text: number) => (
         <>
           <div className="link-primary">
-            {text}
+            RM{text}
           </div>
         </>
       ),

@@ -227,7 +227,7 @@ export const SidebarData = [
         submenu: false,
       },
       {
-        label: "Section",
+        label: "Class",
         link: routes.classSection,
         icon: "ti ti-square-rotated-forbid-2",
         showSubRoute: false,

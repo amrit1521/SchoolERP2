@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import Table from "../../core/common/dataTable/index";
-import { accounts_income_data } from "../../core/data/json/accounts_income_data";
+// import { accounts_income_data } from "../../core/data/json/accounts_income_data";
 import type { TableData } from "../../core/data/interface";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import CommonSelect from "../../core/common/commonSelect";
@@ -15,26 +15,253 @@ import { DatePicker } from "antd";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
+import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import dayjs from 'dayjs'
+import { addIncome, allIncome, delIncome, editIncome, genIncomeInv, speIncome } from "../../service/accounts";
+import { handleModalPopUp } from "../../handlePopUpmodal";
+import { Spinner } from "../../spinner";
+
+export interface Income {
+  id: number;
+  incomeName: string;
+  date: string;
+  amount: number;
+  invoiceNo: number;
+  paymentMethod: string;
+  description: string;
+  source: string;
+}
+
+interface IncomeFormData {
+  incomeName: string;
+  source: string;
+  date: string | null;
+  amount: number | null;
+  invoiceNo: number | null;
+  paymentMethod: number | null;
+  description: string;
+  status: string;
+}
+
+interface IncomeFormErrors {
+  incomeName?: string;
+  source?: string;
+  date?: string;
+  amount?: string;
+  invoiceNo?: string;
+  paymentMethod?: string;
+  description?: string;
+}
+
+
+const initialData: IncomeFormData = {
+  incomeName: "",
+  source: "",
+  date: null,
+  amount: null,
+  invoiceNo: null,
+  paymentMethod: null,
+  description: "",
+  status: "1"
+};
 
 const AccountsIncome = () => {
   const routes = all_routes;
-  const data = accounts_income_data;
+  // const data = accounts_income_data;
+
+
+  const [allIncomeData, setAllIncomeData] = useState<Income[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [formData, setFormData] = useState<IncomeFormData>(initialData);
+  const [errors, setErrors] = useState<IncomeFormErrors>({});
+  const [editId, setEditId] = useState<number | null>(null);
+
+
+  const fetchAllIncome = async () => {
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500))
+    try {
+      const { data } = await allIncome();
+      if (data.success) setAllIncomeData(data.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllIncome();
+  }, []);
+
+
+
+  const validate = (): boolean => {
+    const newErrors: IncomeFormErrors = {};
+    if (!formData.incomeName.trim()) newErrors.incomeName = "Income Name is required";
+    else if (formData.incomeName.length < 5) newErrors.incomeName = "Income name must be at least 5 chracherts !"
+
+    if (!formData.source.trim()) newErrors.source = "Source is required";
+    else if (formData.source.length < 3) newErrors.source = "Source name must be at least 3 chracherts !"
+    if (!formData.date) newErrors.date = "Date is required";
+    if (formData.amount === null || formData.amount <= 0) newErrors.amount = "Amount must be greater than 0";
+    if (formData.invoiceNo === null || formData.invoiceNo <= 0) newErrors.invoiceNo = "Invoice No must be greater than 0";
+    if (formData.paymentMethod === null) newErrors.paymentMethod = "Payment method is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" ? (value === "" ? null : Number(value)) : value,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
+  };
+
+
+
+  const handleSelectChange = (name: keyof IncomeFormData, value: number | string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+
+
+  const handleDateChange = (field: keyof IncomeFormData, date: Date | null) => {
+    setFormData((prev) => ({ ...prev, [field]: date }));
+  };
+
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      "status": (checked ? "1" : "0")
+    }));
+  };
+
+  const fetchById = async (id: number) => {
+    try {
+      const { data } = await speIncome(id);
+      if (data.success) {
+        const res = data.data;
+        console.log(res)
+        setFormData({
+          incomeName: res.incomeName,
+          source: res.source,
+          date: dayjs(res.date).format("DD MMM YYYY"),
+          amount: res.amount,
+          invoiceNo: res.invoiceNo,
+          paymentMethod: res.paymentMethod,
+          description: res.description,
+          status: res.status
+        });
+        setEditId(id);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) {
+      toast.error("Please fix errors first!");
+      return;
+    }
+    // console.log(formData)
+    try {
+      const apiCall = editId ? editIncome(formData, editId) : addIncome(formData);
+      const { data } = await apiCall;
+      if (data.success) {
+        toast.success(data.message);
+        setFormData(initialData);
+        fetchAllIncome();
+        handleModalPopUp(editId ? 'edit_income' : 'add_income')
+        setEditId(null)
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Something went wrong");
+    }
+  };
+
+  const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setFormData(initialData);
+    setEditId(null);
+    setErrors({});
+    setEditId(null)
+  };
+
+
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+
+    e.preventDefault()
+    try {
+
+      const { data } = await delIncome(id)
+      if (data.success) {
+        toast.success(data.message)
+        fetchAllIncome()
+        handleModalPopUp('delete-modal')
+      }
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
+
+
+  const generateInv = async (id: number) => {
+    try {
+      const { data } = await genIncomeInv(id);
+
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `expense-invoice-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+      // console.log("Invoice downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+    }
+  };
 
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: any) => (
+      render: (id: number) => (
         <Link
           to="#"
           className="link-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#view_invoice"
+        // data-bs-toggle="modal"
+        // data-bs-target="#view_invoice"
         >
-          {text}
+          INC{id}
         </Link>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
     {
       title: "Income Name",
@@ -45,6 +272,9 @@ const AccountsIncome = () => {
     {
       title: "Description",
       dataIndex: "description",
+      render: (text: string) => (
+        <span>{text ? text : "_"}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.description.length - b.description.length,
     },
@@ -56,18 +286,23 @@ const AccountsIncome = () => {
     {
       title: "Date",
       dataIndex: "date",
-      sorter: (a: TableData, b: TableData) => a.date.length - b.date.length,
+      render: (text: string) => (
+        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+      ),
+      sorter: (a: TableData, b: TableData) =>
+        dayjs(a.date).unix() - dayjs(b.date).unix(),
     },
+
     {
       title: "Amount",
       dataIndex: "amount",
-      sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
+      sorter: (a: TableData, b: TableData) => a.amount - b.amount,
     },
     {
       title: "Invoice No",
       dataIndex: "invoiceNo",
       sorter: (a: TableData, b: TableData) =>
-        a.invoiceNo.length - b.invoiceNo.length,
+        a.invoiceNo - b.invoiceNo,
       render: (text: any) => (
         <Link
           to="#"
@@ -75,7 +310,7 @@ const AccountsIncome = () => {
           data-bs-toggle="modal"
           data-bs-target="#view_invoice"
         >
-          {text}
+          INV-{text}
         </Link>
       ),
     },
@@ -86,9 +321,18 @@ const AccountsIncome = () => {
         a.paymentMethod.length - b.paymentMethod.length,
     },
     {
+      title: "Generate Invoice",
+      dataIndex: "inv",
+      render: (_: any, record: any) => (
+        <>
+          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">Gen-Invoice</button>
+        </>
+      ),
+    },
+    {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="dropdown">
             <Link
@@ -101,26 +345,26 @@ const AccountsIncome = () => {
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => fetchById(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#edit_income"
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => setDeleteId(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
@@ -128,6 +372,8 @@ const AccountsIncome = () => {
       ),
     },
   ];
+
+
 
   return (
     <div>
@@ -274,7 +520,9 @@ const AccountsIncome = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Income List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {
+                loading ? <Spinner /> : (<Table dataSource={allIncomeData} columns={columns} Selection={true} />)
+              }
               {/* /Income List */}
             </div>
           </div>
@@ -289,84 +537,146 @@ const AccountsIncome = () => {
               <h4 className="modal-title">Add Income</h4>
               <button
                 type="button"
+                onClick={handleCancel}
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
-                aria-label="Close"
               >
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="mb-3">
                       <label className="form-label">Income Name</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        name="incomeName"
+                        className={`form-control ${errors.incomeName ? "is-invalid" : ""}`}
+                        value={formData.incomeName}
+                        onChange={handleChange}
+                      />
+                      {errors.incomeName && <div className="invalid-feedback">{errors.incomeName}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-12">
+
+
                     <div className="mb-3">
                       <label className="form-label">Source</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        name="source"
+                        value={formData.source}
+                        onChange={handleChange}
+                        className="form-control"
+                        autoComplete="off"
+                      />
+                      {errors.source && <div className="invalid-feedback d-block">{errors.source}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
-                      <label className="form-label">Date of Birth</label>
+                      <label className="form-label">Date</label>
                       <div className="input-icon position-relative">
+                        <DatePicker
+                          className="form-control datetimepicker"
+                          format="DD MMM YYYY"
+                          value={formData.date ? dayjs(formData.date, "DD MMM YYYY") : null}
+                          placeholder="Select Date"
+                          onChange={(dateString) =>
+                            handleDateChange(
+                              "date",
+                              Array.isArray(dateString) ? dateString[0] : dateString
+                            )
+                          }
+                        />
                         <span className="input-icon-addon">
                           <i className="ti ti-calendar" />
                         </span>
-                        <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
+                        {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
                       </div>
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Amount</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="number"
+                        name="amount"
+                        className={`form-control ${errors.amount ? "is-invalid" : ""}`}
+                        value={formData.amount ?? ""}
+                        onChange={handleChange}
+                      />
+                      {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Invoice No</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="number"
+                        name="invoiceNo"
+                        className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
+                        value={formData.invoiceNo ?? ""}
+                        onChange={handleChange}
+                      />
+                      {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Payment Method</label>
                       <CommonSelect
-                        className="select"
+                        className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
                         options={paymentMethod}
-                        defaultValue={paymentMethod[0]}
+                        value={formData.paymentMethod}
+                        onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
                       />
+                      {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-12">
-                    <div className="mb-0">
+
+
+                    <div className="mb-3">
                       <label className="form-label">Description</label>
                       <textarea
+                        name="description"
                         rows={4}
                         className="form-control"
-                        defaultValue={""}
+                        value={formData.description}
+                        onChange={handleChange}
                       />
+                    </div>
+
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div className="status-title">
+                        <h5>Status</h5>
+                        <p>Change the Status by toggle</p>
+                      </div>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="switch-sm2"
+                          name="status"
+                          checked={formData.status === "1"}
+                          onChange={handleStatusChange}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <Link
-                  to="#"
+                <button
+                  type="button"
+                  onClick={handleCancel}
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
                 >
                   Cancel
-                </Link>
+                </button>
                 <button type="submit" className="btn btn-primary">
                   Add Income
                 </button>
@@ -376,6 +686,7 @@ const AccountsIncome = () => {
         </div>
       </div>
       {/* /Add Income */}
+
       {/* Edit Income */}
       <div className="modal fade" id="edit_income">
         <div className="modal-dialog modal-dialog-centered">
@@ -391,93 +702,138 @@ const AccountsIncome = () => {
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="mb-3">
                       <label className="form-label">Income Name</label>
                       <input
                         type="text"
-                        className="form-control"
-                        placeholder="Enter Income Name"
-                        defaultValue="April Month Fees"
+                        name="incomeName"
+                        className={`form-control ${errors.incomeName ? "is-invalid" : ""}`}
+                        value={formData.incomeName}
+                        onChange={handleChange}
                       />
+                      {errors.incomeName && <div className="invalid-feedback">{errors.incomeName}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-12">
+
+
                     <div className="mb-3">
                       <label className="form-label">Source</label>
                       <input
                         type="text"
+                        name="source"
+                        value={formData.source}
+                        onChange={handleChange}
                         className="form-control"
-                        placeholder="Enter Source"
-                        defaultValue="Tuition Fees"
+                        autoComplete="off"
                       />
+                      {errors.source && <div className="invalid-feedback d-block">{errors.source}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
-                      <label className="form-label">Date of Birth</label>
-                      <DatePicker
-                        className="form-control datetimepicker"
-                        placeholder="Select Date"
-                      />
+                      <label className="form-label">Date</label>
+                      <div className="input-icon position-relative">
+                        <DatePicker
+                          className="form-control datetimepicker"
+                          format="DD MMM YYYY"
+                          value={formData.date ? dayjs(formData.date, "DD MMM YYYY") : null}
+                          placeholder="Select Date"
+                          onChange={(dateString) =>
+                            handleDateChange(
+                              "date",
+                              Array.isArray(dateString) ? dateString[0] : dateString
+                            )
+                          }
+                        />
+                        <span className="input-icon-addon">
+                          <i className="ti ti-calendar" />
+                        </span>
+                        {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Amount</label>
                       <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter Amount"
-                        defaultValue="$15,000"
+                        type="number"
+                        name="amount"
+                        className={`form-control ${errors.amount ? "is-invalid" : ""}`}
+                        value={formData.amount ?? ""}
+                        onChange={handleChange}
                       />
+                      {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Invoice No</label>
                       <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter Invoice No"
-                        defaultValue="INV681537"
+                        type="number"
+                        name="invoiceNo"
+                        className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
+                        value={formData.invoiceNo ?? ""}
+                        onChange={handleChange}
                       />
+                      {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-6">
+
+
                     <div className="mb-3">
                       <label className="form-label">Payment Method</label>
                       <CommonSelect
-                        className="select"
+                        className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
                         options={paymentMethod}
-                        defaultValue={paymentMethod[0]}
+                        value={formData.paymentMethod}
+                        onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
                       />
+                      {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
                     </div>
-                  </div>
-                  <div className="col-md-12">
-                    <div className="mb-0">
+
+
+                    <div className="mb-3">
                       <label className="form-label">Description</label>
                       <textarea
+                        name="description"
                         rows={4}
                         className="form-control"
-                        placeholder="text"
-                        defaultValue={"Tuition for Term 1, Class II"}
+                        value={formData.description}
+                        onChange={handleChange}
                       />
+                    </div>
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div className="status-title">
+                        <h5>Status</h5>
+                        <p>Change the Status by toggle</p>
+                      </div>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          role="switch"
+                          id="switch-sm2"
+                          name="status"
+                          checked={formData.status === "1"}
+                          onChange={handleStatusChange}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <Link
-                  to="#"
+                <button
+                  type="button"
+                  onClick={handleCancel}
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
                 >
                   Cancel
-                </Link>
+                </button>
                 <button type="submit" className="btn btn-primary">
                   Save Changes
                 </button>
@@ -491,28 +847,31 @@ const AccountsIncome = () => {
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form>
+            <form >
               <div className="modal-body text-center">
                 <span className="delete-icon">
                   <i className="ti ti-trash-x" />
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone
+                  You want to delete  marked item, this can't be undone
                   once you delete.
                 </p>
-                <div className="d-flex justify-content-center">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-3"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-danger">
-                    Yes, Delete
-                  </button>
-                </div>
+                {
+                  deleteId && (<div className="d-flex justify-content-center">
+                    <button
+                      onClick={(e) => cancelDelete(e)}
+                      className="btn btn-light me-3"
+                      data-bs-dismiss="modal"
+                    >
+                      Cancel
+                    </button>
+                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>)
+                }
               </div>
             </form>
           </div>
@@ -526,10 +885,10 @@ const AccountsIncome = () => {
             <div className="modal-wrapper">
               <div className="invoice-popup-head d-flex align-items-center justify-content-between mb-4">
                 <span>
-                  <ImageWithBasePath src="assets/img/logo.svg" alt="Img" />
+                  <img src="assets/img/logo.svg" alt="Img" />
                 </span>
                 <div className="popup-title">
-                  <h2>UNIVERSITY NAME</h2>
+                  <h2>Little Flower School , Gorakhpur</h2>
                   <p>Original For Recipient</p>
                 </div>
               </div>

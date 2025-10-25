@@ -288,7 +288,7 @@ const TeacherGrid = () => {
                   <div className="card flex-fill">
                     <div className="card-header d-flex align-items-center justify-content-between">
                       <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="link-primary">
-                        {teacher.teacher_id}
+                        TEA{teacher.teacher_id}
                       </Link>
                       <div className="d-flex align-items-center">
                         <span className="badge badge-soft-success d-inline-flex align-items-center me-1">

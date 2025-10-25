@@ -8,6 +8,7 @@ const router = express.Router()
 
 router.post('/markstuattendance' , attendanaceController.markStudentAttendance)
 router.get('/getstuattendance/:rollno' , attendanaceController.getStudentAttendanceData)
+router.get('/getstuattendancereport' , attendanaceController.getStuAttendanceReport)
 
 // staff attendance
 router.post('/markstaffattendance' , attendanaceController.markStaffAttendance)
@@ -15,7 +16,6 @@ router.get('/getstaffattendance/:staffid' , attendanaceController.getStaffAttend
 
 // teacher attendance
 router.get('/getteacherattendance/:teacher_id' , attendanaceController.getTeacherAttendanceData)
-
 router.post('/markteacherattendance' , attendanaceController.markTeacherAttendance)
 
 

@@ -42,7 +42,7 @@ import AcademicReason from "../academic/academic-reason";
 import ClassHomeWork from "../academic/class-home-work";
 import ClassRoom from "../academic/class-room";
 import ClassRoutine from "../academic/class-routine";
-import ClassSection from "../academic/class-section";
+import ClassSection from "../academic/add-class/index.tsx";
 import ClassSubject from "../academic/class-subject";
 import ClassSyllabus from "../academic/class-syllabus";
 import ClassTimetable from "../academic/class-timetable";

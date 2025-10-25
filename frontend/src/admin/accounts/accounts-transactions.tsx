@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { accounts_transactions_data } from "../../core/data/json/accounts_transactions_data";
+// import { accounts_transactions_data } from "../../core/data/json/accounts_transactions_data";
 import Table from "../../core/common/dataTable/index";
 import type { TableData } from "../../core/data/interface";
 import PredefinedDateRanges from "../../core/common/datePicker";
@@ -12,10 +12,52 @@ import {
 } from "../../core/common/selectoption/selectoption";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { useEffect, useState } from "react";
+import { getTransactionsData } from "../../service/accounts";
+import { Spinner } from "../../spinner";
+import dayjs from 'dayjs'
+
+
+interface TransactionData {
+  id: number;
+  source: string;
+  date: string;
+  amount: number;
+  method: string;
+  type: string;
+  status: "1" | "0"
+}
 
 const AccountsTransactions = () => {
-  const data = accounts_transactions_data;
+  // const data = accounts_transactions_data;
   const routes = all_routes;
+
+  const [transData, setTransData] = useState<TransactionData[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchData = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 300))
+
+    try {
+
+      const { data } = await getTransactionsData()
+      if (data.success) {
+        setTransData(data.data)
+      }
+
+    } catch (error) {
+
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+
   const columns = [
     {
       title: "ID",
@@ -23,34 +65,40 @@ const AccountsTransactions = () => {
       key: "id",
       render: (text: any) => (
         <Link to="#" className="link-primary">
-          {text}
+          FT-{text}
         </Link>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
     {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
+      title: "Transaction Source",
+      dataIndex: "source",
+      key:"source",
       sorter: (a: TableData, b: TableData) =>
-        a.description.length - b.description.length,
+        a.source.length - b.source.length,
     },
     {
       title: "Transaction Date",
       dataIndex: "date",
       key: "date",
+      render: (text: string) => (
+        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+      ),
       sorter: (a: TableData, b: TableData) => a.date.length - b.date.length,
     },
     {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
+      sorter: (a: TableData, b: TableData) => a.amount - b.amount,
     },
     {
       title: "Transaction Type",
       dataIndex: "type",
       key: "type",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) => a.type.length - b.type.length,
     },
     {
@@ -67,16 +115,14 @@ const AccountsTransactions = () => {
         <>
           <span
             className={`badge d-inline-flex align-items-center badge-soft-success
-        ${
-          status === "Completed"
-            ? "badge-soft-success"
-            : status === "Pending"
-            ? "badge-soft-warning"
-            : ""
-        }`}
+        ${status === "1"
+                ? "badge-soft-success"
+                : "badge-soft-warning"
+
+              }`}
           >
             <i className="ti ti-circle-filled fs-5 me-1" />
-            {status}
+            {status === '1' ? "Completed" : "Pending"}
           </span>
         </>
       ),
@@ -222,7 +268,9 @@ const AccountsTransactions = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Transaction List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {
+                loading ? <Spinner /> : (<Table dataSource={transData}  columns={columns} />)
+              }
               {/* /Transaction List */}
             </div>
           </div>

@@ -93,7 +93,7 @@ const TeacherList = () => {
       dataIndex: "id",
       render: (id: string) => (
         <Link to={`${routes.teacherDetails}/${id}`} className="link-primary">
-          {id}
+          TEA{id}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,

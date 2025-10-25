@@ -909,7 +909,7 @@ exports.studentReport = async (req, res) => {
     s.rollnum ,
     c.class_name as class,
     s.class_id,
-    se.section_name as section,
+    UPPER(se.section_name) as section,
     s.section_id,
     s.gender,
     s.dob,

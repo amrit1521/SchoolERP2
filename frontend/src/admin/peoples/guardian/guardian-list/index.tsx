@@ -374,7 +374,7 @@ const GuardianList = () => {
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" onClick={() => setShow(true)} className="link-primary">
-          {text}
+          GUA{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id - b.id,

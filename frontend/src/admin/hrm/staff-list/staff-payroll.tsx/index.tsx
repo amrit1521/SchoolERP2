@@ -247,7 +247,7 @@ const StaffPayRoll = () => {
       render: (id: number) => (
         <>
           <Link to="#" className="link-primary">
-            {id}
+            SAL{id}
           </Link>
         </>
       ),
@@ -646,7 +646,7 @@ const StaffPayRoll = () => {
                         loading ? <Spinner /> : (<Table
                           columns={columns}
                           dataSource={tableData}
-                          Selection={true}
+                          // Selection={true}
                         />)
                       }
                       {/* /Payroll List */}

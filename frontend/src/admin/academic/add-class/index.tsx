@@ -1,53 +1,40 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect,useRef, useState } from "react";
+// import { classes } from "../../../core/data/json/classes";
 import Table from "../../../core/common/dataTable/index";
-// import { scheduleClass } from "../../../core/data/json/schedule_class";
 import PredefinedDateRanges from "../../../core/common/datePicker";
-import {
-  activeList,
-  classselect,
-  startTime,
-} from "../../../core/common/selectoption/selectoption";
+
 import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { addClassSchedule, allClassSchedule, deleteClassSchedule, editClassSchedule, speClassSchedule } from "../../../service/classApi";
+import { all_routes } from "../../router/all_routes";
+import { addClass, allClasses, deleteClass, editClass, speClass } from "../../../service/classApi";
+// allClasses
 import { toast } from "react-toastify";
-import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
-
-const ScheduleClasses = () => {
-  // const data = scheduleClass;
-  const route = all_routes;
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
-  interface Schedule {
-    id: number;
-    className: string;
-    startTime: string;
-    endTime: string;
-    status: string;
-  }
+import { status } from "../../../core/common/selectoption/selectoption";
 
 
+const Classes = () => {
 
-  const [schedules, setSchedules] = useState<Schedule[]>([])
+
+  // const data = classes;
+
+  const route = all_routes
+
+  const [classList, setClassList] = useState<any>([])
+  const [origialClassList, setOriginalClassList] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
 
-
-  const fetchSchedule = async () => {
+  const fetchClasses = async () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
     try {
-
-      const { data } = await allClassSchedule()
+      const { data } = await allClasses()
+      // console.log(data)
       if (data.success) {
-        setSchedules(data.data)
+        setClassList(data.data)
+        setOriginalClassList(data.data)
       }
 
     } catch (error) {
@@ -59,153 +46,116 @@ const ScheduleClasses = () => {
 
 
   useEffect(() => {
-    fetchSchedule()
+    fetchClasses()
   }, [])
 
 
 
-
-  // addschedule------------------------------------------
-  interface ScheduleForm {
+  interface ClassFormData {
     className: string;
-    startTime: string;
-    endTime: string;
     status: string;
   }
 
-  interface ScheduleErrors {
-    className?: string;
-    startTime?: string;
-    endTime?: string;
-  }
-
-
-  const [formData, setFormData] = useState<ScheduleForm>({
+  const [formData, setFormData] = useState<ClassFormData>({
     className: "",
-    startTime: "",
-    endTime: "",
     status: "1",
   });
-
-  const [errors, setErrors] = useState<ScheduleErrors>({});
   const [editId, setEditId] = useState<number | null>(null)
 
 
-  const validate = (): boolean => {
-    const newErrors: ScheduleErrors = {};
-
-    if (!formData.className) newErrors.className = "className is required";
-    if (!formData.startTime) newErrors.startTime = "Start Time is required";
-    if (!formData.endTime) newErrors.endTime = "End Time is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-
-
-  const handleSelectChange = (field: keyof ScheduleForm, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, type, checked, value } = e.target;
+  // ✅ Generic handleChange for inputs
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? (checked ? "1" : "0") : value,
     }));
-
   };
 
-  // edit
-  const fetchScheduleById = async (id: number) => {
+  const fetchSpecificClass = async (id: number) => {
 
     try {
-      const { data } = await speClassSchedule(id)
-      // console.log(data)
-      if (data.success) {
-        setFormData({
-          className: data.data.className,
-          startTime: data.data.startTime,
-          endTime: data.data.endTime,
-          status: data.data.status,
-        })
-        setEditId(id)
+      const { data } = await speClass(id)
+      setFormData({
+        className: data.data.className,
+        status: data.data.status,
       }
+      )
+      setEditId(id)
     } catch (error) {
       console.log(error)
     }
+
   }
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    setEditId(null)
     setFormData({
       className: "",
-      startTime: "",
-      endTime: "",
       status: "1",
-    })
-    setErrors({})
+    });
+    // setErrors({});
+    setEditId(null)
   }
 
+  // ✅ Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-
+    if(!formData.className.trim()){
+      toast.warn('Classname must be required !')
+      return
+    }
     try {
+      if (editId) {
+        const { data } = await editClass(formData, editId)
 
-     if(editId){
-      
-      const {data} = await editClassSchedule(formData,editId)
-      if(data.success){
-        toast.success(data.message)
-        handleModalPopUp('edit_Schedule')
-        setEditId(null)
-      }
-     }else{
-       const { data } = await addClassSchedule(formData)
-      if (data.success) {
-        toast.success(data.message)
-        handleModalPopUp('add_Schedule')
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('edit_class')
+          setEditId(null)
+        }
 
+      } else {
+
+        const { data } = await addClass(formData)
+        if (data.success) {
+          toast.success(data.message)
+          handleModalPopUp('add_class')
+
+        }
       }
-     }
-      fetchSchedule()
+      fetchClasses()
       setFormData({
         className: "",
-        startTime: "",
-        endTime: "",
         status: "1",
       })
+
+    } catch (error) {
+      console.log(error)
+
+    }
+
+  };
+
+  // delete class--------------------------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const { data } = await deleteClass(id)
+      if (data.success) {
+        setDeleteId(null)
+        toast.success(data.message)
+        fetchClasses()
+        handleModalPopUp('delete-modal')
+
+      }
 
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
-    }
-  };
-
-
-
-  // delete section----------------------------------------------------
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-
-  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    // console.log(id)
-    try {
-
-      const { data } = await deleteClassSchedule(id)
-      if (data.success) {
-        toast.success(data.message)
-        fetchSchedule();
-        setDeleteId(null)
-        handleModalPopUp('delete-modal')
-      }
-
-    } catch (error) {
-      console.log(error)
     }
   }
 
@@ -216,38 +166,25 @@ const ScheduleClasses = () => {
 
 
 
-
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: number) => (
+      render: (text: any) => (
         <>
           <Link to="#" className="link-primary">
-            SC{text}
+            CL{text}
           </Link>
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
 
     {
       title: "Class",
       dataIndex: "className",
-      sorter: (a: Schedule, b: Schedule) => a.className.length - b.className.length,
+      sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
     },
-    {
-      title: "Start Time",
-      dataIndex: "startTime",
-      sorter: (a: TableData, b: TableData) =>
-        a.startTime.length - b.startTime.length,
-    },
-    {
-      title: "End Time",
-      dataIndex: "endTime",
-      sorter: (a: TableData, b: TableData) =>
-        a.endTime.length - b.endTime.length,
-    },
+
     {
       title: "Status",
       dataIndex: "status",
@@ -269,8 +206,8 @@ const ScheduleClasses = () => {
     },
     {
       title: "Action",
-      dataIndex: "id",
-      render: (id: number) => (
+      dataIndex: "action",
+      render: (_:any , record:any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -286,9 +223,9 @@ const ScheduleClasses = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => fetchScheduleById(id)}
+                    onClick={() => fetchSpecificClass(record.id)}
                     data-bs-toggle="modal"
-                    data-bs-target="#edit_Schedule"
+                    data-bs-target="#edit_class"
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -297,7 +234,7 @@ const ScheduleClasses = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
+                    onClick={() => setDeleteId(record.id)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
@@ -312,6 +249,40 @@ const ScheduleClasses = () => {
       ),
     },
   ];
+
+
+  interface FilterData {
+   status:string;
+  }
+
+  const [filterData, setFilterData] = useState<FilterData>({ status: "" });
+
+  const handleFilterSelectChange = (name: keyof FilterData, value: string | number) => {
+    setFilterData((prev) => ({ ...prev, [name]: String(value) }));
+  };
+
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const handleApplyClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    const filtered = origialClassList.filter((row: any) => {
+      const matchClass = filterData.status ? row.status === filterData.status : true;
+      return matchClass ;
+    });
+    setClassList(filtered);
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
+
+  const handleResetFilter = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    setFilterData({ status: "" });
+    setClassList(origialClassList);
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
   return (
     <div>
       {/* Page Wrapper */}
@@ -320,7 +291,7 @@ const ScheduleClasses = () => {
           {/* Page Header */}
           <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
             <div className="my-auto mb-2">
-              <h3 className="page-title mb-1">Schedule</h3>
+              <h3 className="page-title mb-1">Classes List</h3>
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
@@ -330,7 +301,7 @@ const ScheduleClasses = () => {
                     <Link to="#">Classes </Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                    Schedule
+                    All Classes
                   </li>
                 </ol>
               </nav>
@@ -342,10 +313,10 @@ const ScheduleClasses = () => {
                   to="#"
                   className="btn btn-primary"
                   data-bs-toggle="modal"
-                  data-bs-target="#add_Schedule"
+                  data-bs-target="#add_class"
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
-                  Add Schedule
+                  Add Class
                 </Link>
               </div>
             </div>
@@ -354,7 +325,7 @@ const ScheduleClasses = () => {
           {/* Guardians List */}
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
-              <h4 className="mb-3">Schedule Classes</h4>
+              <h4 className="mb-3">Classes List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
                   <PredefinedDateRanges />
@@ -369,11 +340,10 @@ const ScheduleClasses = () => {
                     <i className="ti ti-filter me-2" />
                     Filter
                   </Link>
-                  <div
-                    className="dropdown-menu drop-width"
-                    ref={dropdownMenuRef}
-                  >
-                    <form>
+                  <div className="dropdown-menu drop-width" ref={dropdownMenuRef}>
+
+
+                    <form >
                       <div className="d-flex align-items-center border-bottom p-3">
                         <h4>Filter</h4>
                       </div>
@@ -381,35 +351,27 @@ const ScheduleClasses = () => {
                         <div className="row">
                           <div className="col-md-12">
                             <div className="mb-3">
-                              <label className="form-label">Type</label>
-                              <CommonSelect
-                                className="select"
-                                options={classselect}
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-12">
-                            <div className="mb-3">
                               <label className="form-label">Status</label>
                               <CommonSelect
                                 className="select"
-                                options={activeList}
+                                options={status}
+                                onChange={(option) => handleFilterSelectChange("status", option ? option.value : "")}
                               />
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="p-3 d-flex align-items-center justify-content-end">
-                        <Link to="#" className="btn btn-light me-3">
+                        <button onClick={handleResetFilter} className="btn btn-light me-3">
                           Reset
-                        </Link>
-                        <Link
-                          to="#"
+                        </button>
+                        <button
+                          // to="#"
                           className="btn btn-primary"
                           onClick={handleApplyClick}
                         >
                           Apply
-                        </Link>
+                        </button>
                       </div>
                     </form>
                   </div>
@@ -450,8 +412,13 @@ const ScheduleClasses = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Guardians List */}
-              {
-                loading ? <Spinner /> : (<Table columns={columns} dataSource={schedules} Selection={true} />)
+              {loading ? (
+                <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : (<Table columns={columns} dataSource={classList} Selection={true} />)
               }
               {/* /Guardians List */}
             </div>
@@ -460,13 +427,13 @@ const ScheduleClasses = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <div>
-        {/* Add Schedule */}
-        <div className="modal fade" id="add_Schedule">
+      <>
+        {/* Add Classes */}
+        <div className="modal fade" id="add_class">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Add Schedule</h4>
+                <h4 className="modal-title">Add Class</h4>
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
@@ -476,47 +443,26 @@ const ScheduleClasses = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
+
+
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
-                      {/* Type */}
+                      {/* Class Name */}
                       <div className="mb-3">
-                        <label className="form-label">Class</label>
-                        <CommonSelect
-                          className="select"
-                          options={classselect}
+                        <label className="form-label">Class Name</label>
+                        <input
+                          className="form-control"
+                          type="text"
+                          name="className"
                           value={formData.className}
-                          onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
+                          autoComplete="off"
+                          onChange={handleChange}
                         />
-                        {errors.className && <small className="text-danger">{errors.className}</small>}
                       </div>
 
-                      {/* Start Time */}
-                      <div className="mb-3">
-                        <label className="form-label">Start Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.startTime}
-                          onChange={(opt) => handleSelectChange("startTime", opt ? opt.value : "")}
-                        />
-                        {errors.startTime && <small className="text-danger">{errors.startTime}</small>}
-                      </div>
-
-                      {/* End Time */}
-                      <div className="mb-3">
-                        <label className="form-label">End Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.endTime}
-                          onChange={(opt) => handleSelectChange("endTime", opt ? opt.value : "")}
-                        />
-                        {errors.endTime && <small className="text-danger">{errors.endTime}</small>}
-                      </div>
-
-                      {/* Status Toggle */}
+                      {/* Status Switch */}
                       <div className="d-flex align-items-center justify-content-between">
                         <div className="status-title">
                           <h5>Status</h5>
@@ -527,7 +473,7 @@ const ScheduleClasses = () => {
                             className="form-check-input"
                             type="checkbox"
                             role="switch"
-                            id="switch-sm"
+                            id="switch-sm2"
                             name="status"
                             checked={formData.status === "1"}
                             onChange={handleChange}
@@ -538,33 +484,40 @@ const ScheduleClasses = () => {
                   </div>
                 </div>
 
+                {/* Footer */}
                 <div className="modal-footer">
-                  <button
-                    type="button"
+                  <Link
+                    to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Add Schedule
+                  </Link>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+
+                  >
+                    Add Class
                   </button>
                 </div>
               </form>
 
+
             </div>
           </div>
         </div>
-        {/* /Add Schedule */}
-        {/* Edit Schedule */}
-        <div className="modal fade" id="edit_Schedule">
+        {/* /Add Classes */}
+
+
+        {/* Edit Classes */}
+        <div className="modal fade" id="edit_class">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Edit Schedule</h4>
+                <h4 className="modal-title">Edit Class</h4>
                 <button
                   type="button"
-                  onClick={(e) => cancelEdit(e)}
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
@@ -572,47 +525,25 @@ const ScheduleClasses = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
+
+
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
-                      {/* Type */}
+                      {/* Class Name */}
                       <div className="mb-3">
-                        <label className="form-label">Class</label>
-                        <CommonSelect
-                          className="select"
-                          options={classselect}
+                        <label className="form-label">Class Name</label>
+                        <input
+                          className="form-control"
+                          type="text"
+                          name="className"
                           value={formData.className}
-                          onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
+                          autoComplete="off"
+                          onChange={handleChange}
                         />
-                        {errors.className && <small className="text-danger">{errors.className}</small>}
                       </div>
-
-                      {/* Start Time */}
-                      <div className="mb-3">
-                        <label className="form-label">Start Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.startTime}
-                          onChange={(opt) => handleSelectChange("startTime", opt ? opt.value : "")}
-                        />
-                        {errors.startTime && <small className="text-danger">{errors.startTime}</small>}
-                      </div>
-
-                      {/* End Time */}
-                      <div className="mb-3">
-                        <label className="form-label">End Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.endTime}
-                          onChange={(opt) => handleSelectChange("endTime", opt ? opt.value : "")}
-                        />
-                        {errors.endTime && <small className="text-danger">{errors.endTime}</small>}
-                      </div>
-
-                      {/* Status Toggle */}
+                      {/* Status Switch */}
                       <div className="d-flex align-items-center justify-content-between">
                         <div className="status-title">
                           <h5>Status</h5>
@@ -623,7 +554,7 @@ const ScheduleClasses = () => {
                             className="form-check-input"
                             type="checkbox"
                             role="switch"
-                            id="switch-sm"
+                            id="switch-sm2"
                             name="status"
                             checked={formData.status === "1"}
                             onChange={handleChange}
@@ -634,63 +565,124 @@ const ScheduleClasses = () => {
                   </div>
                 </div>
 
+                {/* Footer */}
                 <div className="modal-footer">
                   <button
-                    type="button"
                     onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    Edit Schedule
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+
+                  >
+                    Save Changes
                   </button>
                 </div>
               </form>
+
+
             </div>
           </div>
         </div>
-        {/* /Edit Schedule */}
-
+        {/* /Edit Classes */}
         {/* Delete Modal */}
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <form >
+              <form>
                 <div className="modal-body text-center">
                   <span className="delete-icon">
                     <i className="ti ti-trash-x" />
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
+                    You want to delete all the marked items, this cant be undone once
+                    you delete.
                   </p>
                   {
-                    deleteId && (<div className="d-flex justify-content-center">
-                      <button
-                        onClick={(e) => cancelDelete(e)}
-                        className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
-                      >
-                        Cancel
-                      </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>)
-                  }
+                    deleteId && (
+                      <div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          data-bs-dismiss="modal"
+                        >
+                          Cancel
+                        </button>
+                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                          Yes, Delete
+                        </button>
+
+                      </div>
+                    )}
                 </div>
               </form>
             </div>
           </div>
         </div>
         {/* /Delete Modal */}
-      </div>
+        {/* View Classes */}
+        <div className="modal fade" id="view_class">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <div className="d-flex align-items-center">
+                  <h4 className="modal-title">Class Details</h4>
+                  <span className="badge badge-soft-success ms-2">
+                    <i className="ti ti-circle-filled me-1 fs-5" />
+                    Active
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form >
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="class-detail-info">
+                        <p>Class Name</p>
+                        <span>III</span>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="class-detail-info">
+                        <p>Section</p>
+                        <span>A</span>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="class-detail-info">
+                        <p>No of Subjects</p>
+                        <span>05</span>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="class-detail-info">
+                        <p>No of Students</p>
+                        <span>25</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {/* /View Classes */}
+      </>
     </div>
   );
 };
 
-export default ScheduleClasses;
+export default Classes;

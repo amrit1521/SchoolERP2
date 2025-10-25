@@ -564,7 +564,7 @@ const GuardianGrid = () => {
                           className="link-primary"
                           onClick={() => fetchSpecficGuardianData(gua.id)}
                         >
-                          {gua.id}
+                          GUA{gua.id}
                         </Link>
                         <div className="d-flex align-items-center">
                           <div className="dropdown">

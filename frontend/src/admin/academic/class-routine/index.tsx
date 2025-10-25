@@ -338,7 +338,7 @@ const ClassRoutine = () => {
       render: (text: number) => (
         <>
           <Link to="#" className="link-primary">
-            {text}
+            CR{text}
           </Link>
         </>
       ),

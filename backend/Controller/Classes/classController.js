@@ -1,30 +1,30 @@
 const db = require("../../config/db");
 
 
+
+
+
+// Add Class
 exports.addClass = async (req, res) => {
-  const { className, section, noOfStudents, noOfSubjects, status } = req.body;
+  const { className, status } = req.body;
 
   try {
-    if (!className || !section || !noOfStudents || !noOfSubjects) {
+    if (!className) {
       return res
         .status(403)
-        .json({ message: "All fields are required!", success: false });
+        .json({ message: "Class name is required!", success: false });
     }
 
-    const sql = `INSERT INTO class_info (class_id, section_id, noOfStudents, noOfSubjects, status) VALUES (?, ?, ?, ?, ?)`;
-    await db.query(sql, [
-      className,
-      section,
-      noOfStudents,
-      noOfSubjects,
-      status,
-    ]);
+    const finalStatus = status ?? 1;
+
+    const sql = `INSERT INTO classes (class_name, status) VALUES (?, ?)`;
+    await db.query(sql, [className, finalStatus]);
 
     return res
       .status(201)
       .json({ message: "Class added successfully!", success: true });
   } catch (error) {
-    console.error(error);
+    console.error("Error adding class:", error);
     return res
       .status(500)
       .json({ message: "Error while adding class!", success: false });
@@ -32,31 +32,15 @@ exports.addClass = async (req, res) => {
 };
 
 
+
 exports.getClasses = async (req, res) => {
   try {
-    const sql = `SELECT 
-    ci.id,
-    ci.noOfStudents,
-    ci.noOfSubjects,
-    ci.status,
-    c.class_name AS className,
-    s.section_name AS section
-    FROM class_info ci
-    LEFT JOIN classes c ON ci.class_id = c.id
-    LEFT JOIN sections s ON ci.section_id = s.id
-    ORDER BY ci.id ASC
-    `;
-
-
-
+    const sql = `SELECT id, class_name AS className, status FROM classes ORDER BY id ASC`;
     const [rows] = await db.query(sql);
 
-    return res.status(200).json({
-      success: true,
-      data: rows,
-    });
+    return res.status(200).json({ success: true, data: rows });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching classes:", error);
     return res
       .status(500)
       .json({ message: "Error while fetching classes!", success: false });
@@ -64,12 +48,12 @@ exports.getClasses = async (req, res) => {
 };
 
 
+
 exports.getClassById = async (req, res) => {
   const { id } = req.params;
-  try {
-    const sql = `SELECT id , class_id AS className , section_id AS section , noOfStudents , noOfSubjects , status FROM class_info WHERE id=?
-    `;
 
+  try {
+    const sql = `SELECT id, class_name AS className, status FROM classes WHERE id = ?`;
     const [rows] = await db.query(sql, [id]);
 
     if (rows.length === 0) {
@@ -80,7 +64,7 @@ exports.getClassById = async (req, res) => {
 
     return res.status(200).json({ success: true, data: rows[0] });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching class:", error);
     return res
       .status(500)
       .json({ message: "Error while fetching class!", success: false });
@@ -88,22 +72,16 @@ exports.getClassById = async (req, res) => {
 };
 
 
-exports.updateClass = async (req, res) => {
 
+exports.updateClass = async (req, res) => {
   const { id } = req.params;
-  const { className, section, noOfStudents, noOfSubjects, status } = req.body;
-  console.log(id, req.body)
+  const { className, status } = req.body;
 
   try {
-    const sql = `UPDATE class_info SET class_id=?, section_id=?, noOfStudents=?, noOfSubjects=?, status=? WHERE id=?`;
-    const [result] = await db.query(sql, [
-      className,
-      section,
-      noOfStudents,
-      noOfSubjects,
-      status,
-      id,
-    ]);
+    const finalStatus = status ?? 1;
+
+    const sql = `UPDATE classes SET class_name = ?, status = ? WHERE id = ?`;
+    const [result] = await db.query(sql, [className, finalStatus, id]);
 
     if (result.affectedRows === 0) {
       return res
@@ -115,7 +93,7 @@ exports.updateClass = async (req, res) => {
       .status(200)
       .json({ message: "Class updated successfully!", success: true });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating class:", error);
     return res
       .status(500)
       .json({ message: "Error while updating class!", success: false });
@@ -127,7 +105,7 @@ exports.deleteClass = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const sql = `DELETE FROM class_info WHERE id=?`;
+    const sql = `DELETE FROM classes WHERE id = ?`;
     const [result] = await db.query(sql, [id]);
 
     if (result.affectedRows === 0) {
@@ -140,12 +118,13 @@ exports.deleteClass = async (req, res) => {
       .status(200)
       .json({ message: "Class deleted successfully!", success: true });
   } catch (error) {
-    console.error(error);
+    console.error("Error deleting class:", error);
     return res
       .status(500)
       .json({ message: "Error while deleting class!", success: false });
   }
 };
+
 
 
 

@@ -36,7 +36,7 @@ export interface Homework {
 }
 
 export interface Teacher {
-  teacher_id: number;
+  id: number;
   firstname: string;
   lastname: string;
 }
@@ -177,7 +177,7 @@ const ClassHomeWork = () => {
   const teacherOptions = useMemo(
     () =>
       teachers.map((t) => ({
-        value: Number(t.teacher_id),
+        value: Number(t.id),
         label: `${t.firstname} ${t.lastname}`,
       })),
     [teachers]
@@ -385,7 +385,7 @@ const ClassHomeWork = () => {
       render: (text: number) => (
         <>
           <Link to="#" className="link-primary">
-            {text}
+            HW{text}
           </Link>
         </>
       ),

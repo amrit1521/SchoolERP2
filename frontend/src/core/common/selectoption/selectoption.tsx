@@ -930,7 +930,7 @@ export const invoiceNumber = [
 export const paymentMethod = [
 
   { value: "Cash", label: "Cash" },
-  { value: "Credit", label: "Credit" },
+  { value: "Bank Transfer", label: "Bank Transfer"},
 ];
 export const incomeName = [
 

@@ -179,7 +179,7 @@ const ExpensesCategory = () => {
       dataIndex: "id",
       render: (id: number) => (
         <Link to="#" className="link-primary">
-          EXP-{id}
+          EXC-{id}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id - b.id,

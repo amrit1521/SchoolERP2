@@ -70,7 +70,7 @@ exports.allHomework = async (req, res) => {
         se.section_name AS section,
         c.class_name  AS className
       FROM home_work hw
-      LEFT JOIN teachers t ON hw.teacherId = t.teacher_id
+      LEFT JOIN teachers t ON hw.teacherId = t.user_id
       LEFT JOIN users u ON t.user_id = u.id
       LEFT JOIN class_subject su ON hw.subject = su.id
       LEFT JOIN  sections se ON hw.section_id = se.id

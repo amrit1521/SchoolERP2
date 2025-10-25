@@ -271,7 +271,7 @@ const Classes: React.FC = () => {
       title: "ID",
       dataIndex: "id",
       sorter: (a: AllSection, b: AllSection) => a.id - b.id,
-      render: (id: number) => <Link to="#" className="link-primary">{id}</Link>,
+      render: (id: number) => <Link to="#" className="link-primary">SEC{id}</Link>,
     },
     {
       title: "Class",

@@ -67,7 +67,7 @@ exports.markTeacherAttendance = async (req, res) => {
 exports.markStaffAttendance = async (req, res) => {
   const data = req.body;
 
-  
+
   if (!Array.isArray(data) || data.length === 0) {
     return res.status(400).json({
       message: "Attendance data is required!",
@@ -129,7 +129,7 @@ exports.getStaffAttendanceData = async (req, res) => {
   try {
     const staffId = parseInt(req.params.staffid);
 
-   
+
     const summarySql = `
       SELECT 
         SUM(CASE WHEN attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
@@ -142,7 +142,7 @@ exports.getStaffAttendanceData = async (req, res) => {
     `;
     const [summary] = await db.query(summarySql, [staffId]);
 
-   
+
     const detailSql = `
       SELECT id, attendance, attendance_date_info
       FROM staff_attendance_info
@@ -165,12 +165,12 @@ exports.getStaffAttendanceData = async (req, res) => {
   }
 };
 
-  
+
 exports.getTeacherAttendanceData = async (req, res) => {
   try {
-    const {teacher_id} =req.params;
- 
-   
+    const { teacher_id } = req.params;
+
+
     const summarySql = `
       SELECT
         SUM(CASE WHEN attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
@@ -182,8 +182,8 @@ exports.getTeacherAttendanceData = async (req, res) => {
       WHERE teacher_id = ?
     `;
     const [summary] = await db.query(summarySql, [teacher_id]);
- 
-   
+
+
     const detailSql = `
       SELECT id, attendance, attendance_date_info
       FROM teacher_attendance_info
@@ -191,7 +191,7 @@ exports.getTeacherAttendanceData = async (req, res) => {
       ORDER BY attendance_date_info ASC
     `;
     const [details] = await db.query(detailSql, [teacher_id]);
- 
+
     return res.status(200).json({
       success: true,
       summary: summary[0],
@@ -205,8 +205,6 @@ exports.getTeacherAttendanceData = async (req, res) => {
     });
   }
 };
- 
-
 
 
 exports.markStudentAttendance = async (req, res) => {
@@ -243,7 +241,7 @@ exports.markStudentAttendance = async (req, res) => {
       }
     }
 
-    
+
     const insertSql = `
       INSERT INTO attendance_info 
       (attendance, student_rollnum, class, section, notes, attendance_date_info) 
@@ -313,3 +311,152 @@ exports.getStudentAttendanceData = async (req, res) => {
     });
   }
 };
+
+
+exports.getStuAttendanceReport = async (req, res) => {
+  try {
+
+
+    const sql = `
+      SELECT  
+        s.rollnum AS roll_no, 
+        s.stu_img,
+        u.firstname,
+        u.lastname,
+        SUM(CASE WHEN a.attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
+        SUM(CASE WHEN a.attendance = 'Late' THEN 1 ELSE 0 END) AS Late,
+        SUM(CASE WHEN a.attendance = 'Absent' THEN 1 ELSE 0 END) AS Absent,
+        SUM(CASE WHEN a.attendance = 'Halfday' THEN 1 ELSE 0 END) AS Halfday,
+        SUM(CASE WHEN a.attendance = 'Holiday' THEN 1 ELSE 0 END) AS Holiday,
+        COUNT(a.id) AS TotalDays
+      FROM attendance_info a
+      JOIN students s ON a.student_rollnum = s.rollnum
+      JOIN users u ON u.id = s.stu_id
+      GROUP BY a.student_rollnum
+      ORDER BY s.rollnum ASC
+    `;
+
+    const [rows] = await db.query(sql);
+
+    const report = rows.map((r) => {
+      const Present = Number(r.Present) || 0;
+      const Late = Number(r.Late) || 0;
+      const Absent = Number(r.Absent) || 0;
+      const Halfday = Number(r.Halfday) || 0;
+      const Holiday = Number(r.Holiday) || 0;
+      const TotalDays = Number(r.TotalDays) || 0; 
+      const totalWorkingDays = TotalDays - Holiday;
+      const totalPresentDays = Present + Late  + (Halfday * 0.5);
+      const percentage =
+        totalWorkingDays > 0
+          ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
+          : "0.0";
+      return {
+        rollNo: r.roll_no,
+        name: `${r.firstname} ${r.lastname} `,
+        img:r.stu_img,
+        p:Present,
+        l:Late,
+        a:Absent,
+        h:Halfday,
+        f:Holiday,
+        TotalDays,
+        totalWorkingDays,
+        totalPresentDays: totalPresentDays.toFixed(1),
+        percentage,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: report,
+    });
+  } catch (error) {
+    console.error("Error generating attendance report:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
+
+// exports.getStuAttendanceReport = async (req, res) => {
+//   try {
+//     const { startDate, endDate } = req.query;
+
+//     if (!startDate || !endDate) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Please provide startDate and endDate (YYYY-MM-DD).",
+//       });
+//     }
+
+//     const sql = `
+//       SELECT  
+//         s.rollnum AS roll_no, 
+//         s.stu_img,
+//         u.firstname,
+//         u.lastname,
+//         SUM(CASE WHEN a.attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
+//         SUM(CASE WHEN a.attendance = 'Late' THEN 1 ELSE 0 END) AS Late,
+//         SUM(CASE WHEN a.attendance = 'Absent' THEN 1 ELSE 0 END) AS Absent,
+//         SUM(CASE WHEN a.attendance = 'Halfday' THEN 1 ELSE 0 END) AS Halfday,
+//         SUM(CASE WHEN a.attendance = 'Holiday' THEN 1 ELSE 0 END) AS Holiday,
+//         COUNT(a.id) AS TotalDays
+//       FROM attendance_info a
+//       JOIN students s ON a.student_rollnum = s.rollnum
+//       JOIN users u ON u.id = s.stu_id
+//       WHERE DATE(a.attendance_date_info) BETWEEN ? AND ?
+//       GROUP BY a.student_rollnum
+//       ORDER BY s.rollnum ASC
+//     `;
+
+//     const [rows] = await db.query(sql, [startDate.trim(), endDate.trim()]);
+
+//     const report = rows.map((r) => {
+//       const Present = Number(r.Present) || 0;
+//       const Late = Number(r.Late) || 0;
+//       const Absent = Number(r.Absent) || 0;
+//       const Halfday = Number(r.Halfday) || 0;
+//       const Holiday = Number(r.Holiday) || 0;
+//       const TotalDays = Number(r.TotalDays) || 0; 
+//       const totalWorkingDays = TotalDays - Holiday;
+//       const totalPresentDays = Present + Late  + (Halfday * 0.5);
+//       const percentage =
+//         totalWorkingDays > 0
+//           ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
+//           : "0.0";
+//       return {
+//         rollNo: r.roll_no,
+//         studentName: `${r.firstname} ${r.lastname} `,
+//         img:r.stu_img,
+//         Present,
+//         Late,
+//         Absent,
+//         Halfday,
+//         Holiday,
+//         TotalDays,
+//         totalWorkingDays,
+//         totalPresentDays: totalPresentDays.toFixed(1),
+//         percentage,
+//       };
+//     });
+
+//     return res.status(200).json({
+//       success: true,
+//       startDate,
+//       endDate,
+//       data: report,
+//     });
+//   } catch (error) {
+//     console.error("Error generating attendance report:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error.",
+//     });
+//   }
+// };
+
+
+

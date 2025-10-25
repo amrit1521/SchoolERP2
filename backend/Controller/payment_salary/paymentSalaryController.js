@@ -167,9 +167,6 @@ exports.getAllApplySalaryDetails = async (req, res) => {
 }
 
 
-
-
-
 exports.paySalary = async (req, res) => {
   const { id } = req.params;
   const { payment_method } = req.body;

@@ -198,7 +198,7 @@ const ClassSubject = () => {
       dataIndex: "id",
       render: (text: number) => (
         <Link to="#" className="link-primary">
-          {text}
+          SUB{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id - b.id,
