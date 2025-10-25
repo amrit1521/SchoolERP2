@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import {
   driverName,
-  PickupPoint2,
-  routesList,
-  VehicleNumber,
+  // PickupPoint2,
+  // routesList,
+  // VehicleNumber,
 } from "../../../core/common/selectoption/selectoption";
 import CommonSelect from "../../../core/common/commonSelect";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";

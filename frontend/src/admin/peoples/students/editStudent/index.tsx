@@ -336,12 +336,12 @@ const EditStudent = () => {
     const [transcertpath, setTranscertpath] = useState<string>("");
 
 
-    const [stuimgid, setStuimgid] = useState<Number | null>(null)
-    const [fatimgid, setFatimgid] = useState<Number | null>(null)
-    const [motimgid, setMotimgid] = useState<Number | null>(null)
-    const [guaimgid, setGuaimgid] = useState<Number | null>(null)
-    const [medcertid, setMedcertid] = useState<Number | null>(null)
-    const [transcertid, setTranscertid] = useState<Number | null>(null)
+    const [stuimgid, setStuimgid] = useState<number | null>(null)
+    const [fatimgid, setFatimgid] = useState<number | null>(null)
+    const [motimgid, setMotimgid] = useState<number | null>(null)
+    const [guaimgid, setGuaimgid] = useState<number | null>(null)
+    const [medcertid, setMedcertid] = useState<number | null>(null)
+    const [transcertid, setTranscertid] = useState<number | null>(null)
 
     const [errors, setErrors] = useState<Partial<Record<keyof StudentData, string>>>({});
 
@@ -405,7 +405,7 @@ const EditStudent = () => {
         }
     };
 
-    const deleteImage = async (id: Number) => {
+    const deleteImage = async (id: number) => {
         if (!id) return;
 
         try {
