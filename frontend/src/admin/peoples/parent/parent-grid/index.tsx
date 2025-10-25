@@ -263,7 +263,7 @@ const ParentGrid = () => {
       }
     }
   };
-  const deleteImage = async (id: Number) => {
+  const deleteImage = async (id: number) => {
     if (!id) return;
 
     try {
