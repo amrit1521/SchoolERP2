@@ -19,15 +19,6 @@ const Permission = () => {
   const location = useLocation();
   const { roleId } = location.state || {};
   const [permissionData, setPermissionData] = useState<any[]>([]);
-  // permission.map((item: any, index: number) => ({
-  //   id: index + 1,
-  //   ...item,
-  //   created: false,
-  //   view: false,
-  //   edit: false,
-  //   delete: false,
-  //   allowAll: false,
-  // }))
   const fetchModule = async () => {
     if (!roleId) {
       toast.error("roleId is required.");
@@ -37,38 +28,24 @@ const Permission = () => {
       const { data } = await getAllModules();
       const result = await getAllRolePermissions(roleId);
       if (data.success) {
-        // console.log("roles data: ", data.result);
-        // setPermissionData(
-        //   data.result.map((item: any) => ({
-        //     id: item.id,
-        //     modules: item.name,
-        //     created: false,
-        //     view: false,
-        //     edit: false,
-        //     delete: false,
-        //     allowAll: false,
-        //   }))
-        // );
         const modules = data.result;
         const permissions = result.data?.result || [];
-        console.log("permission: ", permissions);
         const combined = modules.map((module: any) => {
           const modulePerm = permissions.find(
             (perm: any) => perm.module_id === module.id
           );
-          console.log("modulePerm: ", modulePerm);
           return {
             id: module.id,
             modules: module.name,
-            created: !!modulePerm?.created,
-            view: !!modulePerm?.view,
-            edit: !!modulePerm?.edit,
-            delete: !!modulePerm?.delete,
+            created: !!modulePerm?.can_create,
+            view: !!modulePerm?.can_view,
+            edit: !!modulePerm?.can_edit,
+            delete: !!modulePerm?.can_delete,
             allowAll: !!(
-              modulePerm?.created &&
-              modulePerm?.view &&
-              modulePerm?.edit &&
-              modulePerm?.delete
+              modulePerm?.can_create &&
+              modulePerm?.can_view &&
+              modulePerm?.can_edit &&
+              modulePerm?.can_delete
             ),
           };
         });
@@ -146,35 +123,6 @@ const Permission = () => {
     );
   };
 
-  // const handlePermissionChange = (
-  //   id: number,
-  //   field: string,
-  //   checked: boolean
-  // ) => {
-  //   setPermissionData((prev) =>
-  //     prev.map((perm) => {
-  //       if (perm.id !== id) return perm;
-
-  //       const updated = { ...perm, [field]: checked };
-
-  //       // recompute allowAll
-  //       updated.allowAll =
-  //         updated.created && updated.view && updated.edit && updated.delete;
-
-  //       // if toggling allowAll, set all fields
-  //       if (field === "allowAll") {
-  //         updated.created =
-  //           updated.view =
-  //           updated.edit =
-  //           updated.delete =
-  //             checked;
-  //       }
-
-  //       return updated;
-  //     })
-  //   );
-  // };
-
   const handleSavePermission = async () => {
     console.log("Updated Permissions:", permissionData, roleId);
     try {
@@ -214,7 +162,7 @@ const Permission = () => {
             <input
               type="checkbox"
               checked={record.created}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 handlePermissionChange(record.id, "created", e.target.checked)
               }
             />
@@ -227,14 +175,13 @@ const Permission = () => {
       title: "View",
       dataIndex: "view",
       render: (_: any, record: any) => {
-        console.log(record);
         return (
           <>
             <label className="checkboxs">
               <input
                 type="checkbox"
                 checked={record.view}
-                onChange={(e) =>
+                onChange={(e: any) =>
                   handlePermissionChange(record.id, "view", e.target.checked)
                 }
               />
@@ -253,7 +200,7 @@ const Permission = () => {
             <input
               type="checkbox"
               checked={record.edit}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 handlePermissionChange(record.id, "edit", e.target.checked)
               }
             />
@@ -271,7 +218,7 @@ const Permission = () => {
             <input
               type="checkbox"
               checked={record.delete}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 handlePermissionChange(record.id, "delete", e.target.checked)
               }
             />
@@ -289,7 +236,7 @@ const Permission = () => {
             <input
               type="checkbox"
               checked={record.allowAll}
-              onChange={(e) =>
+              onChange={(e: any) =>
                 handlePermissionChange(record.id, "allowAll", e.target.checked)
               }
             />

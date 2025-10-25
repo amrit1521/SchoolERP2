@@ -9,9 +9,107 @@ import {
 } from "../../core/common/selectoption/selectoption";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { useEffect, useState } from "react";
+import {
+  CreateNotice,
+  getAllRoles,
+  uploadTeacherFile,
+} from "../../service/api";
+import { toast } from "react-toastify";
 
 const NoticeBoard = () => {
   const routes = all_routes;
+
+  //add message:
+  const [title, setTitle] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [attachement, setAttachement] = useState<File | null>(null);
+  const [messageTo, setMessageTo] = useState<any[]>([]);
+  const [allRoles, setAllRoles] = useState([]);
+
+  const formReset = () => {
+    setTitle("");
+    setMessage("");
+    setAttachement(null);
+    setMessageTo([]);
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+        console.log("roles data: ", data.result);
+        setAllRoles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            roleName: item.role_name,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  const handleCheckboxChange = (id: number) => {
+    setMessageTo((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      if (file.size > 4 * 1024 * 1024) {
+        alert("File size must be less than 4MB");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.type !== "application/pdf") {
+        alert("Only PDF files are allowed");
+        e.target.value = "";
+        return;
+      }
+
+      setAttachement(file);
+    }
+  };
+
+  const handleCreateNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("notice Data: ", title, message, attachement, messageTo);
+    const formData = new FormData();
+    try {
+      if (attachement) {
+        formData.append("noticefile", attachement);
+        const res = await uploadTeacherFile(formData);
+        const uploadedPath = res.data.file;
+        const id = res.data.insertId;
+      }
+      const payload = {
+        title: title,
+        message: message,
+        attachement: attachement,
+        messageTo: messageTo,
+      };
+      const { data } = await CreateNotice(payload);
+      if (data.success) {
+        toast.success(data.message || "Notice Created Successfully.");
+        formReset();
+      } else {
+        toast.error(data.message || "Notice creation failed.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
   return (
     <>
       {" "}
@@ -601,42 +699,25 @@ const NoticeBoard = () => {
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={() => formReset()}
               >
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleCreateNotice}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
                     <div className="mb-3">
                       <label className="form-label">Title</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={title}
+                        onChange={(e: any) => setTitle(e.target?.value)}
+                      />
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">Notice Date</label>
-                      <div className="date-pic">
-                        <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Publish On</label>
-                      <div className="date-pic">
-                        <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
-                    </div>
+
                     <div className="mb-3">
                       <div className="bg-light p-3 pb-2 rounded">
                         <div className="mb-3">
@@ -650,9 +731,14 @@ const NoticeBoard = () => {
                             <input
                               type="file"
                               className="form-control image_sign"
-                              multiple
+                              onChange={handleFileChange}
                             />
                           </div>
+                          {attachement && (
+                            <span className="ms-2 text-muted">
+                              {attachement.name}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -662,55 +748,29 @@ const NoticeBoard = () => {
                         className="form-control"
                         rows={4}
                         defaultValue={""}
+                        value={message}
+                        onChange={(e: any) => setMessage(e.target?.value)}
                       />
                     </div>
                     <div className="mb-0">
                       <label className="form-label">Message To</label>
                       <div className="row">
-                        <div className="col-md-6">
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Student
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Parent
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Admin
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Teacher
-                          </label>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Accountant
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Librarian
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Receptionist
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Super Admin
-                          </label>
-                        </div>
+                        {allRoles.map((item: any, index: number) => {
+                          return (
+                            <div key={index} className="col-md-6 col-12 mb-1">
+                              <div className="form-check form-check-md">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  onChange={() => handleCheckboxChange(item.id)}
+                                />
+                                <span className="text-capitalize">
+                                  {item?.roleName}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -721,6 +781,7 @@ const NoticeBoard = () => {
                   to="#"
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
+                  onClick={() => formReset()}
                 >
                   Cancel
                 </Link>
@@ -764,7 +825,7 @@ const NoticeBoard = () => {
                     <div className="mb-3">
                       <label className="form-label">Notice Date</label>
                       <div className="date-pic">
-                      <DatePicker
+                        <DatePicker
                           className="form-control datetimepicker"
                           placeholder="Select Date"
                         />
@@ -776,7 +837,7 @@ const NoticeBoard = () => {
                     <div className="mb-3">
                       <label className="form-label">Publish On</label>
                       <div className="date-pic">
-                      <DatePicker
+                        <DatePicker
                           className="form-control datetimepicker"
                           placeholder="Select Date"
                         />
