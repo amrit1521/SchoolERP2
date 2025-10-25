@@ -11,7 +11,7 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-import TransportModal from "./transportModal";
+// import TransportModal from "./transportModal";
 import { transportdriver } from "../../../core/data/json/transport_driver";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 
@@ -297,7 +297,7 @@ const TransportVehicleDrivers = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      <TransportModal />
+      {/* <TransportModal /> */}
     </>
   );
 };

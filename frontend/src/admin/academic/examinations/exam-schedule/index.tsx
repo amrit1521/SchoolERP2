@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import {
   // classSection,
-  classselect,
   classSylabus,
   // count,
   durationOne,
@@ -21,13 +20,22 @@ import type { TableData } from "../../../../core/data/interface";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
-import { addExamSchedule, allExamData, allExamSchedule, deleteExamSchedule, editExamSchedule, getAllSection, getAllSubject, speExamSchedule } from "../../../../service/api";
+import {
+  addExamSchedule,
+  allExamData,
+  allExamSchedule,
+  deleteExamSchedule,
+  editExamSchedule,
+  getAllSectionForAClass,
+  getAllSubject,
+  speExamSchedule,
+} from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-import { allClassRoom } from "../../../../service/classApi";
-import dayjs from 'dayjs'
+import { allClassRoom, allRealClasses } from "../../../../service/classApi";
+import dayjs from "dayjs";
 export interface Section {
-  id:string;
+  id: number;
   section: string;
 }
 
@@ -51,16 +59,13 @@ const ExamSchedule = () => {
     }
   };
 
-
-
-
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [allExam, setAllExam] = useState<any[]>([]);
-  const [sections, setSections] = useState<Section[]>([])
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [rooms, setRooms] = useState<Room[]>([])
+  const [sections, setSections] = useState<Section[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
+  const [allClass, setAllClass] = useState<any[]>([]);
 
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
@@ -75,15 +80,14 @@ const ExamSchedule = () => {
   };
 
   const fetchSchedule = async () => {
-    setLoading(true)
-    await new Promise((res) => setTimeout(res, 500))
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500));
 
     try {
-      const { data } = await allExamSchedule()
+      const { data } = await allExamSchedule();
       if (data.success) {
         setScheduleData(data.data);
       }
-
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message || "Something went wrong");
@@ -92,21 +96,34 @@ const ExamSchedule = () => {
     }
   };
 
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
+  const fetchRooms = () => fetchData(allClassRoom, setRooms);
+  const fetchExams = () => fetchData(allExamData, setAllExam);
 
-  const fetchSections = () => fetchData(getAllSection, setSections);
-  const fetchSubjects = () => fetchData(getAllSubject, setSubjects)
-  const fetchRooms = () => fetchData(allClassRoom, setRooms)
-  const fetchExams = () => fetchData(allExamData, setAllExam)
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
 
   useEffect(() => {
     fetchSchedule();
-    fetchSections()
-    fetchSubjects()
-    fetchRooms()
-    fetchExams()
+    fetchSubjects();
+    fetchRooms();
+    fetchExams();
+    fetchClass();
+    console.log(allClass);
   }, []);
-
-
 
   const examNameOptions = useMemo(
     () =>
@@ -139,14 +156,14 @@ const ExamSchedule = () => {
     () =>
       allExam.map((e) => ({
         value: e.id,
-        label: dayjs(e.examDate).format('DD MMM YYYY')
+        label: dayjs(e.examDate).format("DD MMM YYYY"),
       })),
     [allExam]
   );
 
   // Section, Subject, Room Options
   const sectionOptions = useMemo(
-    () => sections.map((s) => ({ value: s.section, label: s.section })),
+    () => sections.map((s) => ({ value: s.id, label: s.section })),
     [sections]
   );
 
@@ -163,7 +180,7 @@ const ExamSchedule = () => {
   // add exam schedule
 
   interface ExamScheduleForm {
-    className: string;
+    className: number | null;
     section: number | null;
     examName: number | null;
     startTime: number | null;
@@ -177,7 +194,7 @@ const ExamSchedule = () => {
   }
 
   const [examScheduleForm, setExamScheduleForm] = useState<ExamScheduleForm>({
-    className: "",
+    className: null,
     section: null,
     examName: null,
     startTime: null,
@@ -189,9 +206,37 @@ const ExamSchedule = () => {
     maxMarks: "",
     minMarks: "",
   });
-  const [editId, setEditId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null);
 
-  const handleChange = (field: keyof ExamScheduleForm, value: string | number) => {
+  const fetchSection = async () => {
+    try {
+      if (examScheduleForm.className) {
+        console.log(examScheduleForm.className, examScheduleForm.section);
+        const { data } = await getAllSectionForAClass(
+          examScheduleForm.className
+        );
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSections(
+            data.data.map((e: any) => ({ id: e.id, section: e.section_name }))
+          );
+        } else {
+          setSections([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  };
+
+  useEffect(() => {
+    fetchSection();
+  }, [examScheduleForm.className]);
+
+  const handleChange = (
+    field: keyof ExamScheduleForm,
+    value: string | number
+  ) => {
     setExamScheduleForm((prev) => ({
       ...prev,
       [field]: value,
@@ -201,10 +246,9 @@ const ExamSchedule = () => {
   // edit
 
   const fetchById = async (id: number) => {
-
     try {
-      const { data } = await speExamSchedule(id)
-      console.log(data)
+      const { data } = await speExamSchedule(id);
+      console.log(data);
       if (data.success) {
         setExamScheduleForm({
           className: data.data.className,
@@ -218,20 +262,19 @@ const ExamSchedule = () => {
           roomNo: data.data.roomNo,
           maxMarks: data.data.maxMarks,
           minMarks: data.data.minMarks,
-        })
-        setEditId(id)
+        });
+        setEditId(id);
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setEditId(null)
+    e.preventDefault();
+    setEditId(null);
     setExamScheduleForm({
-      className: "",
+      className: null,
       section: null,
       examName: null,
       startTime: null,
@@ -242,35 +285,29 @@ const ExamSchedule = () => {
       roomNo: null,
       maxMarks: "",
       minMarks: "",
-    })
-  }
+    });
+  };
 
   const handleSubmit = async () => {
-
     try {
-
       if (editId) {
-
-        const { data } = await editExamSchedule(examScheduleForm, editId)
+        const { data } = await editExamSchedule(examScheduleForm, editId);
         if (data.success) {
-          toast.success(data.message)
-          handleModalPopUp(`edit_exam_schedule`)
-          setEditId(null)
+          toast.success(data.message);
+          handleModalPopUp(`edit_exam_schedule`);
+          setEditId(null);
         }
-
       } else {
-        const { data } = await addExamSchedule(examScheduleForm)
-        console.log(data)
+        const { data } = await addExamSchedule(examScheduleForm);
+        console.log(data);
         if (data.success) {
-
-          toast.success(data.message)
-          handleModalPopUp(`add_exam_schedule`)
-
+          toast.success(data.message);
+          handleModalPopUp(`add_exam_schedule`);
         }
       }
-      fetchSchedule()
+      fetchSchedule();
       setExamScheduleForm({
-        className: "",
+        className: null,
         section: null,
         examName: null,
         startTime: null,
@@ -281,45 +318,40 @@ const ExamSchedule = () => {
         roomNo: null,
         maxMarks: "",
         minMarks: "",
-      })
-
+      });
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     }
   };
 
   // delete-----------------------------------
   // delete section----------------------------------------------------
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+  const handleDelete = async (
+    id: number,
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
 
     try {
-
-      const { data } = await deleteExamSchedule(id)
+      const { data } = await deleteExamSchedule(id);
       if (data.success) {
-        toast.success(data.message)
+        toast.success(data.message);
         fetchSchedule();
-        setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDeleteId(null);
+        handleModalPopUp("delete-modal");
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setDeleteId(null)
-  }
-
-
-
-
-
+    e.preventDefault();
+    setDeleteId(null);
+  };
 
   const columns = [
     {
@@ -339,7 +371,7 @@ const ExamSchedule = () => {
       title: "Exam Date",
       dataIndex: "examDate",
       render: (text: string) => (
-        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+        <span>{dayjs(text).format("DD MMM YYYY")}</span>
       ),
       sorter: (a: TableData, b: TableData) =>
         a.examDate.length - b.examDate.length,
@@ -481,8 +513,11 @@ const ExamSchedule = () => {
                     <i className="ti ti-filter me-2" />
                     Filter
                   </Link>
-                  <div className="dropdown-menu drop-width" ref={dropdownMenuRef}>
-                    <form >
+                  <div
+                    className="dropdown-menu drop-width"
+                    ref={dropdownMenuRef}
+                  >
+                    <form>
                       <div className="d-flex align-items-center border-bottom p-3">
                         <h4>Filter</h4>
                       </div>
@@ -560,12 +595,21 @@ const ExamSchedule = () => {
             <div className="card-body p-0 py-3">
               {/* Guardians List */}
               {loading ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+                <div
+                  className="d-flex justify-content-center align-items-center"
+                  style={{ height: "200px" }}
+                >
                   <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
                 </div>
-              ) : (<Table columns={columns} dataSource={scheduleData} Selection={true} />)}
+              ) : (
+                <Table
+                  columns={columns}
+                  dataSource={scheduleData}
+                  Selection={true}
+                />
+              )}
 
               {/* /Guardians List */}
             </div>
@@ -590,7 +634,6 @@ const ExamSchedule = () => {
                 </button>
               </div>
 
-
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="modal-body">
                   <div className="row">
@@ -601,7 +644,7 @@ const ExamSchedule = () => {
                             <label className="form-label">Class</label>
                             <CommonSelect
                               className="select"
-                              options={classselect}
+                              options={allClass}
                               value={examScheduleForm.className}
                               onChange={(option: any) =>
                                 handleChange("className", option.value)
@@ -763,13 +806,11 @@ const ExamSchedule = () => {
                     type="button"
                     className="btn btn-primary"
                     onClick={handleSubmit}
-
                   >
                     Add Exam Schedule
                   </button>
                 </div>
               </form>
-
             </div>
           </div>
         </div>
@@ -801,7 +842,7 @@ const ExamSchedule = () => {
                             <label className="form-label">Class</label>
                             <CommonSelect
                               className="select"
-                              options={classselect}
+                              options={allClass}
                               value={examScheduleForm.className}
                               onChange={(option: any) =>
                                 handleChange("className", option.value)
@@ -962,10 +1003,8 @@ const ExamSchedule = () => {
                   </button>
                   <button
                     type="button"
-
                     className="btn btn-primary"
                     onClick={handleSubmit}
-
                   >
                     Edit Exam Schedule
                   </button>
@@ -979,7 +1018,7 @@ const ExamSchedule = () => {
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <form >
+              <form>
                 <div className="modal-body text-center">
                   <span className="delete-icon">
                     <i className="ti ti-trash-x" />
@@ -989,8 +1028,8 @@ const ExamSchedule = () => {
                     You want to delete all the marked items, this cant be undone
                     once you delete.
                   </p>
-                  {
-                    deleteId && (<div className="d-flex justify-content-center">
+                  {deleteId && (
+                    <div className="d-flex justify-content-center">
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
@@ -998,12 +1037,14 @@ const ExamSchedule = () => {
                       >
                         Cancel
                       </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      <button
+                        onClick={(e) => handleDelete(deleteId, e)}
+                        className="btn btn-danger"
                       >
                         Yes, Delete
                       </button>
-                    </div>)
-                  }
+                    </div>
+                  )}
                 </div>
               </form>
             </div>

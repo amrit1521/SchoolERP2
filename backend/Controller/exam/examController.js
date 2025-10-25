@@ -667,11 +667,11 @@ const calculateGradeResult = (grade) => {
 
 const calculateObtainedMarksForGrades = (grade) => {
   if (grade === "A") return 90;
-  if (grade === "B") return 90;
-  if (grade === "C") return 90;
-  if (grade === "D") return 90;
-  if (grade === "E") return 90;
-  if (grade === "F") return 90;
+  if (grade === "B") return 80;
+  if (grade === "C") return 70;
+  if (grade === "D") return 60;
+  if (grade === "E") return 50;
+  if (grade === "F") return 30;
 };
 
 exports.addExamResult = async (req, res) => {
@@ -894,6 +894,35 @@ exports.addExamResult2 = async (req, res) => {
   }
 };
 
+exports.examNameForStudentResults = async (req, res) => {
+  const { rollNum } = req.params;
+  try {
+    const sql = `
+    SELECT er.exam_name_id, er.roll_num, en.examName
+    FROM exam_result er
+    JOIN examName en ON er.exam_name_id = en.id
+    WHERE er.roll_num = ?
+    GROUP BY er.exam_name_id, er.roll_num;
+    `;
+    const [rows] = await db.query(sql, [rollNum]);
+    if (!rows.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No results found!" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Exam Name fetched successfully!",
+      data: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
+
 exports.getExamResultSpeStudents = async (req, res) => {
   const { rollnum } = req.params;
   try {
@@ -908,8 +937,15 @@ exports.getExamResultSpeStudents = async (req, res) => {
         cs.name AS subject_name,
         cs.code,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        s.perm_address,
+        s.dob,
+        s.academicyear,
+        cl.class_name,
+        se.section_name,
+        s.admissionnum,
         p.name,
         p.phone_num,
         u.firstname,
@@ -918,6 +954,8 @@ exports.getExamResultSpeStudents = async (req, res) => {
       LEFT JOIN examName en ON er.exam_name_id = en.id
       LEFT JOIN class_subject cs ON er.subject_id = cs.id
       LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN parents_info p ON p.user_id = s.stu_id AND relation="Father"
       LEFT JOIN users u ON s.stu_id = u.id
       WHERE er.roll_num = ?
@@ -943,10 +981,15 @@ exports.getExamResultSpeStudents = async (req, res) => {
           rollnum: row.rollnum,
           firstname: row.firstname,
           lastname: row.lastname,
-          class: row.class,
-          section: row.section,
+          class: row.class_name,
+          section: row.section_name,
           fat_name: row.name,
           phone_num: row.phone_num,
+          student_image: row.stu_img,
+          stud_admNo: row.admissionnum,
+          stud_dob: row.dob,
+          stud_address: row.perm_address,
+          stud_academicYear: row.academicyear,
           exams: {},
         };
       }
@@ -1002,8 +1045,10 @@ exports.getExamResultAllStudents = async (req, res) => {
         cs.code,
         s.admissionnum,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
+        cl.class_name,
+        se.section_name,
         s.stu_img,
         p.name AS father_name,
         p.phone_num,
@@ -1013,6 +1058,8 @@ exports.getExamResultAllStudents = async (req, res) => {
       LEFT JOIN examName en ON er.exam_name_id = en.id
       LEFT JOIN class_subject cs ON er.subject_id = cs.id
       LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
       LEFT JOIN users u ON s.stu_id = u.id
       ORDER BY s.rollnum, en.examName, cs.name
@@ -1038,8 +1085,10 @@ exports.getExamResultAllStudents = async (req, res) => {
           rollnum: row.rollnum,
           admissionNo: row.admissionnum,
           studentName: `${row.firstname} ${row.lastname}`,
-          class: row.class,
-          section: row.section,
+          class_id: row.class_id,
+          section_id: row.section_id,
+          class: row.class_name,
+          section: row.section_name,
           img: row.stu_img || "assets/img/students/default.jpg",
           examName: row.examName,
           subjects: {},
@@ -1118,6 +1167,150 @@ exports.getExamResultAllStudents = async (req, res) => {
   }
 };
 
+exports.getExamResultAllStudentsOfAClass = async (req, res) => {
+  const { classId } = req.params;
+  try {
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        er.grade_marks,
+        er.grade,
+        en.examName,
+        cs.name AS subject_name,
+        cs.code,
+        s.admissionnum,
+        s.rollnum,
+        s.section_id,
+        s.class_id,
+        cl.class_name,
+        se.section_name,
+        s.perm_address,
+        s.dob,
+        s.academicyear,
+        s.stu_img,
+        p.name AS father_name,
+        p.phone_num,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN class_subject cs ON er.subject_id = cs.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      LEFT JOIN parents_info p ON p.user_id = s.stu_id AND p.relation = "Father"
+      LEFT JOIN users u ON s.stu_id = u.id
+      Where s.class_id = ?
+      ORDER BY s.rollnum, en.examName, cs.name
+    `;
+
+    const [rows] = await db.query(sql, [classId]);
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: false,
+        message: "No results found!",
+      });
+    }
+    const studentsMap = {};
+
+    rows.forEach((row) => {
+      const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
+      if (!studentsMap[key]) {
+        studentsMap[key] = {
+          key: row.id,
+          rollnum: row.rollnum,
+          admissionNo: row.admissionnum,
+          studentName: `${row.firstname} ${row.lastname}`,
+          class_id: row.class_id,
+          section_id: row.section_id,
+          class: row.class_name,
+          section: row.section_name,
+          father_name: row.father_name,
+          date_of_birth: row.dob,
+          address: row.perm_address,
+          academic_year: row.academicyear,
+          phone_num: row.phone_num,
+          student_image: row.stu_img || "assets/img/students/default.jpg",
+          examName: row.examName,
+          subjects: {},
+          totalMaxMarks: 0,
+        };
+      }
+
+      const subjKey = `${row.subject_name} (${row.code})`;
+      studentsMap[key].subjects[subjKey] = {
+        id: row.id,
+        mark_obtained: row.mark_obtained || 0,
+        max_mark: row.max_mark || 0,
+        grade_marks: row.grade,
+      };
+      //  else {
+      //   studentsMap[key].subjects[subjKey] = {
+      //     id: row.id,
+      //     grade_marks: row.grade || "",
+      //   };
+      // }
+
+      // Increment total max marks for this exam
+      studentsMap[key].totalMaxMarks += row.max_mark || 0;
+    });
+
+    // Calculate total, percent, grade, and result per exam
+    const students = Object.values(studentsMap).map((student) => {
+      let totalObtained = 0;
+
+      Object.values(student.subjects).forEach((subj) => {
+        if (subj.mark_obtained) {
+          totalObtained += subj.mark_obtained;
+        }
+        //  else if (subj.grade_marks) {
+        //   totalObtained += calculateObtainedMarksForGrades(subj.grade_marks);
+        // }
+      });
+
+      const percent =
+        student.totalMaxMarks > 0
+          ? Number(((totalObtained / student.totalMaxMarks) * 100).toFixed(2))
+          : 0;
+
+      let overallGrade = "F";
+
+      if (percent >= 90) overallGrade = "A+";
+      else if (percent >= 80) overallGrade = "A";
+      else if (percent >= 70) overallGrade = "B+";
+      else if (percent >= 60) overallGrade = "B";
+      else if (percent >= 50) overallGrade = "C";
+      else if (percent >= 33) overallGrade = "D";
+
+      const overallResult = percent < 33 ? "Fail" : "Pass";
+
+      return {
+        ...student,
+        total: totalObtained,
+        totalMaxMarks: student.totalMaxMarks,
+        percent,
+        grade: overallGrade,
+        result: overallResult,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Results fetched successfully!",
+      data: students,
+    });
+  } catch (error) {
+    console.error("❌ Error in getExamResultAllStudents:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};
+
 exports.getExamResultUpdateList = async (req, res) => {
   try {
     const { className, section, examName } = req.body;
@@ -1139,12 +1332,16 @@ exports.getExamResultUpdateList = async (req, res) => {
         cs.code,
         s.admissionnum,
         s.rollnum,
-        s.section,
-        s.class,
+        s.section_id,
+        s.class_id,
+        cl.class_name as class,
+        se.section_name as section,
         u.firstname,
         u.lastname
       FROM examSchedule es
-      RIGHT JOIN students s ON es.className = s.class AND es.section = s.section
+      RIGHT JOIN students s ON es.className = s.class_id AND es.section = s.section_id
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
       LEFT JOIN class_subject cs ON es.subject = cs.id
       LEFT JOIN users u ON s.stu_id = u.id
       WHERE es.className = ? AND es.section = ? AND es.examName = ?
@@ -1156,10 +1353,11 @@ exports.getExamResultUpdateList = async (req, res) => {
       section,
       examName,
     ]);
+    console.log("object: ", scheduleRows);
     if (!scheduleRows.length) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
-        message: "No data found for the given parameters",
+        message: "No student found for the selected class and section",
       });
     }
 
@@ -1195,6 +1393,8 @@ exports.getExamResultUpdateList = async (req, res) => {
           name: `${row.firstname} ${row.lastname}`,
           class: row.class,
           section: row.section,
+          class_id: row.class_id,
+          section_id: row.section_id,
           admissionNum: row.admissionnum,
           rollNum: row.rollnum,
           subject: [],
@@ -1209,7 +1409,6 @@ exports.getExamResultUpdateList = async (req, res) => {
 
         const markObtained = result?.mark_obtained ?? null;
 
-        // If marks are added, add to totals
         if (markObtained !== null) {
           groupedData[key].totalObtained += markObtained;
           groupedData[key].totalMax += parseInt(row.maxMarks);

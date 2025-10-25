@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { all_routes } from "../../../router/all_routes";
 import { toast } from "react-toastify";
-import { Card, Checkbox, Input, Space, message } from "antd";
+import { Card, Input, Space, message } from "antd";
 import Table from "../../../../core/common/dataTable/index";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Spinner } from "../../../../spinner";
 import {
   SaveOutlined,
@@ -18,13 +18,10 @@ import TooltipOption from "../../../../core/common/tooltipOption";
 import {
   addExamResult2,
   examNameForOption,
+  getAllSectionForAClass,
   getStudentExamResultEditList,
 } from "../../../../service/api";
-import {
-  allClass,
-  classSection,
-} from "../../../../core/common/selectoption/selectoption";
-// const { Option } = Select;
+import { allRealClasses } from "../../../../service/classApi";
 
 // ---------- Types ----------
 interface Subject {
@@ -51,8 +48,8 @@ interface MarksEntry {
 }
 
 interface FilterData {
-  class: string;
-  section: string;
+  class: number | null;
+  section: number | null;
   exam_type: number | null;
 }
 
@@ -61,18 +58,20 @@ type MarksData = Record<string, Record<string, MarksEntry>>;
 export default function ExamMarkUpload() {
   const routes = all_routes;
   const location = useLocation();
+  const navigate = useNavigate();
   const {
     exam_name_id: examId,
     class: class_Name,
     section: sections,
   } = location.state || {};
-  const [className, setClassName] = useState<string>(class_Name);
-  const [section, setSection] = useState<string>(sections);
+  const [className, setClassName] = useState<number>(class_Name);
+  const [section, setSection] = useState<number>(sections);
   const [exam_name_id, setExamNameId] = useState<number>(examId);
   const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [marksData, setMarksData] = useState<MarksData>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [allClass, setAllClass] = useState<any[]>([]);
   // Fetch Data from API
   useEffect(() => {
     const getList = async () => {
@@ -83,7 +82,13 @@ export default function ExamMarkUpload() {
           className,
           section,
         });
-        console.log(data);
+        console.log("data: ", data);
+        if (data.success == false) {
+          setStudents([]);
+          setSubjects([]);
+          toast.error(data.message);
+          navigate("/academic/exam-result");
+        }
         setStudents(data.data);
 
         const subjList = data.data[0]?.subject || [];
@@ -114,18 +119,18 @@ export default function ExamMarkUpload() {
     }
   }, [exam_name_id, className, section]);
 
-  const handleCheck = (admNo: string, subId: number) => {
-    setMarksData((prev) => ({
-      ...prev,
-      [admNo]: {
-        ...prev[admNo],
-        [subId]: {
-          ...prev[admNo][subId],
-          checked: !prev[admNo][subId].checked,
-        },
-      },
-    }));
-  };
+  // const handleCheck = (admNo: string, subId: number) => {
+  //   setMarksData((prev) => ({
+  //     ...prev,
+  //     [admNo]: {
+  //       ...prev[admNo],
+  //       [subId]: {
+  //         ...prev[admNo][subId],
+  //         checked: !prev[admNo][subId].checked,
+  //       },
+  //     },
+  //   }));
+  // };
 
   const handleMarkChange = (admNo: string, subId: number, value: string) => {
     setMarksData((prev) => ({
@@ -141,20 +146,66 @@ export default function ExamMarkUpload() {
   };
   //handling filter
   const [filterData, setFilterData] = useState<FilterData>({
-    class: "",
-    section: "",
+    class: null,
+    section: null,
     exam_type: null,
   });
   const [examOptions, setExamOptions] = useState<
     { value: number; label: string }[]
   >([]);
-  // const [isExamLoading, setIsExamLoading] = useState(false);
+  const [sectionOptions, setSectionOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
   const [isApplyDisabled, setIsApplyDisabled] = useState(true);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchExamOptions = async (cls: string, section: string) => {
+  const fetchClass = async () => {
     try {
-      // setIsExamLoading(true);
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
+
+  useEffect(() => {
+    fetchClass();
+  }, []);
+
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        const { data } = await getAllSectionForAClass(id);
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(
+            data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
+  useEffect(() => {
+    if (filterData.class) {
+      fetchSections(filterData.class);
+    }
+  }, [filterData.class]);
+
+  const fetchExamOptions = async (cls: number, section: number) => {
+    try {
+      setLoading(true);
       const { data } = await examNameForOption({ class: cls, section });
       if (data.success && Array.isArray(data.data)) {
         setExamOptions(
@@ -167,7 +218,9 @@ export default function ExamMarkUpload() {
     } catch (error) {
       console.error("Error fetching exams:", error);
       toast.error("Error fetching exam names!");
-    } 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFilterSelectChange = (
@@ -209,7 +262,7 @@ export default function ExamMarkUpload() {
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "", exam_type: null });
+    setFilterData({ class: null, section: null, exam_type: null });
     setExamOptions([]);
     setIsApplyDisabled(true);
     dropdownMenuRef.current?.classList.remove("show");
@@ -223,12 +276,12 @@ export default function ExamMarkUpload() {
       marks: subjects.map((sub) => ({
         subject_id: sub.subject_id,
         mark: parseInt(
-          marksData[stu.admissionNum]?.[sub.subject_id]?.mark?.toString()
+          marksData[stu.admissionNum]?.[sub.subject_id]?.mark?.toString() ?? "0"
         ),
         minMarks: sub.minMarks,
         maxMarks: sub.maxMarks,
-        checked:
-          marksData[stu.admissionNum]?.[sub.subject_id]?.checked || false,
+        // checked:
+        //   marksData[stu.admissionNum]?.[sub.subject_id]?.checked || false,
       })),
     }));
     const finalPayload = {
@@ -240,7 +293,6 @@ export default function ExamMarkUpload() {
       console.log(data);
       if (data.success) {
         toast.success(data.message);
-        setSection("");
       }
     } catch (error: any) {
       console.log(error);
@@ -287,23 +339,41 @@ export default function ExamMarkUpload() {
           mark: "",
           checked: false,
         };
+
+        const markValue = current.mark;
+
+        const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          handleMarkChange(record.admissionNum, sub.subject_id, e.target.value);
+        };
+
+        const handleInputBlur = () => {
+          const numericValue = Number(markValue);
+
+          if (markValue === null) return;
+
+          if (isNaN(numericValue)) return;
+
+          if (numericValue > sub.maxMarks) {
+            toast.error(`Marks cannot be greater than ${sub.maxMarks}`);
+            handleMarkChange(
+              record.admissionNum,
+              sub.subject_id,
+              sub.maxMarks.toString()
+            );
+          } else if (numericValue < 0) {
+            toast.error(`Marks cannot be less than 0`);
+            handleMarkChange(record.admissionNum, sub.subject_id, "0");
+          }
+        };
+
         return (
           <Space>
-            <Checkbox
-              checked={current.checked}
-              onChange={() => handleCheck(record.admissionNum, sub.subject_id)}
-            />
             <Input
               type="number"
               style={{ width: 70 }}
-              value={current.mark}
-              onChange={(e) =>
-                handleMarkChange(
-                  record.admissionNum,
-                  sub.subject_id,
-                  e.target.value
-                )
-              }
+              value={markValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
             />
           </Space>
         );
@@ -393,7 +463,15 @@ export default function ExamMarkUpload() {
               </div>
             </div>
             {/* /Page Header */} {/* Guardians List */}
-            <div className="dropdown mb-3 me-2 d-flex justify-content-end">
+            <div className="dropdown mb-3 me-2 d-flex justify-content-between mt-3">
+              <div className="text-center pt-2">
+                Class:{" "}
+                {students
+                  ? `${
+                      students[0]?.class
+                    }-(${students[0]?.section.toUpperCase()})`
+                  : "no class"}
+              </div>
               <Link
                 to="#"
                 className="btn btn-outline-light bg-white dropdown-toggle"
@@ -428,7 +506,14 @@ export default function ExamMarkUpload() {
                       <div className="col-md-6">
                         <label className="form-label">Section</label>
                         <CommonSelect
-                          options={classSection}
+                          options={
+                            sectionOptions
+                              ? sectionOptions.map((e: any) => ({
+                                  value: e.value,
+                                  label: e.label.toUpperCase(),
+                                }))
+                              : []
+                          }
                           value={filterData.section || null}
                           onChange={(option) =>
                             handleFilterSelectChange(
