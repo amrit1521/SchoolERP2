@@ -37,6 +37,9 @@ export const getAllRolePermissions = (id: number) =>
 export const addModules = (data: any) => api.post("/user/create-module", data);
 export const getAllModules = () => api.get("/user/all-module");
 
+//notifications:
+export const CreateNotice = (data:any) => api.post('/notification/create-notice',data);
+
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);
 export const allStudents = () => api.get("/stu/");
