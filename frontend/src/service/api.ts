@@ -38,7 +38,11 @@ export const addModules = (data: any) => api.post("/user/create-module", data);
 export const getAllModules = () => api.get("/user/all-module");
 
 //notifications:
-export const CreateNotice = (data:any) => api.post('/notification/create-notice',data);
+export const CreateNotice = (data: any) =>
+  api.post("/notification/create-notice", data);
+export const UploadNoticeFile = (data: object) =>
+  api2.post("/notification/upload", data);
+export const getAllNotice = () => api.get("/notification/all-notice");
 
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);

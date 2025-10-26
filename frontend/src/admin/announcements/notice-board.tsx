@@ -12,8 +12,9 @@ import TooltipOption from "../../core/common/tooltipOption";
 import { useEffect, useState } from "react";
 import {
   CreateNotice,
+  getAllNotice,
   getAllRoles,
-  uploadTeacherFile,
+  UploadNoticeFile,
 } from "../../service/api";
 import { toast } from "react-toastify";
 
@@ -26,7 +27,8 @@ const NoticeBoard = () => {
   const [attachement, setAttachement] = useState<File | null>(null);
   const [messageTo, setMessageTo] = useState<any[]>([]);
   const [allRoles, setAllRoles] = useState([]);
-
+  const [allNotice, setAllNotice] = useState([]);
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
   const formReset = () => {
     setTitle("");
     setMessage("");
@@ -48,6 +50,29 @@ const NoticeBoard = () => {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  const fetchNotice = async () => {
+    try {
+      const { data } = await getAllNotice();
+      if (data.success) {
+        console.log("notice data: ", data.result);
+        setAllNotice(
+          data.result.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            attachment: item.attachment,
+            role_id: item.role_id,
+            addedOn: item.created_at,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to load notice data"
+      );
     }
   };
 
@@ -79,23 +104,27 @@ const NoticeBoard = () => {
 
   const handleCreateNotice = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("notice Data: ", title, message, attachement, messageTo);
     const formData = new FormData();
     try {
+      let uploadedPath = null;
+      let id = null;
       if (attachement) {
         formData.append("noticefile", attachement);
-        const res = await uploadTeacherFile(formData);
-        const uploadedPath = res.data.file;
-        const id = res.data.insertId;
+        const res = await UploadNoticeFile(formData);
+        uploadedPath = res.data.file;
+        id = res.data.insertId;
       }
       const payload = {
         title: title,
         message: message,
-        attachement: attachement,
+        attachement: uploadedPath,
         messageTo: messageTo,
+        docsId: id,
       };
+      console.log("notice Data: ", payload);
       const { data } = await CreateNotice(payload);
       if (data.success) {
+        console.log(data);
         toast.success(data.message || "Notice Created Successfully.");
         formReset();
       } else {
@@ -105,9 +134,10 @@ const NoticeBoard = () => {
       toast.error(error.response?.data?.message || "Failed to load roles data");
     }
   };
-
+  console.log("aallNotice : ", allNotice);
   useEffect(() => {
     fetchRoles();
+    fetchNotice();
   }, []);
 
   return (
@@ -210,474 +240,56 @@ const NoticeBoard = () => {
             </div>
           </div>
           {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
+          {allNotice.map((notice: any) => (
+            <div key={notice.id} className="card board-hover mb-3">
+              <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="form-check form-check-md me-2">
+                    <input className="form-check-input" type="checkbox" />
+                  </div>
+                  <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
+                    <i className="ti ti-notification fs-16" />
+                  </span>
+                  <div>
+                    <h6 className="mb-1 fw-semibold">
+                      <Link
+                        to="#"
+                        data-bs-toggle="modal"
+                        data-bs-target="#view_details"
+                        onClick={() => setSelectedNotice(notice)}
+                      >
+                        {notice.title}
+                      </Link>
+                    </h6>
+                    <p>
+                      <i className="ti ti-calendar me-1" />
+                      Added on: {new Date(notice.addedOn).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Classes Preparation
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 24 May 2024
-                  </p>
+
+                {/* Board actions remain unchanged */}
+                <div className="d-flex align-items-center board-action mb-3">
+                  <Link
+                    to="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#edit_message"
+                    className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
+                  >
+                    <i className="ti ti-edit-circle fs-16" />
+                  </Link>
+                  <Link
+                    to="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete-modal"
+                    className="text-danger border rounded p-1 badge danger-btn-hover"
+                  >
+                    <i className="ti ti-trash-x fs-16" />
+                  </Link>
                 </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
               </div>
             </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Fees Reminder
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 12 May 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Parents Teacher Meeting
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 10 May 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      New Academic Session For Admission (2024-25)
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 28 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Staff Meeting
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 23 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      World Environment Day Program.....!!!
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 21 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      New Syllabus Instructions
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 11 Mar 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Exam Preparation Notification!
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 18 Mar 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Gandhi Jayanti Programmed
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 16 Feb 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Republic Day Celebration
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 24 Jan 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
+          ))}
           {/* Notice Board List */}
           <div className="text-center">
             <Link to="#" className="btn btn-primary">
@@ -967,7 +579,7 @@ const NoticeBoard = () => {
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h4 className="modal-title">Fees Reminder</h4>
+              <h4 className="modal-title">{selectedNotice?.title}</h4>
               <button
                 type="button"
                 className="btn-close custom-btn-close"
@@ -980,64 +592,63 @@ const NoticeBoard = () => {
             <div className="modal-body pb-0">
               <div className="mb-3">
                 <p className="mb-1">Dear parents,</p>
-                <p>
-                  Please clear the outstanding dues for the school fees on the
-                  urgent basis.
-                </p>
+                <p>{selectedNotice?.message}</p>
               </div>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Notice Date</label>
-                    <p className="d-flex align-items-center">
-                      <i className="ti ti-calendar me-1" />
-                      15 May 2024
-                    </p>
+
+              {selectedNotice?.attachment && (
+                <div className="mb-3">
+                  <div className="bg-light p-3 pb-2 rounded">
+                    <div className="mb-0">
+                      <label className="form-label">Attachment</label>
+                      <p className="text-primary">
+                        <a
+                          href={selectedNotice.attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {selectedNotice.attachment.split("/").pop()}
+                        </a>
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Publish On</label>
-                    <p className="d-flex align-items-center">
-                      <i className="ti ti-calendar me-1" />
-                      21 May 2024
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mb-3">
-                <div className="bg-light p-3 pb-2 rounded">
-                  <div className="mb-0">
-                    <label className="form-label">Attachment</label>
-                    <p className="text-primary">Fees_Structure.pdf</p>
-                  </div>
-                </div>
-              </div>
+              )}
+
               <div className="mb-3">
                 <label className="form-label d-block">Message To</label>
-                <span className="badge badge-soft-primary me-2">Student</span>
-                <span className="badge badge-soft-primary">Parent</span>
+                {selectedNotice &&
+                  JSON.parse(selectedNotice?.role_id)?.map((role: string) => (
+                    <span key={role} className="badge badge-soft-primary me-2">
+                      {
+                        allRoles.filter((rol: any) => role == rol.id)[0]
+                          ?.roleName
+                      }
+                    </span>
+                  ))}
               </div>
+
               <div className="border-top pt-3">
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="d-flex align-items-center me-4 mb-3">
                     <span className="avatar avatar-sm bg-light me-1">
                       <i className="ti ti-calendar text-default fs-14" />
                     </span>
-                    Added on: 28 Apr 2024
+                    Added on:{" "}
+                    {selectedNotice
+                      ? new Date(selectedNotice.addedOn).toLocaleDateString()
+                      : ""}
                   </div>
                   <div className="d-flex align-items-center mb-3">
                     <span className="avatar avatar-sm bg-light me-1">
                       <i className="ti ti-user-edit text-default fs-14" />
                     </span>
-                    Added By : Daniel
+                    Added By : {selectedNotice?.added_by || "N/A"}
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* /View Details */}
       </div>
       {/* /Main Wrapper */}
       {/* Delete Modal */}
