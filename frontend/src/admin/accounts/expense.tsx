@@ -42,7 +42,7 @@ interface ExpenseFormData {
   date: string | null;
   amount: number | null;
   invoiceNo: number | null;
-  paymentMethod: number | null;
+  paymentMethod: string | "";
   description: string;
   status: string;
 }
@@ -70,7 +70,7 @@ const initaldata = {
   date: null,
   amount: null,
   invoiceNo: null,
-  paymentMethod: null,
+  paymentMethod: "",
   description: "",
   status: '1'
 }
@@ -325,8 +325,6 @@ const Expense = () => {
   };
 
 
-
-
   const columns = [
     {
       title: "ID",
@@ -370,7 +368,7 @@ const Expense = () => {
     {
       title: "Invoice No",
       dataIndex: "invoiceNo",
-      sorter: (a: TableData, b: TableData) => a.invoiceNo.length - b.invoiceNo.length,
+      sorter: (a: TableData, b: TableData) => a.invoiceNo- b.invoiceNo,
       render: (text: any) => (
         <Link to="#" className="link-primary">
           INV-{text}

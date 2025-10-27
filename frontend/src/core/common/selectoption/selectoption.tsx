@@ -928,10 +928,15 @@ export const invoiceNumber = [
   { value: "INV681535", label: "INV681535" },
 ];
 export const paymentMethod = [
-
   { value: "Cash", label: "Cash" },
   { value: "Bank Transfer", label: "Bank Transfer"},
 ];
+
+export const invStatus = [
+   { value: "paid", label: "paid" },
+  { value: "pending", label: "pending"},
+  { value: "overdue", label: "overdue"},
+]
 export const incomeName = [
 
   { value: "April Month Fees", label: "April Month Fees" },

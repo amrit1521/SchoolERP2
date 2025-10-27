@@ -2,7 +2,7 @@
 
 import { Link } from "react-router-dom";
 import Table from "../../core/common/dataTable/index";
-import { accounts_invoices_data } from "../../core/data/json/accounts_invoices_data";
+// import { accounts_invoices_data } from "../../core/data/json/accounts_invoices_data";
 import type { TableData } from "../../core/data/interface";
 import {
   invoiceNumber,
@@ -14,10 +14,107 @@ import PredefinedDateRanges from "../../core/common/datePicker";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
+import { useEffect, useState } from "react";
+import { allInvoice, deleteInvoice, genInvoice } from "../../service/accounts";
+import { Spinner } from "../../spinner";
+import dayjs from 'dayjs'
+import { handleModalPopUp } from "../../handlePopUpmodal";
+import { toast } from "react-toastify";
+
+export interface Invoice {
+  id: number;
+  customer: string;
+  invoiceNumber: string;
+  date: string; // ISO date string
+  dueDate: string; // ISO date string
+  paymentMethod: string;
+  status: string;
+  description: string;
+  total: string;
+}
+
 
 const AccountsInvoices = () => {
   const routes = all_routes;
-  const data = accounts_invoices_data;
+  // const data = accounts_invoices_data;
+
+  const [invData, setInvData] = useState<Invoice[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [genLoading, setGenLoading] = useState<boolean>(false)
+  const [genId, setGenId] = useState<number | null>(null)
+
+  const fetchInvData = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 400))
+    try {
+
+      const { data } = await allInvoice()
+      if (data.success) {
+        setInvData(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInvData()
+  }, [])
+
+  const generateInv = async (id: number) => {
+    setGenId(id)
+    setGenLoading(true)
+    try {
+      const { data } = await genInvoice(id);
+
+      const blob = new Blob([data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `expense-invoice-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+      console.log("Invoice downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+    } finally {
+      setGenLoading(false)
+    }
+  };
+
+
+  // delete class room-----------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+
+    e.preventDefault()
+    try {
+
+      const { data } = await deleteInvoice(id)
+      if (data.success) {
+        toast.success(data.message)
+        fetchInvData()
+        handleModalPopUp('delete-modal')
+      }
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
 
   const columns = [
     {
@@ -32,13 +129,16 @@ const AccountsInvoices = () => {
           data-bs-toggle="modal"
           data-bs-target="#view_invoice"
         >
-          {text}
+          INV{text}
         </Link>
       ),
     },
     {
       title: "Date",
       dataIndex: "date",
+      render: (text: string) => (
+        dayjs(text).format('DD MMM YYYY')
+      ),
       sorter: (a: TableData, b: TableData) => a.date.length - b.date.length,
     },
     {
@@ -48,7 +148,7 @@ const AccountsInvoices = () => {
         a.description.length - b.description.length,
     },
     {
-      title: "Amount",
+      title: "Amount (₹)",
       dataIndex: "amount",
       sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
     },
@@ -61,6 +161,9 @@ const AccountsInvoices = () => {
     {
       title: "Due Date",
       dataIndex: "dueDate",
+      render: (text: string) => (
+        dayjs(text).format('DD MMM YYYY')
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.dueDate.length - b.dueDate.length,
     },
@@ -72,15 +175,14 @@ const AccountsInvoices = () => {
         <>
           <span
             className={`badge d-inline-flex align-items-center badge-soft-success
-        ${
-          status === "Paid"
-            ? "badge-soft-success"
-            : status === "Overdue"
-            ? "badge-soft-warning"
-            : status === "Pending"
-            ? "badge-soft-info"
-            : ""
-        }`}
+        ${status === "Paid"
+                ? "badge-soft-success"
+                : status === "overdue"
+                  ? "badge-soft-warning"
+                  : status === "pending"
+                    ? "badge-soft-info"
+                    : ""
+              }`}
           >
             <i className="ti ti-circle-filled fs-5 me-1" />
             {status}
@@ -89,10 +191,19 @@ const AccountsInvoices = () => {
       ),
     },
     {
+      title: "Generate Invoice",
+      dataIndex: "inv",
+      render: (_: any, record: any) => (
+        <>
+          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId === record.id && genLoading ? 'Generating...' : 'Gen-Invoice'}</button>
+        </>
+      ),
+    },
+    {
       title: "Action",
       dataIndex: "action",
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
-      render: () => (
+      render: (_:any , record:any) => (
         <>
           {" "}
           <div className="dropdown">
@@ -125,17 +236,15 @@ const AccountsInvoices = () => {
                   Edit
                 </Link>
               </li>
-              <li>
-                <Link
-                  className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </Link>
-              </li>
+              <button
+                onClick={() => setDeleteId(record.id)}
+                className="dropdown-item rounded-1"
+                data-bs-toggle="modal"
+                data-bs-target="#delete-modal"
+              >
+                <i className="ti ti-trash-x me-2" />
+                Delete
+              </button>
             </ul>
           </div>
         </>
@@ -289,7 +398,7 @@ const AccountsInvoices = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Invoice List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {loading ? <Spinner /> : (<Table dataSource={invData} columns={columns} Selection={true} />)}
               {/* /Invoice List */}
             </div>
           </div>
@@ -475,28 +584,31 @@ const AccountsInvoices = () => {
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form>
+            <form >
               <div className="modal-body text-center">
                 <span className="delete-icon">
                   <i className="ti ti-trash-x" />
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone
+                  You want to delete  marked item, this can't be undone
                   once you delete.
                 </p>
-                <div className="d-flex justify-content-center">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-3"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-danger">
-                    Yes, Delete
-                  </button>
-                </div>
+                {
+                  deleteId && (<div className="d-flex justify-content-center">
+                    <button
+                      onClick={(e) => cancelDelete(e)}
+                      className="btn btn-light me-3"
+                      data-bs-dismiss="modal"
+                    >
+                      Cancel
+                    </button>
+                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                    >
+                      Yes, Delete
+                    </button>
+                  </div>)
+                }
               </div>
             </form>
           </div>

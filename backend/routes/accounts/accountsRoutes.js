@@ -1,5 +1,7 @@
 const router = require('express').Router()
 const accountController = require('../../Controller/accounts/accountsController')
+const fileController = require('../../Controller/file/fileController')
+const upload = require('../../multer/multer')
 
 // expense category
 router.post('/addexpcat', accountController.addExpenseCategory)
@@ -27,5 +29,15 @@ router.get('/genincinv/:id' , accountController.generateIncomeInvoice)
 
 // transction
 router.get('/gettrans' , accountController.transactionsData)
+
+// invoices
+router.post('/addinvoice' , accountController.addInvoice)
+router.get('/allinvoices' , accountController.getAllInvoices)
+router.delete('/delinvoice/:id' , accountController.deleteInvoice)
+router.get('/geninvoice/:id' , accountController.generateInvoicePDF)
+
+// files
+router.post('/upload', upload.single('invoice'), fileController.uploadFile);
+router.delete('/deletefile/:id', fileController.deleteFile)
 
 module.exports = router
