@@ -3,7 +3,6 @@
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import CommonSelect from "../../core/common/commonSelect";
-// import { transactionDate } from "../../core/common/selectoption/selectoption";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { useEffect, useMemo, useState } from "react";
@@ -150,6 +149,13 @@ const NoticeBoard = () => {
         toast.success(data.message || "Notice Created Successfully.");
         formReset();
         fetchNotice();
+        const modalEl = document.getElementById("add_message");
+        if (modalEl) {
+          const bs = (window as any).bootstrap;
+          const modalInstance =
+            bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+          modalInstance?.hide();
+        }
       } else {
         toast.error(data.message || "Notice creation failed.");
       }
@@ -171,6 +177,13 @@ const NoticeBoard = () => {
           toast.success(data.message || "Notice deleted Successfully.");
           fetchNotice();
           setSelectedNotice(null);
+          const modalEl = document.getElementById("delete-modal");
+          if (modalEl) {
+            const bs = (window as any).bootstrap;
+            const modalInstance =
+              bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+            modalInstance?.hide();
+          }
         } else {
           toast.error(data.message || "Notice deletion failed.");
         }
@@ -222,6 +235,13 @@ const NoticeBoard = () => {
         formReset();
         fetchNotice();
         setSelectedNotice(null);
+        const modalEl = document.getElementById("edit_message");
+        if (modalEl) {
+          const bs = (window as any).bootstrap;
+          const modalInstance =
+            bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+          modalInstance?.hide();
+        }
       } else {
         toast.error(data.message || "Notice updation failed.");
       }
