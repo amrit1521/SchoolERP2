@@ -39,6 +39,7 @@ exports.uploadFile= async (req, res) => {
 // DELETE FILE
 exports.deleteFile = async (req, res) => {
   const id = req.params.id;
+  console.log('dfdshfbs' , id)
 
   try {
    

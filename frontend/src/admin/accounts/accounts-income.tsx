@@ -39,7 +39,7 @@ interface IncomeFormData {
   date: string | null;
   amount: number | null;
   invoiceNo: number | null;
-  paymentMethod: number | null;
+  paymentMethod: string| "";
   description: string;
   status: string;
 }
@@ -61,7 +61,7 @@ const initialData: IncomeFormData = {
   date: null,
   amount: null,
   invoiceNo: null,
-  paymentMethod: null,
+  paymentMethod: "",
   description: "",
   status: "1"
 };

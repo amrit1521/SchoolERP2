@@ -232,7 +232,7 @@ exports.addExpense = async (req, res) => {
         }
 
         const newDate = dayjs(date).format("YYYY-MM-DD");
-
+        //   console.log(newDate , date)
         const [result] = await db.query(
             `INSERT INTO expense 
       (name, mobile, email, exp_name, category_id, date, amount, invoice_no, payment_method, description, status)
@@ -389,7 +389,6 @@ exports.deleteExpense = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
 
 function buildExpenseInvoiceHTML(expense) {
     const formattedDate = dayjs(expense.date).format("DD MMM YYYY");
@@ -958,6 +957,667 @@ exports.transactionsData = async (req, res) => {
             .json({ message: "Internal server error", success: false });
     }
 };
+
+// invoices
+
+
+
+exports.addInvoice = async (req, res) => {
+
+    try {
+        const {
+            customer,
+            invoiceNo,
+            invoiceDate,
+            dueDate,
+            notes,
+            terms,
+            signatureName,
+            products,
+            subtotal,
+            totalDiscount,
+            tax,
+            total,
+            logo,
+            signature,
+            method,
+            status,
+            description,
+        } = req.body;
+
+        if (
+            !customer ||
+            !invoiceNo ||
+            !invoiceDate ||
+            !dueDate ||
+            !signatureName ||
+            !subtotal ||
+            !total ||
+            !method ||
+            !description
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required invoice fields",
+            });
+        }
+        const [existing] = await db.query(
+            "SELECT id FROM invoices WHERE invoiceNo = ?",
+            [invoiceNo]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invoice number '${invoiceNo}' already exists`,
+            });
+        }
+        const formattedInvoiceDate = invoiceDate
+            ? dayjs(invoiceDate).format("YYYY-MM-DD")
+            : null;
+        const formattedDueDate = dueDate
+            ? dayjs(dueDate).format("YYYY-MM-DD")
+            : null;
+
+        if (!formattedInvoiceDate || !formattedDueDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid date format for invoiceDate or dueDate",
+            });
+        }
+
+        console.log(formattedInvoiceDate, invoiceDate)
+
+
+        let parsedProducts = [];
+        try {
+            parsedProducts = JSON.parse(products);
+            if (!Array.isArray(parsedProducts) || parsedProducts.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "At least one product is required",
+                });
+            }
+        } catch (err) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid products format (must be valid JSON)",
+            });
+        }
+
+        const invoiceSQL = `
+      INSERT INTO invoices
+      (customer, invoiceNo, invoiceDate, dueDate, notes, terms, signatureName,
+       subtotal, totalDiscount, tax, total, logo, signature , method , status , description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,? ,?)
+    `;
+
+        const invoiceValues = [
+            customer,
+            invoiceNo,
+            formattedInvoiceDate,
+            formattedDueDate,
+            notes,
+            terms,
+            signatureName,
+            subtotal,
+            totalDiscount,
+            tax,
+            total,
+            logo,
+            signature,
+            method,
+            status ?? "paid",
+            description
+        ];
+
+        const [invoiceResult] = await db.query(invoiceSQL, invoiceValues);
+        const invoiceId = invoiceResult.insertId;
+
+        const productSQL = `
+      INSERT INTO invoice_products (invoice_id, name, quantity, unitPrice, discount)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+
+        for (const p of parsedProducts) {
+            await db.query(productSQL, [
+                invoiceId,
+                p.name,
+                p.quantity,
+                p.unitPrice,
+                p.discount,
+            ]);
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "Invoice added successfully",
+            invoiceId,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error while adding invoice",
+            error: error.message,
+        });
+    }
+};
+
+exports.getAllInvoices = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT id, customer, invoiceNo AS invoiceNumber, invoiceDate AS date, dueDate,method AS paymentMethod, status,description , total AS amount FROM invoices ORDER BY id DESC"
+        );
+        res.status(200).json({
+            success: true,
+            data: rows,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error while fetching invoices",
+        });
+    }
+};
+
+exports.getInvoiceById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [invoice] = await db.query("SELECT * FROM invoices WHERE id = ?", [id]);
+        if (invoice.length === 0)
+            return res
+                .status(404)
+                .json({ success: false, message: "Invoice not found" });
+
+        const [products] = await db.query(
+            "SELECT id, name, quantity, unitPrice, discount FROM invoice_products WHERE invoice_id = ?",
+            [id]
+        );
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...invoice[0],
+                products,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error while fetching invoice",
+        });
+    }
+};
+
+exports.updateInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            customer,
+            invoiceNo,
+            invoiceDate,
+            dueDate,
+            notes,
+            terms,
+            signatureName,
+            products,
+            subtotal,
+            totalDiscount,
+            tax,
+            total,
+            logo,
+            signature,
+            method,
+            status,
+            description,
+        } = req.body;
+
+        if (!customer || !invoiceNo || !invoiceDate || !dueDate || !signatureName || !method || !description) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Required fields missing" });
+        }
+
+        const formattedInvoiceDate = dayjs(invoiceDate).isValid()
+            ? dayjs(invoiceDate).format("YYYY-MM-DD")
+            : null;
+        const formattedDueDate = dayjs(dueDate).isValid()
+            ? dayjs(dueDate).format("YYYY-MM-DD")
+            : null;
+
+        if (!formattedInvoiceDate || !formattedDueDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid date format for invoiceDate or dueDate",
+            });
+        }
+
+        const [existing] = await db.query(
+            "SELECT id FROM invoices WHERE invoiceNo = ? AND id != ?",
+            [invoiceNo, id]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invoice number '${invoiceNo}' already exists`,
+            });
+        }
+
+        let parsedProducts = [];
+        try {
+            parsedProducts = JSON.parse(products);
+            if (!Array.isArray(parsedProducts) || parsedProducts.length === 0) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: "At least one product is required" });
+            }
+        } catch (err) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Invalid products format" });
+        }
+
+        const updateSQL = `
+      UPDATE invoices SET 
+      customer=?, invoiceNo=?, invoiceDate=?, dueDate=?, notes=?, terms=?, 
+      signatureName=?, subtotal=?, totalDiscount=?, tax=?, total=?, logo=?, signature=? , method=?,staus=? , description=?
+      WHERE id=?
+    `;
+        const values = [
+            customer,
+            invoiceNo,
+            formattedInvoiceDate,
+            formattedDueDate,
+            notes,
+            terms,
+            signatureName,
+            subtotal,
+            totalDiscount,
+            tax,
+            total,
+            logo,
+            signature,
+            method,
+            status ?? "paid",
+            description,
+            id,
+        ];
+        await db.query(updateSQL, values);
+        await db.query("DELETE FROM invoice_products WHERE invoice_id = ?", [id]);
+
+        const insertProductSQL = `
+      INSERT INTO invoice_products (invoice_id, name, quantity, unitPrice, discount)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+        for (const p of parsedProducts) {
+            await db.query(insertProductSQL, [id, p.name, p.quantity, p.unitPrice, p.discount]);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Invoice updated successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error while updating invoice",
+        });
+    }
+};
+
+exports.deleteInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // await db.query("DELETE FROM invoice_products WHERE invoice_id = ?", [id]);
+        const [result] = await db.query("DELETE FROM invoices WHERE id = ?", [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Invoice not found" });
+        }
+        res.status(200).json({
+            success: true,
+            message: "Invoice deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error while deleting invoice",
+        });
+    }
+};
+
+
+function buildInvoiceHTML(invoice, products = []) {
+  const formattedDate = dayjs(invoice.invoiceDate).format("DD MMM YYYY");
+  const dueDate = dayjs(invoice.dueDate).format("DD MMM YYYY");
+  const generatedOn = dayjs().format("DD MMM YYYY HH:mm");
+
+  const subtotal = Number(invoice.subtotal || 0);
+  const discount = Number(invoice.totalDiscount || 0);
+  const tax = Number(invoice.tax || 0);
+  const total = Number(invoice.total || 0);
+
+  // Convert multiline text into bullet list items
+  const formatList = (text) => {
+    if (!text) return "<li>None</li>";
+    return text
+      .split(/\r?\n/) // split by new lines
+      .filter((line) => line.trim() !== "")
+      .map((line) => `<li>${line.trim()}</li>`)
+      .join("");
+  };
+
+  const productRows = products
+    .map(
+      (p, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${p.name}</td>
+          <td>${p.quantity}</td>
+          <td>₹${Number(p.unitPrice).toFixed(2)}</td>
+          <td>${p.discount}%</td>
+          <td>₹${(
+            p.quantity * p.unitPrice -
+            (p.discount / 100) * (p.quantity * p.unitPrice)
+          ).toFixed(2)}</td>
+        </tr>`
+    )
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Invoice - ${invoice.invoiceNo}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    color: #222;
+  
+  }
+  .invoice-wrapper {
+    width: 850px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    position: relative;
+  }
+
+  /* Background logo fix */
+  .bg-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.1;
+    width: 450px;
+    height: 450px;
+    background-image: url('http://localhost:3004/api/stu/uploads/image/${invoice.logo}');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 40px 50px;
+    
+    border-radius: 12px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+  .logo {
+    height: 65px;
+    width: 65px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 2px solid #007bff;
+  }
+  .school-info {
+    margin-left: 12px;
+    line-height: 1.6;
+    font-size: 13px;
+    color: #444;
+  }
+  .school-info strong {
+    font-size: 15px;
+    color: #007bff;
+  }
+
+  .invoice-meta h1 {
+    color: #007bff;
+    font-size: 28px;
+    margin-bottom: 5px;
+  }
+  .invoice-meta {
+    font-size: 13px;
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  .status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: ${invoice.status === "paid" ? "#d4edda" : "#fdecea"};
+    color: ${invoice.status === "paid" ? "#155724" : "#7f1d1d"};
+  }
+
+  .bill-to {
+    background: #f0f6ff;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 20px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    font-size: 13px;
+    text-align: left;
+  }
+  th {
+    
+    font-weight: 600;
+  }
+
+  .totals {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 25px;
+  }
+  .totals table {
+    width: 40%;
+    border: none;
+  }
+  .totals td {
+    font-size: 13px;
+    padding: 5px 0;
+  }
+  .totals .total-row td {
+    font-weight: 600;
+    font-size: 14px;
+    border-top: 2px solid #000;
+  }
+
+  .details {
+    margin-top: 30px;
+    font-size: 12px;
+    color: #444;
+  }
+  .details h4 {
+    color: #007bff;
+    margin-bottom: 5px;
+    font-size: 13px;
+    text-decoration: underline;
+  }
+  .details ul {
+    list-style: disc;
+    padding-left: 20px;
+  }
+
+  .signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+  }
+  .sign-box {
+    width: 45%;
+    text-align: center;
+  }
+  .sign-line {
+    margin-top: 40px;
+    border-top: 1px solid #444;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #777;
+    margin-top: 40px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="invoice-wrapper">
+    <div class="bg-logo"></div>
+    <div class="content">
+      <div class="header">
+        <div class="header-left">
+          <img src="http://localhost:3004/api/stu/uploads/image/${invoice.logo}" alt="Logo" class="logo"/>
+          <div class="school-info">
+            <strong>Little Flower School, GKP</strong><br>
+            123 Education Street, Springfield<br>
+            Phone: +91 9876543210 | Email: contact@springfield.edu
+          </div>
+        </div>
+        <div class="invoice-meta">
+          <h1>INVOICE</h1>
+          Invoice No: <strong>${invoice.invoiceNo}</strong><br>
+          Date: ${formattedDate}<br>
+          Due: ${dueDate}<br>
+          Status: <span class="status">${invoice.status}</span>
+        </div>
+      </div>
+
+      <div class="bill-to">
+        <strong>Bill To:</strong><br>
+        ${invoice.customer}
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>${productRows}</tbody>
+      </table>
+
+      <div class="totals">
+        <table>
+          <tr><td>Subtotal:</td><td>₹${subtotal.toFixed(2)}</td></tr>
+          <tr><td>Discount:</td><td>₹${discount.toFixed(2)}</td></tr>
+          <tr><td>Tax:</td><td>₹${tax.toFixed(2)}</td></tr>
+          <tr class="total-row"><td>Total:</td><td>₹${total.toFixed(2)}</td></tr>
+          <tr><td>Payment Method:</td><td>${invoice.method || "N/A"}</td></tr>
+        </table>
+      </div>
+
+      <div class="details">
+        <h4>Description:</h4>
+        <ul>${formatList(invoice.description)}</ul>
+
+        <h4>Terms:</h4>
+        <ul>${formatList(invoice.terms)}</ul>
+
+        <h4>Notes:</h4>
+        <ul>${formatList(invoice.notes)}</ul>
+      </div>
+
+      <div class="signatures">
+        <div class="sign-box">
+          <div class="sign-line"></div>
+          <strong>${invoice.signatureName}</strong><br>Authorized Signature
+        </div>
+        <div class="sign-box">
+          <div class="sign-line"></div>
+          <strong>${invoice.customer}</strong><br>Customer Signature
+        </div>
+      </div>
+
+      <div class="footer">
+        Generated on ${generatedOn}<br>
+        &copy; ${new Date().getFullYear()} Little Flower School | All Rights Reserved
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+
+exports.generateInvoicePDF = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [invoiceRows] = await db.query("SELECT * FROM invoices WHERE id = ?", [id]);
+        if (!invoiceRows.length) return res.status(404).send("Invoice not found");
+
+        const invoice = invoiceRows[0];
+        const [products] = await db.query(
+            "SELECT name, quantity, unitPrice, discount FROM invoice_products WHERE invoice_id = ?",
+            [id]
+        );
+
+        const html = buildInvoiceHTML(invoice, products);
+        const file = { content: html };
+        const options = {
+            format: "A4",
+            margin: { top: "20mm", bottom: "20mm", left: "15mm", right: "15mm" },
+        };
+
+        const pdfBuffer = await pdf.generatePdf(file, options);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="invoice-${invoice.invoiceNo}.pdf"`
+        );
+        res.setHeader("Content-Length", pdfBuffer.length);
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error("Invoice PDF generation error:", error);
+        res.status(500).send("Internal Server Error");
+    }
+};
+
+
+
+
+
 
 
 
