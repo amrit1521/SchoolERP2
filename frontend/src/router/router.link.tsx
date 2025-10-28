@@ -1177,7 +1177,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.editInvoice,
+    path: `${routes.editInvoice}/:id`,
     element: <EditInvoice />,
     route: Route,
   },

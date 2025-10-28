@@ -20,7 +20,7 @@ export const genExpenseInv = (id: number) => api.get(`/account/genexpinv/${id}`,
 
 
 
-// expense
+// income
 export const addIncome = (data: object) => api.post('/account/addinc', data)
 export const allIncome = () => api.get('/account/allinc')
 export const delIncome = (id: number) => api.delete(`/account/delinc/${id}`)
@@ -37,10 +37,8 @@ export const getTransactionsData = () => api.get('/account/gettrans')
 export const addInvoice = (data: object) => api.post('/account/addinvoice', data)
 export const allInvoice = () => api.get('/account/allinvoices')
 export const deleteInvoice = (id: number) => api.delete(`/account/delinvoice/${id}`)
+export const speInvoice = (id: number) => api.get(`/account/speinvoice/${id}`)
+export const editInvoice = (data: object, id: number) => api.put(`/account/editinvoice/${id}`, data)
 export const genInvoice = (id: number) => api.get(`/account/geninvoice/${id}`, { responseType: "blob" });
-
-
-// invoice file upload
-export const uploadInvoiceFile = (data: object) =>
-    api2.post("/account/upload", data);
+export const uploadInvoiceFile = (data: object) => api2.post("/account/upload", data);
 export const deleteInvoiceFile = (id: number) => api.delete(`/account/deletefile/${id}`);

@@ -175,6 +175,7 @@ const EditTeacher = () => {
 
     });
     const [errors, setErrors] = useState<Partial<Record<keyof TeacherData, string>>>({});
+    
     const [teacherImg, setTeacherImg] = useState<File | null>(null);
     const [teacherResume, setTeacherResume] = useState<File | null>(null);
     const [teacherJoinLetter, setTeacherJoinLetter] = useState<File | null>(null);
