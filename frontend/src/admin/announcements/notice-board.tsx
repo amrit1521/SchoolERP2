@@ -793,7 +793,7 @@ const NoticeBoard = () => {
                     <span className="avatar avatar-sm bg-light me-1">
                       <i className="ti ti-user-edit text-default fs-14" />
                     </span>
-                    Added By : {selectedNotice?.added_by || "N/A"}
+                    Added By : {selectedNotice?.added_by || "Admin"}
                   </div>
                 </div>
               </div>
