@@ -559,13 +559,13 @@ export const SidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-      {
-        label: "Delete Account Request",
-        link: routes.deleteRequest,
-        icon: "ti ti-user-question",
-        showSubRoute: false,
-        submenu: false,
-      },
+      // {
+      //   label: "Delete Account Request",
+      //   link: routes.deleteRequest,
+      //   icon: "ti ti-user-question",
+      //   showSubRoute: false,
+      //   submenu: false,
+      // },
     ],
   },
   {
@@ -1215,7 +1215,6 @@ export const SidebarData = [
   },
 ];
 
-
 export const TeacherSidebarData = [
   {
     label: "MAIN",
@@ -1464,11 +1463,7 @@ export const TeacherSidebarData = [
         submenu: true,
         showSubRoute: false,
 
-        submenuItems: [
-
-          { label: "Fees Assign", link: routes.feesAssign },
-
-        ],
+        submenuItems: [{ label: "Fees Assign", link: routes.feesAssign }],
       },
       {
         label: "Library",
@@ -1477,7 +1472,6 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-
           { label: "Issue Book", link: routes.libraryIssueBook },
           { label: "Return", link: routes.libraryReturn },
         ],
@@ -1496,8 +1490,6 @@ export const TeacherSidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-
-
     ],
   },
   {
@@ -1507,7 +1499,6 @@ export const TeacherSidebarData = [
     submenu: false,
     showSubRoute: false,
     submenuItems: [
-
       {
         label: "Attendance",
         icon: "ti ti-calendar-share",
@@ -1516,7 +1507,6 @@ export const TeacherSidebarData = [
 
         submenuItems: [
           { label: "Student Attendance", link: routes.studentAttendance },
-
         ],
       },
 
@@ -1527,14 +1517,9 @@ export const TeacherSidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-
     ],
   },
-
-
 ];
-
-
 
 export const StudentSidebarData = [
   {
@@ -1549,8 +1534,8 @@ export const StudentSidebarData = [
         submenu: true,
         showSubRoute: false,
 
-        submenuItems: [ 
-          { label: "Student Dashboard", link: routes.studentDashboard },       
+        submenuItems: [
+          { label: "Student Dashboard", link: routes.studentDashboard },
         ],
       },
       {
@@ -1620,11 +1605,8 @@ export const StudentSidebarData = [
             subLink2: routes.editStudent,
           },
           { label: "Students List", link: routes.studentList },
-
-
         ],
       },
-     
     ],
   },
 
@@ -1642,7 +1624,6 @@ export const StudentSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-
           { label: "Issue Book", link: routes.libraryIssueBook },
           { label: "Return", link: routes.libraryReturn },
         ],
@@ -1661,8 +1642,6 @@ export const StudentSidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-
-
     ],
   },
   {
@@ -1672,8 +1651,6 @@ export const StudentSidebarData = [
     submenu: false,
     showSubRoute: false,
     submenuItems: [
-
-
       {
         label: "Holidays",
         link: routes.holidays,
@@ -1681,13 +1658,9 @@ export const StudentSidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-
     ],
   },
-
-
 ];
-
 
 export const ParentSidebarData = [
   {
@@ -1702,8 +1675,8 @@ export const ParentSidebarData = [
         submenu: true,
         showSubRoute: false,
 
-        submenuItems: [ 
-          { label: "Student Dashboard", link: routes.studentDashboard },       
+        submenuItems: [
+          { label: "Student Dashboard", link: routes.studentDashboard },
         ],
       },
       {
@@ -1773,14 +1746,10 @@ export const ParentSidebarData = [
             subLink2: routes.editStudent,
           },
           { label: "Students List", link: routes.studentList },
-
-
         ],
       },
-    
     ],
   },
-
 
   {
     label: "HRM",
@@ -1789,8 +1758,6 @@ export const ParentSidebarData = [
     submenu: false,
     showSubRoute: false,
     submenuItems: [
-
-
       {
         label: "Holidays",
         link: routes.holidays,
@@ -1798,9 +1765,6 @@ export const ParentSidebarData = [
         showSubRoute: false,
         submenu: false,
       },
-
     ],
   },
-
-
 ];
