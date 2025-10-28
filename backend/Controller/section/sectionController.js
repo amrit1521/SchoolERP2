@@ -11,6 +11,7 @@ exports.allSection = async (req, res) => {
     noOfStudents,
     noOfSubjects,
     s.status,
+    s.class_id,
     c.class_name,
     r.room_no
     FROM sections s 
