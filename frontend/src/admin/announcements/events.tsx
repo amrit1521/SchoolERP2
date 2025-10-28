@@ -9,9 +9,9 @@ import { Link } from "react-router-dom";
 import CommonSelect from "../../core/common/commonSelect";
 
 import {
-  classes,
+  // classes,
   eventCategory,
-  sections,
+  // sections,
 } from "../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { all_routes } from "../router/all_routes";
@@ -107,12 +107,13 @@ const Events = () => {
 
   const handleCheckboxChange = (roleId: number) => {
     setFormData((prev) => {
-      const exists = prev.roles.includes(roleId);
+      const roles = prev.roles || [];
+      const exists = roles.includes(roleId);
       return {
         ...prev,
         roles: exists
-          ? prev.roles.filter((id) => id !== roleId)
-          : [...prev.roles, roleId],
+          ? roles.filter((id) => id !== roleId)
+          : [...roles, roleId],
       };
     });
   };
@@ -188,6 +189,7 @@ const Events = () => {
       if (data.success) {
         toast.success(data.message || "Event Created Successfully.");
         console.log(data);
+        fetchEvents();
       } else {
         toast.error(data.message || "Event creation failed.");
       }
@@ -551,7 +553,7 @@ const Events = () => {
                         <input
                           className="form-check-input"
                           type="checkbox"
-                          // checked={formData.roles.includes(item.id)}
+                          checked={formData.roles?.includes(item.id) || false}
                           onChange={() => handleCheckboxChange(item.id)}
                         />
                         <span className="text-capitalize">{item.roleName}</span>
@@ -560,8 +562,7 @@ const Events = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Event Title */}
+              ;{/* Event Title */}
               <div className="mb-3">
                 <label className="form-label">Event Title</label>
                 <input
@@ -573,7 +574,6 @@ const Events = () => {
                   onChange={handleInputChange}
                 />
               </div>
-
               {/* Event Category */}
               <div className="mb-3">
                 <label className="form-label">Event Category</label>
@@ -584,7 +584,6 @@ const Events = () => {
                   onChange={handleSelectChange}
                 />
               </div>
-
               {/* Dates */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Start Date</label>
@@ -608,7 +607,6 @@ const Events = () => {
                   }
                 />
               </div>
-
               {/* Times */}
               <div className="col-md-6 mb-3">
                 <label className="form-label">Start Time</label>
@@ -630,7 +628,6 @@ const Events = () => {
                   }
                 />
               </div>
-
               {/* Attachment */}
               <div className="col-md-12 mb-3">
                 <label className="form-label">Attachment</label>
@@ -648,7 +645,6 @@ const Events = () => {
                   </ul>
                 )}
               </div>
-
               <div className="col-md-12">
                 <label className="form-label">Message</label>
                 <textarea

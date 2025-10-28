@@ -1,67 +1,7 @@
 import { success } from "zod";
 import db from "../../config/db.js";
 import transporter from "../../utils/sendEmail.js";
-// export const sendNoticeMail = async (
-//   recipient,
-//   title,
-//   message,
-//   attachments
-// ) => {
-//   try {
-//     if (!recipient || !recipient.length) return;
-
-//     const placeholders = recipient.map((id) => `$${id}`).join(",");
-//     const sql = `SELECT email FROM users WHERE role_id IN (${placeholders})`;
-//     const { rows } = await db.query(sql, recipient);
-
-//     const emails = rows.map((r) => r.email);
-//     if (emails.length === 0) return;
-
-//     const htmlTemplate = `
-//       <div style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
-//         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-//           <div style="background-color: #0d6efd; color: #ffffff; padding: 16px 24px;">
-//             <h2 style="margin: 0; font-size: 22px;">${title}</h2>
-//           </div>
-//           <div style="padding: 24px; color: #333333;">
-//             <p style="font-size: 16px; line-height: 1.6;">
-//               Dear User,
-//             </p>
-//             <p style="font-size: 16px; line-height: 1.6;">
-//               ${message}
-//             </p>
-//             <p style="font-size: 16px; line-height: 1.6;">
-//               If you have any questions or need assistance, please contact us at
-//               <a href="mailto:support@example.com" style="color: #0d6efd;">support@example.com</a>.
-//             </p>
-//             <p style="margin-top: 30px; font-size: 16px;">
-//               Best regards,<br/>
-//               <strong>The Admin Team</strong><br/>
-//               <span style="font-size: 14px; color: #6c757d;">Whizlancer Organization</span>
-//             </p>
-//           </div>
-//           <div style="background-color: #f1f3f5; padding: 12px 24px; text-align: center; font-size: 13px; color: #6c757d;">
-//             &copy; ${new Date().getFullYear()} Whizlancer Organization. All rights reserved.
-//           </div>
-//         </div>
-//       </div>
-//     `;
-
-//     await transporter.sendMail({
-//       from: `"Admin Team" <${process.env.SMTP_USER}>`,
-//       to: emails.join(","),
-//       subject: title,
-//       html: htmlTemplate,
-//       attachments,
-//     });
-
-//     console.log(`Notice mail sent to ${emails.length} users.`);
-//   } catch (error) {
-//     console.error("Error sending notice mail:", error);
-//   }
-// };
-
-// Notice api module:
+import cron from "node-cron";
 
 export const sendNoticeMail = async (
   recipientRoles,
@@ -179,15 +119,24 @@ export const sendEventMail = async (
     const sql = `SELECT email FROM users WHERE roll_id IN (${placeholders}) AND email IS NOT NULL`;
     const [rows] = await db.query(sql, recipientRoles);
 
+    if (!Array.isArray(rows)) {
+      console.error("Database query did not return an array. Got:", rows);
+      return;
+    }
+
     const emails = rows.map((r) => r.email).filter(Boolean);
     if (emails.length === 0) {
       console.log("No valid recipient emails found.");
       return;
     }
 
+    console.log(
+      `🚀 Preparing to send event mail to ${emails.length} recipients...`
+    );
+
     const htmlTemplate = `
       <div style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
-        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; 
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px;
                     overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
 
           <div style="background-color: #198754; color: #ffffff; padding: 16px 24px;">
@@ -198,14 +147,10 @@ export const sendEventMail = async (
           </div>
 
           <div style="padding: 24px; color: #333333;">
+            <p style="font-size: 16px; line-height: 1.6;">Hello,</p>
+            <p style="font-size: 16px; line-height: 1.6;">${message}</p>
             <p style="font-size: 16px; line-height: 1.6;">
-              Hello,
-            </p>
-            <p style="font-size: 16px; line-height: 1.6;">
-              ${message}
-            </p>
-            <p style="font-size: 16px; line-height: 1.6;">
-              For questions or support, contact 
+              For questions or support, contact
               <a href="mailto:support@example.com" style="color: #198754;">support@example.com</a>.
             </p>
             <p style="margin-top: 30px; font-size: 16px;">
@@ -215,7 +160,7 @@ export const sendEventMail = async (
             </p>
           </div>
 
-          <div style="background-color: #f1f3f5; padding: 12px 24px; text-align: center; 
+          <div style="background-color: #f1f3f5; padding: 12px 24px; text-align: center;
                       font-size: 13px; color: #6c757d;">
             &copy; ${new Date().getFullYear()} whizlancer Organization. All rights reserved.
           </div>
@@ -223,12 +168,12 @@ export const sendEventMail = async (
       </div>
     `;
 
-    console.log(`🚀 Sending event mail to ${emails.length} recipients...`);
     const batchSize = 50;
     const delay = 1500;
 
     for (let i = 0; i < emails.length; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
+
       await Promise.allSettled(
         batch.map(async (email) => {
           try {
@@ -237,10 +182,12 @@ export const sendEventMail = async (
               to: email,
               subject: title,
               html: htmlTemplate,
-              attachments: attachments.map((filePath) => ({
-                filename: filePath.split("/").pop(), // Extract filename
-                path: `./${filePath}`, // Path to the file
-              })),
+              ...(attachments?.length > 0 && {
+                attachments: attachments?.map((file) => ({
+                  filename: file,
+                  path: `./${file}`,
+                })),
+              }),
             });
             console.log(`Event notice sent to ${email}`);
           } catch (err) {
@@ -255,11 +202,78 @@ export const sendEventMail = async (
       }
     }
 
-    console.log("All event emails have been sent successfully!");
+    console.log("All event emails sent successfully!");
   } catch (error) {
     console.error("Error in sendEventMail:", error);
   }
 };
+
+cron.schedule("* * * * *", async () => {
+  try {
+    const [events] = await db.query(`
+      SELECT *, 
+      SUBSTRING_INDEX(event_date, '|', 1) AS start_date,
+      SUBSTRING_INDEX(event_time, '|', 1) AS start_time
+      FROM notifications
+      WHERE type='event' 
+        AND (mail_10min_sent = false OR mail_5hr_sent = false)
+    `);
+
+    const now = new Date();
+    for (const event of events) {
+      if (!event.mail_10min_sent) {
+        const createdAt = new Date(event.created_at);
+        const diffMs = now - createdAt;
+        const diffMinutes = diffMs / 1000 / 60;
+        console.log('10 min mail: ',diffMinutes);
+        if (diffMinutes >= 10 && !event.mail_10min_sent) {
+          const roles = [event.roll_id];
+          await sendEventMail(
+            roles,
+            `[NEW EVENT] ${event.title}`,
+            event.message,
+            event.event_category,
+            event.start_date,
+            event.start_time,
+            event.attachment
+          );
+          await db.execute(
+            "UPDATE notifications SET mail_10min_sent = true WHERE id = ?",
+            [event.id]
+          );
+          console.log("10-min mail sent to:", roles);
+        }
+      }
+
+      if (!event.mail_5hr_sent) {
+        const eventDateTimeStr = `${event.start_date} ${event.start_time}`;
+        const eventDateTime = new Date(eventDateTimeStr);
+        const diffMs = eventDateTime - now;
+        const diffHours = diffMs / 1000 / 60 / 60;
+
+        if (diffHours <= 5 && diffHours > 4.9) {
+          const roles = [event.roll_id];
+          await sendEventMail(
+            roles,
+            `[REMINDER] ${event.title}`,
+            event.message,
+            event.event_category,
+            event.start_date,
+            event.start_time,
+            event.attachment
+          );
+          await db.execute(
+            "UPDATE notifications SET mail_5hr_sent = true WHERE id = ?",
+            [event.id]
+          );
+          console.log("5-hr mail sent to:", roles);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error in event scheduler:", err);
+  }
+});
 
 export const addNotice = async (req, res) => {
   const { title, message, attachement, messageTo, docsId } = req.body;
@@ -455,10 +469,9 @@ export const createEvent = async (req, res) => {
         success: false,
       });
     }
-    console.log("data: ", docsId, typeof docsId);
     const insertSql = `
-      INSERT INTO notifications (title, message, attachment, roll_id, type, event_category, event_date, event_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notifications (title, message, attachment, roll_id, type, event_category, event_date, event_time,mail_10min_sent, mail_5hr_sent)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?,false,false)
     `;
 
     const insertPromises = roles.map((id) =>
@@ -480,15 +493,6 @@ export const createEvent = async (req, res) => {
       const updateSql = "UPDATE files SET status = 1 WHERE id = ?";
       await db.execute(updateSql, [docsId]);
     }
-    await sendEventMail(
-      roles,
-      title,
-      message,
-      category,
-      dateRange,
-      timeRange,
-      attachement
-    );
     return res.status(201).json({
       message: "Event(s) created successfully.",
       success: true,
