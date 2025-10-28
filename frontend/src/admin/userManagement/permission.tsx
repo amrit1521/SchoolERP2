@@ -1,91 +1,252 @@
-
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import PredefinedDateRanges from "../../core/common/datePicker";
-import type { TableData } from "../../core/data/interface";
+// import type { TableData } from "../../core/data/interface";
 import Table from "../../core/common/dataTable/index";
-import { permission } from "../../core/data/json/permission";
+// import { permission } from "../../core/data/json/permission";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import {
+  addModules,
+  getAllModules,
+  getAllRolePermissions,
+  savePermissions,
+} from "../../service/api";
+import { toast } from "react-toastify";
 
 const Permission = () => {
-  const data = permission;
   const routes = all_routes;
+  const location = useLocation();
+  const { roleId } = location.state || {};
+  const [permissionData, setPermissionData] = useState<any[]>([]);
+  const fetchModule = async () => {
+    if (!roleId) {
+      toast.error("roleId is required.");
+      return;
+    }
+    try {
+      const { data } = await getAllModules();
+      const result = await getAllRolePermissions(roleId);
+      if (data.success) {
+        const modules = data.result;
+        const permissions = result.data?.result || [];
+        const combined = modules.map((module: any) => {
+          const modulePerm = permissions.find(
+            (perm: any) => perm.module_id === module.id
+          );
+          return {
+            id: module.id,
+            modules: module.name,
+            created: !!modulePerm?.can_create,
+            view: !!modulePerm?.can_view,
+            edit: !!modulePerm?.can_edit,
+            delete: !!modulePerm?.can_delete,
+            allowAll: !!(
+              modulePerm?.can_create &&
+              modulePerm?.can_view &&
+              modulePerm?.can_edit &&
+              modulePerm?.can_delete
+            ),
+          };
+        });
+        setPermissionData(combined);
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to load modules data"
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchModule();
+  }, []);
+
+  const [moduleName, setModuleName] = useState<string>("");
+  const [slugName, setSlugName] = useState<string>("");
+
+  const handleCreateModule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!moduleName && !slugName) {
+      toast.error("both data are required");
+      return;
+    }
+    try {
+      const payload = {
+        name: moduleName,
+        slug: slugName,
+      };
+      const { data } = await addModules(payload);
+      console.log("module data : ", data);
+      if (data.success) {
+        toast.success(data.message || "module added successfully.");
+        setModuleName("");
+        setSlugName("");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create module");
+    }
+  };
+
+  const handlePermissionChange = (
+    id: number,
+    field: string,
+    checked: boolean
+  ) => {
+    setPermissionData((prev) =>
+      prev.map((perm) => {
+        if (perm.id === id) {
+          if (field === "allowAll") {
+            return {
+              ...perm,
+              allowAll: checked,
+              created: checked,
+              view: checked,
+              edit: checked,
+              delete: checked,
+            };
+          }
+          const updated = { ...perm, [field]: checked };
+          if (!checked) updated.allowAll = false;
+          else if (
+            updated.created &&
+            updated.view &&
+            updated.edit &&
+            updated.delete
+          ) {
+            updated.allowAll = true;
+          }
+          return updated;
+        }
+        return perm;
+      })
+    );
+  };
+
+  const handleSavePermission = async () => {
+    console.log("Updated Permissions:", permissionData, roleId);
+    try {
+      const payload = {
+        permissions: permissionData,
+        role_id: roleId,
+      };
+      if (roleId) {
+        const { data } = await savePermissions(payload);
+        if (data.success) {
+          toast.success(data.message || "permission saved Successfully.");
+        } else {
+          toast.error(data.message || "saving permission failed.");
+        }
+      } else {
+        toast.error("roleId not found. please select role.");
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to save permission."
+      );
+    }
+  };
 
   const columns = [
     {
       title: "Modules",
       dataIndex: "modules",
-      sorter: (a: TableData, b: TableData) =>
-        a.modules.length - b.modules.length,
+      key: "modules",
     },
     {
       title: "Created",
       dataIndex: "created",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <label className="checkboxs">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={record.created}
+              onChange={(e: any) =>
+                handlePermissionChange(record.id, "created", e.target.checked)
+              }
+            />
             <span className="checkmarks" />
           </label>
         </>
       ),
-      sorter: (a: TableData, b: TableData) =>
-        a.created.length - b.created.length,
     },
     {
       title: "View",
       dataIndex: "view",
-      render: () => (
-        <>
-          <label className="checkboxs">
-            <input type="checkbox" />
-            <span className="checkmarks" />
-          </label>
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.view.length - b.view.length,
+      render: (_: any, record: any) => {
+        return (
+          <>
+            <label className="checkboxs">
+              <input
+                type="checkbox"
+                checked={record.view}
+                onChange={(e: any) =>
+                  handlePermissionChange(record.id, "view", e.target.checked)
+                }
+              />
+              <span className="checkmarks" />
+            </label>
+          </>
+        );
+      },
     },
     {
       title: "Edit",
       dataIndex: "edit",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <label className="checkboxs">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={record.edit}
+              onChange={(e: any) =>
+                handlePermissionChange(record.id, "edit", e.target.checked)
+              }
+            />
             <span className="checkmarks" />
           </label>
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.edit.length - b.edit.length,
     },
     {
       title: "Delete",
       dataIndex: "delete",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <label className="checkboxs">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={record.delete}
+              onChange={(e: any) =>
+                handlePermissionChange(record.id, "delete", e.target.checked)
+              }
+            />
             <span className="checkmarks" />
           </label>
         </>
       ),
-      sorter: (a: TableData, b: TableData) => a.delete.length - b.delete.length,
     },
     {
       title: "AllowAll",
       dataIndex: "allowAll",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <label className="checkboxs">
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={record.allowAll}
+              onChange={(e: any) =>
+                handlePermissionChange(record.id, "allowAll", e.target.checked)
+              }
+            />
             <span className="checkmarks" />
           </label>
         </>
       ),
-      sorter: (a: TableData, b: TableData) =>
-        a.allowAll.length - b.allowAll.length,
     },
   ];
+
   return (
     <div>
       <>
@@ -110,7 +271,7 @@ const Permission = () => {
                   </ol>
                 </nav>
               </div>
-              <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
+              <div className="d-flex my-xl-auto right-content align-items-center flex-wrap gap-1">
                 <TooltipOption />
                 <div className="mb-2">
                   <Link
@@ -120,7 +281,17 @@ const Permission = () => {
                     data-bs-target="#add_role"
                   >
                     <i className="ti ti-square-rounded-plus me-2" />
-                    Add Role
+                    Add Module
+                  </Link>
+                </div>
+                <div className="mb-2">
+                  <Link
+                    to="#"
+                    className="btn btn-warning d-flex align-items-center"
+                    onClick={handleSavePermission}
+                  >
+                    <i className="ti ti-square-rounded-plus me-2" />
+                    Save Permission
                   </Link>
                 </div>
               </div>
@@ -170,7 +341,11 @@ const Permission = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Student List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+                <Table
+                  columns={columns}
+                  dataSource={permissionData}
+                  Selection={true}
+                />
                 {/* /Student List */}
               </div>
             </div>
@@ -183,26 +358,42 @@ const Permission = () => {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Add Role</h4>
+                <h4 className="modal-title">Add Module</h4>
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
+                  onClick={() => {
+                    setModuleName("");
+                    setSlugName("");
+                  }}
                 >
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form>
+              <form onSubmit={handleCreateModule}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
-                      <div className="mb-0">
-                        <label className="form-label">Role Name</label>
+                      <div className="mb-2">
+                        <label className="form-label">Module Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Enter State Name"
+                          placeholder="Enter Module Name"
+                          value={moduleName}
+                          onChange={(e: any) => setModuleName(e.target.value)}
+                        />
+                      </div>
+                      <div className="mb-0">
+                        <label className="form-label">Slug Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Enter Slug Name"
+                          value={slugName}
+                          onChange={(e: any) => setSlugName(e.target.value)}
                         />
                       </div>
                     </div>
@@ -213,16 +404,20 @@ const Permission = () => {
                     to="#"
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
+                    onClick={() => {
+                      setModuleName("");
+                      setSlugName("");
+                    }}
                   >
                     Cancel
                   </Link>
-                  <Link
-                    to="#"
+                  <button
+                    type="submit"
                     className="btn btn-primary"
                     data-bs-dismiss="modal"
                   >
-                    Add Role
-                  </Link>
+                    Add Module
+                  </button>
                 </div>
               </form>
             </div>
