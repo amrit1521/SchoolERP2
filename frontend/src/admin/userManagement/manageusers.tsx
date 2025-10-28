@@ -227,6 +227,13 @@ const Manageusers = () => {
         )
       );
     }
+    if (filters.userType == "Parent") {
+      setFilteredUsersOption(
+        allusers.filter(
+          (item: any) => item.role == filters.userType.toLowerCase()
+        )
+      );
+    }
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
