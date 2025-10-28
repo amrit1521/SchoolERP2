@@ -186,6 +186,7 @@ exports.allStudents = async (req, res) => {
                 u.mobile,
                 u.email,
                 u.roll_id,
+                r.role_name,
                 u.status,
                 s.id AS student_id,
                 s.stu_id,
@@ -212,6 +213,7 @@ exports.allStudents = async (req, res) => {
                 ON u.id = s.stu_id
           RIGHT JOIN classes  c ON c.id =  s.class_id
           RIGHT JOIN sections se ON se.id = s.section_id
+          JOIN roles r on r.id=u.roll_id
           
                 WHERE u.roll_id=3
         `;

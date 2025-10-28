@@ -1,120 +1,256 @@
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Table from "../../core/common/dataTable/index";
-import { manageusersData } from "../../core/data/json/manageuser";
+// import { manageusersData } from "../../core/data/json/manageuser";
 import type { TableData } from "../../core/data/interface";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import CommonSelect from "../../core/common/commonSelect";
 import { Reason } from "../../core/common/selectoption/selectoption";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { allUsers, deleteUsersById } from "../../service/api";
+import { toast } from "react-toastify";
+
+interface User {
+  id: string;
+  name: string;
+  class?: string;
+  section?: string;
+  role: string;
+  remark?: string;
+  dateOfJoined: string;
+  status: string;
+}
 
 const Manageusers = () => {
   const routes = all_routes;
-  const data = manageusersData;
+  // const data = manageusersData;
+  const [allusers, setAllusers] = useState<User[]>([]);
+  const [filteredUsersOption, setFilteredUsersOption] = useState<User[]>([]);
 
+  const [filters, setFilters] = useState<{ userType: string }>({
+    userType: "Student",
+  });
 
+  const fetchUserData = async () => {
+    try {
+      const { data } = await allUsers();
+      console.log("result : ", data);
+      if (data.success) {
+        setAllusers(
+          data.result.map((user: any) => ({
+            id: user.user_id,
+            name: user.firstname + " " + user.lastname,
+            class: user.class,
+            section: user.section,
+            role: user.role_name,
+            remark: user.remark,
+            dateOfJoined: user.dateOfJoined,
+            status: user.status,
+          }))
+        );
+        // setFilteredUsersOption(
+        //   data.result.map((user: any) => ({
+        //     id: user.user_id,
+        //     name: user.firstname + " " + user.lastname,
+        //     class: user?.class,
+        //     section: user?.section,
+        //     role: user.role_name,
+        //     dateOfJoined: user.dateOfJoined,
+        //     status: user.status,
+        //   }))
+        // );
+        if (filters.userType == "Student") {
+          setFilteredUsersOption([
+            ...data.result
+              .filter(
+                (item: any) => item.role_name == filters.userType.toLowerCase()
+              )
+              .map((user: any) => ({
+                id: user.user_id,
+                name: user.firstname + " " + user.lastname,
+                class: user?.class,
+                section: user?.section,
+                role: user.role_name,
+                dateOfJoined: user.dateOfJoined,
+                status: user.status,
+              })),
+          ]);
+        }
+      } else {
+        toast.error(data.message || "Failed to load user data");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load user data");
+    }
+  };
 
-  const columns = [
+  useMemo(() => {
+    fetchUserData();
+  }, []);
+
+  const columns: any[] = [
     {
       title: "ID",
       dataIndex: "id",
-      render: ( record: any) => (
-        <>
-          <Link to="#" className="link-primary">
-            {record.id}
-          </Link>
-        </>
+      render: (_: any, record: any) => (
+        <Link to="#" className="link-primary">
+          USR0{record.id}
+        </Link>
       ),
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
     },
-
     {
       title: "Name",
       dataIndex: "name",
-      sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
+      sorter: (a: TableData, b: TableData) => a.name.localeCompare(b.name),
     },
     {
-      title: "Class",
-      dataIndex: "class",
-      sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
+      title: "Role",
+      dataIndex: "role",
+      render: (text: string) => <span className="text-capitalize">{text}</span>,
+      sorter: (a: TableData, b: TableData) => a.role.localeCompare(b.role),
     },
     {
-      title: "Section",
-      dataIndex: "section",
-      sorter: (a: TableData, b: TableData) =>
-        a.section.length - b.section.length,
-    },
-    {
-      title: "DateOfJoined",
+      title: "Date Of Joined",
       dataIndex: "dateOfJoined",
+      render: (text: string) => (
+        <span>{new Date(text)?.toLocaleDateString()}</span>
+      ),
       sorter: (a: TableData, b: TableData) =>
-        a.dateOfJoined.length - b.dateOfJoined.length,
+        new Date(a.dateOfJoined).getTime() - new Date(b.dateOfJoined).getTime(),
     },
     {
       title: "Status",
       dataIndex: "status",
-      render: (text: string) => (
-        <>
-          {text === "Active" ? (
-            <span className="badge badge-soft-success d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          ) : (
-            <span className="badge badge-soft-danger d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
-          )}
-        </>
-      ),
-      sorter: (a: any, b: any) => a.status.length - b.status.length,
+      render: (text: string) =>
+        text === "1" ? (
+          <span className="badge badge-soft-success d-inline-flex align-items-center">
+            <i className="ti ti-circle-filled fs-5 me-1"></i> Active
+          </span>
+        ) : (
+          <span className="badge badge-soft-danger d-inline-flex align-items-center">
+            <i className="ti ti-circle-filled fs-5 me-1"></i> Inactive
+          </span>
+        ),
+      sorter: (a: any, b: any) => a.status.localeCompare(b.status),
     },
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
-        <>
-          <div className="d-flex align-items-center">
-            <div className="dropdown">
-              <Link
-                to="#"
-                className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <i className="ti ti-dots-vertical fs-14" />
-              </Link>
-              <ul className="dropdown-menu dropdown-menu-right p-3">
-                {/* <li>
-                  <Link className="dropdown-item rounded-1" to="#">
-                    <i className="ti ti-edit-circle me-2" />
-                    Edit
-                  </Link>
-                </li> */}
-                <li>
-                  <Link
-                    className="dropdown-item rounded-1"
-                    to="#"
-                  >
-                    <i className="ti ti-trash-x me-2" />
-                    Delete
-                  </Link>
-                </li>
-              </ul>
-            </div>
+      render: (_: any, record: any) => (
+        <div className="d-flex align-items-center">
+          <div className="dropdown">
+            <Link
+              to="#"
+              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i className="ti ti-dots-vertical fs-14" />
+            </Link>
+            <ul className="dropdown-menu dropdown-menu-right p-3">
+              <li>
+                <Link
+                  className="dropdown-item rounded-1"
+                  to="#"
+                  onClick={() => handleDelete(record.id)}
+                >
+                  <i className="ti ti-trash-x me-2" />
+                  Delete
+                </Link>
+              </li>
+            </ul>
           </div>
-        </>
+        </div>
       ),
     },
   ];
+  if (filters?.userType === "Student") {
+    columns.splice(
+      2,
+      0,
+      {
+        title: "Class",
+        dataIndex: "class",
+        sorter: (a: TableData, b: TableData) => a.class.localeCompare(b.class),
+      },
+      {
+        title: "Section",
+        dataIndex: "section",
+        sorter: (a: TableData, b: TableData) =>
+          a.section.localeCompare(b.section),
+      }
+    );
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      console.log("deleteId: ", id);
+      const { data } = await deleteUsersById(id);
+      if (data.success) {
+        fetchUserData();
+        toast.success(data.message || "user deleted successfully");
+      } else {
+        toast.error(data.message || "Failed to delete user");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Error deleting user.");
+    }
+  };
+
+  const handleFilterChange = (key: keyof typeof filters, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
   const handleApplyClick = () => {
+    if (filters.userType == "Student") {
+      setFilteredUsersOption(
+        allusers.filter(
+          (item: any) => item.role == filters.userType.toLowerCase()
+        )
+      );
+    }
+    if (filters.userType == "Teacher") {
+      setFilteredUsersOption(
+        allusers.filter(
+          (item: any) => item.role == filters.userType.toLowerCase()
+        )
+      );
+    }
+    if (filters.userType == "Staff") {
+      setFilteredUsersOption(
+        allusers.filter(
+          (item: any) => item.remark == filters.userType.toLowerCase()
+        )
+      );
+    }
+    if (filters.userType == "Parent") {
+      setFilteredUsersOption(
+        allusers.filter(
+          (item: any) => item.role == filters.userType.toLowerCase()
+        )
+      );
+    }
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const handleResetFilter = () => {
+    setFilters({ userType: "Student" });
+    setFilteredUsersOption(
+      allusers.filter(
+        (item: any) => item.role == filters.userType.toLowerCase()
+      )
+    );
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
+
   return (
     <div>
       <>
@@ -140,7 +276,7 @@ const Manageusers = () => {
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-              <TooltipOption />
+                <TooltipOption />
                 {/* <div className="mb-2">
                   <Link
                     to="#"
@@ -187,13 +323,24 @@ const Manageusers = () => {
                                 <CommonSelect
                                   className="select"
                                   options={Reason}
+                                  value={filters?.userType}
+                                  onChange={(option) =>
+                                    handleFilterChange(
+                                      "userType",
+                                      option ? option.value : null
+                                    )
+                                  }
                                 />
                               </div>
                             </div>
                           </div>
                         </div>
                         <div className="p-3 d-flex align-items-center justify-content-end">
-                          <Link to="#" className="btn btn-light me-3">
+                          <Link
+                            to="#"
+                            className="btn btn-light me-3"
+                            onClick={handleResetFilter}
+                          >
                             Reset
                           </Link>
                           <Link
@@ -243,7 +390,11 @@ const Manageusers = () => {
               </div>
               {/* User List */}
               <div className="card-body p-0 py-3">
-                <Table columns={columns} dataSource={data} Selection={true} />
+                <Table
+                  columns={columns}
+                  dataSource={filteredUsersOption}
+                  Selection={true}
+                />
               </div>
               {/* /User List */}
             </div>

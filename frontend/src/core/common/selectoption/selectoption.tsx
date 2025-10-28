@@ -1,106 +1,131 @@
-
-
 export const options1 = [
-  { value: 'Select a View', label: 'Select a View' },
-  { value: 'Contact View List', label: 'Contact View List' },
-  { value: 'Contact Location View', label: 'Contact Location View' }
+  { value: "Select a View", label: "Select a View" },
+  { value: "Contact View List", label: "Contact View List" },
+  { value: "Contact Location View", label: "Contact Location View" },
 ];
 export const optionssymbol = [
-
-  { value: '$', label: '$' },
-  { value: '€', label: '€' }
+  { value: "$", label: "$" },
+  { value: "€", label: "€" },
 ];
 export const duration = [
-
-  { value: 'Days', label: 'Days' },
-  { value: 'Month', label: 'Month' }
+  { value: "Days", label: "Days" },
+  { value: "Month", label: "Month" },
 ];
 
 export const optionschoose = [
-
-  { value: 'Work', label: 'Work' },
-  { value: 'Home', label: 'Home' }
+  { value: "Work", label: "Work" },
+  { value: "Home", label: "Home" },
 ];
 
 export const options = [
-
-  { value: 'NovaWave LLC', label: 'NovaWave LLC' },
-  { value: 'SilverHawk', label: 'SilverHawk' },
-  { value: 'SummitPeak', label: 'SummitPeak' },
-  { value: 'RiverStone Ventur', label: 'RiverStone Ventur' },
-  { value: 'China', label: 'China' },
+  { value: "NovaWave LLC", label: "NovaWave LLC" },
+  { value: "SilverHawk", label: "SilverHawk" },
+  { value: "SummitPeak", label: "SummitPeak" },
+  { value: "RiverStone Ventur", label: "RiverStone Ventur" },
+  { value: "China", label: "China" },
 ];
 export const clientList = [
-
-  { value: 'NovaWave LLC', label: 'NovaWave LLC' },
-  { value: 'SilverHawk', label: 'SilverHawk' },
-  { value: 'HarborView', label: 'HarborView' },
+  { value: "NovaWave LLC", label: "NovaWave LLC" },
+  { value: "SilverHawk", label: "SilverHawk" },
+  { value: "HarborView", label: "HarborView" },
 ];
 export const category = [
-
-  { value: 'HarborView', label: 'HarborView' },
-  { value: 'LLC', label: 'LLC' },
+  { value: "HarborView", label: "HarborView" },
+  { value: "LLC", label: "LLC" },
 ];
 export const projectTiming = [
-
-  { value: 'Hourly', label: 'Hourly' },
-  { value: 'Minutes', label: 'Minutes' },
+  { value: "Hourly", label: "Hourly" },
+  { value: "Minutes", label: "Minutes" },
 ];
 
 export const optionsource = [
-
-  { value: 'Phone Calls', label: 'Phone Calls' },
-  { value: 'Social Media', label: 'Social Media' },
-  { value: 'Referral Sites', label: 'Referral Sites' },
-  { value: 'Web Analytics', label: 'Web Analytics' },
-  { value: 'Previous Purchases', label: 'Previous Purchases' },
+  { value: "Phone Calls", label: "Phone Calls" },
+  { value: "Social Media", label: "Social Media" },
+  { value: "Referral Sites", label: "Referral Sites" },
+  { value: "Web Analytics", label: "Web Analytics" },
+  { value: "Previous Purchases", label: "Previous Purchases" },
 ];
 export const optionindustry = [
-
-  { value: 'Retail Industry', label: 'Retail Industry' },
-  { value: 'Banking', label: 'Banking' },
-  { value: 'Hotels', label: 'Hotels' },
-  { value: 'Financial Services', label: 'Financial Services' },
-  { value: 'Insurance', label: 'Insurance' },
+  { value: "Retail Industry", label: "Retail Industry" },
+  { value: "Banking", label: "Banking" },
+  { value: "Hotels", label: "Hotels" },
+  { value: "Financial Services", label: "Financial Services" },
+  { value: "Insurance", label: "Insurance" },
 ];
 export const optiondeals = [
-
-  { value: 'Collins', label: 'Collins' },
-  { value: 'Konopelski', label: 'Konopelski' },
-  { value: 'Adams', label: 'Adams' },
-  { value: 'Schumm', label: 'Schumm' },
-  { value: 'Wisozk', label: 'Wisozk' },
+  { value: "Collins", label: "Collins" },
+  { value: "Konopelski", label: "Konopelski" },
+  { value: "Adams", label: "Adams" },
+  { value: "Schumm", label: "Schumm" },
+  { value: "Wisozk", label: "Wisozk" },
 ];
 export const languageOptions = [
-
-  { value: 'English', label: 'English' },
-  { value: 'Arabic', label: 'Arabic' },
-  { value: 'Chinese', label: 'Chinese' },
-  { value: 'Hindi', label: 'Hindi' },
+  { value: "English", label: "English" },
+  { value: "Arabic", label: "Arabic" },
+  { value: "Chinese", label: "Chinese" },
+  { value: "Hindi", label: "Hindi" },
 ];
 export const optionsowner = [
-  { label: 'Jerald', value: 'Jerald', image: 'assets/img/profiles/avatar-14.jpg' },
-  { label: 'Sharon Roy', value: 'Sharon Roy', image: 'assets/img/profiles/avatar-20.jpg' },
-  { label: 'Vaughan', value: 'Vaughan', image: 'assets/img/profiles/avatar-21.jpg' },
-  { label: 'Jessica', value: 'Jessica', image: 'assets/img/profiles/avatar-23.jpg' },
-  { label: 'Carol Thomas', value: 'Carol Thomas', image: 'assets/img/profiles/avatar-16.jpg' }
+  {
+    label: "Jerald",
+    value: "Jerald",
+    image: "assets/img/profiles/avatar-14.jpg",
+  },
+  {
+    label: "Sharon Roy",
+    value: "Sharon Roy",
+    image: "assets/img/profiles/avatar-20.jpg",
+  },
+  {
+    label: "Vaughan",
+    value: "Vaughan",
+    image: "assets/img/profiles/avatar-21.jpg",
+  },
+  {
+    label: "Jessica",
+    value: "Jessica",
+    image: "assets/img/profiles/avatar-23.jpg",
+  },
+  {
+    label: "Carol Thomas",
+    value: "Carol Thomas",
+    image: "assets/img/profiles/avatar-16.jpg",
+  },
 ];
 export const optionsowner1 = [
-  { label: 'Darlee Robertson', value: 'Jerald', image: 'assets/img/profiles/avatar-19.jpg' },
-  { label: 'Sharon Roy', value: 'Sharon Roy', image: 'assets/img/profiles/avatar-20.jpg' },
-  { label: 'Vaughan', value: 'Vaughan', image: 'assets/img/profiles/avatar-21.jpg' },
-  { label: 'Jessica', value: 'Jessica', image: 'assets/img/profiles/avatar-23.jpg' },
-  { label: 'Carol Thomas', value: 'Carol Thomas', image: 'assets/img/profiles/avatar-16.jpg' }
+  {
+    label: "Darlee Robertson",
+    value: "Jerald",
+    image: "assets/img/profiles/avatar-19.jpg",
+  },
+  {
+    label: "Sharon Roy",
+    value: "Sharon Roy",
+    image: "assets/img/profiles/avatar-20.jpg",
+  },
+  {
+    label: "Vaughan",
+    value: "Vaughan",
+    image: "assets/img/profiles/avatar-21.jpg",
+  },
+  {
+    label: "Jessica",
+    value: "Jessica",
+    image: "assets/img/profiles/avatar-23.jpg",
+  },
+  {
+    label: "Carol Thomas",
+    value: "Carol Thomas",
+    image: "assets/img/profiles/avatar-16.jpg",
+  },
 ];
 
 export const countryoptions1 = [
-
-  { value: 'India', label: 'India' },
-  { value: 'USA', label: 'USA' },
-  { value: 'France', label: 'France' },
-  { value: 'UK', label: 'UK' },
-  { value: 'UAE', label: 'UAE' },
-
+  { value: "India", label: "India" },
+  { value: "USA", label: "USA" },
+  { value: "France", label: "France" },
+  { value: "UK", label: "UK" },
+  { value: "UAE", label: "UAE" },
 ];
 export const lastModified = [
   { value: "sortByDate", label: "Sort by Date" },
@@ -116,12 +141,11 @@ export const recent = [
   { value: "Last Modified by me", label: "Last Modified by me" },
 ];
 export const companyName = [
-
-  { value: 'novaWave', label: 'NovaWave LLC' },
-  { value: 'blueSky', label: 'BlueSky Industries' },
-  { value: 'silverHawk', label: 'SilverHawk' },
-  { value: 'summitPeak', label: 'SummitPeak' },
-  { value: 'riverStone', label: 'RiverStone Ventur' }
+  { value: "novaWave", label: "NovaWave LLC" },
+  { value: "blueSky", label: "BlueSky Industries" },
+  { value: "silverHawk", label: "SilverHawk" },
+  { value: "summitPeak", label: "SummitPeak" },
+  { value: "riverStone", label: "RiverStone Ventur" },
 ];
 
 export const initialSettings = {
@@ -156,161 +180,165 @@ export const initialSettings = {
   timePicker: false,
 };
 
-
-
 export const salestypelist = [
-  { value: 'sales', label: 'Sales' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'calls', label: 'Calls' }
+  { value: "sales", label: "Sales" },
+  { value: "marketing", label: "Marketing" },
+  { value: "calls", label: "Calls" },
 ];
 export const project = [
-  { value: 'Devops Design', label: 'Devops Design' },
-  { value: 'MargrateDesign', label: 'MargrateDesign' },
-  { value: 'UI for Chat', label: 'UI for Chat' },
-  { value: 'Web Chat', label: 'Web Chat' },
+  { value: "Devops Design", label: "Devops Design" },
+  { value: "MargrateDesign", label: "MargrateDesign" },
+  { value: "UI for Chat", label: "UI for Chat" },
+  { value: "Web Chat", label: "Web Chat" },
 ];
 export const defaultValues = [
-  { value: 'Devops Design', label: 'Devops Design' },
-  { value: 'MargrateDesign', label: 'MargrateDesign' },
-  { value: 'UI for Chat', label: 'UI for Chat' }
+  { value: "Devops Design", label: "Devops Design" },
+  { value: "MargrateDesign", label: "MargrateDesign" },
+  { value: "UI for Chat", label: "UI for Chat" },
 ];
 
 export const socialMedia = [
-
-  { value: 'Google', label: 'Google' },
-  { value: 'Social Media', label: 'Social Media' },
+  { value: "Google", label: "Google" },
+  { value: "Social Media", label: "Social Media" },
 ];
 export const priorityList = [
-
-  { value: 'Highy', label: 'Highy' },
-  { value: 'Low', label: 'Low' },
-  { value: 'Medium', label: 'Medium' },
+  { value: "Highy", label: "Highy" },
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
 ];
 export const tagInputValues = [
-  { value: 'Devops Design', label: 'Devops Design' },
-  { value: 'MargrateDesign', label: 'MargrateDesign' },
+  { value: "Devops Design", label: "Devops Design" },
+  { value: "MargrateDesign", label: "MargrateDesign" },
 ];
 export const projectType = [
-
-  { value: 'Mobile App', label: 'Mobile App' },
-  { value: 'Meeting', label: 'Meeting' },
+  { value: "Mobile App", label: "Mobile App" },
+  { value: "Meeting", label: "Meeting" },
 ];
 export const status1 = [
-
-  { value: 'Mobile App', label: 'Mobile App' },
-  { value: 'Meeting', label: 'Meeting' },
+  { value: "Mobile App", label: "Mobile App" },
+  { value: "Meeting", label: "Meeting" },
 ];
 
 export const ascendingandDecending = [
-  { value: 'Sort By Date', label: 'Sort By Date' },
-  { value: 'Ascending', label: 'Ascending' },
-  { value: 'Descending', label: 'Descending' },
+  { value: "Sort By Date", label: "Sort By Date" },
+  { value: "Ascending", label: "Ascending" },
+  { value: "Descending", label: "Descending" },
 ];
 export const statusList = [
-  { value: 'Busy', label: 'Busy' },
-  { value: 'Unavailable', label: 'Unavailable' },
-  { value: 'No Answer', label: 'No Answer' },
-  { value: 'Wrong Number', label: 'Wrong Number' },
-  { value: 'Left Voice Message', label: 'Left Voice Message' },
-  { value: 'Moving Forward', label: 'Moving Forward' },
+  { value: "Busy", label: "Busy" },
+  { value: "Unavailable", label: "Unavailable" },
+  { value: "No Answer", label: "No Answer" },
+  { value: "Wrong Number", label: "Wrong Number" },
+  { value: "Left Voice Message", label: "Left Voice Message" },
+  { value: "Moving Forward", label: "Moving Forward" },
 ];
 export const owner = [
-  { value: 'Jerald', label: 'Jerald' },
-  { value: 'Guillory', label: 'Guillory' },
-  { value: 'Jami', label: 'Jami' },
-  { value: 'Theresa', label: 'Theresa' },
-  { value: ' Espinosa', label: ' Espinosa' },
+  { value: "Jerald", label: "Jerald" },
+  { value: "Guillory", label: "Guillory" },
+  { value: "Jami", label: "Jami" },
+  { value: "Theresa", label: "Theresa" },
+  { value: " Espinosa", label: " Espinosa" },
 ];
 export const assigneeOption = [
-  { value: 'Darlee Robertson', label: 'Darlee Robertson', image: 'assets/img/profiles/avatar-19.jpg' },
-  { value: 'Sharon Roy', label: 'Sharon Roy', image: 'assets/img/profiles/avatar-20.jpg' },
-  { value: 'Vaughan', label: 'Vaughan', image: 'assets/img/profiles/avatar-21.jpg' },
-  { value: 'Jessica', label: 'Jessica', image: 'assets/img/profiles/avatar-23.jpg' },
-  { value: 'Carol Thomas', label: 'Carol Thomas', image: 'assets/img/profiles/avatar-16.jpg' }
+  {
+    value: "Darlee Robertson",
+    label: "Darlee Robertson",
+    image: "assets/img/profiles/avatar-19.jpg",
+  },
+  {
+    value: "Sharon Roy",
+    label: "Sharon Roy",
+    image: "assets/img/profiles/avatar-20.jpg",
+  },
+  {
+    value: "Vaughan",
+    label: "Vaughan",
+    image: "assets/img/profiles/avatar-21.jpg",
+  },
+  {
+    value: "Jessica",
+    label: "Jessica",
+    image: "assets/img/profiles/avatar-23.jpg",
+  },
+  {
+    value: "Carol Thomas",
+    label: "Carol Thomas",
+    image: "assets/img/profiles/avatar-16.jpg",
+  },
 ];
 export const ratings = [
-
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '4', label: '4' },
-  { value: '5', label: '5' },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
 ];
 export const priority = [
-
-  { value: 'Low', label: 'Low' },
-  { value: 'Medium', label: 'Medium' },
-  { value: 'High', label: 'High' },
-]
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
+];
 export const statusOption = [
-  { value: 'Closed', label: 'Closed' },
-  { value: 'Open', label: 'Open' },
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Resolved', label: 'Resolved' },
-  { value: 'Reopened', label: 'Reopened' },
-  { value: 'Inprogress', label: 'Inprogress' },
+  { value: "Closed", label: "Closed" },
+  { value: "Open", label: "Open" },
+  { value: "Pending", label: "Pending" },
+  { value: "Resolved", label: "Resolved" },
+  { value: "Reopened", label: "Reopened" },
+  { value: "Inprogress", label: "Inprogress" },
 ];
 export const newselectOption = [
-
-  { value: 'Truelysell', label: 'Truelysell' },
-  { value: 'Dreamsports', label: 'Dreamsports' },
-  { value: 'Doccure', label: 'Doccure' },
-  { value: 'Kofejob', label: 'Kofejob' },
+  { value: "Truelysell", label: "Truelysell" },
+  { value: "Dreamsports", label: "Dreamsports" },
+  { value: "Doccure", label: "Doccure" },
+  { value: "Kofejob", label: "Kofejob" },
 ];
 export const releatdselectOption = [
-
-  { value: 'Truelysell', label: 'Truelysell' },
-  { value: 'Dreamsports', label: 'Dreamsports' },
-  { value: 'Doccure', label: 'Doccure' },
-  { value: 'Kofejob', label: 'Kofejob' },
-  { value: 'Best@laundry', label: 'Best@laundry' },
+  { value: "Truelysell", label: "Truelysell" },
+  { value: "Dreamsports", label: "Dreamsports" },
+  { value: "Doccure", label: "Doccure" },
+  { value: "Kofejob", label: "Kofejob" },
+  { value: "Best@laundry", label: "Best@laundry" },
 ];
 export const editreleatdselectOption = [
-
-  { value: 'Deals', label: 'Deals' },
-  { value: 'Truelysell', label: 'Truelysell' },
-  { value: 'Dreamsports', label: 'Dreamsports' },
-  { value: 'Doccure', label: 'Doccure' },
-  { value: 'Kofejob', label: 'Kofejob' },
-  { value: 'Best@laundry', label: 'Best@laundry' },
+  { value: "Deals", label: "Deals" },
+  { value: "Truelysell", label: "Truelysell" },
+  { value: "Dreamsports", label: "Dreamsports" },
+  { value: "Doccure", label: "Doccure" },
+  { value: "Kofejob", label: "Kofejob" },
+  { value: "Best@laundry", label: "Best@laundry" },
 ];
 export const dealsselectOption = [
-
-  { value: 'Collins', label: 'Collins' },
-  { value: 'Best@laundry', label: 'Best@laundry' },
-  { value: 'Dreamsports', label: 'Dreamsports' },
-  { value: 'Doccure', label: 'Doccure' },
-  { value: 'Kofejob', label: 'Kofejob' },
-
+  { value: "Collins", label: "Collins" },
+  { value: "Best@laundry", label: "Best@laundry" },
+  { value: "Dreamsports", label: "Dreamsports" },
+  { value: "Doccure", label: "Doccure" },
+  { value: "Kofejob", label: "Kofejob" },
 ];
 export const currency = [
-  { value: '$', label: '$' },
-  { value: 'Low', label: 'Low' },
-  { value: 'Medium', label: 'Medium' },
-  { value: 'High', label: 'High' },
-]
+  { value: "$", label: "$" },
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
+];
 export const contracts = [
-  { value: 'Contracts under Seal', label: 'Contracts under Seal' },
-  { value: 'Meeting', label: 'Meeting' },
-]
+  { value: "Contracts under Seal", label: "Contracts under Seal" },
+  { value: "Meeting", label: "Meeting" },
+];
 export const client = [
-  { value: 'Harbor View', label: 'Harbor View' },
-  { value: 'CoastalStar Co.', label: 'CoastalStar Co.' },
-  { value: 'RiverStone Ventur.', label: 'RiverStone Ventur.' },
-]
+  { value: "Harbor View", label: "Harbor View" },
+  { value: "CoastalStar Co.", label: "CoastalStar Co." },
+  { value: "RiverStone Ventur.", label: "RiverStone Ventur." },
+];
 export const contracttype = [
-  { value: 'Contracts under Seal', label: 'Contracts under Seal' },
-  { value: 'Contract', label: 'Contract' },
-  { value: 'RiverStone Ventur', label: 'RiverStone Ventur' },
-]
+  { value: "Contracts under Seal", label: "Contracts under Seal" },
+  { value: "Contract", label: "Contract" },
+  { value: "RiverStone Ventur", label: "RiverStone Ventur" },
+];
 export const currencyselect = [
-
-  { value: '$', label: '$' },
-  { value: 'INR', label: 'INR' },
-  { value: 'Euro', label: 'Euro' },
-]
-
-
+  { value: "$", label: "$" },
+  { value: "INR", label: "INR" },
+  { value: "Euro", label: "Euro" },
+];
 
 // preskool
 
@@ -502,27 +530,23 @@ export const academicYear = [
   { value: "June 2022/23", label: "June 2022/23" },
 ];
 export const Reason = [
-
   { value: "Teacher", label: "Teacher" },
+  { value: "Parent", label: "Parent" },
   { value: "Student", label: "Student" },
   { value: "Staff", label: "Staff" },
 ];
 export const acadamicReason = [
-
   { value: "Pregnancy", label: "Pregnancy" },
   { value: "Fees Unpaid", label: "Fees Unpaid" },
   { value: "Complaint", label: "Complaint" },
 ];
 export const classSylabus = [
-
   { value: "I", label: "I" },
   { value: "II", label: "II" },
   { value: "III", label: "III" },
 ];
 
-
 export const classSection = [
-
   { value: "a", label: "A" },
   { value: "b", label: "B" },
   { value: "c", label: "C" },
@@ -530,16 +554,12 @@ export const classSection = [
   { value: "e", label: "E" },
 ];
 
-
-
 export const language = [
-
   { value: "English", label: "English" },
   { value: "Maths", label: "Maths" },
   { value: "Physics", label: "Physics" },
 ];
 export const count = [
-
   { value: "101", label: "101" },
   { value: "102", label: "102" },
   { value: "103", label: "103" },
@@ -552,7 +572,6 @@ export const count = [
   { value: "110", label: "110" },
 ];
 export const typetheory = [
-
   { value: "Theory", label: "Theory" },
   { value: "Practical", label: "Practical" },
 ];
@@ -567,7 +586,6 @@ export const startTime = [
   { value: "12:30 PM", label: "12:30 PM" },
 ];
 export const classselect = [
-
   { value: "I", label: "I" },
   { value: "II", label: "II" },
   { value: "III", label: "III" },
@@ -580,28 +598,23 @@ export const classselect = [
   { value: "X", label: "X" },
 ];
 
-export const empty = [
-  { value: "", label: "Select" },
-];
+export const empty = [{ value: "", label: "Select" }];
 export const activeList = [
-
-  { value: '1', label: 'Active' },
-  { value: '0', label: 'Inactive' },
+  { value: "1", label: "Active" },
+  { value: "0", label: "Inactive" },
 ];
 export const capacitycount = [
-
-  { value: '50', label: '50' },
-  { value: '40', label: '40' },
-  { value: '60', label: '60' },
+  { value: "50", label: "50" },
+  { value: "40", label: "40" },
+  { value: "60", label: "60" },
 ];
 export const weak = [
-  { value: 'Monday', label: 'Monday' },
-  { value: 'Tuesday', label: 'Tuesday' },
-  { value: 'Wednesday', label: 'Wednesday' },
-  { value: 'Thursday', label: ' Thursday' },
-  { value: 'Friday', label: 'Friday' },
-  { value: 'Saturday', label: 'Saturday' },
-
+  { value: "Monday", label: "Monday" },
+  { value: "Tuesday", label: "Tuesday" },
+  { value: "Wednesday", label: "Wednesday" },
+  { value: "Thursday", label: " Thursday" },
+  { value: "Friday", label: "Friday" },
+  { value: "Saturday", label: "Saturday" },
 ];
 export const durationOne = [
   { value: "30 miutes", label: "30 miutes" },
@@ -613,21 +626,18 @@ export const durationOne = [
 ];
 
 export const examtwo = [
-
   { value: "Week Test", label: "Week Test" },
   { value: "Monthly Test", label: "Monthly Test" },
   { value: "Chapter Wise Test", label: "Chapter Wise Test" },
 ];
 
 export const examOne = [
-
   { value: "13 May 2024", label: "13 May 2024" },
   { value: "27 May 2024", label: "27 May 2024" },
   { value: "05 Jun 2024", label: "05 Jun 2024" },
 ];
 
 export const startTimeOne = [
-
   { value: "10:45 AM", label: "10:45 AM" },
   { value: "11:00 AM", label: "11:00 AM" },
   { value: "11:30 AM", label: "11:30 AM" },
@@ -635,19 +645,16 @@ export const startTimeOne = [
 ];
 
 export const maxMark = [
-
   { value: "100", label: "100" },
   { value: "50", label: "50" },
 ];
 
 export const minMark = [
-
   { value: "33", label: "33" },
   { value: "17", label: "17" },
 ];
 
 export const gradeOne = [
-
   { value: "A+", label: "A+" },
   { value: "A", label: "A" },
   { value: "B+", label: "B+" },
@@ -658,7 +665,6 @@ export const gradeOne = [
 ];
 
 export const gradePercentage = [
-
   { value: "90% - 100%", label: "90% - 100%" },
   { value: "80% - 90%", label: "80% - 90%" },
   { value: "70% - 80%", label: "70% - 80%" },
@@ -672,11 +678,9 @@ export const marksFrom = [
   { value: "50", label: "50" },
   { value: "40", label: "40" },
   { value: "30", label: "30" },
-
 ];
 
 export const marksUpto = [
-
   { value: "100", label: "100" },
   { value: "90", label: "90" },
   { value: "80", label: "80" },
@@ -685,11 +689,9 @@ export const marksUpto = [
   { value: "50", label: "50" },
   { value: "40", label: "40" },
   { value: "30", label: "30" },
-
 ];
 
 export const gradePoints = [
-
   { value: "0", label: "0" },
   { value: "1", label: "1" },
   { value: "2", label: "2" },
@@ -701,7 +703,6 @@ export const gradePoints = [
 ];
 
 export const staffName = [
-
   { value: "Kevin", label: "Kevin" },
   { value: "Willie", label: "Willie" },
   { value: "Daniel", label: "Daniel" },
@@ -710,14 +711,12 @@ export const staffName = [
 ];
 
 export const departmentName = [
-
   { value: "Admin", label: "Admin" },
   { value: "Management", label: "Management" },
   { value: "Finance", label: "Finance" },
 ];
 
 export const designationName = [
-
   { value: "Technical Head", label: "Technical Head" },
   { value: "Receptionist", label: "Receptionist" },
   { value: "Admin", label: "Admin" },
@@ -726,7 +725,6 @@ export const designationName = [
 ];
 
 export const morefilterStaff = [
-
   { value: "ID", label: "ID" },
   { value: "Name", label: "Name" },
   { value: "Department", label: "Department" },
@@ -735,7 +733,6 @@ export const morefilterStaff = [
 ];
 
 export const departmentSelect = [
-
   { value: "Admin", label: "Admin" },
   { value: "Finance", label: "Finance" },
   { value: "Academic", label: "Academic" },
@@ -743,76 +740,63 @@ export const departmentSelect = [
   { value: "Health", label: "Health" },
 ];
 export const routinename = [
-
   { value: "Erickson", label: "Erickson" },
   { value: "Mori", label: "Mori" },
   { value: "Joseph", label: "Joseph" },
-
 ];
 export const Shift = [
   { value: "Morning", label: "Morning" },
   { value: "Afternoon", label: "Afternoon" },
-
 ];
 export const promotion = [
   { value: "No Promotion", label: "No Promotion" },
   { value: "Promote to IV", label: "Promote to IV" },
-
 ];
 
 export const teacher = [
-
   { value: "Hellana", label: "Hellana" },
   { value: "Erickson", label: "Erickson" },
   { value: "Teresa", label: "Teresa" },
   { value: "Aaron", label: "Aaron" },
 ];
 export const Time = [
-
   { value: "09:00", label: "09:00" },
   { value: "09:45", label: "09:45" },
   { value: "10:45", label: "10:45" },
   { value: "11:30", label: "11:30" },
 ];
 export const Timeto = [
-
   { value: "09:45", label: "09:45" },
   { value: "10:45", label: "10:45" },
   { value: "11:30", label: "11:30" },
   { value: "12:15", label: "12:15" },
 ];
 export const subjectGroup = [
-
   { value: "09:45", label: "09:45" },
   { value: "10:45", label: "10:45" },
   { value: "11:30", label: "11:30" },
   { value: "12:15", label: "12:15" },
 ];
 export const period = [
-
   { value: "09:00 AM", label: "09:45 AM" },
   { value: "09:45 AM", label: "09:45 AM" },
   { value: "10:45 AM", label: "10:45 AM" },
 ];
 export const classduration = [
-
   { value: "45 Mins", label: "45 Mins" },
   { value: "1 Hour", label: "1 Hour" },
 ];
 export const weeklytest = [
-
   { value: "Weekly Test", label: "Weekly Test" },
   { value: "Monthly Test", label: "Monthly Test" },
   { value: "Chapter Wise Test", label: "Chapter Wise Test" },
 ];
 export const holidays = [
-
   { value: "New Year", label: "New Year" },
   { value: "Martin Luther King Jr. Day", label: "Martin Luther King Jr. Day" },
   { value: "Presidents' Day", label: "Presidents' Day" },
 ];
 export const month = [
-
   { value: "April", label: "April" },
   { value: "May", label: "May" },
   { value: "june", label: "june" },
@@ -823,25 +807,21 @@ export const months = [
   { value: "june", label: "june" },
 ];
 export const year = [
-
   { value: "2024", label: "2024" },
   { value: "2023", label: "2023" },
   { value: "2022", label: "2022" },
 ];
 export const parent = [
-
   { value: "Johnson", label: "Johnson" },
   { value: "Marquita", label: "Marquita" },
   { value: "Thomas", label: "Thomas" },
 ];
 export const ids = [
-
   { value: "FG80482", label: "FG80482" },
   { value: "FG80481", label: "FG80481" },
   { value: "FG80480", label: "FG80480" },
-]
+];
 export const Role = [
-
   { value: "Student", label: "Student" },
   { value: "Teacher", label: "Teacher" },
   { value: "Admin", label: "Admin" },
@@ -852,26 +832,22 @@ export const MonthDate = [
   { value: "08 May 2024 - 19 may 2024", label: "08 May 2024 - 19 may 2024" },
 ];
 export const AdmissionNumber = [
-
   { value: "AD9892424", label: "AD9892424" },
   { value: "AD9892425", label: "AD9892425" },
   { value: "AD9892426", label: "AD9892426" },
 ];
 export const RollNumber = [
-
   { value: "35004", label: "35004" },
   { value: "35005", label: "35005" },
   { value: "35006", label: "35006" },
 ];
 export const studentName = [
-
   { value: "Janet", label: "Janet" },
   { value: "Joann", label: "Joann" },
   { value: "Kathleen", label: "Kathleen" },
   { value: "Gifford", label: "Gifford" },
 ];
 export const studentclass = [
-
   { value: "XI", label: "XI" },
   { value: "I", label: "I" },
   { value: "II", label: "II" },
@@ -880,13 +856,11 @@ export const studentclass = [
   { value: "VIII", label: "VIII" },
 ];
 export const teacherId = [
-
   { value: "T849127", label: "T849127" },
   { value: "T849125", label: "T849125" },
   { value: "T849126", label: "T849126" },
 ];
 export const attendance = [
-
   { value: "Present", label: "Present" },
   { value: "Absent", label: "Absent" },
   { value: "Late", label: "Late" },
@@ -902,7 +876,6 @@ export const roomno = [
   { value: "26", label: "26" },
 ];
 export const staffDepartment = [
-
   { value: "Admin", label: "Admin" },
   { value: "Management", label: "Management" },
   { value: "Academic", label: "Academic" },
@@ -910,64 +883,55 @@ export const staffDepartment = [
 ];
 
 export const expenseName = [
-
   { value: "Monthly Electricity", label: "Monthly Electricity" },
   { value: "Teacher Salary", label: "Teacher Salary" },
   { value: "AC Repair", label: "AC Repair" },
 ];
 export const category2 = [
-
   { value: "Utilities", label: "Utilities" },
   { value: "Salaries", label: "Salaries" },
   { value: "Maintenance", label: "Maintenance" },
 ];
 export const invoiceNumber = [
-
   { value: "INV681537", label: "INV681537" },
   { value: "INV681536", label: "INV681536" },
   { value: "INV681535", label: "INV681535" },
 ];
 export const paymentMethod = [
   { value: "Cash", label: "Cash" },
-  { value: "Bank Transfer", label: "Bank Transfer"},
+  { value: "Bank Transfer", label: "Bank Transfer" },
 ];
 
 export const invStatus = [
-   { value: "paid", label: "paid" },
-  { value: "pending", label: "pending"},
-  { value: "overdue", label: "overdue"},
-]
+  { value: "paid", label: "paid" },
+  { value: "pending", label: "pending" },
+  { value: "overdue", label: "overdue" },
+];
 export const incomeName = [
-
   { value: "April Month Fees", label: "April Month Fees" },
   { value: "STEM Program Grant", label: "STEM Program Grant" },
   { value: "Alumni Scholarship", label: "Alumni Scholarship" },
 ];
 export const source = [
-
   { value: "Tuition Fees", label: "Tuition Fees" },
   { value: "Government Grants", label: "Government Grants" },
   { value: "Donations", label: "Donations" },
 ];
 export const transactionId = [
-
   { value: "FT624893", label: "FT624893" },
   { value: "FT624892", label: "FT624892" },
   { value: "FT624891", label: "FT624891" },
 ];
 export const transactionType = [
-
   { value: "Income", label: "Income" },
   { value: "Expense", label: "Expense" },
 ];
 export const transactionDate = [
-
   { value: "25 Apr 2024", label: "25 Apr 2024" },
   { value: "27 Apr 2024", label: "27 Apr 2024" },
   { value: "03 May 2024", label: "03 May 2024" },
 ];
 export const customerName = [
-
   { value: "Ralph Claudia", label: "Ralph Claudia" },
   { value: "Julie Scott", label: "Julie Scott" },
   { value: "Maria", label: "Maria" },
@@ -983,129 +947,123 @@ export const productName = [
 ];
 
 export const members = [
-  { value: 'Collins', label: 'Collins' },
-  { value: 'Konopelski', label: 'Konopelski' },
-  { value: 'Adams', label: 'Adams' },
-  { value: 'Schumm', label: 'Schumm' },
-  { value: 'Wisozk', label: 'Wisozk' },
+  { value: "Collins", label: "Collins" },
+  { value: "Konopelski", label: "Konopelski" },
+  { value: "Adams", label: "Adams" },
+  { value: "Schumm", label: "Schumm" },
+  { value: "Wisozk", label: "Wisozk" },
 ];
 export const cardNo = [
-  { value: '501', label: '501' },
-  { value: '502', label: '502' },
-  { value: '503', label: '503' },
-  { value: '504', label: '504' },
+  { value: "501", label: "501" },
+  { value: "502", label: "502" },
+  { value: "503", label: "503" },
+  { value: "504", label: "504" },
 ];
 export const moreFilter = [
-  { value: 'Members', label: 'Members' },
-  { value: 'Card No', label: 'Card No' },
-  { value: 'Email', label: 'Email' },
-  { value: 'Mobile', label: 'Mobile' },
-  { value: 'Date Of join', label: 'Date Of join' },
+  { value: "Members", label: "Members" },
+  { value: "Card No", label: "Card No" },
+  { value: "Email", label: "Email" },
+  { value: "Mobile", label: "Mobile" },
+  { value: "Date Of join", label: "Date Of join" },
 ];
 export const moreFilterBook = [
-  { value: 'ID', label: 'ID' },
-  { value: 'Book Name', label: 'Book Name' },
-  { value: 'Book No', label: 'Book No' },
-  { value: 'Publisher', label: 'Publisher' },
-  { value: 'Subject', label: 'Subject' },
-  { value: 'Rack No', label: 'Rack No' },
+  { value: "ID", label: "ID" },
+  { value: "Book Name", label: "Book Name" },
+  { value: "Book No", label: "Book No" },
+  { value: "Publisher", label: "Publisher" },
+  { value: "Subject", label: "Subject" },
+  { value: "Rack No", label: "Rack No" },
 ];
 export const moreFilterBookIssue = [
-  { value: 'ID', label: 'ID' },
-  { value: 'Date of Issue', label: 'Date of Issue' },
-  { value: 'Due Date', label: 'Due Date' },
-  { value: 'Issue To', label: 'Issue To' },
-  { value: 'Books Issued', label: 'Books Issued' },
-  { value: 'Book ReturnedID', label: 'Book Returned' },
-  { value: 'Issue Remarks', label: 'Issue Remarks' },
-
+  { value: "ID", label: "ID" },
+  { value: "Date of Issue", label: "Date of Issue" },
+  { value: "Due Date", label: "Due Date" },
+  { value: "Issue To", label: "Issue To" },
+  { value: "Books Issued", label: "Books Issued" },
+  { value: "Book ReturnedID", label: "Book Returned" },
+  { value: "Issue Remarks", label: "Issue Remarks" },
 ];
 export const playersName = [
-  { value: 'Francis', label: 'Francis' },
-  { value: 'Cheryl', label: 'Cheryl' },
-  { value: 'Daniel', label: 'Daniel' },
-  { value: 'Irene', label: 'Irene' },
-  { value: 'Keith', label: 'Keith' },
+  { value: "Francis", label: "Francis" },
+  { value: "Cheryl", label: "Cheryl" },
+  { value: "Daniel", label: "Daniel" },
+  { value: "Irene", label: "Irene" },
+  { value: "Keith", label: "Keith" },
 ];
 export const coachName = [
-  { value: 'Thomas', label: 'Thomas' },
-  { value: 'Georgia', label: 'Georgia' },
-  { value: 'Nicholas', label: 'Nicholas' },
-  { value: 'Sandra', label: 'Sandra' },
+  { value: "Thomas", label: "Thomas" },
+  { value: "Georgia", label: "Georgia" },
+  { value: "Nicholas", label: "Nicholas" },
+  { value: "Sandra", label: "Sandra" },
 ];
 export const hostelName = [
-  { value: '1', label: 'Phoenix Residence' },
-  { value: '2', label: 'Tranquil Haven' },
-  { value: '3', label: 'Radiant Towers' },
-  { value: '4', label: 'Nova Nest' },
-  { value: '5', label: 'Vista Villa' },
+  { value: "1", label: "Phoenix Residence" },
+  { value: "2", label: "Tranquil Haven" },
+  { value: "3", label: "Radiant Towers" },
+  { value: "4", label: "Nova Nest" },
+  { value: "5", label: "Vista Villa" },
 ];
 export const HostelroomNo = [
-  { value: '1', label: 'A1' },
-  { value: '2', label: 'A2' },
-  { value: '3', label: 'A3' },
-  { value: '4', label: 'B1' },
-  { value: '5', label: 'B2' },
+  { value: "1", label: "A1" },
+  { value: "2", label: "A2" },
+  { value: "3", label: "A3" },
+  { value: "4", label: "B1" },
+  { value: "5", label: "B2" },
 ];
 export const hostelType = [
-  { value: '1', label: 'Boys' },
-  { value: '2', label: 'Girls' },
+  { value: "1", label: "Boys" },
+  { value: "2", label: "Girls" },
 ];
 export const moreFilterHostel = [
-  { value: '1', label: 'Hostel Name' },
-  { value: '2', label: 'Hostel Type' },
-  { value: '3', label: 'Address' },
-  { value: '4', label: 'Intake' },
-  { value: '5', label: 'Description' },
+  { value: "1", label: "Hostel Name" },
+  { value: "2", label: "Hostel Type" },
+  { value: "3", label: "Address" },
+  { value: "4", label: "Intake" },
+  { value: "5", label: "Description" },
 ];
 export const moreFilterRoom = [
-  { value: '1', label: 'Room No' },
-  { value: '2', label: 'Hostel Name' },
-  { value: '3', label: 'Room Type' },
-  { value: '4', label: 'No of Bed' },
-  { value: '5', label: 'Cost per Bed' },
+  { value: "1", label: "Room No" },
+  { value: "2", label: "Hostel Name" },
+  { value: "3", label: "Room Type" },
+  { value: "4", label: "No of Bed" },
+  { value: "5", label: "Cost per Bed" },
 ];
 export const roomtype = [
-  { value: '1', label: 'One Bed' },
-  { value: '2', label: 'One Bed AC' },
-  { value: '3', label: 'Two Bed' },
-  { value: '4', label: 'Two Bed AC' }
+  { value: "1", label: "One Bed" },
+  { value: "2", label: "One Bed AC" },
+  { value: "3", label: "Two Bed" },
+  { value: "4", label: "Two Bed AC" },
 ];
 export const bedcount = [
-  { value: 1, label: '1' },
-  { value: 2, label: '2' },
-  { value: 3, label: '3' },
-  { value: 4, label: '4' },
+  { value: 1, label: "1" },
+  { value: 2, label: "2" },
+  { value: 3, label: "3" },
+  { value: 4, label: "4" },
 ];
 export const moreFilterSport = [
-  { value: 'ID', label: 'ID' },
-  { value: 'Name', label: 'Name' },
-  { value: 'Coach', label: 'Coach' },
-  { value: 'Started Year', label: 'Started Year' },
-  { value: 'Action', label: 'Action' },
+  { value: "ID", label: "ID" },
+  { value: "Name", label: "Name" },
+  { value: "Coach", label: "Coach" },
+  { value: "Started Year", label: "Started Year" },
+  { value: "Action", label: "Action" },
 ];
 export const sports = [
-  { value: 'Cricket', label: 'Cricket' },
-  { value: 'Throwball', label: 'Throwball' },
-  { value: 'Football', label: 'Football' },
-  { value: 'Tennis', label: 'Tennis' },
-
-
+  { value: "Cricket", label: "Cricket" },
+  { value: "Throwball", label: "Throwball" },
+  { value: "Football", label: "Football" },
+  { value: "Tennis", label: "Tennis" },
 ];
 export const membershipplan = [
-
   { value: "Starter Pack", label: "Starter Pack" },
   { value: "Enterprise", label: "Enterprise" },
   { value: "Premium Pack", label: "Premium Pack" },
 ];
 export const school = [
-
   { value: "Green Valley High School", label: "Green Valley High School" },
   { value: "Riverside Academy", label: "Riverside Academy" },
   { value: "Sunshine School", label: "Sunshine School" },
 ];
 export const messageTo = [
-
   { value: "Staff", label: "Staff" },
   { value: "Student", label: "Student" },
   { value: "Teacher", label: "Teacher" },
@@ -1124,179 +1082,173 @@ export const sections = [
   { value: "C", label: "C" },
   { value: "D", label: "D" },
   { value: "E", label: "E" },
-]
+];
 export const eventCategory = [
-
   { value: "Celebration", label: "Celebration" },
   { value: "Training", label: "Training" },
   { value: "Meeting", label: "Meeting" },
   { value: "Holidays", label: "Holidays" },
-]
+];
 
 export const codeLanguage = [
-
   { value: "en", label: "en" },
   { value: "ar", label: "ar" },
   { value: "zh", label: "zh" },
-]
+];
 
 export const customeFields = [
-
   { value: "Expense", label: "Expense" },
   { value: "Inventory", label: "Inventory" },
-]
+];
 
 export const editcustomeFields = [
-
   { value: "Expense", label: "Expense" },
   { value: "Inventory", label: "Inventory" },
-]
+];
 
 export const otpSet = [
   { value: "SMS", label: "SMS" },
   { value: "Email", label: "Email" },
-]
+];
 
 export const otpSetNum = [
   { value: "4", label: "4" },
   { value: "5", label: "5" },
   { value: "6", label: "6" },
-]
+];
 
 export const otpSetMin = [
   { value: "5 mins", label: "5 mins" },
   { value: "2 mins", label: "2 mins" },
   { value: "10 mins", label: "10 mins" },
-]
+];
 
 export const gdprCookies = [
   { value: "Right", label: "Right" },
   { value: "Left", label: "Left" },
   { value: "Center", label: "Center" },
-]
+];
 export const page = [
-
   { value: "Students", label: "Students" },
   { value: "Teachers", label: "Teachers" },
   { value: "Parents", label: "Parents" },
-]
+];
 export const questions = [
-
-  { value: "How do I reset my password?", label: "How do I reset my password?" },
-  { value: "Can I volunteer at the school?", label: "Can I volunteer at the school?" },
-  { value: "What are the school's hours of operation?", label: "What are the school's hours of operation?" },
-]
+  {
+    value: "How do I reset my password?",
+    label: "How do I reset my password?",
+  },
+  {
+    value: "Can I volunteer at the school?",
+    label: "Can I volunteer at the school?",
+  },
+  {
+    value: "What are the school's hours of operation?",
+    label: "What are the school's hours of operation?",
+  },
+];
 export const category3 = [
-
   { value: "Account", label: "Account" },
   { value: "Support", label: "Support" },
   { value: "Finance", label: "Finance" },
-]
+];
 export const city = [
-
   { value: "Los Angeles", label: "Los Angeles" },
   { value: "New York City", label: "New York City" },
   { value: "Houston", label: "Houston" },
-]
+];
 export const state = [
-
   { value: "California", label: "California" },
   { value: "New York", label: "New York" },
   { value: "Texas", label: "Texas" },
-]
+];
 export const country = [
-
   { value: "United States", label: "United States" },
   { value: "Germany", label: "Germany" },
   { value: "Canada", label: "Canada" },
   { value: "Australia", label: "Australia" },
-]
+];
 export const code = [
-
   { value: "US", label: "US" },
   { value: "CA", label: "CA" },
   { value: "UK", label: "UK" },
-]
+];
 export const category4 = [
-
   { value: "Education", label: "Education" },
   { value: "Clear Goals", label: "Clear Goals" },
   { value: "Advice", label: "Advice" },
-]
+];
 export const author = [
-
   { value: "Jordan", label: "Jordan" },
   { value: "Rubiaana", label: "Rubiaana" },
   { value: "Daniel", label: "Daniel" },
-]
+];
 export const tags = [
-
   { value: "Guide", label: "Guide" },
   { value: "Development", label: "Development" },
   { value: "Education", label: "Education" },
   { value: "Sports", label: "Sports" },
-]
+];
 export const publish = [
   { value: "Unpublish", label: "Unpublish" },
   { value: "Publish", label: "Publish" },
-]
+];
 export const date = [
-
   { value: "25 May 2024", label: "25 May 2024" },
   { value: "15 May 2024", label: "15 May 2024" },
   { value: "27 May 2024", label: "27 May 2024" },
-]
+];
 export const assigned = [
   { value: "Janet", label: "Janet" },
   { value: "Joann", label: "Joann" },
   { value: "Gifford", label: "Gifford" },
-]
+];
 export const ticketDate = [
   { value: "22 May 2024", label: "22 May 2024" },
   { value: "23 May 2024", label: "23 May 2024" },
   { value: "24 May 2024", label: "24 May 2024" },
-]
+];
 export const markAs = [
   { value: "Mark as Public", label: "Mark as Public" },
   { value: "Mark as Private", label: "Mark as Private" },
-]
+];
 export const internetCategory = [
   { value: "Internet Issue", label: "Internet Issue" },
   { value: "Redistribute", label: "Redistribute" },
   { value: "Computer", label: "Computer" },
   { value: "Complaint", label: "Complaint" },
-]
+];
 export const ticketStatus = [
   { value: "Open", label: "Open" },
   { value: "Closed", label: "Closed" },
   { value: "Medium", label: "Medium" },
-]
+];
 export const routesList = [
   { value: "1", label: "Seattle" },
   { value: "2", label: "Brooklyn Central" },
   { value: "3", label: "Rochester" },
   { value: "4", label: "Kansas City" },
   { value: "5", label: "Brooklyn North" },
-]
+];
 export const driverName = [
   { value: "1", label: "Thomas" },
   { value: "2", label: "Mary" },
   { value: "3", label: "Michael" },
   { value: "4", label: "Jessie" },
   { value: "5", label: "Robert" },
-]
+];
 export const GPSDevice = [
   { value: "1", label: "GPS3254789541" },
   { value: "2", label: "GPS1478545214" },
   { value: "3", label: "GPS4579454785" },
   { value: "4", label: "GPS7899456689" },
-]
+];
 export const AttendanceTypeList = [
   { value: "1", label: "Present" },
   { value: "2", label: "Half Day" },
   { value: "3", label: "Absent" },
   { value: "4", label: "Holiday" },
-]
+];
 export const driverFilter3 = [
   { value: "1", label: "ID" },
   { value: "2", label: "Route" },
@@ -1304,7 +1256,7 @@ export const driverFilter3 = [
   { value: "4", label: "Vehicle" },
   { value: "5", label: "Driver" },
   { value: "6", label: "Status" },
-]
+];
 export const driverFilter = [
   { value: "1", label: "ID" },
   { value: "2", label: "Driver" },
@@ -1312,7 +1264,7 @@ export const driverFilter = [
   { value: "4", label: "Driver License No" },
   { value: "5", label: "Address" },
   { value: "6", label: "Status" },
-]
+];
 export const driverFilter2 = [
   { value: "1", label: "ID" },
   { value: "2", label: "Vehicle No" },
@@ -1320,32 +1272,50 @@ export const driverFilter2 = [
   { value: "4", label: "Made of Year" },
   { value: "5", label: "Registration No" },
   { value: "6", label: "Status" },
-]
+];
 export const vehicleModel = [
   { value: "1", label: "Scania" },
   { value: "2", label: "Mini Bus" },
   { value: "3", label: "Kinsmart " },
   { value: "4", label: "Single deck" },
-]
+];
 export const PickupPoint2 = [
   { value: "1", label: "2603 Wood Duck Drive Marquette, MI" },
   { value: "2", label: "3521 Harvest Lane Kansas City, MO " },
   { value: "3", label: "4025 Khale Street, Folly Beach, SC" },
   { value: "4", label: "2261 Sweetwood Drive, Denver, CO " },
   { value: "5", label: "3341 Palmer Road, Columbus, OH" },
-]
+];
 export const contactMess = [
-  { value: "Reminder: Staff meeting tomorrow.", label: "Reminder: Staff meeting tomorrow." },
-  { value: "Sure, let's discuss it in class.", label: "Sure, let's discuss it in class." },
-  { value: "Requesting a meeting for next week.", label: "Requesting a meeting for next week." },
-]
+  {
+    value: "Reminder: Staff meeting tomorrow.",
+    label: "Reminder: Staff meeting tomorrow.",
+  },
+  {
+    value: "Sure, let's discuss it in class.",
+    label: "Sure, let's discuss it in class.",
+  },
+  {
+    value: "Requesting a meeting for next week.",
+    label: "Requesting a meeting for next week.",
+  },
+];
 export const contactMessOne = [
-  { value: "Reminder: Staff meeting tomorrow.", label: "Reminder: Staff meeting tomorrow." },
-  { value: "Sure, let's discuss it in class.", label: "Sure, let's discuss it in class." },
-  { value: "Requesting a meeting for next week.", label: "Requesting a meeting for next week." },
-]
+  {
+    value: "Reminder: Staff meeting tomorrow.",
+    label: "Reminder: Staff meeting tomorrow.",
+  },
+  {
+    value: "Sure, let's discuss it in class.",
+    label: "Sure, let's discuss it in class.",
+  },
+  {
+    value: "Requesting a meeting for next week.",
+    label: "Requesting a meeting for next week.",
+  },
+];
 export const studentsnumber = [
   { value: "30", label: "30" },
   { value: "35", label: "35" },
   { value: "40", label: "40" },
-]
+];

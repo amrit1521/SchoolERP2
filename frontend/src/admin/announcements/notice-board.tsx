@@ -1,17 +1,314 @@
-import { DatePicker } from "antd";
+// import { DatePicker } from "antd";
 
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import CommonSelect from "../../core/common/commonSelect";
-import {
-  messageTo,
-  transactionDate,
-} from "../../core/common/selectoption/selectoption";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { useEffect, useMemo, useState } from "react";
+import {
+  CreateNotice,
+  deleteNotice,
+  getAllNotice,
+  getAllRoles,
+  updateNotice,
+  UploadNoticeFile,
+} from "../../service/api";
+import { toast } from "react-toastify";
 
 const NoticeBoard = () => {
   const routes = all_routes;
+
+  //add message:
+  const [title, setTitle] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
+  const [attachement, setAttachement] = useState<File | any | null>(null);
+  const [messageTo, setMessageTo] = useState<any[]>([]);
+  const [allRoles, setAllRoles] = useState([]);
+  const [allNotice, setAllNotice] = useState([]);
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
+  const [messageToOption, setMessageToOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  // const [addedOnFilterOption, setAddedOnFilterOption] = useState<
+  //   { value: string; label: string }[]
+  // >([]);
+  const [selectedMessageTo, setSelectedMessageTo] = useState<string | null>(
+    null
+  );
+  const [selectedAddedDate, setSelectedAddedDate] = useState<string | null>(
+    null
+  );
+  const [filteredNotice, setFilteredNotice] = useState<any[]>([]);
+  const formReset = () => {
+    setTitle("");
+    setMessage("");
+    setAttachement(null);
+    setMessageTo([]);
+  };
+  const addedOnFilterOption = [
+    { label: "Today", value: "today" },
+    { label: "Last 7 Days", value: "last7days" },
+    { label: "Last 30 Days", value: "last30days" },
+  ];
+  const fetchRoles = async () => {
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+        console.log("roles data: ", data.result);
+        setAllRoles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            roleName: item.role_name,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  const fetchNotice = async () => {
+    try {
+      const { data } = await getAllNotice();
+      if (data.success) {
+        console.log("notice data: ", data.result);
+        setAllNotice(
+          data.result.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            attachment: item.attachment,
+            role_id: item.role_id,
+            addedOn: item.created_at,
+          }))
+        );
+        // setAddedOnFilterOption(
+        //   data.result.map((item: any) => ({
+        //     value: item.created_at,
+        //     label: new Date(item.created_at).toLocaleDateString(),
+        //   }))
+        // );
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to load notice data"
+      );
+    }
+  };
+
+  const handleCheckboxChange = (id: number) => {
+    setMessageTo((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      if (file.size > 4 * 1024 * 1024) {
+        alert("File size must be less than 4MB");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.type !== "application/pdf") {
+        alert("Only PDF files are allowed");
+        e.target.value = "";
+        return;
+      }
+
+      setAttachement(file);
+    }
+  };
+
+  const handleCreateNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    try {
+      let uploadedPath = null;
+      let id = null;
+      if (attachement) {
+        formData.append("noticefile", attachement);
+        const res = await UploadNoticeFile(formData);
+        uploadedPath = res.data.file;
+        id = res.data.insertId;
+      }
+      const payload = {
+        title: title,
+        message: message,
+        attachement: uploadedPath,
+        messageTo: messageTo,
+        docsId: id,
+      };
+      console.log("notice Data: ", payload);
+      const { data } = await CreateNotice(payload);
+      if (data.success) {
+        console.log(data);
+        toast.success(data.message || "Notice Created Successfully.");
+        formReset();
+        fetchNotice();
+        const modalEl = document.getElementById("add_message");
+        if (modalEl) {
+          const bs = (window as any).bootstrap;
+          const modalInstance =
+            bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+          modalInstance?.hide();
+        }
+      } else {
+        toast.error(data.message || "Notice creation failed.");
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to load Notice data"
+      );
+    }
+  };
+
+  const handleDeleteNotice = async () => {
+    try {
+      if (selectedNotice) {
+        console.log("slectedNotice: ", selectedNotice);
+        const { data } = await deleteNotice(selectedNotice.id);
+        console.log(data);
+        if (data.success) {
+          console.log(data);
+          toast.success(data.message || "Notice deleted Successfully.");
+          fetchNotice();
+          setSelectedNotice(null);
+          const modalEl = document.getElementById("delete-modal");
+          if (modalEl) {
+            const bs = (window as any).bootstrap;
+            const modalInstance =
+              bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+            modalInstance?.hide();
+          }
+        } else {
+          toast.error(data.message || "Notice deletion failed.");
+        }
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete Notice data"
+      );
+    }
+  };
+
+  const handleUpdateNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+
+    try {
+      let uploadedPath = null;
+      let id = null;
+
+      if (
+        selectedNotice &&
+        attachement &&
+        attachement.name !== selectedNotice.attachment
+      ) {
+        formData.append("noticefile", attachement);
+        const res = await UploadNoticeFile(formData);
+        uploadedPath = res.data.file;
+        id = res.data.insertId;
+      }
+
+      if (!messageTo || !Array.isArray(messageTo) || messageTo.length === 0) {
+        toast.error("Please select recipients");
+        return;
+      }
+
+      const payload = {
+        title: title,
+        message: message,
+        attachement: uploadedPath || selectedNotice?.attachment || null,
+        messageTo: messageTo,
+        docsId: id,
+        noticeId: selectedNotice?.id,
+      };
+      console.log("payload: ", payload);
+      const { data } = await updateNotice(payload);
+
+      if (data.success) {
+        toast.success(data.message || "Notice updated Successfully.");
+        formReset();
+        fetchNotice();
+        setSelectedNotice(null);
+        const modalEl = document.getElementById("edit_message");
+        if (modalEl) {
+          const bs = (window as any).bootstrap;
+          const modalInstance =
+            bs?.Modal?.getInstance(modalEl) ?? new bs.Modal(modalEl);
+          modalInstance?.hide();
+        }
+      } else {
+        toast.error(data.message || "Notice updation failed.");
+      }
+    } catch (error: any) {
+      console.error(error.response || error);
+      toast.error(
+        error.response?.data?.message || "Failed to load Notice data"
+      );
+    }
+  };
+
+  const handleApplyFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    let filtered = [...allNotice];
+
+    if (selectedMessageTo) {
+      filtered = filtered.filter((notice: any) => {
+        try {
+          const roles = JSON.parse(notice.role_id || "[]");
+          return roles.includes(parseInt(selectedMessageTo));
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    if (selectedAddedDate) {
+      const today = new Date();
+      filtered = filtered.filter((notice: any) => {
+        const added = new Date(notice.addedOn);
+        switch (selectedAddedDate) {
+          case "today":
+            return added.toDateString() === new Date().toDateString();
+          case "last7days":
+            return added >= new Date(today.setDate(today.getDate() - 7));
+          case "last30days":
+            return added >= new Date(today.setDate(today.getDate() - 30));
+          default:
+            return true;
+        }
+      });
+    }
+
+    setFilteredNotice(filtered);
+  };
+
+  const handleResetFilter = () => {
+    setSelectedMessageTo(null);
+    setSelectedAddedDate(null);
+    setFilteredNotice(allNotice);
+  };
+
+  useMemo(() => {
+    if (allRoles) {
+      setMessageToOption(
+        allRoles.map((e: any) => ({ value: e.id, label: e.roleName }))
+      );
+    }
+  }, [allRoles]);
+
+  console.log("aallNotice : ", allNotice);
+  useEffect(() => {
+    fetchRoles();
+    fetchNotice();
+  }, []);
+
   return (
     <>
       {" "}
@@ -70,7 +367,7 @@ const NoticeBoard = () => {
                   Filter
                 </Link>
                 <div className="dropdown-menu drop-width">
-                  <form>
+                  <form onSubmit={handleApplyFilter}>
                     <div className="d-flex align-items-center border-bottom p-3">
                       <h4>Filter</h4>
                     </div>
@@ -81,8 +378,18 @@ const NoticeBoard = () => {
                             <label className="form-label">Message to</label>
                             <CommonSelect
                               className="select"
-                              options={messageTo}
-                              defaultValue={messageTo[0]}
+                              options={messageToOption}
+                              value={
+                                selectedMessageTo
+                                  ? messageToOption.find(
+                                      (opt: any) =>
+                                        opt.value === selectedMessageTo
+                                    )?.value
+                                  : null
+                              }
+                              onChange={(value: any) =>
+                                setSelectedMessageTo(value?.value || null)
+                              }
                             />
                           </div>
                         </div>
@@ -91,15 +398,28 @@ const NoticeBoard = () => {
                             <label className="form-label">Added Date</label>
                             <CommonSelect
                               className="select"
-                              options={transactionDate}
-                              defaultValue={transactionDate[0]}
+                              options={addedOnFilterOption}
+                              value={
+                                selectedAddedDate
+                                  ? addedOnFilterOption.find(
+                                      (opt) => opt.value === selectedAddedDate
+                                    )?.value
+                                  : null
+                              }
+                              onChange={(value: any) =>
+                                setSelectedAddedDate(value?.value || null)
+                              }
                             />
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="p-3 d-flex align-items-center justify-content-end">
-                      <Link to="#" className="btn btn-light me-3">
+                      <Link
+                        to="#"
+                        className="btn btn-light me-3"
+                        onClick={handleResetFilter}
+                      >
                         Reset
                       </Link>
                       <button type="submit" className="btn btn-primary">
@@ -112,474 +432,75 @@ const NoticeBoard = () => {
             </div>
           </div>
           {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
+          {(filteredNotice.length > 0 ? filteredNotice : allNotice).map(
+            (notice: any) => (
+              <div key={notice.id} className="card board-hover mb-3">
+                <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
+                  <div className="d-flex align-items-center mb-3">
+                    <div className="form-check form-check-md me-2">
+                      <input className="form-check-input" type="checkbox" />
+                    </div>
+                    <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
+                      <i className="ti ti-notification fs-16" />
+                    </span>
+                    <div>
+                      <h6 className="mb-1 fw-semibold">
+                        <Link
+                          to="#"
+                          data-bs-toggle="modal"
+                          data-bs-target="#view_details"
+                          onClick={() => setSelectedNotice(notice)}
+                        >
+                          {notice.title}
+                        </Link>
+                      </h6>
+                      <p>
+                        <i className="ti ti-calendar me-1" />
+                        Added on:{" "}
+                        {new Date(notice.addedOn).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Board actions remain unchanged */}
+                  <div className="d-flex align-items-center board-action mb-3">
                     <Link
                       to="#"
                       data-bs-toggle="modal"
-                      data-bs-target="#view_details"
+                      data-bs-target="#edit_message"
+                      className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
+                      onClick={() => {
+                        setSelectedNotice(notice);
+                        setTitle(notice.title || "");
+                        setMessage(notice.message || "");
+                        setAttachement(notice.attachment || null);
+                        try {
+                          const parsedRoles =
+                            typeof notice.role_id === "string"
+                              ? JSON.parse(notice.role_id)
+                              : notice.role_id || [];
+                          setMessageTo(parsedRoles);
+                        } catch {
+                          setMessageTo([]);
+                        }
+                      }}
                     >
-                      Classes Preparation
+                      <i className="ti ti-edit-circle fs-16" />
                     </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 24 May 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
                     <Link
                       to="#"
                       data-bs-toggle="modal"
-                      data-bs-target="#view_details"
+                      data-bs-target="#delete-modal"
+                      className="text-danger border rounded p-1 badge danger-btn-hover"
+                      onClick={() => setSelectedNotice(notice)}
                     >
-                      Fees Reminder
+                      <i className="ti ti-trash-x fs-16" />
                     </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 12 May 2024
-                  </p>
+                  </div>
                 </div>
               </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Parents Teacher Meeting
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 10 May 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      New Academic Session For Admission (2024-25)
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 28 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Staff Meeting
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 23 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      World Environment Day Program.....!!!
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 21 Apr 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      New Syllabus Instructions
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 11 Mar 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Exam Preparation Notification!
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 18 Mar 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Gandhi Jayanti Programmed
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 16 Feb 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
-          {/* Notice Board List */}
-          {/* Notice Board List */}
-          <div className="card board-hover mb-3">
-            <div className="card-body d-md-flex align-items-center justify-content-between pb-1">
-              <div className="d-flex align-items-center mb-3">
-                <div className="form-check form-check-md me-2">
-                  <input className="form-check-input" type="checkbox" />
-                </div>
-                <span className="bg-soft-primary text-primary avatar avatar-md me-2 br-5 flex-shrink-0">
-                  <i className="ti ti-notification fs-16" />
-                </span>
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    <Link
-                      to="#"
-                      data-bs-toggle="modal"
-                      data-bs-target="#view_details"
-                    >
-                      Republic Day Celebration
-                    </Link>
-                  </h6>
-                  <p>
-                    <i className="ti ti-calendar me-1" />
-                    Added on : 24 Jan 2024
-                  </p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center board-action mb-3">
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_message"
-                  className="text-primary border rounded p-1 badge me-1 primary-btn-hover"
-                >
-                  <i className="ti ti-edit-circle fs-16" />
-                </Link>
-                <Link
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                  className="text-danger border rounded p-1 badge danger-btn-hover"
-                >
-                  <i className="ti ti-trash-x fs-16" />
-                </Link>
-              </div>
-            </div>
-          </div>
+            )
+          )}
           {/* Notice Board List */}
           <div className="text-center">
             <Link to="#" className="btn btn-primary">
@@ -601,42 +522,25 @@ const NoticeBoard = () => {
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={() => formReset()}
               >
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleCreateNotice}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
                     <div className="mb-3">
                       <label className="form-label">Title</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={title}
+                        onChange={(e: any) => setTitle(e.target?.value)}
+                      />
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">Notice Date</label>
-                      <div className="date-pic">
-                        <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Publish On</label>
-                      <div className="date-pic">
-                        <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
-                    </div>
+
                     <div className="mb-3">
                       <div className="bg-light p-3 pb-2 rounded">
                         <div className="mb-3">
@@ -650,9 +554,14 @@ const NoticeBoard = () => {
                             <input
                               type="file"
                               className="form-control image_sign"
-                              multiple
+                              onChange={handleFileChange}
                             />
                           </div>
+                          {attachement && (
+                            <span className="ms-2 text-muted">
+                              {attachement["name"]}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -662,55 +571,29 @@ const NoticeBoard = () => {
                         className="form-control"
                         rows={4}
                         defaultValue={""}
+                        value={message}
+                        onChange={(e: any) => setMessage(e.target?.value)}
                       />
                     </div>
                     <div className="mb-0">
                       <label className="form-label">Message To</label>
                       <div className="row">
-                        <div className="col-md-6">
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Student
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Parent
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Admin
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Teacher
-                          </label>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Accountant
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Librarian
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Receptionist
-                          </label>
-                          <label className="checkboxs mb-1">
-                            <input type="checkbox" />
-                            <span className="checkmarks" />
-                            Super Admin
-                          </label>
-                        </div>
+                        {allRoles.map((item: any, index: number) => {
+                          return (
+                            <div key={index} className="col-md-6 col-12 mb-1">
+                              <div className="form-check form-check-md">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  onChange={() => handleCheckboxChange(item.id)}
+                                />
+                                <span className="text-capitalize">
+                                  {item?.roleName}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -721,6 +604,7 @@ const NoticeBoard = () => {
                   to="#"
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
+                  onClick={() => formReset()}
                 >
                   Cancel
                 </Link>
@@ -744,11 +628,12 @@ const NoticeBoard = () => {
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
+                onClick={() => formReset()}
               >
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleUpdateNotice}>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
@@ -758,32 +643,9 @@ const NoticeBoard = () => {
                         type="text"
                         className="form-control"
                         placeholder="Enter Title"
-                        defaultValue="Fees Reminder"
+                        value={title}
+                        onChange={(e: any) => setTitle(e.target?.value)}
                       />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Notice Date</label>
-                      <div className="date-pic">
-                      <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Publish On</label>
-                      <div className="date-pic">
-                      <DatePicker
-                          className="form-control datetimepicker"
-                          placeholder="Select Date"
-                        />
-                        <span className="cal-icon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                      </div>
                     </div>
                     <div className="mb-3">
                       <div className="bg-light p-3 pb-2 rounded">
@@ -798,10 +660,16 @@ const NoticeBoard = () => {
                             <input
                               type="file"
                               className="form-control image_sign"
-                              multiple
+                              onChange={handleFileChange}
                             />
                           </div>
-                          <p className="mb-2">Fees_Structure.pdf</p>
+                          {attachement && (
+                            <span className="ms-2 text-muted">
+                              {typeof attachement === "string"
+                                ? attachement.split("/").pop()
+                                : attachement.name}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -811,74 +679,28 @@ const NoticeBoard = () => {
                         className="form-control"
                         rows={4}
                         placeholder="Add Comment"
-                        defaultValue={
-                          "Please clear the outstanding dues for the school fees on the urgent basis."
-                        }
+                        value={message}
+                        onChange={(e: any) => setMessage(e.target?.value)}
                       />
                     </div>
                     <div className="mb-0">
                       <label className="form-label">Message To</label>
                       <div className="row">
-                        <div className="col-md-6">
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Student</span>
+                        {allRoles.map((item: any, index: number) => (
+                          <div key={index} className="col-md-6 col-12 mb-1">
+                            <div className="form-check form-check-md">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={messageTo.includes(item.id)}
+                                onChange={() => handleCheckboxChange(item.id)}
+                              />
+                              <span className="text-capitalize">
+                                {item?.roleName}
+                              </span>
+                            </div>
                           </div>
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Parent</span>
-                          </div>
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Admin</span>
-                          </div>
-                          <div className="form-check form-check-md">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Teacher</span>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Accountant</span>
-                          </div>
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Librarian</span>
-                          </div>
-                          <div className="form-check form-check-md mb-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Receptionist</span>
-                          </div>
-                          <div className="form-check form-check-md">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <span>Super Admin</span>
-                          </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -889,6 +711,7 @@ const NoticeBoard = () => {
                   to="#"
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
+                  onClick={() => formReset()}
                 >
                   Cancel
                 </Link>
@@ -906,7 +729,7 @@ const NoticeBoard = () => {
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
-              <h4 className="modal-title">Fees Reminder</h4>
+              <h4 className="modal-title">{selectedNotice?.title}</h4>
               <button
                 type="button"
                 className="btn-close custom-btn-close"
@@ -919,64 +742,64 @@ const NoticeBoard = () => {
             <div className="modal-body pb-0">
               <div className="mb-3">
                 <p className="mb-1">Dear parents,</p>
-                <p>
-                  Please clear the outstanding dues for the school fees on the
-                  urgent basis.
-                </p>
+                <p>{selectedNotice?.message}</p>
               </div>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Notice Date</label>
-                    <p className="d-flex align-items-center">
-                      <i className="ti ti-calendar me-1" />
-                      15 May 2024
-                    </p>
+
+              {selectedNotice?.attachment && (
+                <div className="mb-3">
+                  <div className="bg-light p-3 pb-2 rounded">
+                    <div className="mb-0">
+                      <label className="form-label">Attachment</label>
+                      <p className="text-primary">
+                        <a
+                          href={selectedNotice.attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {selectedNotice.attachment.split("/").pop()}
+                        </a>
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Publish On</label>
-                    <p className="d-flex align-items-center">
-                      <i className="ti ti-calendar me-1" />
-                      21 May 2024
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mb-3">
-                <div className="bg-light p-3 pb-2 rounded">
-                  <div className="mb-0">
-                    <label className="form-label">Attachment</label>
-                    <p className="text-primary">Fees_Structure.pdf</p>
-                  </div>
-                </div>
-              </div>
+              )}
+
               <div className="mb-3">
                 <label className="form-label d-block">Message To</label>
-                <span className="badge badge-soft-primary me-2">Student</span>
-                <span className="badge badge-soft-primary">Parent</span>
+                {selectedNotice &&
+                  JSON.parse(selectedNotice?.role_id)?.map((role: string) => (
+                    <span key={role} className="badge badge-soft-primary me-2">
+                      {
+                        allRoles.filter((rol: any) => role == rol.id)[0][
+                          "roleName"
+                        ]
+                      }
+                    </span>
+                  ))}
               </div>
+
               <div className="border-top pt-3">
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="d-flex align-items-center me-4 mb-3">
                     <span className="avatar avatar-sm bg-light me-1">
                       <i className="ti ti-calendar text-default fs-14" />
                     </span>
-                    Added on: 28 Apr 2024
+                    Added on:{" "}
+                    {selectedNotice
+                      ? new Date(selectedNotice.addedOn).toLocaleDateString()
+                      : ""}
                   </div>
                   <div className="d-flex align-items-center mb-3">
                     <span className="avatar avatar-sm bg-light me-1">
                       <i className="ti ti-user-edit text-default fs-14" />
                     </span>
-                    Added By : Daniel
+                    Added By : {selectedNotice?.added_by || "Admin"}
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* /View Details */}
       </div>
       {/* /Main Wrapper */}
       {/* Delete Modal */}
@@ -1001,7 +824,11 @@ const NoticeBoard = () => {
                   >
                     Cancel
                   </Link>
-                  <button type="submit" className="btn btn-danger">
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleDeleteNotice}
+                  >
                     Yes, Delete
                   </button>
                 </div>

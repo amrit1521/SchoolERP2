@@ -1,4 +1,4 @@
-import  { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -7,27 +7,63 @@ import { Modal, OverlayTrigger, Tooltip } from "react-bootstrap";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import { Link } from "react-router-dom";
 import CommonSelect from "../../core/common/commonSelect";
+
 import {
-  classes,
+  // classes,
   eventCategory,
-  sections,
+  // sections,
 } from "../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { all_routes } from "../router/all_routes";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import { TimePicker } from "antd";
-interface EventDetails {
-  title: string;
-}
+import {
+  CreateEvent,
+  deleteEvent,
+  getAllEvent,
+  getAllRoles,
+  UploadEventFile,
+} from "../../service/api";
+import { toast } from "react-toastify";
+// interface EventDetails {
+//   title: string;
+// }
+
+// interface Role {
+//   id: number;
+//   roleName: string;
+// }
+
+// interface EventFormProps {
+//   allRoles: Role[];
+//   eventCategory: { value: string; label: string }[];
+//   handleAddEventClose: () => void;
+// }
 
 const Events = () => {
   const routes = all_routes;
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
-  const [eventDetails, setEventDetails] = useState<EventDetails>({
+  // const [eventDetails, setEventDetails] = useState<EventDetails>({
+  //   title: "",
+  // });
+  const [allEvent, setAllEvent] = useState<any[]>([]);
+  const [allRoles, setAllRoles] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState("All Category");
+  const [formData, setFormData] = useState({
+    roles: [] as number[],
     title: "",
+    category: eventCategory[0],
+    startDate: null as Dayjs | null,
+    endDate: null as Dayjs | null,
+    startTime: dayjs("00:00:00", "HH:mm:ss"),
+    endTime: dayjs("00:00:00", "HH:mm:ss"),
+    attachments: [] as File[],
+    message: "",
   });
+
   const calendarRef = useRef(null);
 
   const handleDateClick = () => {
@@ -35,41 +71,204 @@ const Events = () => {
   };
 
   const handleEventClick = (info: any) => {
-    setEventDetails({
-      title: info.event.title,
-    });
+    console.log("info: ", info.event?._def.extendedProps?.item);
+    setSelectedEvent(info.event?._def.extendedProps?.item);
     setShowEventDetailsModal(true);
   };
 
   const handleAddEventClose = () => setShowAddEventModal(false);
   const handleEventDetailsClose = () => setShowEventDetailsModal(false);
 
-  const onChange = (time: Dayjs, timeString: string | string[]) => {
-    console.log(time, timeString);
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
   };
 
-  const events = [
-    {
-      title: "Summer Vacation",
-      backgroundColor: "#FDE9ED",
-      start: new Date(Date.now() - 168000000).toISOString().slice(0, 10),
-    },
-    {
-      title: "Parents, Teacher Meet",
-      backgroundColor: "#E7F1FC",
-      start: new Date(Date.now() + 338000000).toISOString().slice(0, 10),
-    },
-    {
-      title: "Admission Camp",
-      backgroundColor: "#E6F9FF",
-      start: new Date(Date.now() - 338000000).toISOString().slice(0, 10),
-    },
-    {
-      title: "Activity - Training",
-      backgroundColor: "#E8F9E8",
-      start: new Date(Date.now() + 68000000).toISOString().slice(0, 10),
-    },
-  ];
+  const filteredEvents =
+    selectedCategory === "All Category"
+      ? allEvent
+      : allEvent.filter((event) => event.category === selectedCategory);
+
+  const fetchRoles = async () => {
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+        console.log("roles data: ", data.result);
+        setAllRoles(
+          data.result.map((item: any) => ({
+            id: item.id,
+            roleName: item.role_name,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
+  const handleCheckboxChange = (roleId: number) => {
+    setFormData((prev) => {
+      const roles = prev.roles || [];
+      const exists = roles.includes(roleId);
+      return {
+        ...prev,
+        roles: exists
+          ? roles.filter((id) => id !== roleId)
+          : [...roles, roleId],
+      };
+    });
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (selected: any) => {
+    setFormData((prev) => ({ ...prev, category: selected }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) {
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      attachments: Array.from(files),
+    }));
+  };
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fileFormData = new FormData();
+
+    try {
+      let uploadedPath = null;
+      let fileId = null;
+
+      if (formData.attachments && formData.attachments.length > 0) {
+        fileFormData.append("eventfile", formData.attachments[0]);
+        const res = await UploadEventFile(fileFormData);
+        uploadedPath = res.data.file;
+        fileId = res.data.insertId;
+      }
+
+      const startDate = formData.startDate
+        ? dayjs(formData.startDate).format("YYYY-MM-DD")
+        : "";
+      const endDate = formData.endDate
+        ? dayjs(formData.endDate).format("YYYY-MM-DD")
+        : "";
+      const startTime = formData.startTime
+        ? formData.startTime.format("HH:mm:ss")
+        : "";
+      const endTime = formData.endTime
+        ? formData.endTime.format("HH:mm:ss")
+        : "";
+
+      const dateRange = `${startDate}|${endDate}`;
+      const timeRange = `${startTime}|${endTime}`;
+
+      const payload = {
+        title: formData.title,
+        message: formData.message,
+        category: formData.category?.value || null,
+        dateRange,
+        timeRange,
+        roles: formData.roles,
+        attachement: uploadedPath,
+        docsId: fileId,
+      };
+
+      console.log("Event Data Payload:", payload);
+
+      const { data } = await CreateEvent(payload);
+
+      if (data.success) {
+        toast.success(data.message || "Event Created Successfully.");
+        console.log(data);
+        fetchEvents();
+      } else {
+        toast.error(data.message || "Event creation failed.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create Event.");
+    }
+    handleAddEventClose();
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const { data } = await getAllEvent();
+
+      if (data.success) {
+        console.log("event data:", data.result);
+
+        setFormData(
+          data.result.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            attachment: item.attachment,
+            category: item.event_category,
+            dateRange: item.event_date,
+            timeRange: item.event_time,
+            roles: item.role_id,
+            addedOn: item.created_at,
+          }))
+        );
+        setAllEvent(
+          data.result.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            message: item.message,
+            attachment: item.attachment,
+            category: item.event_category,
+            dateRange: item.event_date,
+            timeRange: item.event_time,
+            roles: item.role_id,
+            addedOn: item.created_at,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load event data");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load event data");
+    }
+  };
+
+  const handleDeleteEvent = async (ids: string) => {
+    try {
+      ids = JSON.parse(ids);
+      if (ids) {
+        console.log("slectedEvent: ", ids);
+        const { data } = await deleteEvent(ids);
+        console.log(data);
+        if (data.success) {
+          console.log(data);
+          toast.success(data.message || "Event deleted Successfully.");
+          fetchEvents();
+          setSelectedEvent(null);
+        } else {
+          toast.error(data.message || "Event deletion failed.");
+        }
+        handleEventDetailsClose();
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Failed to delete Event data"
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+    fetchEvents();
+  }, []);
+
   return (
     <div>
       {/* Page Wrapper */}
@@ -143,7 +342,27 @@ const Events = () => {
                         interactionPlugin,
                       ]}
                       initialView="dayGridMonth"
-                      events={events}
+                      events={
+                        allEvent &&
+                        (allEvent
+                          .map((item: any) => {
+                            const dateRange = item?.dateRange || "";
+                            const startDateStr = dateRange.split("|")[0];
+                            const startDate = new Date(startDateStr);
+
+                            if (isNaN(startDate.getTime())) {
+                              return null;
+                            }
+
+                            return {
+                              item: item,
+                              title: item?.title,
+                              backgroundColor: "#FDE9ED",
+                              start: startDate.toISOString().slice(0, 10),
+                            };
+                          })
+                          .filter((event) => event !== null) as any)
+                      }
                       headerToolbar={{
                         start: "title",
                         center: "dayGridMonth,dayGridWeek,dayGridDay",
@@ -174,13 +393,14 @@ const Events = () => {
                       className="btn btn-outline-light dropdown-toggle"
                       data-bs-toggle="dropdown"
                     >
-                      All Category
+                      {selectedCategory}
                     </Link>
                     <ul className="dropdown-menu p-3">
                       <li>
                         <Link
                           to="#"
                           className="dropdown-item rounded-1 d-flex align-items-center"
+                          onClick={() => handleCategoryChange("Celebration")}
                         >
                           <i className="ti ti-circle-filled fs-8 text-warning me-2" />
                           Celebration
@@ -190,6 +410,7 @@ const Events = () => {
                         <Link
                           to="#"
                           className="dropdown-item rounded-1 d-flex align-items-center"
+                          onClick={() => handleCategoryChange("Training")}
                         >
                           <i className="ti ti-circle-filled fs-8 text-success me-2" />
                           Training
@@ -199,6 +420,7 @@ const Events = () => {
                         <Link
                           to="#"
                           className="dropdown-item rounded-1 d-flex align-items-center"
+                          onClick={() => handleCategoryChange("Meeting")}
                         >
                           <i className="ti ti-circle-filled fs-8 text-info me-2" />
                           Meeting
@@ -208,6 +430,7 @@ const Events = () => {
                         <Link
                           to="#"
                           className="dropdown-item rounded-1 d-flex align-items-center"
+                          onClick={() => handleCategoryChange("Holidays")}
                         >
                           <i className="ti ti-circle-filled fs-8 text-danger me-2" />
                           Holidays
@@ -217,6 +440,7 @@ const Events = () => {
                         <Link
                           to="#"
                           className="dropdown-item rounded-1 d-flex align-items-center"
+                          onClick={() => handleCategoryChange("Camp")}
                         >
                           <i className="ti ti-circle-filled fs-8 text-pending me-2" />
                           Camp
@@ -225,224 +449,76 @@ const Events = () => {
                     </ul>
                   </div>
                 </div>
-                {/* Event Item */}
-                <div className="border-start border-info border-3 shadow-sm p-3 mb-3 bg-white">
-                  <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                    <span className="avatar p-1 me-3 bg-primary-transparent flex-shrink-0">
-                      <i className="ti ti-users-group text-info fs-20" />
-                    </span>
-                    <div className="flex-fill">
-                      <h6 className="mb-1">Parents, Teacher Meet</h6>
-                      <p className="fs-12">
-                        <i className="ti ti-calendar me-1" />
-                        15 July 2024
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="mb-0 fs-12">
-                      <i className="ti ti-clock me-1" />
-                      09:10AM - 10:50PM
-                    </p>
-                    <div className="avatar-list-stacked avatar-group-sm">
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-01.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-07.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-02.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* /Event Item */}
-                {/* Event Item */}
-                <div className="border-start border-danger border-3 shadow-sm p-3 mb-3 bg-white">
-                  <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                    <span className="avatar p-1 me-2 bg-danger-transparent flex-shrink-0">
-                      <i className="ti ti-vacuum-cleaner fs-24" />
-                    </span>
-                    <div className="flex-fill">
-                      <h6 className="mb-1">Summer Vacation</h6>
-                      <p className="fs-12">
-                        <i className="ti ti-calendar me-1" />
-                        07 July 2024 - 08 July 2024
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="fs-12 mb-0">
-                      <i className="ti ti-clock me-1" />
-                      09:10 AM - 10:50 PM
-                    </p>
-                    <div className="avatar-list-stacked avatar-group-sm">
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-11.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-13.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* /Event Item */}
-                {/* Event Item */}
-                <div className="border-start border-info border-3 shadow-sm p-3 mb-3 bg-white">
-                  <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                    <span className="avatar p-1 me-2 bg-info-transparent flex-shrink-0">
-                      <i className="ti ti-user-edit fs-20" />
-                    </span>
-                    <div className="flex-fill">
-                      <h6 className="mb-1">Staff Meeting</h6>
-                      <p className="fs-12">
-                        <i className="ti ti-calendar me-1" />
-                        10 July 2024
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="fs-12 mb-0">
-                      <i className="ti ti-clock me-1" />
-                      09:10AM - 10:50PM
-                    </p>
-                    <div className="avatar-list-stacked avatar-group-sm">
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-05.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-06.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-07.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* /Event Item */}
-                {/* Event Item */}
-                <div className="border-start border-secondary border-3 shadow-sm p-3 mb-3 bg-white">
-                  <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                    <span className="avatar p-1 me-2 bg-secondary-transparent flex-shrink-0">
-                      <i className="ti ti-campfire fs-20" />
-                    </span>
-                    <div className="flex-fill">
-                      <h6 className="mb-1">Admission Camp</h6>
-                      <p className="fs-12">
-                        <i className="ti ti-calendar me-1" />
-                        10 July 2024
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="fs-12 mb-0">
-                      <i className="ti ti-clock me-1" />
-                      09:10AM - 10:50PM
-                    </p>
-                    <div className="avatar-list-stacked avatar-group-sm">
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-04.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-05.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/parents/parent-10.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* /Event Item */}
-                {/* Event Item */}
-                <div className="border-start border-success border-3 shadow-sm p-3 mb-4 bg-white">
-                  <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                    <span className="avatar p-1 me-2 bg-success-transparent flex-shrink-0">
-                      <i className="ti ti-clipboard-heart fs-20" />
-                    </span>
-                    <div className="flex-fill">
-                      <h6 className="mb-1">Activity Training</h6>
-                      <p className="fs-12">
-                        <i className="ti ti-calendar me-1" />
-                        26 July 2024
-                      </p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="fs-12 mb-0">
-                      <i className="ti ti-clock me-1" />
-                      09:10AM - 10:50PM
-                    </p>
-                    <div className="avatar-list-stacked avatar-group-sm">
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/teachers/teacher-02.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/teachers/teacher-05.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                      <span className="avatar border-0">
-                        <ImageWithBasePath
-                          src="assets/img/teachers/teacher-06.jpg"
-                          className="rounded"
-                          alt="img"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* /Event Item */}
+
+                {/* Event Items */}
+                {filteredEvents &&
+                  filteredEvents.map((event: any) => {
+                    return (
+                      <div
+                        className="border-start border-info border-3 shadow-sm p-3 mb-3 bg-white"
+                        key={event.id}
+                      >
+                        <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
+                          <span className="avatar p-1 me-3 bg-primary-transparent flex-shrink-0">
+                            <i className="ti ti-users-group text-info fs-20" />
+                          </span>
+                          <div className="flex-fill">
+                            <h6 className="mb-1">{event?.title}</h6>
+                            <p className="fs-12">
+                              <i className="ti ti-calendar me-1" />
+                              {new Date(
+                                event?.dateRange?.split("|")[0]
+                              ).toDateString()}{" "}
+                              -{" "}
+                              {new Date(
+                                event?.dateRange?.split("|")[1]
+                              ).toDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between">
+                          <p className="mb-0 fs-12">
+                            <i className="ti ti-clock me-1" />
+                            {event?.timeRange
+                              ?.split("|")
+                              .map((t: any) => {
+                                const [h, m] = t.split(":").map(Number);
+                                return `${(h % 12 || 12)
+                                  .toString()
+                                  .padStart(2, "0")}:${m
+                                  .toString()
+                                  .padStart(2, "0")}${h >= 12 ? "PM" : "AM"}`;
+                              })
+                              .join(" - ")}
+                          </p>
+                          <div className="avatar-list-stacked avatar-group-sm">
+                            <span className="avatar border-0">
+                              <ImageWithBasePath
+                                src="assets/img/parents/parent-01.jpg"
+                                className="rounded"
+                                alt="img"
+                              />
+                            </span>
+                            <span className="avatar border-0">
+                              <ImageWithBasePath
+                                src="assets/img/parents/parent-07.jpg"
+                                className="rounded"
+                                alt="img"
+                              />
+                            </span>
+                            <span className="avatar border-0">
+                              <ImageWithBasePath
+                                src="assets/img/parents/parent-02.jpg"
+                                className="rounded"
+                                alt="img"
+                              />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {/* /Event Items */}
               </div>
               {/* /Event List */}
             </div>
@@ -459,252 +535,136 @@ const Events = () => {
             className="btn-close custom-btn-close"
             data-bs-dismiss="modal"
             aria-label="Close"
+            onClick={handleAddEventClose}
           >
             <i className="ti ti-x" />
           </button>
         </div>
-        <form>
+        <form onSubmit={handleCreateEvent}>
           <div className="modal-body">
             <div className="row">
-              <div className="col-md-12">
-                <div>
-                  <label className="form-label">Event For</label>
-                  <div className="d-flex align-items-center flex-wrap">
-                    <div className="form-check me-3 mb-3">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="event"
-                        id="all"
-                        defaultChecked
-                      />
-                      <label className="form-check-label" htmlFor="all">
-                        All
-                      </label>
-                    </div>
-                    <div className="form-check me-3 mb-3">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="event"
-                        id="students"
-                      />
-                      <label className="form-check-label" htmlFor="students">
-                        Students
-                      </label>
-                    </div>
-                    <div className="form-check me-3 mb-3">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="event"
-                        id="staffs"
-                      />
-                      <label className="form-check-label" htmlFor="staffs">
-                        Staffs
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="all-content" id="all-student">
-                  <div className="mb-3">
-                    <label className="form-label">Classes</label>
-                    <CommonSelect
-                      className="select"
-                      options={classes}
-                      defaultValue={classes[0]}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Sections</label>
-                    <CommonSelect
-                      className="select"
-                      options={sections}
-                      defaultValue={sections[0]}
-                    />
-                  </div>
-                </div>
-                <div className="all-content" id="all-staffs">
-                  <div className="mb-3">
-                    <div className="bg-light-500 p-3 pb-2 rounded">
-                      <label className="form-label">Role</label>
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            Admin
-                          </div>
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              defaultChecked
-                            />
-                            Teacher
-                          </div>
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            Driver
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            Accountant
-                          </div>
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            Librarian
-                          </div>
-                          <div className="form-check form-check-sm mb-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            Receptionist
-                          </div>
-                        </div>
+              {/* Event For */}
+              <div className="col-md-12 mb-3">
+                <label className="form-label">Event For</label>
+                <div className="row">
+                  {allRoles.map((item: any) => (
+                    <div key={item.id} className="col-md-4 col-12 mb-1">
+                      <div className="form-check form-check-md">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          checked={formData.roles?.includes(item.id) || false}
+                          onChange={() => handleCheckboxChange(item.id)}
+                        />
+                        <span className="text-capitalize">{item.roleName}</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">All Teachers</label>
-                    <select className="select">
-                      <option>Select</option>
-                      <option>I</option>
-                      <option>II</option>
-                      <option>III</option>
-                      <option>IV</option>
-                    </select>
-                  </div>
+                  ))}
                 </div>
               </div>
+              ;{/* Event Title */}
               <div className="mb-3">
                 <label className="form-label">Event Title</label>
                 <input
                   type="text"
+                  name="title"
                   className="form-control"
                   placeholder="Enter Title"
+                  value={formData.title}
+                  onChange={handleInputChange}
                 />
               </div>
+              {/* Event Category */}
               <div className="mb-3">
                 <label className="form-label">Event Category</label>
                 <CommonSelect
                   className="select"
                   options={eventCategory}
-                  defaultValue={eventCategory[0]}
+                  value={formData.category?.value}
+                  onChange={handleSelectChange}
                 />
               </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label className="form-label">Start Date</label>
-                  <div className="date-pic">
-                    <DatePicker
-                      className="form-control datetimepicker"
-                      placeholder="Select Date"
-                    />
-
-                    <span className="cal-icon">
-                      <i className="ti ti-calendar" />
-                    </span>
-                  </div>
-                </div>
+              {/* Dates */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">Start Date</label>
+                <DatePicker
+                  className="form-control datetimepicker"
+                  placeholder="Select Date"
+                  value={formData.startDate}
+                  onChange={(date: Dayjs | null) =>
+                    setFormData((prev: any) => ({ ...prev, startDate: date }))
+                  }
+                />
               </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label className="form-label">End Date</label>
-                  <div className="date-pic">
-                    <DatePicker
-                      className="form-control datetimepicker"
-                      placeholder="Select Date"
-                    />
-
-                    <span className="cal-icon">
-                      <i className="ti ti-calendar" />
-                    </span>
-                  </div>
-                </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label">End Date</label>
+                <DatePicker
+                  className="form-control datetimepicker"
+                  placeholder="Select Date"
+                  value={formData.endDate}
+                  onChange={(date: Dayjs | null) =>
+                    setFormData((prev: any) => ({ ...prev, endDate: date }))
+                  }
+                />
               </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label className="form-label">Start Time</label>
-                  <div className="date-pic">
-                    <TimePicker
-                      placeholder="11:00 AM"
-                      className="form-control timepicker"
-                      onChange={onChange}
-                      defaultValue={dayjs("00:00:00", "HH:mm:ss")}
-                    />
-                    <span className="cal-icon">
-                      <i className="ti ti-clock" />
-                    </span>
-                  </div>
-                </div>
+              {/* Times */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label">Start Time</label>
+                <TimePicker
+                  className="form-control timepicker"
+                  value={formData.startTime}
+                  onChange={(time) =>
+                    setFormData((prev) => ({ ...prev, startTime: time }))
+                  }
+                />
               </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <label className="form-label">End Time</label>
-                  <div className="date-pic">
-                    <TimePicker
-                      placeholder="11:00 AM"
-                      className="form-control timepicker"
-                      onChange={onChange}
-                      defaultValue={dayjs("00:00:00", "HH:mm:ss")}
-                    />
-                    <span className="cal-icon">
-                      <i className="ti ti-clock" />
-                    </span>
-                  </div>
-                </div>
+              <div className="col-md-6 mb-3">
+                <label className="form-label">End Time</label>
+                <TimePicker
+                  className="form-control timepicker"
+                  value={formData.endTime}
+                  onChange={(time) =>
+                    setFormData((prev) => ({ ...prev, endTime: time }))
+                  }
+                />
+              </div>
+              {/* Attachment */}
+              <div className="col-md-12 mb-3">
+                <label className="form-label">Attachment</label>
+                <input
+                  type="file"
+                  className="form-control"
+                  multiple
+                  onChange={handleFileChange}
+                />
+                {formData.attachments?.length > 0 && (
+                  <ul className="mt-2">
+                    {formData.attachments.map((file, idx) => (
+                      <li key={idx}>{file.name}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div className="col-md-12">
-                <div className="mb-3">
-                  <div className="bg-light p-3 pb-2 rounded">
-                    <div className="mb-3">
-                      <label className="form-label">Attachment</label>
-                      <p>Upload size of 4MB, Accepted Format PDF</p>
-                    </div>
-                    <div className="d-flex align-items-center flex-wrap">
-                      <div className="btn btn-primary drag-upload-btn mb-2 me-2">
-                        <i className="ti ti-file-upload me-1" />
-                        Upload
-                        <input
-                          type="file"
-                          className="form-control image_sign"
-                          multiple
-                        />
-                      </div>
-                      <p className="mb-2">Fees_Structure.pdf</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-0">
-                  <label className="form-label">Message</label>
-                  <textarea
-                    className="form-control"
-                    rows={4}
-                    defaultValue={
-                      "Meeting with Staffs on the Quality Improvement s and completion of syllabus before the August,  enhance the students health issue"
-                    }
-                  />
-                </div>
+                <label className="form-label">Message</label>
+                <textarea
+                  name="message"
+                  className="form-control"
+                  rows={4}
+                  value={formData.message}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
           </div>
+
           <div className="modal-footer">
-            <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+            <Link
+              to="#"
+              className="btn btn-light me-2"
+              data-bs-dismiss="modal"
+              onClick={handleAddEventClose}
+            >
               Cancel
             </Link>
             <button type="submit" className="btn btn-primary">
@@ -719,16 +679,25 @@ const Events = () => {
         <div className="modal-header justify-content-between">
           <span className="d-inline-flex align-items-center">
             <i className="ti ti-circle-filled fs-8 me-1 text-info" />
-            Meeting
+            {selectedEvent?.category}
           </span>
           <div className="d-flex align-items-center">
-            <Link to="#" className="me-1 fs-18">
+            {/* <Link to="#" className="me-1 fs-18">
               <i className="ti ti-edit-circle" />
-            </Link>
-            <Link to="#" className="me-1 fs-18">
+            </Link> */}
+            <Link
+              to="#"
+              className="me-1 fs-18"
+              onClick={() => handleDeleteEvent(selectedEvent?.id)}
+            >
               <i className="ti ti-trash-x" />
             </Link>
-            <Link to="#" className="fs-18" data-bs-dismiss="modal">
+            <Link
+              to="#"
+              className="fs-18"
+              data-bs-dismiss="modal"
+              onClick={handleEventDetailsClose}
+            >
               <i className="ti ti-x" />
             </Link>
           </div>
@@ -740,25 +709,32 @@ const Events = () => {
             </span>
             <div>
               <h3 id="eventTitle" className="mb-1">
-                {eventDetails.title}
+                {selectedEvent?.title}
               </h3>
               <div className="d-flex align-items-center flex-wrap">
                 <p className="me-3 mb-0">
                   <i className="ti ti-calendar me-1" />
-                  10 July 2024
+                  {new Date(
+                    selectedEvent?.dateRange?.split("|")[0]
+                  ).toDateString()}{" "}
                 </p>
                 <p>
                   <i className="ti ti-calendar me-1" />
-                  09:10AM - 10:50PM
+                  {selectedEvent?.timeRange
+                    ?.split("|")
+                    .map((t: any) => {
+                      const [h, m] = t.split(":").map(Number);
+                      return `${(h % 12 || 12).toString().padStart(2, "0")}:${m
+                        .toString()
+                        .padStart(2, "0")}${h >= 12 ? "PM" : "AM"}`;
+                    })
+                    .join(" - ")}
                 </p>
               </div>
             </div>
           </div>
           <div className="bg-light-400 p-3 rounded mb-3">
-            <p>
-              Meeting with Staffs on the Quality Improvement s and completion of
-              syllabus before the August, enhance the students health issue
-            </p>
+            <p>{selectedEvent?.message}</p>
           </div>
           <div className="d-flex align-items-center justify-content-between flex-wrap">
             <div className="avatar-list-stacked avatar-group-sm d-flex mb-3">
@@ -786,7 +762,19 @@ const Events = () => {
             </div>
             <div className="mb-3">
               <p className="mb-1">Event For</p>
-              <h6>All Classes, All Sections</h6>
+              <h6>
+                {selectedEvent &&
+                  selectedEvent.roles &&
+                  JSON.parse(selectedEvent.roles)
+                    .map((roleId: any) => {
+                      const role: any = allRoles.find(
+                        (r: any) => r.id === roleId
+                      );
+                      return role ? role.roleName : null;
+                    })
+                    .filter(Boolean)
+                    .join(", ")}
+              </h6>
             </div>
           </div>
         </div>
@@ -797,3 +785,18 @@ const Events = () => {
 };
 
 export default Events;
+
+{
+  /* <i className="ti ti-vacuum-cleaner fs-24" /> */
+}
+{
+  /* <i className="ti ti-user-edit fs-20" /> */
+}
+{
+  /* <i className="ti ti-campfire fs-20" /> */
+}
+{
+  /* <span className="avatar p-1 me-2 bg-success-transparent flex-shrink-0">
+<i className="ti ti-clipboard-heart fs-20" />
+</span> */
+}

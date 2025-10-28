@@ -17,6 +17,43 @@ export const api2 = axios.create({
   withCredentials: true,
 });
 
+//user apis-------------------
+export const allUsers = () => api.get("/user/all-users");
+export const deleteUsersById = (id: number) =>
+  api.delete(`/user/delete-users/${id}`);
+export const getAllRoles = () => api.get("/user/all-roles");
+export const updateRoles = (data: object, id: number | null) =>
+  api.patch(`/user/update-roles/${id}`, data);
+export const createRoles = (data: object) =>
+  api.post(`/user/create-roles`, data);
+export const deleteRolesById = (id: number | null) =>
+  api.delete(`/user/delete-roles/${id}`);
+export const savePermissions = (data: object) =>
+  api.post("/user/save-permission", data);
+export const getAllRolePermissions = (id: number) =>
+  api.get(`/user/role-permission/${id}`);
+
+export const addModules = (data: any) => api.post("/user/create-module", data);
+export const getAllModules = () => api.get("/user/all-module");
+
+//notifications:
+export const CreateNotice = (data: any) =>
+  api.post("/notification/create-notice", data);
+export const UploadNoticeFile = (data: object) =>
+  api2.post("/notification/upload", data);
+export const getAllNotice = () => api.get("/notification/all-notice");
+export const deleteNotice = (data:any) => api.post("/notification/delete-notice",data);
+export const updateNotice = (data:any) => api.patch("/notification/update-notice",data);
+
+export const CreateEvent = (data: any) =>
+  api.post("/notification/create-event", data);
+export const UploadEventFile = (data: object) =>
+  api2.post("/notification/event/upload", data);
+export const getAllEvent = () => api.get("/notification/all-event");
+export const updateEvent = (data:any) => api.patch("/notification/update-event",data);
+export const deleteEvent = (data:any) => api.post("/notification/delete-event",data);
+
+
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);
 export const allStudents = () => api.get("/stu/");
