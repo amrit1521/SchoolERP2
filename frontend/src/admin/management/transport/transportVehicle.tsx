@@ -3,12 +3,12 @@ import { all_routes } from "../../router/all_routes";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
-  driverFilter2,
+  // driverFilter2,
   driverName,
-  GPSDevice,
+  // GPSDevice,
   status,
-  vehicleModel,
-  VehicleNumber,
+  // vehicleModel,
+  // VehicleNumber,
 } from "../../../core/common/selectoption/selectoption";
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
@@ -48,18 +48,17 @@ const TransportVehicle = () => {
   >([]);
   const [selectedVehicleInfo, setSelecteVehicleInfo] =
     useState<TransportVehicleProps | null>(null);
+  const [vehicleNoOption, setVehicleNoOption] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [vehicleModelOption, setVehicleModelOption] = useState<
+    { value: string; label: string }[]
+  >([]);
 
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
-  console.log(vehicleDetails ? "" : "");
   const fetchVehicleDetails = async () => {
     try {
       const { data } = await getAllVehicle();
       if (data.success) {
-        console.log("data: ", data);
         setVehicleDetails(
           data.result.map((item: any) => ({
             id: item.id,
@@ -94,10 +93,22 @@ const TransportVehicle = () => {
             status: item.status,
           }))
         );
-        // setPickupPointOption(
-        //   data.result.map((point: PickupPoint) => ({
-        //     value: point.id,
-        //     label: point.pickPointName,
+        setVehicleNoOption(
+          data.result.map((vhNo: any) => ({
+            value: vhNo.vehicle_no,
+            label: vhNo.vehicle_no,
+          }))
+        );
+        setVehicleModelOption(
+          data.result.map((vhM: any) => ({
+            value: vhM.vehicle_model,
+            label: vhM.vehicle_model,
+          }))
+        );
+        // setDriverOption(
+        //   data.result.map((item: any) => ({
+        //     value: item.driver_id,
+        //     label: driverName.find((item) => item.value == text)?.label,
         //   }))
         // );
       } else {
@@ -115,7 +126,6 @@ const TransportVehicle = () => {
   }, []);
 
   const handleDelete = async (id: number) => {
-    console.log("handleDelete Called: ", id);
     try {
       const { data } = await deleteVehicleById(id);
       if (data.success) {
@@ -129,6 +139,59 @@ const TransportVehicle = () => {
         err.response?.data?.message || "Error deleting vehicle Info."
       );
     }
+  };
+
+  //filter handling:
+  const [filters, setFilters] = useState<{
+    vehicleNo: string | null;
+    vehicleModel: string | null;
+    driver: string | null;
+    status: string | null;
+  }>({
+    vehicleNo: null,
+    vehicleModel: null,
+    driver: null,
+    status: null,
+  });
+
+  const handleFilterChange = (key: keyof typeof filters, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilter = () => {
+    let filtered = vehicleDetails;
+    if (filters.vehicleNo !== null) {
+      filtered = filtered.filter((e: any) => e.vehicleNo === filters.vehicleNo);
+    }
+    if (filters.vehicleModel !== null) {
+      filtered = filtered.filter(
+        (e: any) => e.vehicleModel === filters.vehicleModel
+      );
+    }
+    if (filters.driver !== null) {
+      filtered = filtered.filter(
+        (e: any) => e.driver === parseInt(filters.driver || "0")
+      );
+    }
+    if (filters.status !== null) {
+      filtered = filtered.filter(
+        (e: any) => parseInt(e.status) === parseInt(filters.status || "0")
+      );
+    }
+
+    setFilterVehicleDetails(filtered);
+    dropdownMenuRef.current?.classList.remove("show");
+  };
+
+  const handleResetFilter = () => {
+    setFilters({
+      vehicleNo: null,
+      vehicleModel: null,
+      driver: null,
+      status: null,
+    });
+    setFilterVehicleDetails(vehicleDetails);
+    dropdownMenuRef.current?.classList.remove("show");
   };
 
   const columns = [
@@ -364,8 +427,14 @@ const TransportVehicle = () => {
                               </label>
                               <CommonSelect
                                 className="select"
-                                options={VehicleNumber}
-                                defaultValue={undefined}
+                                options={vehicleNoOption}
+                                value={filters.vehicleNo}
+                                onChange={(option) =>
+                                  handleFilterChange(
+                                    "vehicleNo",
+                                    option ? option.value : null
+                                  )
+                                }
                               />
                             </div>
                           </div>
@@ -374,22 +443,34 @@ const TransportVehicle = () => {
                               <label className="form-label">Model</label>
                               <CommonSelect
                                 className="select"
-                                options={vehicleModel}
-                                // defaultValue={vehicleModel[0]}
+                                options={vehicleModelOption}
+                                value={filters.vehicleModel}
+                                onChange={(option) =>
+                                  handleFilterChange(
+                                    "vehicleModel",
+                                    option ? option.value : null
+                                  )
+                                }
                               />
                             </div>
                           </div>
-                          <div className="col-md-12">
+                          <div className="col-md-6">
                             <div className="mb-3">
                               <label className="form-label">Name</label>
                               <CommonSelect
                                 className="select"
                                 options={driverName}
-                                // defaultValue={driverName[0]}
+                                value={filters.driver}
+                                onChange={(option) =>
+                                  handleFilterChange(
+                                    "driver",
+                                    option ? option.value : null
+                                  )
+                                }
                               />
                             </div>
                           </div>
-                          <div className="col-md-6">
+                          {/* <div className="col-md-6">
                             <div className="mb-3">
                               <label className="form-label">GPS Device</label>
                               <CommonSelect
@@ -398,8 +479,8 @@ const TransportVehicle = () => {
                                 defaultValue={undefined}
                               />
                             </div>
-                          </div>
-                          <div className="col-md-6">
+                          </div> */}
+                          {/* <div className="col-md-6">
                             <div className="mb-0">
                               <label className="form-label">Driver</label>
                               <CommonSelect
@@ -408,18 +489,24 @@ const TransportVehicle = () => {
                                 defaultValue={undefined}
                               />
                             </div>
-                          </div>
+                          </div> */}
                           <div className="col-md-6">
                             <div className="mb-3">
                               <label className="form-label">Status</label>
                               <CommonSelect
                                 className="select"
                                 options={status}
-                                // defaultValue={status[0]}
+                                value={filters.status}
+                                onChange={(option) =>
+                                  handleFilterChange(
+                                    "status",
+                                    option ? option.value : null
+                                  )
+                                }
                               />
                             </div>
                           </div>
-                          <div className="col-md-6">
+                          {/* <div className="col-md-6">
                             <div className="mb-0">
                               <label className="form-label">More Filter</label>
                               <CommonSelect
@@ -428,17 +515,21 @@ const TransportVehicle = () => {
                                 // defaultValue={driverFilter2[0]}
                               />
                             </div>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div className="p-3 d-flex align-items-center justify-content-end">
-                        <Link to="#" className="btn btn-light me-3">
+                        <Link
+                          to="#"
+                          className="btn btn-light me-3"
+                          onClick={handleResetFilter}
+                        >
                           Reset
                         </Link>
                         <Link
                           to="#"
                           className="btn btn-primary"
-                          onClick={handleApplyClick}
+                          onClick={handleApplyFilter}
                         >
                           Apply
                         </Link>
