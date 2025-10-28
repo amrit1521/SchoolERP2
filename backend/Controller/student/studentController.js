@@ -922,8 +922,6 @@ exports.studentReport = async (req, res) => {
     father.name AS father_name,
     father.img_src AS father_img 
 FROM students s
-JOIN classes cl ON cl.id = s.class_id
-JOIN sections se ON se.id = s.section_id
 LEFT JOIN users u 
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
@@ -1007,6 +1005,29 @@ exports.studentForOption = async (req, res) => {
       LEFT JOIN users u ON st.stu_id = u.id AND roll_id=3
       LEFT JOIN classes c ON st.class_id = c.id
       LEFT JOIN sections se ON st.section_id = se.id
+    `
+
+    const [rows] = await db.query(sql)
+    return res.status(200).json({ message: "Students for option fetched successfully!", success: true, data: rows })
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error !", success: false })
+  }
+}
+
+exports.studentForOption2 = async (req, res) => {
+  try {
+
+    const sql = `
+      SELECT 
+      st.id,
+      st.rollnum,
+      u.id AS userId,
+      u.firstname,
+      u.lastname
+      FROM students st
+      LEFT JOIN users u ON st.stu_id = u.id AND roll_id=3
     `
 
     const [rows] = await db.query(sql)

@@ -974,9 +974,12 @@ export const customerName = [
 ];
 export const productName = [
 
-  { value: "STEM Program Grant", label: "STEM Program Grant" },
+  { value: "Exam Fees", label: "Exam Fees" },
+  { value: "Semester-1", label: "Semester-1" },
+  { value: "Semester-2", label: "Semester-2" },
+  { value: "Monthly-fees", label: "Monthly-Fees" },
+  { value: "Exam Fees", label: "Exam Fees" },
   { value: "Uniform", label: "Uniform" },
-  { value: "Library Donation", label: "Library Donation" },
 ];
 
 export const members = [

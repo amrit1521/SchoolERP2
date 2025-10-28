@@ -41,6 +41,7 @@ export const deleteStudent = (rollnum: number) =>
 export const getStuByToken = (userId: number) =>
   api.get(`/stu/getstubytoken/${userId}`);
 export const stuForOption = () => api.get(`/stu/stuforoption`);
+export const stuForOption2 = () => api.get(`/stu/stuforoption2`);
 
 export const uploadStudentFile = (data: object) =>
   api2.post("/stu/upload", data);

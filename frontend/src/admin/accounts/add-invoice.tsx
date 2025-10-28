@@ -1,20 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
 import CommonSelect from "../../core/common/commonSelect";
 import {
-  customerName,
+  // customerName,
   invStatus,
   paymentMethod,
   productName,
 } from "../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { Editor } from "primereact/editor";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { all_routes } from "../router/all_routes";
 import dayjs from "dayjs";
 // import jsPDF from "jspdf";
 // import html2canvas from "html2canvas";
 import { toast } from "react-toastify";
 import { addInvoice, deleteInvoiceFile, uploadInvoiceFile } from "../../service/accounts";
+import { stuForOption2 } from "../../service/api";
 
 
 interface InvoiceForm {
@@ -27,7 +28,7 @@ interface InvoiceForm {
   notes: string;
   terms: string;
   signatureName: string;
-  description:string;
+  description: string;
 }
 
 interface Product {
@@ -43,6 +44,7 @@ interface InvoiceData extends InvoiceForm {
   totalDiscount: number;
   tax: number;
   total: number;
+  taxPercent: number;
 }
 
 
@@ -170,6 +172,28 @@ interface InvoiceData extends InvoiceForm {
 const AddInvoice: React.FC = () => {
   const routes = all_routes;
   const navigate = useNavigate();
+  const [students, setStudents] = useState<{ value: string; label: string }[]>([]);
+
+  const fetchStudents = async () => {
+    try {
+      const { data } = await stuForOption2();
+
+      if (data.success) {
+        setStudents(
+          data.data.map((s: any) => ({
+            value: s.userId,
+            label: `${s.firstname} ${s.lastname}`
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents()
+  }, [])
 
   const [form, setForm] = useState<InvoiceForm>({
     customer: "",
@@ -181,7 +205,7 @@ const AddInvoice: React.FC = () => {
     notes: "",
     terms: "",
     signatureName: "",
-    description:""
+    description: ""
   });
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -194,7 +218,7 @@ const AddInvoice: React.FC = () => {
   const [taxPercent, setTaxPercent] = useState<number>(10);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ✅ Logo and Signature State
+
   const [logo, setLogo] = useState<File | null>(null);
   const [signature, setSignature] = useState<File | null>(null)
 
@@ -295,7 +319,7 @@ const AddInvoice: React.FC = () => {
 
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -325,10 +349,9 @@ const AddInvoice: React.FC = () => {
     if (!products.length) newErrors.products = "At least one product is required";
     if (subtotal <= 0) newErrors.subtotal = "Subtotal must be greater than zero";
     if (!form.signatureName.trim()) newErrors.signatureName = "Signature name is required";
-    if (!logo) newErrors.logo = "Company logo is required";
     if (!form.method.trim()) newErrors.method = "Payment method is required "
-    if(!form.description.trim()) newErrors.description="Description is required "
-    else if(form.description.length<10) newErrors.description = "Description must be at least 10 Characters"
+    if (!form.description.trim()) newErrors.description = "Description is required "
+    else if (form.description.length < 10) newErrors.description = "Description must be at least 10 Characters"
 
     // Optional fields but recommended
     if (!form.notes.trim()) newErrors.notes = "Notes cannot be empty ";
@@ -349,7 +372,7 @@ const AddInvoice: React.FC = () => {
       status: "paid",
       terms: "",
       signatureName: "",
-      description:""
+      description: ""
     });
     setProducts([]);
     setSelectedProduct({ name: "", quantity: 1, unitPrice: 0, discount: 0 });
@@ -363,11 +386,10 @@ const AddInvoice: React.FC = () => {
     setSignimgid(null);
 
 
+
     setErrors({});
     navigate(routes.accountsInvoices)
   };
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -395,6 +417,7 @@ const AddInvoice: React.FC = () => {
         totalDiscount,
         tax,
         total,
+        taxPercent,
       };
 
       const formData = new FormData();
@@ -506,10 +529,10 @@ const AddInvoice: React.FC = () => {
               <div className="card-body p-2">
                 <div className="row">
                   <div className="col-lg-3 col-md-6">
-                    <label className="form-label">Customer Name <span className="text-danger">*</span></label>
+                    <label className="form-label">Name <span className="text-danger">*</span></label>
                     <CommonSelect
                       className={`select `}
-                      options={customerName}
+                      options={students}
                       onChange={(v: any) =>
                         setForm((prev) => ({ ...prev, customer: v.value }))
                       }
@@ -609,15 +632,15 @@ const AddInvoice: React.FC = () => {
 
                   </div>
                   <div className=" col-md-6">
-                    <label className="form-label">Description</label>
+                    <label className="form-label">Description <span className="text-danger">*</span></label>
                     <textarea
                       name="description"
                       rows={4}
                       className="form-control"
                       value={form.description}
-                      onChange={handleChange} 
+                      onChange={handleChange}
                     />
-                    {errors.description&&(<div className="text-small text-danger">{errors.description}</div>)}
+                    {errors.description && (<div className="text-small text-danger">{errors.description}</div>)}
                   </div>
                 </div>
               </div>

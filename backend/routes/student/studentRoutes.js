@@ -35,6 +35,7 @@ router.get('/leavedata/:rollnum', studentController.getStuLeaveData)
 
 // for option
 router.get('/stuforoption'  ,studentController.studentForOption)
+router.get('/stuforoption2'  ,studentController.studentForOption2)
 
 // file upload and delete
 router.post('/upload', upload.single('stufile'), fileController.uploadFile);

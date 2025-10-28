@@ -316,7 +316,7 @@ const Expense = () => {
       link.remove();
 
       window.URL.revokeObjectURL(url);
-      console.log("Invoice downloaded successfully!");
+      
     } catch (error) {
       console.error("Error generating invoice:", error);
     }finally{
@@ -611,7 +611,8 @@ const Expense = () => {
                 <div className="row">
                   <div className="col-md-12">
                     <div className="row">
-                           <div className="mb-3 col col-sm-6">
+
+                    <div className="mb-3 col col-sm-6">
                       <label className="form-label">Name</label>
                       <input
                         type="text"
@@ -622,6 +623,7 @@ const Expense = () => {
                       />
                       {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
+
                      <div className="mb-3 col col-sm-6">
                       <label className="form-label">Mobile Number</label>
                       <input
@@ -633,6 +635,7 @@ const Expense = () => {
                       />
                       {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
                     </div>
+
                     </div>
                      <div className="mb-3">
                       <label className="form-label">Email</label>
@@ -645,6 +648,7 @@ const Expense = () => {
                       />
                       {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                     </div>
+
                     {/* Expense Name */}
                     <div className="mb-3">
                       <label className="form-label">Expense Name</label>
