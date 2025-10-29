@@ -64,6 +64,7 @@ exports.markTeacherAttendance = async (req, res) => {
   }
 };
 
+// staff attendance Module.
 exports.markStaffAttendance = async (req, res) => {
   const data = req.body;
 
@@ -165,6 +166,109 @@ exports.getStaffAttendanceData = async (req, res) => {
   }
 };
 
+exports.getDailyStafftAttendanceReport = async (req,res) =>{
+  try {
+    const date = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
+    console.log('date: ',date,req.query.date);
+    const sql = `
+      SELECT 
+      sta.staff_id,
+      sta.department,
+        sta.attendance,
+        CONCAT(u.firstname, ' ', u.lastname) AS name,
+        sf.role,
+        sf.img_src
+    FROM staff_attendance_info sta
+    RIGHT JOIN staffs sf ON sf.id = sta.staff_id
+    RIGHT JOIN users u ON u.id = sf.user_id
+    WHERE DATE(sta.attendance_date_info) = ?;
+    `;
+
+    const [rows] = await db.query(sql, [date]);
+
+    res.status(200).json({
+      success: true,
+      date: date,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching daily attendance report:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch daily attendance report",
+      error: error.message
+    });
+  }
+}
+
+
+exports.getStaffAttendanceReport = async (req, res) => {
+  try {
+    
+    const sql = `
+      SELECT  
+        sai.staff_id, 
+        st.img_src,
+        u.firstname,
+        u.lastname,
+        SUM(CASE WHEN sai.attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
+        SUM(CASE WHEN sai.attendance = 'Late' THEN 1 ELSE 0 END) AS Late,
+        SUM(CASE WHEN sai.attendance = 'Absent' THEN 1 ELSE 0 END) AS Absent,
+        SUM(CASE WHEN sai.attendance = 'Halfday' THEN 1 ELSE 0 END) AS Halfday,
+        SUM(CASE WHEN sai.attendance = 'Holiday' THEN 1 ELSE 0 END) AS Holiday,
+        COUNT(sai.id) AS TotalDays
+      FROM staff_attendance_info sai
+      JOIN staffs st ON sai.staff_id = st.id
+      JOIN users u ON u.id = st.user_id
+      GROUP BY sai.staff_id
+      `;
+
+    const [rows] = await db.query(sql);
+
+    const report = rows.map((r) => {
+      const Present = Number(r.Present) || 0;
+      const Late = Number(r.Late) || 0;
+      const Absent = Number(r.Absent) || 0;
+      const Halfday = Number(r.Halfday) || 0;
+      const Holiday = Number(r.Holiday) || 0;
+      const TotalDays = Number(r.TotalDays) || 0; 
+      const totalWorkingDays = TotalDays - Holiday;
+      const totalPresentDays = Present + Late  + (Halfday * 0.5);
+      const percentage =
+        totalWorkingDays > 0
+          ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
+          : "0.0";
+      return {
+        rollNo: r.roll_no,
+        name: `${r.firstname} ${r.lastname} `,
+        img:r.img_src,
+        p:Present,
+        l:Late,
+        a:Absent,
+        h:Halfday,
+        f:Holiday,
+        TotalDays,
+        totalWorkingDays,
+        totalPresentDays: totalPresentDays.toFixed(1),
+        percentage,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: report,
+    });
+  } catch (error) {
+    console.error("Error generating attendance report:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
+
 
 exports.getTeacherAttendanceData = async (req, res) => {
   try {
@@ -205,6 +309,109 @@ exports.getTeacherAttendanceData = async (req, res) => {
     });
   }
 };
+
+exports.getDailyTeacherAttendanceReport = async (req,res) =>{
+  try {
+    const date = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
+    console.log('date: ',date,req.query.date);
+    const sql = `
+    SELECT 
+      tai.teacher_id,
+      tai.attendance,
+      CONCAT(u.firstname, ' ', u.lastname) AS name,
+      t.img_src,
+      t.subject
+    FROM teacher_attendance_info tai
+    RIGHT JOIN teachers t ON t.teacher_id = tai.teacher_id
+    RIGHT JOIN users u ON u.id = t.user_id
+    WHERE DATE(tai.attendance_date_info) = ?;
+    `;
+
+    const [rows] = await db.query(sql, [date]);
+
+    res.status(200).json({
+      success: true,
+      date: date,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching daily attendance report:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch daily attendance report",
+      error: error.message
+    });
+  }
+}
+
+exports.getTeacherAttendanceReport = async (req, res) => {
+  try {
+
+
+    const sql = `
+      SELECT  
+        t.teacher_id, 
+        t.img_src,
+        u.firstname,
+        u.lastname,
+        SUM(CASE WHEN ta.attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
+        SUM(CASE WHEN ta.attendance = 'Late' THEN 1 ELSE 0 END) AS Late,
+        SUM(CASE WHEN ta.attendance = 'Absent' THEN 1 ELSE 0 END) AS Absent,
+        SUM(CASE WHEN ta.attendance = 'Halfday' THEN 1 ELSE 0 END) AS Halfday,
+        SUM(CASE WHEN ta.attendance = 'Holiday' THEN 1 ELSE 0 END) AS Holiday,
+        COUNT(ta.id) AS TotalDays
+      FROM teacher_attendance_info ta
+      JOIN teachers t ON ta.teacher_id = t.teacher_id
+      JOIN users u ON u.id = t.user_id
+      GROUP BY ta.teacher_id
+      `;
+      // ORDER BY s.rollnum ASC
+
+    const [rows] = await db.query(sql);
+
+    const report = rows.map((r) => {
+      const Present = Number(r.Present) || 0;
+      const Late = Number(r.Late) || 0;
+      const Absent = Number(r.Absent) || 0;
+      const Halfday = Number(r.Halfday) || 0;
+      const Holiday = Number(r.Holiday) || 0;
+      const TotalDays = Number(r.TotalDays) || 0; 
+      const totalWorkingDays = TotalDays - Holiday;
+      const totalPresentDays = Present + Late  + (Halfday * 0.5);
+      const percentage =
+        totalWorkingDays > 0
+          ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
+          : "0.0";
+      return {
+        rollNo: r.roll_no,
+        name: `${r.firstname} ${r.lastname} `,
+        img:r.img_src,
+        p:Present,
+        l:Late,
+        a:Absent,
+        h:Halfday,
+        f:Holiday,
+        TotalDays,
+        totalWorkingDays,
+        totalPresentDays: totalPresentDays.toFixed(1),
+        percentage,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: report,
+    });
+  } catch (error) {
+    console.error("Error generating attendance report:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
 
 
 exports.markStudentAttendance = async (req, res) => {
@@ -458,5 +665,83 @@ exports.getStuAttendanceReport = async (req, res) => {
 //   }
 // };
 
+
+
+exports.getDailyClassAttendanceReport = async (req, res) => {
+  try {
+    const date = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
+    console.log('date: ',date,req.query.date);
+    const sql = `
+      SELECT 
+        ai.class AS class,
+        ai.section AS section,
+        se.noOfStudents,
+        SUM(ai.attendance = 'Present') AS total_present,
+        SUM(ai.attendance = 'Absent') AS total_absent,
+        (SUM(ai.attendance = 'Present') / se.noOfStudents * 100) AS present_percent,
+        (SUM(ai.attendance = 'Absent') / se.noOfStudents * 100) AS absent_percent
+      FROM attendance_info ai
+      RIGHT JOIN classes c 
+        ON c.class_name = ai.class
+      RIGHT JOIN sections se 
+        ON se.section_name = ai.section 
+        AND c.id = se.class_id
+      WHERE DATE(ai.attendance_date_info) = ?
+      GROUP BY ai.class, ai.section, se.noOfStudents;
+    `;
+
+    const [rows] = await db.query(sql, [date]);
+
+    res.status(200).json({
+      success: true,
+      date: date,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching daily attendance report:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch daily attendance report",
+      error: error.message
+    });
+  }
+};
+exports.getDailyStudentAttendanceReport = async (req, res) => {
+  try {
+    const date = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
+    console.log('date: ',date,req.query.date);
+    const sql = `
+      SELECT 
+      ai.attendance,
+      ai.student_rollnum,
+      s.admissionnum,
+      s.stu_img,
+      CONCAT(u.firstname, ' ', u.lastname) AS name
+    FROM attendance_info ai
+    RIGHT JOIN students s 
+      ON s.rollnum = ai.student_rollnum
+    RIGHT JOIN users u 
+      ON u.id = s.stu_id
+    WHERE DATE(ai.attendance_date_info) = ?
+    `;
+
+    const [rows] = await db.query(sql, [date]);
+
+    res.status(200).json({
+      success: true,
+      date: date,
+      data: rows
+    });
+
+  } catch (error) {
+    console.error("Error fetching daily attendance report:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch daily attendance report",
+      error: error.message
+    });
+  }
+};
 
 
