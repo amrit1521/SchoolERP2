@@ -1,29 +1,63 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
-import CommonSelect from "../../../core/common/commonSelect";
 import Table from "../../../core/common/dataTable/index";
-import {
-
-  date,
-
-} from "../../../core/common/selectoption/selectoption";
-
+// import { date } from "../../../core/common/selectoption/selectoption";
+import type { Dayjs } from "dayjs";
 import type { TableData } from "../../../core/data/interface";
-import { dailyAttendanceData } from "../../../core/data/json/dailyAttendanceData";
+import { dailyClassAttendanceReport } from "../../../service/reports";
+import { DatePicker } from "antd";
+import { toast } from "react-toastify";
+
+interface attendaceFormat {
+  class: string;
+  section: string;
+  present: number;
+  absent: number;
+  percentange: number;
+  absentPercentange: number;
+}
 
 const DailyAttendance = () => {
   const routes = all_routes;
- 
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
+  const [dailyStudentAttendance, setdailyStudentAttendance] = useState<
+    attendaceFormat[]
+  >([]);
+  const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
+  const fetchDailyAttendance = async (date?: any) => {
+    const { data } = await dailyClassAttendanceReport(date ? date : new Date());
+    if (data.success) {
+      setdailyStudentAttendance(
+        data.data.map((attendance: any) => ({
+          class: attendance.class,
+          section: attendance.section,
+          present: attendance.total_present,
+          absent: attendance.total_absent,
+          percentange: attendance.present_percent,
+          absentPercentange: attendance.absent_percent,
+        }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchDailyAttendance();
+  }, []);
+
+  const handleApplyFilter = () => {
+    if (!filter.date) {
+      toast.error("please select any valid date.");
+      return;
+    }
+    fetchDailyAttendance(filter.date);
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-  const data = dailyAttendanceData;
 
   const columns = [
     {
@@ -34,31 +68,34 @@ const DailyAttendance = () => {
     {
       title: " Section",
       dataIndex: "section",
-      sorter: (a: TableData, b: TableData) => a.section.length - b.section.length,
+      sorter: (a: TableData, b: TableData) =>
+        a.section.length - b.section.length,
     },
     {
       title: " Total Present",
       dataIndex: "present",
-      sorter: (a: TableData, b: TableData) => a.present.length - b.present.length,
+      sorter: (a: TableData, b: TableData) =>
+        a.present.length - b.present.length,
     },
     {
       title: " Total Absent",
-      dataIndex: "present",
+      dataIndex: "absent",
       sorter: (a: TableData, b: TableData) => a.absent.length - b.absent.length,
     },
     {
       title: " Present %",
       dataIndex: "percentange",
-      sorter: (a: TableData, b: TableData) => a.percentange.length - b.percentange.length,
+      sorter: (a: TableData, b: TableData) =>
+        a.percentange.length - b.percentange.length,
     },
     {
       title: " Absent %",
-      dataIndex: "percentange",
-      sorter: (a: TableData, b: TableData) => a.absentPercentange.length - b.absentPercentange.length,
+      dataIndex: "absentPercentange",
+      sorter: (a: TableData, b: TableData) =>
+        a.absentPercentange.length - b.absentPercentange.length,
     },
-
-   
   ];
+
   return (
     <>
       {/* Page Wrapper */}
@@ -77,7 +114,7 @@ const DailyAttendance = () => {
                     <Link to="#">Report</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                  Daily Attendance
+                    Daily Attendance
                   </li>
                 </ol>
               </nav>
@@ -120,12 +157,14 @@ const DailyAttendance = () => {
                   <Link to={routes.attendanceReport}>Attendance Report</Link>
                 </li>
                 <li>
-                  <Link to={routes.studentAttendanceType} >
+                  <Link to={routes.studentAttendanceType}>
                     Students Attendance Type
                   </Link>
                 </li>
                 <li>
-                  <Link to={routes.dailyAttendance} className="active">Daily Attendance</Link>
+                  <Link to={routes.dailyAttendance} className="active">
+                    Daily Attendance
+                  </Link>
                 </li>
                 <li>
                   <Link to={routes.studentDayWise}>Student Day Wise</Link>
@@ -147,7 +186,7 @@ const DailyAttendance = () => {
             {/* /List Tab */}
           </div>
           {/* /Filter Section */}
-         
+
           {/* Attendance List */}
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -170,6 +209,7 @@ const DailyAttendance = () => {
                     className="dropdown-menu drop-width"
                     ref={dropdownMenuRef}
                     id="modal-datepicker"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
@@ -179,16 +219,24 @@ const DailyAttendance = () => {
                         <div className="row">
                           <div className="col-md-12">
                             <div className="mb-3">
-                              <label className="form-label">Attendance Date</label>
+                              <label className="form-label">
+                                Attendance Date
+                              </label>
 
-                              <CommonSelect
-                                className="select"
-                                options={date}
-                                defaultValue={undefined}
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                placeholder="Select Date"
+                                onChange={(date: Dayjs | null) => {
+                                  setFilter({
+                                    date: date
+                                      ? date.format("YYYY-MM-DD")
+                                      : null,
+                                  });
+                                }}
                               />
                             </div>
                           </div>
-                          
                         </div>
                       </div>
                       <div className="p-3 d-flex align-items-center justify-content-end">
@@ -198,7 +246,7 @@ const DailyAttendance = () => {
                         <Link
                           to="#"
                           className="btn btn-primary"
-                          onClick={handleApplyClick}
+                          onClick={handleApplyFilter}
                         >
                           Apply
                         </Link>
@@ -242,7 +290,11 @@ const DailyAttendance = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={false} />
+              <Table
+                dataSource={dailyStudentAttendance}
+                columns={columns}
+                Selection={false}
+              />
               {/* /Student List */}
             </div>
           </div>

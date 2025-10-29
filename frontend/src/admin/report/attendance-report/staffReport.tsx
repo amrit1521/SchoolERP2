@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
@@ -12,19 +12,45 @@ import {
   ticketDate,
 } from "../../../core/common/selectoption/selectoption";
 import type { TableData } from "../../../core/data/interface";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { teacherAttendancereportData } from "../../../core/data/json/teacher_attendance_data";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import { teacherAttendancereportData } from "../../../core/data/json/teacher_attendance_data";
+import { staffAttendanceReport } from "../../../service/reports";
+import { Spinner } from "../../../spinner";
+import { Imageurl } from "../../../service/api";
 
 const StaffReport = () => {
   const routes = all_routes;
-  
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-  const data = teacherAttendancereportData;
+
+  const [staffAttendanceData, setStaffAttendanceData] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchReport = async () => {
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 400));
+    try {
+      const { data } = await staffAttendanceReport();
+      if (data.success) {
+        console.log("data: ", data);
+        setStaffAttendanceData(data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReport();
+  }, []);
+
   const renderTitle = (title1: any, title2: any) => {
     return (
       <>
@@ -42,8 +68,8 @@ const StaffReport = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -56,7 +82,7 @@ const StaffReport = () => {
         </div>
       ),
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
-      fixed: 'left',
+      fixed: "left",
     },
     {
       title: "%",
@@ -222,310 +248,309 @@ const StaffReport = () => {
       ),
     },
     {
-        title: () => renderTitle("08", "M"),
-        dataIndex: "m08",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("09", "T"),
-        dataIndex: "t09",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("10", "W"),
-        dataIndex: "w10",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("11", "T"),
-        dataIndex: "t011",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("12", "F"),
-        dataIndex: "f012",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("13", "S"),
-        dataIndex: "s13",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("14", "S"),
-        dataIndex: "s14",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("15", "M"),
-        dataIndex: "m15",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("16", "T"),
-        dataIndex: "t16",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("17", "W"),
-        dataIndex: "w17",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("18", "T"),
-        dataIndex: "t018",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("19", "F"),
-        dataIndex: "f019",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("20", "S"),
-        dataIndex: "s20",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("21", "S"),
-        dataIndex: "s21",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("22", "M"),
-        dataIndex: "m22",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      {
-        title: () => renderTitle("23", "T"),
-        dataIndex: "t23",
-        render: (text: string) => (
-          <>
-            {text === "1" ? (
-              <span className="attendance-range bg-success"></span>
-            ) : text === "2" ? (
-              <span className="attendance-range bg-pending"></span>
-            ) : text === "3" ? (
-              <span className="attendance-range bg-dark"></span>
-            ) : text === "4" ? (
-              <span className="attendance-range bg-danger"></span>
-            ) : (
-              <span className="attendance-range bg-info"></span>
-            )}
-          </>
-        ),
-      },
-      
+      title: () => renderTitle("08", "M"),
+      dataIndex: "m08",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("09", "T"),
+      dataIndex: "t09",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("10", "W"),
+      dataIndex: "w10",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("11", "T"),
+      dataIndex: "t011",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("12", "F"),
+      dataIndex: "f012",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("13", "S"),
+      dataIndex: "s13",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("14", "S"),
+      dataIndex: "s14",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("15", "M"),
+      dataIndex: "m15",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("16", "T"),
+      dataIndex: "t16",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("17", "W"),
+      dataIndex: "w17",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("18", "T"),
+      dataIndex: "t018",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("19", "F"),
+      dataIndex: "f019",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("20", "S"),
+      dataIndex: "s20",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("21", "S"),
+      dataIndex: "s21",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("22", "M"),
+      dataIndex: "m22",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: () => renderTitle("23", "T"),
+      dataIndex: "t23",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="attendance-range bg-success"></span>
+          ) : text === "2" ? (
+            <span className="attendance-range bg-pending"></span>
+          ) : text === "3" ? (
+            <span className="attendance-range bg-dark"></span>
+          ) : text === "4" ? (
+            <span className="attendance-range bg-danger"></span>
+          ) : (
+            <span className="attendance-range bg-info"></span>
+          )}
+        </>
+      ),
+    },
   ];
   return (
     <>
@@ -545,7 +570,7 @@ const StaffReport = () => {
                     <Link to="#">Report</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                  Staff Attendance Report
+                    Staff Attendance Report
                   </li>
                 </ol>
               </nav>
@@ -585,9 +610,7 @@ const StaffReport = () => {
             <div className="list-tab">
               <ul>
                 <li>
-                  <Link to={routes.attendanceReport} >
-                    Attendance Report
-                  </Link>
+                  <Link to={routes.attendanceReport}>Attendance Report</Link>
                 </li>
                 <li>
                   <Link to={routes.studentAttendanceType}>
@@ -610,7 +633,9 @@ const StaffReport = () => {
                   <Link to={routes.staffDayWise}>Staff Day Wise</Link>
                 </li>
                 <li>
-                  <Link to={routes.staffReport} className="active">Staff Report</Link>
+                  <Link to={routes.staffReport} className="active">
+                    Staff Report
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -693,7 +718,7 @@ const StaffReport = () => {
                           </div>
                           <div className="col-md-12">
                             <div className="mb-3">
-                            <label className="form-label">Name</label>
+                              <label className="form-label">Name</label>
                               <CommonSelect
                                 className="select"
                                 options={names}
@@ -774,8 +799,16 @@ const StaffReport = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              
-              <Table dataSource={data} columns={columns} Selection={false} />
+
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={staffAttendanceData}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

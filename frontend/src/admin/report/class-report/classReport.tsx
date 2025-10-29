@@ -45,8 +45,6 @@ interface filterProps {
 }
 
 const ClassReport = () => {
-  // const data = classreport;
-  // const data2 = classstudentreport;
   const routes = all_routes;
   const [allClasses, setAllClasses] = useState<rowsProps[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<rowsProps[]>([]);
@@ -99,7 +97,6 @@ const ClassReport = () => {
             }
           )
         );
-        toast.success(data.message || "class data fetch successfully.");
       } else {
         toast.error(data.message || "fetching classes failed.");
       }
@@ -182,7 +179,7 @@ const ClassReport = () => {
     {
       title: "ID",
       dataIndex: "id",
-      render: (text: number, record: any) => (
+      render: (text: number) => (
         <>
           <Link to="#" className="link-primary">
             CL0{text}

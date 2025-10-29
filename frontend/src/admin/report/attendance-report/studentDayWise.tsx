@@ -1,30 +1,77 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
-import CommonSelect from "../../../core/common/commonSelect";
+// import CommonSelect from "../../../core/common/commonSelect";
 import Table from "../../../core/common/dataTable/index";
-import {
-  allClass,
-  allSection,
-  date,
-} from "../../../core/common/selectoption/selectoption";
+// import {
+//   allClass,
+//   allSection,
+//   // date,
+// } from "../../../core/common/selectoption/selectoption";
 
 import type { TableData } from "../../../core/data/interface";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { studentDayWiseData } from "../../../core/data/json/student_day_wise";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import { studentDayWiseData } from "../../../core/data/json/student_day_wise";
+import { dailyStudentAttendanceReport } from "../../../service/reports";
+import { Imageurl } from "../../../service/api";
+import { DatePicker } from "antd";
+import type { Dayjs } from "dayjs";
+import { toast } from "react-toastify";
+
+interface attendaceFormat {
+  key: number;
+  admissionNo: string;
+  rollNo: number;
+  img: string;
+  name: string;
+  attendance: string;
+}
 
 const StudentDayWise = () => {
   const routes = all_routes;
 
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  // const data = studentDayWiseData;
+
+  const [dailyStudentAttendance, setdailyStudentAttendance] = useState<
+    attendaceFormat[]
+  >([]);
+  const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
+
+  const fetchDailyAttendance = async (date?: any) => {
+    const { data } = await dailyStudentAttendanceReport(
+      date ? date : new Date()
+    );
+    if (data.success) {
+      setdailyStudentAttendance(
+        data.data.map((attendance: any, index: number) => ({
+          key: index + 1,
+          admissionNo: attendance.admissionnum,
+          rollNo: attendance.student_rollnum,
+          img: attendance.stu_img,
+          name: attendance.name,
+          attendance: attendance.attendance,
+        }))
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchDailyAttendance();
+  }, []);
+
   const handleApplyClick = () => {
+    if (!filter.date) {
+      toast.error("please select any valid date.");
+      return;
+    }
+    fetchDailyAttendance(filter.date);
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-  const data = studentDayWiseData;
 
   const columns = [
     {
@@ -34,8 +81,7 @@ const StudentDayWise = () => {
     },
     {
       title: " Adminssion No",
-      dataIndex: "id",
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      dataIndex: "admissionNo",
     },
     {
       title: " Roll No",
@@ -48,8 +94,8 @@ const StudentDayWise = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -67,8 +113,15 @@ const StudentDayWise = () => {
       title: " Attendance",
       dataIndex: "attendance",
       render: (text: string, record: any) => (
-        <span className={`${record.class} d-inline-flex align-items-center`}>
-          <i className="ti ti-circle-filled fs-5 me-1"></i>{text}
+        <span
+          className={`${
+            record.attendance == "Present"
+              ? "badge badge-soft-success"
+              : "badge badge-soft-danger"
+          } d-inline-flex align-items-center`}
+        >
+          <i className="ti ti-circle-filled fs-5 me-1"></i>
+          {text}
         </span>
       ),
       sorter: (a: TableData, b: TableData) =>
@@ -188,6 +241,7 @@ const StudentDayWise = () => {
                     className="dropdown-menu drop-width"
                     ref={dropdownMenuRef}
                     id="modal-datepicker"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
@@ -195,7 +249,7 @@ const StudentDayWise = () => {
                       </div>
                       <div className="p-3 border-bottom">
                         <div className="row">
-                          <div className="col-md-6">
+                          {/* <div className="col-md-6">
                             <div className="mb-3">
                               <label className="form-label">Class</label>
 
@@ -215,17 +269,24 @@ const StudentDayWise = () => {
                                 defaultValue={undefined}
                               />
                             </div>
-                          </div>
+                          </div> */}
                           <div className="col-md-12">
                             <div className="mb-3">
                               <label className="form-label">
                                 Attendance Date
                               </label>
 
-                              <CommonSelect
-                                className="select"
-                                options={date}
-                                defaultValue={undefined}
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                placeholder="Select Date"
+                                onChange={(date: Dayjs | null) => {
+                                  setFilter({
+                                    date: date
+                                      ? date.format("YYYY-MM-DD")
+                                      : null,
+                                  });
+                                }}
                               />
                             </div>
                           </div>
@@ -282,7 +343,11 @@ const StudentDayWise = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={false} />
+              <Table
+                dataSource={dailyStudentAttendance}
+                columns={columns}
+                Selection={false}
+              />
               {/* /Student List */}
             </div>
           </div>

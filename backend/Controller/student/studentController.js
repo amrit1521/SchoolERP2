@@ -926,8 +926,6 @@ exports.studentReport = async (req, res) => {
     father.name AS father_name,
     father.img_src AS father_img 
 FROM students s
-JOIN classes cl ON cl.id = s.class_id
-JOIN sections se ON se.id = s.section_id
 LEFT JOIN users u 
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 

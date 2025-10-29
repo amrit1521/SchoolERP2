@@ -1314,7 +1314,7 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
 exports.getExamResultUpdateList = async (req, res) => {
   try {
     const { className, section, examName } = req.body;
-
+    console.log(className, section, examName);
     if (!className || !section || !examName) {
       return res.status(400).json({
         success: false,
@@ -1334,6 +1334,7 @@ exports.getExamResultUpdateList = async (req, res) => {
         s.rollnum,
         s.section_id,
         s.class_id,
+        s.stu_img,
         cl.class_name as class,
         se.section_name as section,
         u.firstname,
@@ -1397,6 +1398,7 @@ exports.getExamResultUpdateList = async (req, res) => {
           section_id: row.section_id,
           admissionNum: row.admissionnum,
           rollNum: row.rollnum,
+          img:row.stu_img,
           subject: [],
           totalObtained: 0,
           totalMax: 0,
