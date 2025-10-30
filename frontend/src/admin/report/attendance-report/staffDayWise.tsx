@@ -19,6 +19,7 @@ import { toast } from "react-toastify";
 import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import { Imageurl } from "../../../service/api";
+import { Spinner } from "../../../spinner";
 
 interface attendaceFormat {
   key: number;
@@ -32,7 +33,7 @@ interface attendaceFormat {
 
 const StaffDayWise = () => {
   const routes = all_routes;
-
+  const [loading, setLoading] = useState<boolean>(false);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   // const data = staffDayWiseData;
   const [dailyStaffAttendance, setdailyStaffAttendance] = useState<
@@ -40,6 +41,7 @@ const StaffDayWise = () => {
   >([]);
   const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
   const fetchDailyAttendance = async (date?: any) => {
+    setLoading(true);
     const { data } = await dailyStaffAttendanceReport(date ? date : new Date());
     if (data.success) {
       setdailyStaffAttendance(
@@ -54,6 +56,7 @@ const StaffDayWise = () => {
         }))
       );
     }
+    setLoading(false);
   };
 
   const handleApplyClick = () => {
@@ -349,11 +352,15 @@ const StaffDayWise = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table
-                dataSource={dailyStaffAttendance}
-                columns={columns}
-                Selection={false}
-              />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={dailyStaffAttendance}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

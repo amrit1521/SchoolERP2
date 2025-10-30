@@ -673,21 +673,31 @@ exports.getDailyClassAttendanceReport = async (req, res) => {
     console.log('date: ',date,req.query.date);
     const sql = `
       SELECT 
-        ai.class AS class,
-        ai.section AS section,
-        se.noOfStudents,
-        SUM(ai.attendance = 'Present') AS total_present,
-        SUM(ai.attendance = 'Absent') AS total_absent,
-        (SUM(ai.attendance = 'Present') / se.noOfStudents * 100) AS present_percent,
-        (SUM(ai.attendance = 'Absent') / se.noOfStudents * 100) AS absent_percent
-      FROM attendance_info ai
-      RIGHT JOIN classes c 
-        ON c.class_name = ai.class
-      RIGHT JOIN sections se 
-        ON se.section_name = ai.section 
-        AND c.id = se.class_id
-      WHERE DATE(ai.attendance_date_info) = ?
-      GROUP BY ai.class, ai.section, se.noOfStudents;
+      ai.class AS class,
+      ai.section AS section,
+      se.noOfStudents,
+      SUM(ai.attendance = 'Present') AS total_present,
+      SUM(ai.attendance = 'Absent') AS total_absent,
+      ROUND(
+        (SUM(ai.attendance = 'Present') / 
+          NULLIF(SUM(ai.attendance = 'Present') + SUM(ai.attendance = 'Absent'), 0)
+        ) * 100, 
+        2
+      ) AS present_percent,
+      ROUND(
+        (SUM(ai.attendance = 'Absent') / 
+          NULLIF(SUM(ai.attendance = 'Present') + SUM(ai.attendance = 'Absent'), 0)
+        ) * 100, 
+        2
+      ) AS absent_percent
+    FROM attendance_info ai
+    RIGHT JOIN classes c 
+      ON c.class_name = ai.class
+    RIGHT JOIN sections se 
+      ON se.section_name = ai.section 
+      AND c.id = se.class_id
+    WHERE DATE(ai.attendance_date_info) = ?
+    GROUP BY ai.class, ai.section, se.noOfStudents
     `;
 
     const [rows] = await db.query(sql, [date]);

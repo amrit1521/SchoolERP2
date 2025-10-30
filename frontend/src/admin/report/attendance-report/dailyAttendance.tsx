@@ -10,6 +10,7 @@ import type { TableData } from "../../../core/data/interface";
 import { dailyClassAttendanceReport } from "../../../service/reports";
 import { DatePicker } from "antd";
 import { toast } from "react-toastify";
+import { Spinner } from "../../../spinner";
 
 interface attendaceFormat {
   class: string;
@@ -27,8 +28,10 @@ const DailyAttendance = () => {
   const [dailyStudentAttendance, setdailyStudentAttendance] = useState<
     attendaceFormat[]
   >([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
   const fetchDailyAttendance = async (date?: any) => {
+    setLoading(true);
     const { data } = await dailyClassAttendanceReport(date ? date : new Date());
     if (data.success) {
       setdailyStudentAttendance(
@@ -42,6 +45,7 @@ const DailyAttendance = () => {
         }))
       );
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -290,11 +294,15 @@ const DailyAttendance = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table
-                dataSource={dailyStudentAttendance}
-                columns={columns}
-                Selection={false}
-              />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={dailyStudentAttendance}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>
