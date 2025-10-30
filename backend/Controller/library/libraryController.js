@@ -57,16 +57,12 @@ exports.addLibraryMember = async (req, res) => {
 
 exports.allLibraryMember = async (req, res) => {
   try {
-
     const baseUrl = `${req.protocol}://${req.get("host")}/api/stu/uploads`;
-
     const sql = `SELECT id, img_src, folder, name, cardno, email, date_of_join, phone_no 
                  FROM librarymember 
                  ORDER BY created_at DESC`;
 
     const [rows] = await db.query(sql);
-
-
     const members = rows.map(member => ({
       ...member,
       image_url: `${baseUrl}/${member.folder}/${member.img_src}`
@@ -145,8 +141,6 @@ exports.deleteLibraryMember = async (req, res) => {
     });
   }
 };
-
-
 
 // library book ------------------------------------------
 
@@ -395,8 +389,6 @@ exports.bookDataForIssueBook = async (req, res) => {
   }
 }
 
-
-
 exports.getAllStuIssueBook = async (req, res) => {
   try {
     const sql = `
@@ -437,7 +429,6 @@ exports.getAllStuIssueBook = async (req, res) => {
   }
 };
 
-
 exports.getSpeStuIssueBookData = async (req, res) => {
 
   const { rollnum } = req.params
@@ -454,7 +445,7 @@ exports.getSpeStuIssueBookData = async (req, res) => {
               ib.last_date,
               ib.bookId,
               ib.status,
-              b.img_src,
+              b.bookImg,
               b.bookName
               FROM libraryIssueBooks ib
               LEFT JOIN library_book_info b ON ib.bookid=b.id
@@ -470,7 +461,6 @@ exports.getSpeStuIssueBookData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error!", success: false })
   }
 }
-
 
 exports.issueBook = async (req, res) => {
   try {

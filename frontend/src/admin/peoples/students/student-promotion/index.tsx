@@ -530,7 +530,7 @@ const StudentPromotion = () => {
                           className="btn btn-primary promote-students-btn"
                           onClick={() => handleManagePromotion()}
                         >
-                          Manage Promotion
+                         {loadingStudents?"Managing...":"Manage Promotion"}
                         </button>
                       </div>
                     </div>
