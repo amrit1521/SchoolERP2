@@ -196,10 +196,39 @@ export const addPickupPoints = async (req, res) => {
   }
 };
 
+
+
 export const getAllPickupPoints = async (req, res) => {
   try {
     const [rows] = await db.query(
       "SELECT * FROM transport_pickupPoints ORDER BY id DESC"
+    );
+    return res.status(200).json({
+      message: "Pickup points fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getAllPickupPointsForARoute = async (req, res) => {
+  const { id } = req.params;
+  if(!id){
+    return res.status(200).json({
+      message: "route Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql = `SELECT * FROM transport_pickupPoints where route_id=? ORDER BY id DESC`;
+    const [rows] = await db.query(
+      sql,[id]
     );
     return res.status(200).json({
       message: "Pickup points fetched successfully",
@@ -584,6 +613,45 @@ export const getAllAssignedVehicles = async (req, res) => {
     }
     return res.status(200).json({
       message: "Assigned vehicles fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+export const getAssignedVehiclesForARoute = async (req, res) => {
+  const {id} = req.params;
+   if(!id){
+    return res.status(200).json({
+      message: "route Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql = `
+      SELECT tr.id as route_id, vi.vehicle_no, vi.vehicle_model, vi.id as vehicle_id, tva.status
+      FROM transport_vehicle_assigned tva
+      JOIN transport_routes tr ON tva.route_id = tr.id 
+      JOIN vehicle_info vi ON tva.vehicle_id = vi.id
+      where tva.route_id = ?
+      ORDER BY tva.id ASC;
+    `;
+    const [rows] = await db.query(sql,[id]);
+    if (rows.length < 0) {
+      return res.status(200).json({
+        message: "No Assigned vehicles for this route found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Assigned vehicles for a route fetched successfully",
       success: true,
       result: rows,
     });
