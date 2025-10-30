@@ -1650,7 +1650,7 @@ function buildInvoiceHTML(invoice, products = []) {
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Product</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Total</th>
+            <th>#</th><th>Invoice-Item</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Total</th>
           </tr>
         </thead>
         <tbody>${productRows}</tbody>

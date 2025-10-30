@@ -47,4 +47,6 @@ router.post("/getspeexamresult", examController.getSpeExamResult);
 router.get("/spemark/:id", examController.speMarkForEdit);
 router.put("/editmark/:id", examController.editMark);
 
+
+
 module.exports = router;

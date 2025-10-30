@@ -2,7 +2,8 @@
 const db = require('../../config/db')
 const bcrypt = require('bcryptjs');
 const transporter = require('../../utils/sendEmail')
-const dayjs = require('dayjs')
+const dayjs = require('dayjs');
+const { promise } = require('zod');
 
 
 function generateRandomPassword(length = 12) {
@@ -98,6 +99,13 @@ exports.addStudent = async (req, res) => {
         connection.query("UPDATE files SET status=1 WHERE filename=?", [file])
       )
     );
+
+    //  const [userResForParent] = await connection.query(
+    //   `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
+    //    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    //   [data.firstname, data.lastname, data.primarycont, data.email, hashPassword, 3, data.status]
+    // );
+    // const parentId = userResForParent.insertId;
 
 
     const parentsData = [
@@ -271,7 +279,7 @@ exports.filterStudents = async (req, res) => {
                 ON u.id = s.stu_id
                   RIGHT JOIN classes  c ON c.id =  s.class_id
           RIGHT JOIN sections se ON se.id = s.section_id
-                WHERE u.roll_id=3 AND class=? AND section=?
+                WHERE u.roll_id=3 AND s.class_id=? AND s.section_id=?
         `;
 
     const [students] = await db.query(sql, [data.class, data.section]);
@@ -287,6 +295,8 @@ exports.filterStudents = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error!', success: false });
   }
 };
+
+
 exports.filterStudentsForOption = async (req, res) => {
 
   const data = req.body;
@@ -1040,6 +1050,192 @@ exports.studentForOption2 = async (req, res) => {
     return res.status(500).json({ message: "Internal server error !", success: false })
   }
 }
+
+exports.filterStudentsForParmotion = async (req, res) => {
+
+  const data = req.body;
+
+  try {
+    const sql = `
+      SELECT 
+        s.id AS student_id,
+        s.rollnum,
+        s.admissionnum,
+        u.firstname, 
+        u.lastname,
+        s.class_id,
+        s.section_id,
+        s.stu_img,
+        UPPER(c.class_name) as class,
+        UPPER( se.section_name) as section,
+        en.examName,
+        er.mark_obtained,
+        er.max_mark
+      FROM exam_result er
+      JOIN examName en ON er.exam_name_id = en.id
+      JOIN students s ON er.roll_num = s.rollnum
+      JOIN users u ON u.id = s.stu_id
+      JOIN classes  c ON c.id =  s.class_id
+      JOIN sections se ON se.id = s.section_id
+      WHERE s.class_id = ? 
+        AND s.section_id = ?
+        AND (en.examName = 'Semester1' OR en.examName = 'Semester2')
+      ORDER BY s.rollnum;
+    `;
+
+    const [rows] = await db.query(sql, [data.class, data.section]);
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: false,
+        message: "No student results found!",
+      });
+    }
+
+    
+    const studentMap = {};
+    rows.forEach((row) => {
+      if (!studentMap[row.student_id]) {
+        studentMap[row.student_id] = {
+          rollnum: row.rollnum,
+          admissionnum: row.admissionnum,
+          firstname: row.firstname,
+          student_id: row.student_id,
+          class: row.class,
+          section: row.section,
+          stu_img: row.stu_img,
+          lastname: row.lastname,
+          semester1: { obtained: 0, max: 0 },
+          semester2: { obtained: 0, max: 0 },
+        };
+      }
+
+      if (row.examName === "Semester1") {
+        studentMap[row.student_id].semester1.obtained += row.mark_obtained || 0;
+        studentMap[row.student_id].semester1.max += row.max_mark || 0;
+      } else if (row.examName === "Semester2") {
+        studentMap[row.student_id].semester2.obtained += row.mark_obtained || 0;
+        studentMap[row.student_id].semester2.max += row.max_mark || 0;
+      }
+    });
+
+    
+    const finalResult = Object.values(studentMap).map((stu) => {
+      const totalObtained = stu.semester1.obtained + stu.semester2.obtained;
+      const totalMax = stu.semester1.max + stu.semester2.max;
+
+      const percent = totalMax > 0 ? Number(((totalObtained / totalMax) * 100).toFixed(2)) : 0;
+
+      const result = percent >= 33 ? "Pass" : "Fail";
+
+      return {
+        student_id: stu.student_id,
+        rollnum: stu.rollnum,
+        admissionnum: stu.admissionnum,
+        firstname: stu.firstname,
+        lastname: stu.lastname,
+        class: stu.class,
+        section: stu.section,
+        stu_img: stu.stu_img,
+        result,
+        percent,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Student fetched  successfully fro promotion!",
+      students: finalResult,
+    });
+  } catch (error) {
+    console.error("❌ Error in getFinalResultByClassSection:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
+exports.promoteStudents = async (req, res) => {
+  let connection;
+  try {
+    const { studentIds, toAcademicYear, toClassId, toSectionId } = req.body;
+
+    if (
+      !studentIds ||
+      !Array.isArray(studentIds) ||
+      studentIds.length === 0 ||
+      !toAcademicYear ||
+      !toClassId ||
+      !toSectionId
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields for promotion",
+      });
+    }
+
+
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    const [existingStudents] = await connection.query(
+      "SELECT id, class_id, section_id, academicyear FROM students WHERE id IN (?)",
+      [studentIds]
+    );
+
+    if (existingStudents.length === 0) {
+      await connection.rollback();
+      return res
+        .status(404)
+        .json({ success: false, message: "No students found with given IDs" });
+    }
+
+    const [updateResult] = await connection.query(
+      `UPDATE students 
+       SET class_id = ?, section_id = ?, academicyear = ?
+       WHERE id IN (?)`,
+      [toClassId, toSectionId, toAcademicYear, studentIds]
+    );
+
+    await Promise.all(
+      existingStudents.map((stu) =>
+        connection.query(
+          `INSERT INTO promotion_history (student_id, from_class, to_class, from_section, to_section, from_year, to_year, promoted_on)
+           VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            stu.id,
+            stu.class_id,
+            toClassId,
+            stu.section_id,
+            toSectionId,
+            stu.academicyear,
+            toAcademicYear,
+          ]
+        )
+      )
+    );
+
+    await connection.commit();
+    return res.status(200).json({
+      success: true,
+      message: "Students promoted successfully!",
+      promotedCount: updateResult.affectedRows,
+    });
+  } catch (error) {
+    console.error("Promotion error:", error);
+    if (connection) await connection.rollback();
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+
 
 
 

@@ -1217,7 +1217,7 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
     const studentsMap = {};
 
     rows.forEach((row) => {
-      const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
+      const key = `${row.rollnum}_${row.examName}`; 
       if (!studentsMap[key]) {
         studentsMap[key] = {
           key: row.id,
@@ -1644,3 +1644,6 @@ exports.editMark = async (req, res) => {
     });
   }
 };
+
+
+

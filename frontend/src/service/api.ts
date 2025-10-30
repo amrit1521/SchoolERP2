@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL: string =import.meta.env.VITE_SERVERURL || "http://localhost:3004";
+const BASE_URL: string = import.meta.env.VITE_SERVERURL || "http://localhost:3004";
 export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;
@@ -42,16 +42,16 @@ export const CreateNotice = (data: any) =>
 export const UploadNoticeFile = (data: object) =>
   api2.post("/notification/upload", data);
 export const getAllNotice = () => api.get("/notification/all-notice");
-export const deleteNotice = (data:any) => api.post("/notification/delete-notice",data);
-export const updateNotice = (data:any) => api.patch("/notification/update-notice",data);
+export const deleteNotice = (data: any) => api.post("/notification/delete-notice", data);
+export const updateNotice = (data: any) => api.patch("/notification/update-notice", data);
 
 export const CreateEvent = (data: any) =>
   api.post("/notification/create-event", data);
 export const UploadEventFile = (data: object) =>
   api2.post("/notification/event/upload", data);
 export const getAllEvent = () => api.get("/notification/all-event");
-export const updateEvent = (data:any) => api.patch("/notification/update-event",data);
-export const deleteEvent = (data:any) => api.post("/notification/delete-event",data);
+export const updateEvent = (data: any) => api.patch("/notification/update-event", data);
+export const deleteEvent = (data: any) => api.post("/notification/delete-event", data);
 
 
 // student apis-------------------
@@ -79,6 +79,8 @@ export const getStuByToken = (userId: number) =>
   api.get(`/stu/getstubytoken/${userId}`);
 export const stuForOption = () => api.get(`/stu/stuforoption`);
 export const stuForOption2 = () => api.get(`/stu/stuforoption2`);
+export const studentsForParmotion = (data: object) => api.post('/stu/filterstudentsforparmotion', data)
+export const parmoteStudents = (data: object) => api.post('/stu/parmotestudents', data)
 
 export const uploadStudentFile = (data: object) =>
   api2.post("/stu/upload", data);
@@ -128,25 +130,27 @@ export const filterTimeTable = (data: object) =>
   api.post("/table/filtertable", data);
 
 // library routes---------------------------
-export const addLibrarymember = (data: object) =>
-  api2.post("/library/addlibrarymember", data);
+export const addLibrarymember = (data: object) => api2.post("/library/addlibrarymember", data);
 export const getAllLibraryMember = () => api.get("/library");
-export const adddBookInLibrary = (data: object) =>
-  api2.post("/library/addbook", data);
+export const deleteLibraryMember = (id: number) => api.delete(`/library/deletelibrarymember/${id}`)
+
+
+export const adddBookInLibrary = (data: object) => api.post("/library/addbook", data);
 export const getallbook = () => api.get("/library/allbook");
-export const getStuIssueBookData = (rollnum: number) =>
-  api.get(`/library/stuissuebookdata/${rollnum}`);
-export const stuDataForIssueBook = () =>
-  api.get("/library/studataforissuebook");
-export const bookDataForIssueBook = () =>
-  api.get("/library/bookdataforissuebook");
-export const issuBookToStu = (data: object) =>
-  api.post("/library/issuebook", data);
+export const speBook = (id: number) => api.get(`/library/spebook/${id}`)
+export const editBook = (data: object, id: number) => api.put(`/library/editbook/${id}`, data)
+export const deleteBook = (id: number) => api.delete(`/library/deletebook/${id}`)
+
+export const uploadBookImg = (data: object) => api2.post("/library/upload", data);
+export const deleteBookImg = (id: number) => api.delete(`/library/deletefile/${id}`);
+
+export const getStuIssueBookData = (rollnum: number) => api.get(`/library/stuissuebookdata/${rollnum}`);
+export const stuDataForIssueBook = () => api.get("/library/studataforissuebook");
+export const bookDataForIssueBook = () => api.get("/library/bookdataforissuebook");
+export const issuBookToStu = (data: object) => api.post("/library/issuebook", data);
 export const getAllStuIssueBook = () => api.get("/library/getallstuissuebook");
-export const speStuNotReturnBookData = (rollnum: number) =>
-  api.get(`/library/spestunotretubookdata/${rollnum}`);
-export const returnBook = (data: object) =>
-  api.put("/library/returnbook", data);
+export const speStuNotReturnBookData = (rollnum: number) => api.get(`/library/spestunotretubookdata/${rollnum}`);
+export const returnBook = (data: object) => api.put("/library/returnbook", data);
 
 // attendance routes----------------------------
 export const markAttendance = (data: object) =>

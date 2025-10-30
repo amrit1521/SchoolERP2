@@ -7,7 +7,7 @@ import {
   Hostel,
   Marital,
   PickupPoint,
-  roomno,
+  roomNo,
   route,
   Shift,
   staffDepartment,
@@ -496,7 +496,7 @@ const AddStaff = () => {
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Room No</label>
-                            <CommonSelect className="select" options={roomno} />
+                            <CommonSelect className="select" options={roomNo} />
                           </div>
                         </div>
                       </div>

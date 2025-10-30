@@ -15,7 +15,7 @@ import {
   allSubject,
   bloodGroup,
   gender,
-  roomNO,
+  roomNo,
   route,
   status,
 
@@ -1514,7 +1514,7 @@ const TeacherForm = () => {
                           <label className="form-label">Room No</label>
                           <CommonSelect
                             className="select"
-                            options={roomNO}
+                            options={roomNo}
                             value={teacherData.room_num}
                             onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
                           />

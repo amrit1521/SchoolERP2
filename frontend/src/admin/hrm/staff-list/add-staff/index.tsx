@@ -7,11 +7,9 @@ import {
   Hostel,
   Marital,
   PickupPoint,
-  roomNO,
-
+  roomNo,
   route,
   Shift,
-  staffrole,
   status,
   VehicleNumber,
 } from "../../../../core/common/selectoption/selectoption";
@@ -24,6 +22,7 @@ import { addStaff, deleteStaffFile, uploadStaffFile } from "../../../../service/
 import { departmentOption } from "../../../../service/department";
 import { designationOption } from "../../../../service/designation";
 import dayjs from 'dayjs'
+import { getAllRoles } from "../../../../service/api";
 
 
 export interface StaffData {
@@ -575,6 +574,7 @@ const AddStaff = () => {
 
   const [departOptions, setDepartOption] = useState<OptionType[]>([]);
   const [desgiOptions, setDesgiOption] = useState<OptionType[]>([]);
+  const [roleOptions , setRoleOptions] = useState<OptionType[]>([])
 
   const fetchDepartMentAndDesginationOption = async () => {
 
@@ -609,8 +609,26 @@ const AddStaff = () => {
     }
   };
 
+  const fetchRoles = async () => {
+      try {
+        const { data } = await getAllRoles();
+        if (data.success) {
+         
+          setRoleOptions(
+            data.result.map((item: any) => ({
+              value: item.id,
+              label: item.role_name,
+            }))
+          );
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to load roles data");
+      }
+    };
+
   useEffect(() => {
     fetchDepartMentAndDesginationOption();
+    fetchRoles()
   }, []);
 
 
@@ -727,8 +745,8 @@ const AddStaff = () => {
                             <div className="mb-3">
                               <label className="form-label">Role<span className="text-danger">*</span></label>
                               <CommonSelect
-                                className="select"
-                                options={staffrole}
+                                className="select text-capitalize"
+                                options={roleOptions}
                                 value={staffData.role}
                                 onChange={(option) => handleSelectChange("role", option ? option.value : "")}
                               />
@@ -1390,7 +1408,7 @@ const AddStaff = () => {
                             <label className="form-label">Room No</label>
                             <CommonSelect
                               className="select"
-                              options={roomNO}
+                              options={roomNo}
                               value={staffData.room_num}
                               onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
                             />
