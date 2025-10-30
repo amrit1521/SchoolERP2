@@ -19,6 +19,7 @@ import { Imageurl } from "../../../service/api";
 import { DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
+import { Spinner } from "../../../spinner";
 
 interface attendaceFormat {
   key: number;
@@ -34,13 +35,14 @@ const StudentDayWise = () => {
 
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   // const data = studentDayWiseData;
-
+  const [loading, setLoading] = useState<boolean>(false);
   const [dailyStudentAttendance, setdailyStudentAttendance] = useState<
     attendaceFormat[]
   >([]);
   const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
 
   const fetchDailyAttendance = async (date?: any) => {
+    setLoading(true);
     const { data } = await dailyStudentAttendanceReport(
       date ? date : new Date()
     );
@@ -56,6 +58,7 @@ const StudentDayWise = () => {
         }))
       );
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -343,11 +346,15 @@ const StudentDayWise = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table
-                dataSource={dailyStudentAttendance}
-                columns={columns}
-                Selection={false}
-              />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={dailyStudentAttendance}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

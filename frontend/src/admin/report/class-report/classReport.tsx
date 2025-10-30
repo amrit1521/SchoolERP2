@@ -17,6 +17,7 @@ import { all_routes } from "../../router/all_routes";
 // import { classreport } from "../../../core/data/json/class_report";
 import { toast } from "react-toastify";
 import { allStudents, getAllSection } from "../../../service/api";
+import { Spinner } from "../../../spinner";
 
 interface rowsProps {
   id: number;
@@ -24,7 +25,8 @@ interface rowsProps {
   class_id: number;
   class: string;
   section: string;
-  NoOfStudent: number;
+  noOfSeats: number;
+  noOfStudents?: number;
 }
 
 interface Student {
@@ -59,6 +61,7 @@ const ClassReport = () => {
     classId: null,
     sectionId: null,
   });
+  const [loading, setLoading] = useState<boolean>(false);
 
   const fetchClass = async () => {
     try {
@@ -71,7 +74,7 @@ const ClassReport = () => {
             class_id: cl.class_id,
             class: cl.class_name,
             section: cl.section.toUpperCase(),
-            NoOfStudent: cl.noOfStudents,
+            noOfSeats: cl.noOfStudents,
           }))
         );
         setFilteredClasses(
@@ -81,7 +84,7 @@ const ClassReport = () => {
             class_id: cl.class_id,
             class: cl.class_name,
             section: cl.section.toUpperCase(),
-            NoOfStudent: cl.noOfStudents,
+            noOfSeats: cl.noOfStudents,
           }))
         );
         setClassOption(
@@ -108,12 +111,14 @@ const ClassReport = () => {
 
   const fetchStudentDetails = async () => {
     try {
+      setLoading(true);
       const { data } = await allStudents();
       if (data.success) {
         setAllStudentData(data.students);
       } else {
         toast.error(data.message || "fetching student details failed.");
       }
+      setLoading(false);
     } catch (error: any) {
       console.log(error.response);
       toast.error(
@@ -150,6 +155,27 @@ const ClassReport = () => {
     fetchClass();
     fetchStudentDetails();
   }, []);
+
+  useEffect(() => {
+    if (!allStudentData?.length || !allClasses?.length) return;
+
+    const updatedClasses = allClasses.map((cl: any) => {
+      const noOfStudents = allStudentData.reduce(
+        (prev: number, std: any) =>
+          cl.class_id === std.class_id && cl.section_id === std.section_id
+            ? prev + 1
+            : prev,
+        0
+      );
+      return { ...cl, noOfStudents };
+    });
+    const isSame =
+      JSON.stringify(updatedClasses) === JSON.stringify(allClasses);
+    if (!isSame) {
+      setAllClasses(updatedClasses);
+      setFilteredClasses(updatedClasses);
+    }
+  }, [allStudentData]);
 
   useEffect(() => {
     if (filter.classId) {
@@ -201,10 +227,12 @@ const ClassReport = () => {
         a.section.length - b.section.length,
     },
     {
-      title: "No Of Students",
-      dataIndex: "NoOfStudent",
-      sorter: (a: TableData, b: TableData) =>
-        a.noOfStudents.length - b.noOfStudents.length,
+      title: "No Of Seats",
+      dataIndex: "noOfSeats",
+    },
+    {
+      title: "Available Students",
+      dataIndex: "noOfStudents",
     },
     {
       title: "Action",
@@ -523,13 +551,15 @@ const ClassReport = () => {
               <div className="modal-wrapper">
                 <div className="modal-body">
                   {/* Student List */}
-
-                  <Table
-                    columns={columns2}
-                    dataSource={selectedClassStudent}
-                    Selection={true}
-                  />
-
+                  {loading ? (
+                    <Spinner />
+                  ) : (
+                    <Table
+                      columns={columns2}
+                      dataSource={selectedClassStudent}
+                      Selection={true}
+                    />
+                  )}
                   {/* /Student List */}
                 </div>
               </div>

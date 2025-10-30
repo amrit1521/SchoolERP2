@@ -1,16 +1,9 @@
 import { Link } from "react-router-dom";
 import Table from "../../../core/common/dataTable/index";
-import { grade_report_data } from "../../../core/data/json/grade_report_data";
-// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { all_routes } from "../../router/all_routes";
 import type { TableData } from "../../../core/data/interface";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
-// import {
-//   classes,
-//   examtwo,
-//   sections,
-// } from "../../../core/common/selectoption/selectoption";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import { useEffect, useRef, useState } from "react";
@@ -42,7 +35,6 @@ interface StudentExamResult {
 
 const GradeReport = () => {
   const routes = all_routes;
-  const data = grade_report_data;
   const [allClass, setAllClass] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [examOptions, setExamOptions] = useState<
@@ -70,9 +62,78 @@ const GradeReport = () => {
       toast.error("Error to fetch classes !");
     }
   };
+  const fetchInitialResultData = async () => {
+    try {
+      setLoading(true);
+      const { data: classData } = await allRealClasses();
+      if (!classData.success || !Array.isArray(classData.data)) return;
 
+      for (const cls of classData.data) {
+        const { data: sectionData } = await getAllSectionForAClass(cls.id);
+        if (!sectionData.success || !Array.isArray(sectionData.data)) continue;
+
+        for (const sec of sectionData.data) {
+          const { data: examData } = await examNameForOption({
+            class: cls.id,
+            section: sec.id,
+          });
+          if (!examData.success || !Array.isArray(examData.data)) continue;
+
+          // Try each exam
+          for (const exam of examData.data) {
+            const filtred = {
+              className: cls.id,
+              section: sec.id,
+              examName: exam.id,
+            };
+            const { data: resultData } = await getStudentExamResultEditList(
+              filtred
+            );
+
+            if (
+              resultData.success &&
+              Array.isArray(resultData.data) &&
+              resultData.data.length > 0
+            ) {
+              setFilterData({
+                class: cls.id,
+                section: sec.id,
+                exam_type: exam.id,
+              });
+
+              setStudentExamDetails(
+                resultData.data.map((item: any) => ({
+                  admissionNo: item.admissionNum,
+                  studentName: item.name,
+                  total: item.totalObtained,
+                  rollNo: item.rollNum,
+                  subjects: item.subject,
+                  img: item.img,
+                  percent: item.percentage,
+                  grade: item.grade,
+                }))
+              );
+              setSubjects(resultData.data[0]?.subject || []);
+              setLoading(false);
+              return; // stop here once you find one valid dataset
+            }
+          }
+        }
+      }
+
+      toast.info("No exam results found yet!");
+      setLoading(false);
+    } catch (error) {
+      console.error("Error auto-fetching result data:", error);
+      toast.error("Error loading initial data!");
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    fetchClasses();
+    (async () => {
+      await fetchClasses();
+      await fetchInitialResultData();
+    })();
   }, []);
 
   // handle Filter:
@@ -235,9 +296,11 @@ const GradeReport = () => {
       title: sub?.subject_name,
       dataIndex: sub?.subject_name?.toLowerCase(),
       key: sub?.subject_name?.toLowerCase(),
-      render: () => {
-        console.log(sub);
-        return <span>{sub.mark_obtained ? sub.mark_obtained : 0}</span>;
+      render: (_: any, record: any) => {
+        const subjectMarks = record.subjects.find(
+          (subject: any) => subject.subject_id === sub.subject_id
+        );
+        return <span>{subjectMarks ? subjectMarks.mark_obtained : 0}</span>;
       },
     })),
     {
@@ -313,7 +376,10 @@ const GradeReport = () => {
                     <i className="ti ti-filter me-2" />
                     Filter
                   </Link>
-                  <div className="dropdown-menu drop-width">
+                  <div
+                    className="dropdown-menu drop-width"
+                    ref={dropdownMenuRef}
+                  >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
                         <h4>Filter</h4>
