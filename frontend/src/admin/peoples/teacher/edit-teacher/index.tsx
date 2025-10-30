@@ -1,617 +1,671 @@
-import React, { useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 // import { feeGroup, feesTypes, paymentType } from '../../../core/common/selectoption/selectoption'
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { all_routes } from "../../../router/all_routes";
 import {
-
-    Contract,
-    Hostel,
-    Marital,
-    PickupPoint,
-    Shift,
-    VehicleNumber,
-    allSubject,
-    bloodGroup,
-    gender,
-    roomNO,
-    route,
-    status,
-
+  Contract,
+  //   Hostel,
+  //   PickupPoint,
+  //   VehicleNumber,
+  //   roomNO,
+  //   route,
+  Marital,
+  Shift,
+  allSubject,
+  bloodGroup,
+  gender,
+  status,
 } from "../../../../core/common/selectoption/selectoption";
 
 import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { deleteTeacherFile, editTeacher, getAllSectionForAClass, getTeacherDataForEdit, Imageurl, uploadTeacherFile } from "../../../../service/api";
+import {
+  deleteTeacherFile,
+  editTeacher,
+  getAllSectionForAClass,
+  getAllTransportRoutes,
+  getAssignedVehicleForARoute,
+  getTeacherDataForEdit,
+  getTransportPickUpPointsForRouteId,
+  Imageurl,
+  uploadTeacherFile,
+} from "../../../../service/api";
 import { allRealClasses } from "../../../../service/classApi";
+import { allHostel, getAllRoomForAHostel } from "../../../../service/hostel";
 
 export interface TeacherData {
+  first_name: string;
+  last_name: string;
+  primarycont: string;
+  email: string;
+  status: string;
 
-    first_name: string;
-    last_name: string;
-    primarycont: string;
-    email: string;
-    status: string;
+  // Teachers table fields
+  teacher_id: string;
+  fromclass: string;
+  toclass: string;
+  section: string;
+  class: string;
+  subject: string;
+  gender: string;
+  blood_gp: string;
+  date_of_join: string;
+  fat_name: string;
+  mot_name: string;
+  dob: string;
+  mari_status: string;
+  lan_known: string[];
+  qualification: string;
+  work_exp: string;
+  prev_school: string;
+  prev_school_addr: string;
+  prev_school_num: string;
+  address: string;
+  perm_address: string;
+  pan_or_id: string;
+  other_info: string;
 
-    // Teachers table fields
-    teacher_id: string;
-    fromclass: string;
-    toclass: string;
-    section: string;
-    class: string;
-    subject: string;
-    gender: string;
-    blood_gp: string;
-    date_of_join: string;
-    fat_name: string;
-    mot_name: string;
-    dob: string;
-    mari_status: string;
-    lan_known: string[];
-    qualification: string;
-    work_exp: string;
-    prev_school: string;
-    prev_school_addr: string;
-    prev_school_num: string;
-    address: string;
-    perm_address: string;
-    pan_or_id: string;
-    other_info: string;
+  // payroll
+  epf_no: string;
+  basic_salary: string;
+  contract_type: string;
+  work_sift: string;
+  work_location: string;
+  date_of_leave: string;
 
-    // payroll
-    epf_no: string;
-    basic_salary: string;
-    contract_type: string;
-    work_sift: string;
-    work_location: string;
-    date_of_leave: string;
+  // leaves
+  medical_leaves: string;
+  casual_leaves: string;
+  maternity_leaves: string;
+  sick_leaves: string;
 
-    // leaves
-    medical_leaves: string;
-    casual_leaves: string;
-    maternity_leaves: string;
-    sick_leaves: string;
+  // bnak details
+  account_name: string;
+  account_num: string;
+  bank_name: string;
+  ifsc_code: string;
+  branch_name: string;
 
-    // bnak details
-    account_name: string;
-    account_num: string;
-    bank_name: string;
-    ifsc_code: string;
-    branch_name: string;
+  // transport info
+  route: number | null;
+  vehicle_num: number | null;
+  pickup_point: number | null;
 
-    // transport info
-    route: string;
-    vehicle_num: string;
-    pickup_point: string;
+  // hostel info
+  hostel: number | null;
+  room_num: number | null;
 
-    // hostel info
-    hostel: string;
-    room_num: string;
-
-
-    //  social media link 
-    facebook_link: string;
-    instagram_link: string;
-    linked_link: string;
-    twitter_link: string;
-
+  //  social media link
+  facebook_link: string;
+  instagram_link: string;
+  linked_link: string;
+  twitter_link: string;
 }
 
 interface Option {
-    value: number;
-    label: string;
+  value: number;
+  label: string;
 }
 
-
-
-
 const EditTeacher = () => {
+  const { teacher_id } = useParams();
+  const routes = all_routes;
+  const navigate = useNavigate();
 
-    const { teacher_id } = useParams()
-    const routes = all_routes;
-    const navigate = useNavigate()
+  const [teacherData, setTeacherData] = useState<TeacherData>({
+    first_name: "",
+    last_name: "",
+    primarycont: "",
+    email: "",
+    status: "",
+    teacher_id: "",
+    fromclass: "",
+    toclass: "",
+    section: "",
+    class: "",
+    subject: "",
+    gender: "",
+    blood_gp: "",
+    date_of_join: "",
+    fat_name: "",
+    mot_name: "",
+    dob: "",
+    mari_status: "",
+    lan_known: [],
+    qualification: "",
+    work_exp: "",
+    prev_school: "",
+    prev_school_addr: "",
+    prev_school_num: "",
+    address: "",
+    perm_address: "",
+    pan_or_id: "",
+    other_info: "",
+    epf_no: "",
+    basic_salary: "",
+    contract_type: "",
+    work_sift: "",
+    work_location: "",
+    date_of_leave: "",
+    medical_leaves: "",
+    casual_leaves: "",
+    maternity_leaves: "",
+    sick_leaves: "",
+    account_name: "",
+    account_num: "",
+    bank_name: "",
+    ifsc_code: "",
+    branch_name: "",
+    // transport info
+    route: null,
+    vehicle_num: null,
+    pickup_point: null,
 
+    // hostel info
+    hostel: null,
+    room_num: null,
 
-    const [teacherData, setTeacherData] = useState<TeacherData>({
-        first_name: "",
-        last_name: "",
-        primarycont: "",
-        email: "",
-        status: "",
-        teacher_id: "",
-        fromclass: "",
-        toclass: "",
-        section: "",
-        class: "",
-        subject: "",
-        gender: "",
-        blood_gp: "",
-        date_of_join: "",
-        fat_name: "",
-        mot_name: "",
-        dob: "",
-        mari_status: "",
-        lan_known: [],
-        qualification: "",
-        work_exp: "",
-        prev_school: "",
-        prev_school_addr: "",
-        prev_school_num: "",
-        address: "",
-        perm_address: "",
-        pan_or_id: "",
-        other_info: "",
-        epf_no: "",
-        basic_salary: "",
-        contract_type: "",
-        work_sift: "",
-        work_location: "",
-        date_of_leave: "",
-        medical_leaves: "",
-        casual_leaves: "",
-        maternity_leaves: "",
-        sick_leaves: "",
-        account_name: "",
-        account_num: "",
-        bank_name: "",
-        ifsc_code: "",
-        branch_name: "",
-        // transport info
-        route: "",
-        vehicle_num: "",
-        pickup_point: "",
+    facebook_link: "",
+    instagram_link: "",
+    linked_link: "",
+    twitter_link: "",
+  });
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof TeacherData, string>>
+  >({});
+  const [teacherImg, setTeacherImg] = useState<File | null>(null);
+  const [teacherResume, setTeacherResume] = useState<File | null>(null);
+  const [teacherJoinLetter, setTeacherJoinLetter] = useState<File | null>(null);
 
-        // hostel info
-        hostel: "",
-        room_num: "",
+  const [teacherImgpath, setTeacherImgpath] = useState<string>("");
+  const [teacherResumepath, setTeacherResumepath] = useState<string>("");
+  const [teacherJoinLetterpath, setTeacherJoinLetterpath] =
+    useState<string>("");
 
-        facebook_link: "",
-        instagram_link: "",
-        linked_link: "",
-        twitter_link: "",
+  const [teacherImgid, setTeacherImgid] = useState<number | null>(null);
+  const [teacherResumeid, setTeacherResumeid] = useState<number | null>(null);
+  const [teacherJoinLetterid, setTeacherJoinLetterid] = useState<number | null>(
+    null
+  );
 
-    });
-    const [errors, setErrors] = useState<Partial<Record<keyof TeacherData, string>>>({});
-    const [teacherImg, setTeacherImg] = useState<File | null>(null);
-    const [teacherResume, setTeacherResume] = useState<File | null>(null);
-    const [teacherJoinLetter, setTeacherJoinLetter] = useState<File | null>(null);
+  // editing data
+  const [originalImgPath, setOriginalImgPath] = useState<string>("");
+  const [originalResumePath, setOriginalResumePath] = useState<string>("");
+  const [originalJoinLetterPath, setOriginalJoinLetterPath] =
+    useState<string>("");
 
-    const [teacherImgpath, setTeacherImgpath] = useState<string>("");
-    const [teacherResumepath, setTeacherResumepath] = useState<string>("");
-    const [teacherJoinLetterpath, setTeacherJoinLetterpath] = useState<string>("");
+  const [transportRouteOption, setTransportRouteOption] = useState<any[]>([]);
+  const [pickupPointOption, setPickupPointOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [vehicalOption, setVehicalOption] = useState<any[]>([]);
+  const [allhostels, setAllHostels] = useState<any[]>([]);
+  const [allRoomsOptions, setAllRoomsOptions] = useState<any[]>([]);
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        setTransportRouteOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load routes");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load routes");
+    }
+  };
 
-    const [teacherImgid, setTeacherImgid] = useState<number | null>(null);
-    const [teacherResumeid, setTeacherResumeid] = useState<number | null>(null);
-    const [teacherJoinLetterid, setTeacherJoinLetterid] = useState<number | null>(null);
+  const fetchPickupPoints = async (id: number) => {
+    try {
+      const { data } = await getTransportPickUpPointsForRouteId(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setPickupPointOption(
+          data.result.map((point: any) => ({
+            value: point.id,
+            label: point.pickPointName,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch pickup points");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch pickup points"
+      );
+    }
+  };
+  const fetchAssginedVehicle = async (id: number) => {
+    try {
+      const { data } = await getAssignedVehicleForARoute(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setVehicalOption(
+          data.result.map((item: any) => ({
+            value: item.vehicle_id,
+            label: item.vehicle_no,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch assigned vehicles");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch assigned vehicles"
+      );
+    }
+  };
 
-    // editing data
-    const [originalImgPath, setOriginalImgPath] = useState<string>("");
-    const [originalResumePath, setOriginalResumePath] = useState<string>("");
-    const [originalJoinLetterPath, setOriginalJoinLetterPath] = useState<string>("");
+  const fetchHostels = async () => {
+    try {
+      const { data } = await allHostel();
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllHostels(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.hostelName,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const fetchHostelsRooms = async (id: number) => {
+    try {
+      const { data } = await getAllRoomForAHostel(id);
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllRoomsOptions(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.roomNo,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  useEffect(() => {
+    if (teacherData.hostel) {
+      fetchHostelsRooms(teacherData.hostel);
+    }
+  }, [teacherData.hostel]);
 
-    const fetchSpecificTeacher = async (teacher_id: string) => {
-        try {
-            const { data } = await getTeacherDataForEdit(teacher_id);
+  useEffect(() => {
+    if (teacherData.route) {
+      fetchPickupPoints(teacherData.route);
+      fetchAssginedVehicle(teacherData.route);
+    }
+  }, [teacherData.route]);
 
-            if (data.success && data.data) {
-                const teacher = data.data;
+  const fetchSpecificTeacher = async (teacher_id: string) => {
+    try {
+      const { data } = await getTeacherDataForEdit(teacher_id);
 
-                setTeacherData({
-                    first_name: teacher.firstname || "",
-                    last_name: teacher.lastname || "",
-                    primarycont: teacher.mobile || "",
-                    email: teacher.email || "",
-                    status: teacher.status || "",
-                    teacher_id: teacher.teacher_id || "",
-                    fromclass: teacher.fromclass || "",
-                    toclass: teacher.toclass || "",
-                    section: teacher.section || "",
-                    class: teacher.class || "",
-                    subject: teacher.subject || "",
-                    gender: teacher.gender || "",
-                    blood_gp: teacher.blood_gp || "",
-                    date_of_join: teacher.date_of_join || "",
-                    fat_name: teacher.fat_name || "",
-                    mot_name: teacher.mot_name || "",
-                    dob: teacher.dob || "",
-                    mari_status: teacher.mari_status || "",
-                    lan_known: teacher.lan_known ? JSON.parse(teacher.lan_known) : [],
-                    qualification: teacher.qualification || "",
-                    work_exp: teacher.work_exp || "",
-                    prev_school: teacher.prev_school || "",
-                    prev_school_addr: teacher.prev_school_addr || "",
-                    prev_school_num: teacher.prev_school_num || "",
-                    address: teacher.address || "",
-                    perm_address: teacher.perm_address || "",
-                    pan_or_id: teacher.pan_or_id || "",
-                    other_info: teacher.other_info || "",
-                    epf_no: teacher.epf_no || "",
-                    basic_salary: teacher.basic_salary || "",
-                    contract_type: teacher.contract_type || "",
-                    work_sift: teacher.work_sift || "",
-                    work_location: teacher.work_location || "",
-                    date_of_leave: teacher.date_of_leave || "",
-                    medical_leaves: teacher.medical_leaves || "",
-                    casual_leaves: teacher.casual_leaves || "",
-                    maternity_leaves: teacher.maternity_leaves || "",
-                    sick_leaves: teacher.sick_leaves || "",
-                    account_name: teacher.account_name || "",
-                    account_num: teacher.account_num || "",
-                    bank_name: teacher.bank_name || "",
-                    ifsc_code: teacher.ifsc_code || "",
-                    branch_name: teacher.branch_name || "",
-                    route: teacher.route || "",
-                    vehicle_num: teacher.vehicle_num || "",
-                    pickup_point: teacher.pickup_point || "",
-                    hostel: teacher.hostel || "",
-                    room_num: teacher.room_num || "",
-                    facebook_link: teacher.facebook_link || "",
-                    instagram_link: teacher.instagram_link || "",
-                    linked_link: teacher.linked_link || "",
-                    twitter_link: teacher.twitter_link || "",
-                });
+      if (data.success && data.data) {
+        const teacher = data.data;
 
+        setTeacherData({
+          first_name: teacher.firstname || "",
+          last_name: teacher.lastname || "",
+          primarycont: teacher.mobile || "",
+          email: teacher.email || "",
+          status: teacher.status || "",
+          teacher_id: teacher.teacher_id || "",
+          fromclass: teacher.fromclass || "",
+          toclass: teacher.toclass || "",
+          section: teacher.section || "",
+          class: teacher.class || "",
+          subject: teacher.subject || "",
+          gender: teacher.gender || "",
+          blood_gp: teacher.blood_gp || "",
+          date_of_join: teacher.date_of_join || "",
+          fat_name: teacher.fat_name || "",
+          mot_name: teacher.mot_name || "",
+          dob: teacher.dob || "",
+          mari_status: teacher.mari_status || "",
+          lan_known: teacher.lan_known ? JSON.parse(teacher.lan_known) : [],
+          qualification: teacher.qualification || "",
+          work_exp: teacher.work_exp || "",
+          prev_school: teacher.prev_school || "",
+          prev_school_addr: teacher.prev_school_addr || "",
+          prev_school_num: teacher.prev_school_num || "",
+          address: teacher.address || "",
+          perm_address: teacher.perm_address || "",
+          pan_or_id: teacher.pan_or_id || "",
+          other_info: teacher.other_info || "",
+          epf_no: teacher.epf_no || "",
+          basic_salary: teacher.basic_salary || "",
+          contract_type: teacher.contract_type || "",
+          work_sift: teacher.work_sift || "",
+          work_location: teacher.work_location || "",
+          date_of_leave: teacher.date_of_leave || "",
+          medical_leaves: teacher.medical_leaves || "",
+          casual_leaves: teacher.casual_leaves || "",
+          maternity_leaves: teacher.maternity_leaves || "",
+          sick_leaves: teacher.sick_leaves || "",
+          account_name: teacher.account_name || "",
+          account_num: teacher.account_num || "",
+          bank_name: teacher.bank_name || "",
+          ifsc_code: teacher.ifsc_code || "",
+          branch_name: teacher.branch_name || "",
+          route: teacher.route || "",
+          vehicle_num: teacher.vehicle_num || "",
+          pickup_point: teacher.pickup_point || "",
+          hostel: teacher.hostel || "",
+          room_num: teacher.room_num || "",
+          facebook_link: teacher.facebook_link || "",
+          instagram_link: teacher.instagram_link || "",
+          linked_link: teacher.linked_link || "",
+          twitter_link: teacher.twitter_link || "",
+        });
 
-                setTeacherImgpath(teacher.img_src || "");
-                setTeacherResumepath(teacher.resume_src || "");
-                setTeacherJoinLetterpath(teacher.letter_src || "");
+        setTeacherImgpath(teacher.img_src || "");
+        setTeacherResumepath(teacher.resume_src || "");
+        setTeacherJoinLetterpath(teacher.letter_src || "");
 
-                setOriginalImgPath(teacher.img_src)
-                setOriginalResumePath(teacher.resume_src)
-                setOriginalJoinLetterPath(teacher.letter_src)
+        setOriginalImgPath(teacher.img_src);
+        setOriginalResumePath(teacher.resume_src);
+        setOriginalJoinLetterPath(teacher.letter_src);
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch teacher data"
+      );
+    }
+  };
 
+  useEffect(() => {
+    if (teacher_id) {
+      fetchSpecificTeacher(teacher_id);
+    }
+  }, [teacher_id]);
 
-            }
-        } catch (error: any) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Failed to fetch teacher data");
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+    fieldName: string
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+
+      // Allow only image or PDF
+      if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
+        toast.error("Only JPG, PNG, or PDF files are allowed.");
+        return;
+      }
+
+      const maxSizeInBytes = 4 * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        toast.error("File size should not exceed 4MB.");
+        return;
+      }
+
+      setFile(file);
+
+      const formData = new FormData();
+      formData.append("teacherfile", file);
+
+      try {
+        const res = await uploadTeacherFile(formData);
+        const uploadedPath = res.data.file;
+        const id = res.data.insertId;
+
+        if (fieldName === "teacherImgpath") {
+          setTeacherImgpath(uploadedPath);
+          setTeacherImgid(id);
+        } else if (fieldName === "teacherResumepath") {
+          setTeacherResumepath(uploadedPath);
+          setTeacherResumeid(id);
+        } else if (fieldName === "teacherJoinLetterpath") {
+          setTeacherJoinLetterpath(uploadedPath);
+          setTeacherJoinLetterid(id);
         }
-    };
+      } catch (error) {
+        console.error("Uploading failed!", error);
+        toast.error("File upload failed. Please try again.");
+      }
+    }
+  };
 
+  const deleteFile = async (id: number) => {
+    if (!id) return;
 
-    useEffect(() => {
-        if (teacher_id) {
-            fetchSpecificTeacher(teacher_id)
+    try {
+      const res = await deleteTeacherFile(id);
+
+      if (res.data.success) {
+        if (id === teacherImgid) {
+          setTeacherImgid(null);
+          setTeacherImg(null);
+          setTeacherImgpath("");
+        } else if (id === teacherResumeid) {
+          setTeacherResumeid(null);
+          setTeacherResume(null);
+          setTeacherResumepath("");
+        } else if (id === teacherJoinLetterid) {
+          setTeacherJoinLetterid(null);
+          setTeacherJoinLetter(null);
+          setTeacherJoinLetterpath("");
         }
-    }, [teacher_id])
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast.error("File deletion failed. Please try again.");
+    }
+  };
 
-    const handleFileChange = async (
-        e: React.ChangeEvent<HTMLInputElement>,
-        setFile: React.Dispatch<React.SetStateAction<File | null>>,
-        fieldName: string
-    ) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files[0];
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setTeacherData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-            // Allow only image or PDF
-            if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
-                toast.error("Only JPG, PNG, or PDF files are allowed.");
-                return;
-            }
+  const handleDateChange = (
+    name: keyof TeacherData,
+    date: dayjs.Dayjs | null,
+    dateString: string
+  ) => {
+    console.log(date ? "" : "");
+    setTeacherData((prev) => ({ ...prev, [name]: dateString }));
+  };
 
-            const maxSizeInBytes = 4 * 1024 * 1024;
-            if (file.size > maxSizeInBytes) {
-                toast.error("File size should not exceed 4MB.");
-                return;
-            }
+  const handleSelectChange = (
+    name: keyof TeacherData,
+    value: string | number | null
+  ) => {
+    setTeacherData((prev) => ({ ...prev, [name]: value }));
+  };
 
+  const handleTagsChange = (
+    field: keyof typeof teacherData,
+    tags: string[]
+  ) => {
+    setTeacherData((prev) => ({
+      ...prev,
+      [field]: tags,
+    }));
+  };
 
-            setFile(file);
+  const validateTeacherData = (data: TeacherData) => {
+    const errors: Partial<Record<keyof TeacherData, string>> = {};
 
-            const formData = new FormData();
-            formData.append("teacherfile", file);
+    if (!data.first_name.trim()) errors.first_name = "First name is required";
+    if (!data.last_name.trim()) errors.last_name = "Last name is required";
+    if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont))
+      errors.primarycont = "Valid 10-digit contact number is required";
+    if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
+      errors.email = "Valid email is required";
+    if (!data.teacher_id) errors.teacher_id = "Teacher ID is required";
+    if (!data.fromclass) errors.fromclass = "From Class is required";
+    if (!data.toclass) errors.toclass = "To Class is required";
+    if (!data.class) errors.class = "Class is required";
+    if (!data.section) errors.section = "Section is required";
+    if (!data.subject.trim()) errors.subject = "Subject is required";
+    if (!data.gender.trim()) errors.gender = "Gender is required";
+    if (!data.date_of_join.trim())
+      errors.date_of_join = "Date of joining is required";
+    if (!data.dob.trim()) errors.dob = "Date of birth is required";
+    if (!data.fat_name.trim()) errors.fat_name = "Father's Name is required";
+    if (!data.mot_name.trim()) errors.mot_name = "Mother's Name is required";
+    if (!data.qualification.trim())
+      errors.qualification = "Qualification is required";
+    if (!data.work_exp.trim()) errors.work_exp = "Work Experience is required";
+    if (!data.address.trim()) errors.address = "Address is required";
+    if (!data.perm_address.trim())
+      errors.perm_address = "Permannent Address is required";
+    if (!data.pan_or_id.trim()) errors.pan_or_id = "Pan Or Id is required";
 
-            try {
-                const res = await uploadTeacherFile(formData);
-                const uploadedPath = res.data.file;
-                const id = res.data.insertId;
+    if (!data.basic_salary.trim())
+      errors.basic_salary = "Basic salary is required";
+    if (!data.contract_type.trim())
+      errors.contract_type = "Contract type is required";
 
-                if (fieldName === "teacherImgpath") {
-                    setTeacherImgpath(uploadedPath);
-                    setTeacherImgid(id);
-                } else if (fieldName === "teacherResumepath") {
-                    setTeacherResumepath(uploadedPath);
-                    setTeacherResumeid(id);
-                } else if (fieldName === "teacherJoinLetterpath") {
-                    setTeacherJoinLetterpath(uploadedPath);
-                    setTeacherJoinLetterid(id);
-                }
-            } catch (error) {
-                console.error("Uploading failed!", error);
-                toast.error("File upload failed. Please try again.");
-            }
-        }
-    };
+    if (!data.account_name.trim())
+      errors.account_name = "Account name is required";
+    if (!data.account_num.trim())
+      errors.account_num = "Bank account number is required";
+    if (!data.ifsc_code.trim()) errors.ifsc_code = "IFSC code is required";
+    if (!data.bank_name.trim()) errors.bank_name = "Bank name is required";
+    if (!data.branch_name.trim())
+      errors.branch_name = "Branch name is required";
 
-    const deleteFile = async (id: number) => {
-        if (!id) return;
-
-        try {
-            const res = await deleteTeacherFile(id);
-
-            if (res.data.success) {
-                if (id === teacherImgid) {
-                    setTeacherImgid(null);
-                    setTeacherImg(null);
-                    setTeacherImgpath("");
-                } else if (id === teacherResumeid) {
-                    setTeacherResumeid(null);
-                    setTeacherResume(null);
-                    setTeacherResumepath("");
-                } else if (id === teacherJoinLetterid) {
-                    setTeacherJoinLetterid(null);
-                    setTeacherJoinLetter(null);
-                    setTeacherJoinLetterpath("");
-                }
-            }
-        } catch (error) {
-            console.error("Error deleting file:", error);
-            toast.error("File deletion failed. Please try again.");
-        }
-    };
-
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setTeacherData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-
-    const handleDateChange = (
-        name: keyof TeacherData,
-        date: dayjs.Dayjs | null,
-        dateString: string
-    ) => {
-        console.log(date ? "" : "")
-        setTeacherData((prev) => ({ ...prev, [name]: dateString }));
-    };
-
-    const handleSelectChange = (name: keyof TeacherData, value: string | number) => {
-        setTeacherData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleTagsChange = (field: keyof typeof teacherData, tags: string[]) => {
-        setTeacherData((prev) => ({
-            ...prev,
-            [field]: tags
-        }));
-    };
-
-    const validateTeacherData = (data: TeacherData) => {
-        const errors: Partial<Record<keyof TeacherData, string>> = {};
-
-        if (!data.first_name.trim()) errors.first_name = "First name is required";
-        if (!data.last_name.trim()) errors.last_name = "Last name is required";
-        if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont)) errors.primarycont = "Valid 10-digit contact number is required";
-        if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Valid email is required";
-        if (!data.teacher_id) errors.teacher_id = "Teacher ID is required";
-        if (!data.fromclass) errors.fromclass = "From Class is required";
-        if (!data.toclass) errors.toclass = "To Class is required";
-        if (!data.class) errors.class = "Class is required";
-        if (!data.section) errors.section = "Section is required";
-        if (!data.subject.trim()) errors.subject = "Subject is required";
-        if (!data.gender.trim()) errors.gender = "Gender is required";
-        if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
-        if (!data.dob.trim()) errors.dob = "Date of birth is required";
-        if (!data.fat_name.trim()) errors.fat_name = "Father's Name is required";
-        if (!data.mot_name.trim()) errors.mot_name = "Mother's Name is required";
-        if (!data.qualification.trim()) errors.qualification = "Qualification is required";
-        if (!data.work_exp.trim()) errors.work_exp = "Work Experience is required";
-        if (!data.address.trim()) errors.address = "Address is required";
-        if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
-        if (!data.pan_or_id.trim()) errors.pan_or_id = "Pan Or Id is required";
-
-        if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
-        if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
-
-        if (!data.account_name.trim()) errors.account_name = "Account name is required";
-        if (!data.account_num.trim()) errors.account_num = "Bank account number is required";
-        if (!data.ifsc_code.trim()) errors.ifsc_code = "IFSC code is required";
-        if (!data.bank_name.trim()) errors.bank_name = "Bank name is required";
-        if (!data.branch_name.trim()) errors.branch_name = "Branch name is required";
-
-        if (!teacherImgpath && !originalImgPath) {
-            toast.error("Teacher Image is Required !")
-        }
-        if (!teacherResumepath && !originalResumePath) {
-            toast.error("Teacher Resume is Required !")
-        }
-        if (!teacherJoinLetterpath && !originalJoinLetterPath) {
-            toast.error("Teacher Join Letter is Required !")
-        }
-
-        setErrors(errors)
-        // Object.entries(errors).forEach(([_, error]) => {
-        //     toast.error(error)
-        // })
-
-        return Object.keys(errors).length === 0
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-
-        if (!validateTeacherData(teacherData)) {
-            toast.error("Required fileds must be filled !")
-            return
-        }
-        console.log(teacherResume ? "" : "")
-        console.log(teacherJoinLetter ? "" : "")
-
-        try {
-
-            const formData = new FormData()
-            if ((originalImgPath || teacherImgpath) && (originalResumePath || teacherResumepath) && (originalJoinLetterPath || teacherJoinLetterpath)) {
-                formData.append('img_src', teacherImgpath || originalImgPath)
-                formData.append('resume_src', teacherResumepath || originalResumePath)
-                formData.append('letter_src', teacherJoinLetterpath || originalJoinLetterPath)
-            } else {
-                toast.error('All files are required !')
-                return
-            }
-
-            Object.entries(teacherData).forEach(([key, value]) => {
-                if (Array.isArray(value)) {
-                    formData.append(key, JSON.stringify(value))
-                } else {
-                    formData.append(key, value as string)
-                }
-            })
-
-            // Object.entries(formData).forEach(([key, value]) => {
-            //   console.log(key, value)
-            // })
-
-            const res = await editTeacher(formData, teacher_id)
-
-            // console.log(res)
-
-            if (res.data.success) {
-                toast.success(res.data.message);
-
-                // Teacher data reset
-                setTeacherData({
-                    first_name: "",
-                    last_name: "",
-                    primarycont: "",
-                    email: "",
-                    status: "",
-                    teacher_id: "",
-                    fromclass: "",
-                    toclass: "",
-                    section: "",
-                    class: "",
-                    subject: "",
-                    gender: "",
-                    blood_gp: "",
-                    date_of_join: "",
-                    fat_name: "",
-                    mot_name: "",
-                    dob: "",
-                    mari_status: "",
-                    lan_known: [],
-                    qualification: "",
-                    work_exp: "",
-                    prev_school: "",
-                    prev_school_addr: "",
-                    prev_school_num: "",
-                    address: "",
-                    perm_address: "",
-                    pan_or_id: "",
-                    other_info: "",
-                    epf_no: "",
-                    basic_salary: "",
-                    contract_type: "",
-                    work_sift: "",
-                    work_location: "",
-                    date_of_leave: "",
-                    medical_leaves: "",
-                    casual_leaves: "",
-                    maternity_leaves: "",
-                    sick_leaves: "",
-                    account_name: "",
-                    account_num: "",
-                    bank_name: "",
-                    ifsc_code: "",
-                    branch_name: "",
-                    route: "",
-                    vehicle_num: "",
-                    pickup_point: "",
-                    hostel: "",
-                    room_num: "",
-                    facebook_link: "",
-                    instagram_link: "",
-                    linked_link: "",
-                    twitter_link: "",
-                });
-
-                // File states reset
-                setTeacherImg(null);
-                setTeacherResume(null);
-                setTeacherJoinLetter(null);
-
-                setTeacherImgpath("");
-                setTeacherResumepath("");
-                setTeacherJoinLetterpath("");
-
-                setTeacherImgid(null);
-                setTeacherResumeid(null);
-                setTeacherJoinLetterid(null);
-
-                setOriginalImgPath("")
-                setOriginalResumePath("")
-                setOriginalJoinLetterPath("")
-
-                navigate(-1)
-            }
-
-        } catch (error: any) {
-            console.log(error)
-            toast.error(error.response.data.message)
-        }
+    if (!teacherImgpath && !originalImgPath) {
+      toast.error("Teacher Image is Required !");
+    }
+    if (!teacherResumepath && !originalResumePath) {
+      toast.error("Teacher Resume is Required !");
+    }
+    if (!teacherJoinLetterpath && !originalJoinLetterPath) {
+      toast.error("Teacher Join Letter is Required !");
     }
 
-    const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault()
+    setErrors(errors);
+    // Object.entries(errors).forEach(([_, error]) => {
+    //     toast.error(error)
+    // })
+
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!validateTeacherData(teacherData)) {
+      toast.error("Required fileds must be filled !");
+      return;
+    }
+    console.log(teacherResume ? "" : "");
+    console.log(teacherJoinLetter ? "" : "");
+
+    try {
+      const formData = new FormData();
+      if (
+        (originalImgPath || teacherImgpath) &&
+        (originalResumePath || teacherResumepath) &&
+        (originalJoinLetterPath || teacherJoinLetterpath)
+      ) {
+        formData.append("img_src", teacherImgpath || originalImgPath);
+        formData.append("resume_src", teacherResumepath || originalResumePath);
+        formData.append(
+          "letter_src",
+          teacherJoinLetterpath || originalJoinLetterPath
+        );
+      } else {
+        toast.error("All files are required !");
+        return;
+      }
+
+      Object.entries(teacherData).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value as string);
+        }
+      });
+
+      // Object.entries(formData).forEach(([key, value]) => {
+      //   console.log(key, value)
+      // })
+
+      const res = await editTeacher(formData, teacher_id);
+
+      // console.log(res)
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+
+        // Teacher data reset
         setTeacherData({
-            first_name: "",
-            last_name: "",
-            primarycont: "",
-            email: "",
-            status: "",
-            teacher_id: "",
-            fromclass: "",
-            toclass: "",
-            section: "",
-            class: "",
-            subject: "",
-            gender: "",
-            blood_gp: "",
-            date_of_join: "",
-            fat_name: "",
-            mot_name: "",
-            dob: "",
-            mari_status: "",
-            lan_known: [],
-            qualification: "",
-            work_exp: "",
-            prev_school: "",
-            prev_school_addr: "",
-            prev_school_num: "",
-            address: "",
-            perm_address: "",
-            pan_or_id: "",
-            other_info: "",
-            epf_no: "",
-            basic_salary: "",
-            contract_type: "",
-            work_sift: "",
-            work_location: "",
-            date_of_leave: "",
-            medical_leaves: "",
-            casual_leaves: "",
-            maternity_leaves: "",
-            sick_leaves: "",
-            account_name: "",
-            account_num: "",
-            bank_name: "",
-            ifsc_code: "",
-            branch_name: "",
-            route: "",
-            vehicle_num: "",
-            pickup_point: "",
-            hostel: "",
-            room_num: "",
-            facebook_link: "",
-            instagram_link: "",
-            linked_link: "",
-            twitter_link: "",
+          first_name: "",
+          last_name: "",
+          primarycont: "",
+          email: "",
+          status: "",
+          teacher_id: "",
+          fromclass: "",
+          toclass: "",
+          section: "",
+          class: "",
+          subject: "",
+          gender: "",
+          blood_gp: "",
+          date_of_join: "",
+          fat_name: "",
+          mot_name: "",
+          dob: "",
+          mari_status: "",
+          lan_known: [],
+          qualification: "",
+          work_exp: "",
+          prev_school: "",
+          prev_school_addr: "",
+          prev_school_num: "",
+          address: "",
+          perm_address: "",
+          pan_or_id: "",
+          other_info: "",
+          epf_no: "",
+          basic_salary: "",
+          contract_type: "",
+          work_sift: "",
+          work_location: "",
+          date_of_leave: "",
+          medical_leaves: "",
+          casual_leaves: "",
+          maternity_leaves: "",
+          sick_leaves: "",
+          account_name: "",
+          account_num: "",
+          bank_name: "",
+          ifsc_code: "",
+          branch_name: "",
+          // transport info
+          route: null,
+          vehicle_num: null,
+          pickup_point: null,
+
+          // hostel info
+          hostel: null,
+          room_num: null,
+          facebook_link: "",
+          instagram_link: "",
+          linked_link: "",
+          twitter_link: "",
         });
 
         // File states reset
@@ -627,687 +681,1021 @@ const EditTeacher = () => {
         setTeacherResumeid(null);
         setTeacherJoinLetterid(null);
 
-        setOriginalImgPath("")
-        setOriginalResumePath("")
-        setOriginalJoinLetterPath("")
+        setOriginalImgPath("");
+        setOriginalResumePath("");
+        setOriginalJoinLetterPath("");
 
-        navigate(-1)
+        navigate(-1);
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
     }
+  };
 
-    // OPTIONS
-    const [classOptions, setClassOptions] = useState<Option[]>([])
-    const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setTeacherData({
+      first_name: "",
+      last_name: "",
+      primarycont: "",
+      email: "",
+      status: "",
+      teacher_id: "",
+      fromclass: "",
+      toclass: "",
+      section: "",
+      class: "",
+      subject: "",
+      gender: "",
+      blood_gp: "",
+      date_of_join: "",
+      fat_name: "",
+      mot_name: "",
+      dob: "",
+      mari_status: "",
+      lan_known: [],
+      qualification: "",
+      work_exp: "",
+      prev_school: "",
+      prev_school_addr: "",
+      prev_school_num: "",
+      address: "",
+      perm_address: "",
+      pan_or_id: "",
+      other_info: "",
+      epf_no: "",
+      basic_salary: "",
+      contract_type: "",
+      work_sift: "",
+      work_location: "",
+      date_of_leave: "",
+      medical_leaves: "",
+      casual_leaves: "",
+      maternity_leaves: "",
+      sick_leaves: "",
+      account_name: "",
+      account_num: "",
+      bank_name: "",
+      ifsc_code: "",
+      branch_name: "",
+      route: null,
+      vehicle_num: null,
+      pickup_point: null,
+      hostel: null,
+      room_num: null,
+      facebook_link: "",
+      instagram_link: "",
+      linked_link: "",
+      twitter_link: "",
+    });
 
+    // File states reset
+    setTeacherImg(null);
+    setTeacherResume(null);
+    setTeacherJoinLetter(null);
 
-    const fetchClass = async () => {
-        try {
-            const { data } = await allRealClasses();
-            if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+    setTeacherImgpath("");
+    setTeacherResumepath("");
+    setTeacherJoinLetterpath("");
 
-                setClassOptions(
-                    data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
-                );
-            } else {
-                setClassOptions([]);
-            }
+    setTeacherImgid(null);
+    setTeacherResumeid(null);
+    setTeacherJoinLetterid(null);
 
-        } catch (error) {
-            console.log(error);
-            toast.error("Error to fetch classes !");
+    setOriginalImgPath("");
+    setOriginalResumePath("");
+    setOriginalJoinLetterPath("");
 
-        }
-    };
-    const fetchSection = async () => {
-        try {
-            if (teacherData.class) {
-                const { data } = await getAllSectionForAClass(Number(teacherData.class));
-                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-                    setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
-                } else {
-                    setSectionOptions([]);
-                }
-            }
-        } catch (error) {
-            console.log(error);
-            toast.error("Error to fetch section !");
-        }
+    navigate(-1);
+  };
+
+  // OPTIONS
+  const [classOptions, setClassOptions] = useState<Option[]>([]);
+  const [sectionOptions, setSectionOptions] = useState<Option[]>([]);
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
     }
-
-
-    useEffect(() => {
-        fetchClass()
-    }, [])
-
-    useEffect(() => {
-        if (teacherData.class) {
-            fetchSection()
+  };
+  const fetchSection = async () => {
+    try {
+      if (teacherData.class) {
+        const { data } = await getAllSectionForAClass(
+          Number(teacherData.class)
+        );
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(
+            data.data.map((e: any) => ({ value: e.id, label: e.section_name }))
+          );
+        } else {
+          setSectionOptions([]);
         }
-    }, [teacherData.class])
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  };
 
+  useEffect(() => {
+    fetchClass();
+    fetchRoutes();
+    fetchHostels();
+  }, []);
 
+  useEffect(() => {
+    if (teacherData.class) {
+      fetchSection();
+    }
+  }, [teacherData.class]);
 
-    return (
-        <>
-            {/* Page Wrapper */}
-            <div className="page-wrapper">
-                <div className="content content-two">
-                    {/* Page Header */}
-                    <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
-                        <div className="my-auto mb-2">
-                            <h3 className="mb-1">Edit Teacher</h3>
-                            <nav>
-                                <ol className="breadcrumb mb-0">
-                                    <li className="breadcrumb-item">
-                                        <Link to={routes.adminDashboard}>Dashboard</Link>
-                                    </li>
-                                    <li className="breadcrumb-item">
-                                        <Link to={routes.teacherList}>Teacher</Link>
-                                    </li>
-                                    <li className="breadcrumb-item active" aria-current="page">
-                                        Edit Teacher
-                                    </li>
-                                </ol>
-                            </nav>
-                        </div>
+  return (
+    <>
+      {/* Page Wrapper */}
+      <div className="page-wrapper">
+        <div className="content content-two">
+          {/* Page Header */}
+          <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
+            <div className="my-auto mb-2">
+              <h3 className="mb-1">Edit Teacher</h3>
+              <nav>
+                <ol className="breadcrumb mb-0">
+                  <li className="breadcrumb-item">
+                    <Link to={routes.adminDashboard}>Dashboard</Link>
+                  </li>
+                  <li className="breadcrumb-item">
+                    <Link to={routes.teacherList}>Teacher</Link>
+                  </li>
+                  <li className="breadcrumb-item active" aria-current="page">
+                    Edit Teacher
+                  </li>
+                </ol>
+              </nav>
+            </div>
+          </div>
+          {/* /Page Header */}
+          <div className="row">
+            <div className="col-md-12">
+              <form onSubmit={handleSubmit}>
+                <>
+                  {/* Personal Information */}
+                  <div className="card">
+                    <div className="card-header bg-light">
+                      <div className="d-flex align-items-center">
+                        <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                          <i className="ti ti-info-square-rounded fs-16" />
+                        </span>
+                        <h4 className="text-dark">Personal Information</h4>
+                      </div>
                     </div>
-                    {/* /Page Header */}
-                    <div className="row">
+                    <div className="card-body pb-1">
+                      <div className="row">
                         <div className="col-md-12">
-                            <form onSubmit={handleSubmit}>
-                                <>
-                                    {/* Personal Information */}
-                                    <div className="card">
-                                        <div className="card-header bg-light">
-                                            <div className="d-flex align-items-center">
-                                                <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                    <i className="ti ti-info-square-rounded fs-16" />
-                                                </span>
-                                                <h4 className="text-dark">Personal Information</h4>
-                                            </div>
-                                        </div>
-                                        <div className="card-body pb-1">
-                                            <div className="row">
-                                                <div className="col-md-12">
-                                                    <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                                                        {
-                                                            !teacherImgid ? (<p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={`${Imageurl}/${originalImgPath}`} alt="" /></p>) :
-                                                                !teacherImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                                                    <i className="ti ti-photo-plus fs-16" />
-                                                                </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(teacherImg)} alt="" /></p>
-                                                        }
-                                                        <div className="profile-upload">
-                                                            <div className="profile-uploader d-flex align-items-center">
-                                                                <div className="drag-upload-btn mb-3">
-                                                                    Upload
-                                                                    <input
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        className="form-control image-sign"
-                                                                        onChange={(e) => handleFileChange(e, setTeacherImg, 'teacherImgpath')}
+                          <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                            {!teacherImgid ? (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={`${Imageurl}/${originalImgPath}`}
+                                  alt=""
+                                />
+                              </p>
+                            ) : !teacherImg ? (
+                              <>
+                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                  <i className="ti ti-photo-plus fs-16" />
+                                </div>
+                              </>
+                            ) : (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={URL.createObjectURL(teacherImg)}
+                                  alt=""
+                                />
+                              </p>
+                            )}
+                            <div className="profile-upload">
+                              <div className="profile-uploader d-flex align-items-center">
+                                <div className="drag-upload-btn mb-3">
+                                  Upload
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="form-control image-sign"
+                                    onChange={(e) =>
+                                      handleFileChange(
+                                        e,
+                                        setTeacherImg,
+                                        "teacherImgpath"
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <span className="text-danger"> *</span>
+                                {teacherImgid && (
+                                  <div
+                                    onClick={() => deleteFile(teacherImgid)}
+                                    className="btn btn-outline-danger mb-3 "
+                                  >
+                                    Remove
+                                  </div>
+                                )}
+                              </div>
+                              <p className="fs-12">
+                                Upload image size 4MB, Format JPG, PNG
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="row row-cols-xxl-5 row-cols-md-6">
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Teacher ID</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="teacher_id"
+                              className="form-control"
+                              value={teacherData.teacher_id}
+                              onChange={handleInputChange}
+                            />
+                            {errors.teacher_id && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.teacher_id}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                                    />
-                                                                </div><span className="text-danger"> *</span>
-                                                                {teacherImgid && (<div onClick={() => deleteFile(teacherImgid)} className="btn btn-outline-danger mb-3 ">
-                                                                    Remove
-                                                                </div>)}
-                                                            </div>
-                                                            <p className="fs-12">
-                                                                Upload image size 4MB, Format JPG, PNG
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="row row-cols-xxl-5 row-cols-md-6">
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Teacher ID</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="teacher_id"
-                                                            className="form-control"
-                                                            value={teacherData.teacher_id}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.teacher_id && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.teacher_id}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">First Name</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="first_name"
+                              className="form-control"
+                              value={teacherData.first_name}
+                              onChange={handleInputChange}
+                            />
+                            {errors.first_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.first_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">First Name</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="first_name"
-                                                            className="form-control"
-                                                            value={teacherData.first_name}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.first_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.first_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Last Name</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="last_name"
+                              className="form-control"
+                              value={teacherData.last_name}
+                              onChange={handleInputChange}
+                            />
+                            {errors.last_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.last_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">From Class</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={classOptions}
+                              value={teacherData.fromclass}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "fromclass",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.fromclass && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fromclass}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">To Class</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={classOptions}
+                              value={teacherData.toclass}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "toclass",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.toclass && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.toclass}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Last Name</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="last_name"
-                                                            className="form-control"
-                                                            value={teacherData.last_name}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.last_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.last_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">From Class</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={classOptions}
-                                                            value={teacherData.fromclass}
-                                                            onChange={(option) => handleSelectChange("fromclass", option ? option.value : "")}
-                                                        />
-                                                        {errors.fromclass && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.fromclass}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">To Class</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={classOptions}
-                                                            value={teacherData.toclass}
-                                                            onChange={(option) => handleSelectChange("toclass", option ? option.value : "")}
-                                                        />
-                                                        {errors.toclass && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.toclass}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Class</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={classOptions}
+                              value={teacherData.class}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "class",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.class && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.class}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Section</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select text-capitalize"
+                              options={sectionOptions}
+                              value={teacherData.section}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "section",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.section && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.section}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Class</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={classOptions}
-                                                            value={teacherData.class}
-                                                            onChange={(option) => handleSelectChange("class", option ? option.value : "")}
-                                                        />
-                                                        {errors.class && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.class}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Section</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select text-capitalize"
-                                                            options={sectionOptions}
-                                                            value={teacherData.section}
-                                                            onChange={(option) => handleSelectChange("section", option ? option.value : "")}
-                                                        />
-                                                        {errors.section && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.section}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Subject</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={allSubject}
+                              value={teacherData.subject}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "subject",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.subject && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.subject}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Subject</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={allSubject}
-                                                            value={teacherData.subject}
-                                                            onChange={(option) => handleSelectChange("subject", option ? option.value : "")}
-                                                        />
-                                                        {errors.subject && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.subject}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Gender</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={gender}
+                              value={teacherData.gender}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "gender",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.gender && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.gender}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Gender</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={gender}
-                                                            value={teacherData.gender}
-                                                            onChange={(option) => handleSelectChange("gender", option ? option.value : "")}
-                                                        />
-                                                        {errors.gender && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.gender}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Primary Contact Number
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="primarycont"
+                              className="form-control"
+                              value={teacherData.primarycont}
+                              onChange={handleInputChange}
+                            />
+                            {errors.primarycont && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.primarycont}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Primary Contact Number</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="primarycont"
-                                                            className="form-control"
-                                                            value={teacherData.primarycont}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.primarycont && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.primarycont}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Email Address</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="email"
+                              name="email"
+                              className="form-control"
+                              value={teacherData.email}
+                              onChange={handleInputChange}
+                            />
+                            {errors.email && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Email Address</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="email"
-                                                            name="email"
-                                                            className="form-control"
-                                                            value={teacherData.email}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.email && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.email}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Blood Group</label>
+                            <CommonSelect
+                              className="select"
+                              options={bloodGroup}
+                              value={teacherData.blood_gp}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "blood_gp",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Blood Group</label>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={bloodGroup}
-                                                            value={teacherData.blood_gp}
-                                                            onChange={(option) => handleSelectChange("blood_gp", option ? option.value : "")}
-                                                        />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Date of Joining
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <div className="input-icon position-relative">
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                value={
+                                  teacherData.date_of_join
+                                    ? dayjs(
+                                        teacherData.date_of_join,
+                                        "DD MMM YYYY"
+                                      )
+                                    : null
+                                }
+                                placeholder="Select Date"
+                                onChange={(date, dateString) =>
+                                  handleDateChange(
+                                    "date_of_join",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
+                                }
+                              />
+                              {errors.date_of_join && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.date_of_join}
+                                </div>
+                              )}
+                              <span className="input-icon-addon">
+                                <i className="ti ti-calendar" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Date of Joining</label><span className="text-danger"> *</span>
-                                                        <div className="input-icon position-relative">
-                                                            <DatePicker
-                                                                className="form-control datetimepicker"
-                                                                format="DD MMM YYYY"
-                                                                value={
-                                                                    teacherData.date_of_join
-                                                                        ? dayjs(teacherData.date_of_join, 'DD MMM YYYY')
-                                                                        : null
-                                                                }
-                                                                placeholder="Select Date"
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Father’s Name</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="fat_name"
+                              className="form-control"
+                              value={teacherData.fat_name}
+                              onChange={handleInputChange}
+                            />
+                            {errors.fat_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fat_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                                onChange={(date, dateString) =>
-                                                                    handleDateChange("date_of_join", date, Array.isArray(dateString) ? dateString[0] : dateString)
-                                                                }
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Mother’s Name</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="mot_name"
+                              className="form-control"
+                              value={teacherData.mot_name}
+                              onChange={handleInputChange}
+                            />
+                            {errors.mot_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.mot_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                            />
-                                                            {errors.date_of_join && (
-                                                                <div style={{ fontSize: '11px' }} className="text-danger">{errors.date_of_join}</div>
-                                                            )}
-                                                            <span className="input-icon-addon">
-                                                                <i className="ti ti-calendar" />
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Date of Birth</label>
+                            <span className="text-danger"> *</span>
+                            <div className="input-icon position-relative">
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                value={
+                                  teacherData.dob
+                                    ? dayjs(teacherData.dob, "DD MMM YYYY")
+                                    : null
+                                }
+                                placeholder="Select Date"
+                                onChange={(date, dateString) =>
+                                  handleDateChange(
+                                    "dob",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
+                                }
+                              />
+                              {errors.dob && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.dob}
+                                </div>
+                              )}
+                              <span className="input-icon-addon">
+                                <i className="ti ti-calendar" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Father’s Name</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="fat_name"
-                                                            className="form-control"
-                                                            value={teacherData.fat_name}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.fat_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.fat_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Marital Status</label>
+                            <CommonSelect
+                              className="select"
+                              options={Marital}
+                              value={teacherData.mari_status}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "mari_status",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Mother’s Name</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="mot_name"
-                                                            className="form-control"
-                                                            value={teacherData.mot_name}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.mot_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.mot_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Language Known</label>
+                            <TagInput
+                              initialTags={teacherData.lan_known}
+                              onTagsChange={(tags) =>
+                                handleTagsChange("lan_known", tags)
+                              }
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Date of Birth</label><span className="text-danger"> *</span>
-                                                        <div className="input-icon position-relative">
-                                                            <DatePicker
-                                                                className="form-control datetimepicker"
-                                                                format="DD MMM YYYY"
-                                                                value={
-                                                                    teacherData.dob
-                                                                        ? dayjs(teacherData.dob, 'DD MMM YYYY')
-                                                                        : null
-                                                                }
-                                                                placeholder="Select Date"
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Qualification</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="qualification"
+                              className="form-control"
+                              value={teacherData.qualification}
+                              onChange={handleInputChange}
+                            />
+                            {errors.qualification && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.qualification}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                                onChange={(date, dateString) =>
-                                                                    handleDateChange("dob", date, Array.isArray(dateString) ? dateString[0] : dateString)
-                                                                }
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Work Experience
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="work_exp"
+                              className="form-control"
+                              value={teacherData.work_exp}
+                              onChange={handleInputChange}
+                            />
+                            {errors.work_exp && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.work_exp}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                            />
-                                                            {errors.dob && (
-                                                                <div style={{ fontSize: '11px' }} className="text-danger">{errors.dob}</div>
-                                                            )}
-                                                            <span className="input-icon-addon">
-                                                                <i className="ti ti-calendar" />
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Previous School if Any
+                            </label>
+                            <input
+                              type="text"
+                              name="prev_school"
+                              className="form-control"
+                              value={teacherData.prev_school}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Marital Status</label>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={Marital}
-                                                            value={teacherData.mari_status}
-                                                            onChange={(option) => handleSelectChange("mari_status", option ? option.value : "")}
-                                                        />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Previous School Address
+                            </label>
+                            <input
+                              type="text"
+                              name="prev_school_addr"
+                              className="form-control"
+                              value={teacherData.prev_school_addr}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Language Known</label>
-                                                        <TagInput
-                                                            initialTags={teacherData.lan_known}
-                                                            onTagsChange={(tags) => handleTagsChange('lan_known', tags)} />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Previous School Phone No
+                            </label>
+                            <input
+                              type="text"
+                              name="prev_school_num"
+                              className="form-control"
+                              value={teacherData.prev_school_num}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Qualification</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="qualification"
-                                                            className="form-control"
-                                                            value={teacherData.qualification}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.qualification && (<div style={{ fontSize: '11px' }} className="text-danger">{errors.qualification}</div>)}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl-3 col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Address</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="address"
+                              className="form-control"
+                              value={teacherData.address}
+                              onChange={handleInputChange}
+                            />
+                            {errors.address && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.address}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Work Experience</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="work_exp"
-                                                            className="form-control"
-                                                            value={teacherData.work_exp}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.work_exp && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.work_exp}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl-3 col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Permanent Address
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="perm_address"
+                              className="form-control"
+                              value={teacherData.perm_address}
+                              onChange={handleInputChange}
+                            />
+                            {errors.perm_address && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.perm_address}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Previous School if Any</label>
-                                                        <input
-                                                            type="text"
-                                                            name="prev_school"
-                                                            className="form-control"
-                                                            value={teacherData.prev_school}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl-3 col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              PAN Number / ID Number
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="pan_or_id"
+                              className="form-control"
+                              value={teacherData.pan_or_id}
+                              onChange={handleInputChange}
+                            />
+                            {errors.pan_or_id && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.pan_or_id}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Previous School Address</label>
-                                                        <input
-                                                            type="text"
-                                                            name="prev_school_addr"
-                                                            className="form-control"
-                                                            value={teacherData.prev_school_addr}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl-3 col-xl-3 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Status</label>
+                            <CommonSelect
+                              className="select"
+                              options={status}
+                              value={teacherData.status}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "status",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
 
-                                                <div className="col-xxl col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Previous School Phone No</label>
-                                                        <input
-                                                            type="text"
-                                                            name="prev_school_num"
-                                                            className="form-control"
-                                                            value={teacherData.prev_school_num}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
+                        <div className="col-xxl-12 col-xl-12">
+                          <div className="mb-3">
+                            <label className="form-label">Notes</label>
+                            <textarea
+                              name="other_info"
+                              className="form-control"
+                              placeholder="Other Information"
+                              rows={4}
+                              value={teacherData.other_info}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Personal Information */}
+                </>
 
-                                                <div className="col-xxl-3 col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Address</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="address"
-                                                            className="form-control"
-                                                            value={teacherData.address}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.address && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.address}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-xxl-3 col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Permanent Address</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="perm_address"
-                                                            className="form-control"
-                                                            value={teacherData.perm_address}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.perm_address && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.perm_address}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-xxl-3 col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">PAN Number / ID Number</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="pan_or_id"
-                                                            className="form-control"
-                                                            value={teacherData.pan_or_id}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.pan_or_id && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.pan_or_id}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-xxl-3 col-xl-3 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Status</label>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={status}
-                                                            value={teacherData.status}
-                                                            onChange={(option) => handleSelectChange("status", option ? option.value : "")}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-xxl-12 col-xl-12">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Notes</label>
-                                                        <textarea
-                                                            name="other_info"
-                                                            className="form-control"
-                                                            placeholder="Other Information"
-                                                            rows={4}
-                                                            value={teacherData.other_info}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                    {/* /Personal Information */}
-                                </>
-
-                                <>
-                                    {/* Payroll */}
-                                    <div className="card">
-                                        <div className="card-header bg-light">
-                                            <div className="d-flex align-items-center">
-                                                <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                    <i className="ti ti-user-shield fs-16" />
-                                                </span>
-                                                <h4 className="text-dark">Payroll</h4>
-                                            </div>
-                                        </div>
-                                        <div className="card-body pb-1">
-                                            <div className="row">
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">EPF No</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="epf_no"
-                                                            value={teacherData.epf_no}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Basic Salary</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="basic_salary"
-                                                            value={teacherData.basic_salary}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.basic_salary && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.basic_salary}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Contract Type</label><span className="text-danger"> *</span>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={Contract}
-                                                            value={teacherData.contract_type}
-                                                            onChange={(option) => handleSelectChange("contract_type", option ? option.value : "")}
-                                                        />
-                                                        {errors.contract_type && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.contract_type}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Work Shift</label>
-                                                        <CommonSelect
-                                                            className="select"
-                                                            options={Shift}
-                                                            value={teacherData.work_sift}
-                                                            onChange={(option) => handleSelectChange("work_sift", option ? option.value : "")}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Work Location</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="work_location"
-                                                            value={teacherData.work_location}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">
-                                                            Date of Leaving
-                                                        </label>
-                                                        <div className="input-icon position-relative">
-                                                            <DatePicker
-                                                                className="form-control datetimepicker"
-                                                                format="DD MMM YYYY"
-                                                                value={
-                                                                    teacherData.date_of_leave
-                                                                        ? dayjs(teacherData.date_of_leave, 'DD MMM YYYY')
-                                                                        : null
-                                                                }
-                                                                placeholder="Select Date"
-
-                                                                onChange={(date, dateString) =>
-                                                                    handleDateChange("date_of_leave", date, Array.isArray(dateString) ? dateString[0] : dateString)
-                                                                }
-
-                                                            />
-                                                            <span className="input-icon-addon">
-                                                                <i className="ti ti-calendar" />
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* /Payroll */}
-                                    {/* Leaves */}
-                                    {/* <div className="card">
+                <>
+                  {/* Payroll */}
+                  <div className="card">
+                    <div className="card-header bg-light">
+                      <div className="d-flex align-items-center">
+                        <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                          <i className="ti ti-user-shield fs-16" />
+                        </span>
+                        <h4 className="text-dark">Payroll</h4>
+                      </div>
+                    </div>
+                    <div className="card-body pb-1">
+                      <div className="row">
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">EPF No</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="epf_no"
+                              value={teacherData.epf_no}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Basic Salary</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="basic_salary"
+                              value={teacherData.basic_salary}
+                              onChange={handleInputChange}
+                            />
+                            {errors.basic_salary && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.basic_salary}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Contract Type</label>
+                            <span className="text-danger"> *</span>
+                            <CommonSelect
+                              className="select"
+                              options={Contract}
+                              value={teacherData.contract_type}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "contract_type",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                            {errors.contract_type && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.contract_type}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Work Shift</label>
+                            <CommonSelect
+                              className="select"
+                              options={Shift}
+                              value={teacherData.work_sift}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "work_sift",
+                                  option ? option.value : ""
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Work Location</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="work_location"
+                              value={teacherData.work_location}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">
+                              Date of Leaving
+                            </label>
+                            <div className="input-icon position-relative">
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                value={
+                                  teacherData.date_of_leave
+                                    ? dayjs(
+                                        teacherData.date_of_leave,
+                                        "DD MMM YYYY"
+                                      )
+                                    : null
+                                }
+                                placeholder="Select Date"
+                                onChange={(date, dateString) =>
+                                  handleDateChange(
+                                    "date_of_leave",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
+                                }
+                              />
+                              <span className="input-icon-addon">
+                                <i className="ti ti-calendar" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Payroll */}
+                  {/* Leaves */}
+                  {/* <div className="card">
                                         <div className="card-header bg-light">
                                             <div className="d-flex align-items-center">
                                                 <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
@@ -1371,366 +1759,439 @@ const EditTeacher = () => {
                                             </div>
                                         </div>
                                     </div> */}
-                                    {/* /Leaves */}
-                                    {/* Bank Details */}
-                                    <div className="card">
-                                        <div className="card-header bg-light">
-                                            <div className="d-flex align-items-center">
-                                                <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                    <i className="ti ti-map fs-16" />
-                                                </span>
-                                                <h4 className="text-dark">Bank Account Detail</h4>
-                                            </div>
-                                        </div>
-                                        <div className="card-body pb-1">
-                                            <div className="row">
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Account Name</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="account_name"
-                                                            value={teacherData.account_name}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.account_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Account Number</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            type="text"
-                                                            name="account_num"
-                                                            className="form-control"
-                                                            value={teacherData.account_num}
-                                                            onChange={handleInputChange}
-                                                        />
-                                                        {errors.account_num && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_num}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Bank Name</label><span className="text-danger">*</span>
-                                                        <input
-                                                            type="text"
-                                                            name="bank_name"
-                                                            onChange={handleInputChange}
-                                                            className="form-control"
-                                                            value={
-                                                                teacherData.bank_name
-                                                            }
-                                                        />
-                                                        {errors.bank_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.bank_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">IFSC Code</label><span className="text-danger"> *</span>
-                                                        <input
-                                                            onChange={handleInputChange}
-                                                            type="text"
-                                                            name="ifsc_code"
-                                                            className="form-control"
-                                                            value={teacherData.ifsc_code}
-                                                        />
-                                                        {errors.ifsc_code && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.ifsc_code}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Branch Name</label><span className="text-danger">*</span>
-                                                        <input
-                                                            onChange={handleInputChange}
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="branch_name"
-                                                            value={teacherData.branch_name}
-                                                        />
-                                                        {errors.branch_name && (
-                                                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.branch_name}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* /Bank Details */}
-                                </>
+                  {/* /Leaves */}
+                  {/* Bank Details */}
+                  <div className="card">
+                    <div className="card-header bg-light">
+                      <div className="d-flex align-items-center">
+                        <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                          <i className="ti ti-map fs-16" />
+                        </span>
+                        <h4 className="text-dark">Bank Account Detail</h4>
+                      </div>
+                    </div>
+                    <div className="card-body pb-1">
+                      <div className="row">
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Account Name</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="account_name"
+                              value={teacherData.account_name}
+                              onChange={handleInputChange}
+                            />
+                            {errors.account_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Account Number</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="text"
+                              name="account_num"
+                              className="form-control"
+                              value={teacherData.account_num}
+                              onChange={handleInputChange}
+                            />
+                            {errors.account_num && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_num}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Bank Name</label>
+                            <span className="text-danger">*</span>
+                            <input
+                              type="text"
+                              name="bank_name"
+                              onChange={handleInputChange}
+                              className="form-control"
+                              value={teacherData.bank_name}
+                            />
+                            {errors.bank_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.bank_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">IFSC Code</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              onChange={handleInputChange}
+                              type="text"
+                              name="ifsc_code"
+                              className="form-control"
+                              value={teacherData.ifsc_code}
+                            />
+                            {errors.ifsc_code && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.ifsc_code}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Branch Name</label>
+                            <span className="text-danger">*</span>
+                            <input
+                              onChange={handleInputChange}
+                              type="text"
+                              className="form-control"
+                              name="branch_name"
+                              value={teacherData.branch_name}
+                            />
+                            {errors.branch_name && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.branch_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Bank Details */}
+                </>
 
-                                {/* Transport Information */}
-                                <div className="card">
-                                    <div className="card-header bg-light d-flex align-items-center justify-content-between">
-                                        <div className="d-flex align-items-center">
-                                            <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                <i className="ti ti-bus-stop fs-16" />
-                                            </span>
-                                            <h4 className="text-dark">Transport Information</h4>
-                                        </div>
-
-                                    </div>
-                                    {/* <div className="form-check form-switch">
+                {/* Transport Information */}
+                <div className="card">
+                  <div className="card-header bg-light d-flex align-items-center justify-content-between">
+                    <div className="d-flex align-items-center">
+                      <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                        <i className="ti ti-bus-stop fs-16" />
+                      </span>
+                      <h4 className="text-dark">Transport Information</h4>
+                    </div>
+                  </div>
+                  {/* <div className="form-check form-switch">
                     <input
                       className="form-check-input"
                       type="checkbox"
                       role="switch"
                     />
                   </div> */}
-                                    <div className="card-body pb-1">
-                                        <div className="row">
-                                            <div className="col-lg-4 col-md-6">
-                                                <div className="mb-3">
-                                                    <label className="form-label">Route</label>
-                                                    <CommonSelect
-                                                        className="select"
-                                                        options={route}
-                                                        value={teacherData.route}
-                                                        onChange={(option) => handleSelectChange("route", option ? option.value : "")}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="col-lg-4 col-md-6">
-                                                <div className="mb-3">
-                                                    <label className="form-label">Vehicle Number</label>
-                                                    <CommonSelect
-                                                        className="select"
-                                                        options={VehicleNumber}
-                                                        value={teacherData.vehicle_num}
-                                                        onChange={(option) => handleSelectChange("vehicle_num", option ? option.value : "")}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="col-lg-4 col-md-6">
-                                                <div className="mb-3">
-                                                    <label className="form-label">Pickup Point</label>
-                                                    <CommonSelect
-                                                        className="select"
-                                                        options={PickupPoint}
-                                                        value={teacherData.pickup_point}
-                                                        onChange={(option) => handleSelectChange("pickup_point", option ? option.value : "")}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* /Transport Information */}
-                                {/* Hostel Information */}
-                                <div className="card">
-                                    <div className="card-header bg-light d-flex align-items-center justify-content-between">
-                                        <div className="d-flex align-items-center">
-                                            <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                <i className="ti ti-building-fortress fs-16" />
-                                            </span>
-                                            <h4 className="text-dark">Hostel Information</h4>
-                                        </div>
-                                        {/* <div className="form-check form-switch">
+                  <div className="card-body pb-1">
+                    <div className="row">
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Route</label>
+                          <CommonSelect
+                            className="select"
+                            options={transportRouteOption}
+                            value={teacherData.route}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "route",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Pickup Point</label>
+                          <CommonSelect
+                            className="select"
+                            options={pickupPointOption}
+                            value={teacherData.pickup_point}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "pickup_point",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Vehicle Number</label>
+                          <CommonSelect
+                            className="select"
+                            options={vehicalOption}
+                            value={teacherData.vehicle_num}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "vehicle_num",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* /Transport Information */}
+                {/* Hostel Information */}
+                <div className="card">
+                  <div className="card-header bg-light d-flex align-items-center justify-content-between">
+                    <div className="d-flex align-items-center">
+                      <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                        <i className="ti ti-building-fortress fs-16" />
+                      </span>
+                      <h4 className="text-dark">Hostel Information</h4>
+                    </div>
+                    {/* <div className="form-check form-switch">
                       <input
                         className="form-check-input"
                         type="checkbox"
                         role="switch"
                       />
                     </div> */}
-                                    </div>
-                                    <div className="card-body pb-1">
-                                        <div className="row">
-                                            <div className="col-md-6">
-                                                <div className="mb-3">
-                                                    <label className="form-label">Hostel</label>
-                                                    <CommonSelect
-                                                        className="select"
-                                                        options={Hostel}
-                                                        value={teacherData.hostel}
-                                                        onChange={(option) => handleSelectChange("hostel", option ? option.value : "")}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="col-md-6">
-                                                <div className="mb-3">
-                                                    <label className="form-label">Room No</label>
-                                                    <CommonSelect
-                                                        className="select"
-                                                        options={roomNO}
-                                                        value={teacherData.room_num}
-                                                        onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {/* /Hostel Information */}
-                                <>
-                                    {/* Social Media Links */}
-                                    <div className="card">
-                                        <div className="card-header bg-light">
-                                            <div className="d-flex align-items-center">
-                                                <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                    <i className="ti ti-building fs-16" />
-                                                </span>
-                                                <h4 className="text-dark">Social Media Links</h4>
-                                            </div>
-                                        </div>
-                                        <div className="card-body pb-1">
-                                            <div className="row rows-cols-xxl-5">
-                                                <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Facebook</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="facebook_link"
-                                                            value={
-                                                                teacherData.facebook_link
-                                                            }
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Instagram</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="instagram_link"
-                                                            value={
-                                                                teacherData.instagram_link
-                                                            }
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Linked In</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="linked_link"
-                                                            value={
-                                                                teacherData.linked_link
-                                                            }
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
-                                                    <div className="mb-3">
-                                                        <label className="form-label">Twitter URL</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            name="twitter_link"
-                                                            value={
-                                                                teacherData.twitter_link
-                                                            }
-                                                            onChange={handleInputChange}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* /Social Media Links */}
-                                    {/* Documents */}
-                                    <div className="card">
-                                        <div className="card-header bg-light">
-                                            <div className="d-flex align-items-center">
-                                                <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
-                                                    <i className="ti ti-file fs-16" />
-                                                </span>
-                                                <h4 className="text-dark">Documents</h4>
-                                            </div>
-                                        </div>
-                                        <div className="card-body pb-1">
-                                            <div className="row">
-                                                <div className="col-lg-6">
-                                                    <div className="mb-2">
-                                                        <div className="mb-3">
-                                                            <label className="form-label">
-                                                                Upload Resume
-                                                            </label><span className="text-danger"> *</span>
-                                                            <p>
-                                                                Upload image size of 4MB, Accepted Format PDF
-                                                            </p>
-                                                        </div>
-                                                        <div className="d-flex align-items-center flex-wrap">
-                                                            <div className="btn btn-primary drag-upload-btn mb-2 me-2">
-                                                                <i className="ti ti-file-upload me-1" />
-                                                                Change
-                                                                <input
-                                                                    type="file"
-                                                                    className="form-control image_sign"
-                                                                    accept="application/pdf"
-                                                                    onChange={(e) => handleFileChange(e, setTeacherResume, 'teacherResumepath')}
-                                                                />
-                                                            </div>
-                                                            {teacherResumeid && (<div onClick={() => deleteFile(teacherResumeid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                                                Remove
-                                                            </div>)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="col-lg-6">
-                                                    <div className="mb-2">
-                                                        <div className="mb-3">
-                                                            <label className="form-label">
-                                                                Upload Joining Letter
-                                                            </label><span className="text-danger"> *</span>
-                                                            <p>
-                                                                Upload image size of 4MB, Accepted Format PDF
-                                                            </p>
-                                                        </div>
-                                                        <div className="d-flex align-items-center flex-wrap">
-                                                            <div className="btn btn-primary drag-upload-btn mb-2 me-2">
-                                                                <i className="ti ti-file-upload me-1" />
-                                                                Upload Document
-                                                                <input
-                                                                    type="file"
-                                                                    className="form-control image_sign"
-                                                                    accept="application/pdf"
-                                                                    onChange={(e) => handleFileChange(e, setTeacherJoinLetter, 'teacherJoinLetterpath')}
-                                                                />
-                                                            </div>
-                                                            {teacherJoinLetterid && (<div onClick={() => deleteFile(teacherJoinLetterid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                                                Remove
-                                                            </div>)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* /Documents */}
-
-                                </>
-
-                                <div className="text-end">
-                                    <button type="button" onClick={(e) => cancelEdit(e)} className="btn btn-light me-3">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="btn btn-primary">
-                                        Edit Teacher
-                                    </button>
-                                </div>
-                            </form>
+                  </div>
+                  <div className="card-body pb-1">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Hostel</label>
+                          <CommonSelect
+                            className="select"
+                            options={allhostels}
+                            value={teacherData.hostel}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "hostel",
+                                option ? option.value : null
+                              )
+                            }
+                          />
                         </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Room No</label>
+                          <CommonSelect
+                            className="select"
+                            options={allRoomsOptions}
+                            value={teacherData.room_num}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "room_num",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
+                  </div>
                 </div>
+                {/* /Hostel Information */}
+                <>
+                  {/* Social Media Links */}
+                  <div className="card">
+                    <div className="card-header bg-light">
+                      <div className="d-flex align-items-center">
+                        <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                          <i className="ti ti-building fs-16" />
+                        </span>
+                        <h4 className="text-dark">Social Media Links</h4>
+                      </div>
+                    </div>
+                    <div className="card-body pb-1">
+                      <div className="row rows-cols-xxl-5">
+                        <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Facebook</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="facebook_link"
+                              value={teacherData.facebook_link}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Instagram</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="instagram_link"
+                              value={teacherData.instagram_link}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Linked In</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="linked_link"
+                              value={teacherData.linked_link}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                        <div className="col-xxl col-xl-3 col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Twitter URL</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="twitter_link"
+                              value={teacherData.twitter_link}
+                              onChange={handleInputChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Social Media Links */}
+                  {/* Documents */}
+                  <div className="card">
+                    <div className="card-header bg-light">
+                      <div className="d-flex align-items-center">
+                        <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                          <i className="ti ti-file fs-16" />
+                        </span>
+                        <h4 className="text-dark">Documents</h4>
+                      </div>
+                    </div>
+                    <div className="card-body pb-1">
+                      <div className="row">
+                        <div className="col-lg-6">
+                          <div className="mb-2">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Upload Resume
+                              </label>
+                              <span className="text-danger"> *</span>
+                              <p>
+                                Upload image size of 4MB, Accepted Format PDF
+                              </p>
+                            </div>
+                            <div className="d-flex align-items-center flex-wrap">
+                              <div className="btn btn-primary drag-upload-btn mb-2 me-2">
+                                <i className="ti ti-file-upload me-1" />
+                                Change
+                                <input
+                                  type="file"
+                                  className="form-control image_sign"
+                                  accept="application/pdf"
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setTeacherResume,
+                                      "teacherResumepath"
+                                    )
+                                  }
+                                />
+                              </div>
+                              {teacherResumeid && (
+                                <div
+                                  onClick={() => deleteFile(teacherResumeid)}
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-lg-6">
+                          <div className="mb-2">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Upload Joining Letter
+                              </label>
+                              <span className="text-danger"> *</span>
+                              <p>
+                                Upload image size of 4MB, Accepted Format PDF
+                              </p>
+                            </div>
+                            <div className="d-flex align-items-center flex-wrap">
+                              <div className="btn btn-primary drag-upload-btn mb-2 me-2">
+                                <i className="ti ti-file-upload me-1" />
+                                Upload Document
+                                <input
+                                  type="file"
+                                  className="form-control image_sign"
+                                  accept="application/pdf"
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setTeacherJoinLetter,
+                                      "teacherJoinLetterpath"
+                                    )
+                                  }
+                                />
+                              </div>
+                              {teacherJoinLetterid && (
+                                <div
+                                  onClick={() =>
+                                    deleteFile(teacherJoinLetterid)
+                                  }
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Documents */}
+                </>
+
+                <div className="text-end">
+                  <button
+                    type="button"
+                    onClick={(e) => cancelEdit(e)}
+                    className="btn btn-light me-3"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Edit Teacher
+                  </button>
+                </div>
+              </form>
             </div>
-            {/* /Page Wrapper */}
-        </>
-    );
+          </div>
+        </div>
+      </div>
+      {/* /Page Wrapper */}
+    </>
+  );
 };
 
 export default EditTeacher;

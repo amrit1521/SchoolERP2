@@ -34,6 +34,7 @@ router.get(
   `/getpickup-points-by-route/:id`,
   transportController.getPickupPointByRouteId
 );
+router.get("/get-pickuppoint-forroute/:id", transportController.getAllPickupPointsForARoute);
 
 //add vehicle info
 router.post("/add-vehicle", transportController.addVehicle);
@@ -47,6 +48,10 @@ router.post("/assign-vehicle", transportController.assignVehicleToRoute);
 router.get(
   "/all-assigned-vehicles",
   transportController.getAllAssignedVehicles
+);
+router.get(
+  "/get-assigned-vehicles-forroute/:id",
+  transportController.getAssignedVehiclesForARoute
 );
 router.delete(
   "/delete-assigned-vehicle/:id",

@@ -4,27 +4,35 @@ import {
   bloodGroup,
   Contract,
   gender,
-  Hostel,
+  // Hostel,
+  // PickupPoint,
+  // roomNO,
+  // route,
+  // VehicleNumber,
   Marital,
-  PickupPoint,
-  roomNO,
-
-  route,
   Shift,
   staffrole,
   status,
-  VehicleNumber,
 } from "../../../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { all_routes } from "../../../router/all_routes";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { addStaff, deleteStaffFile, uploadStaffFile } from "../../../../service/staff";
+import {
+  addStaff,
+  deleteStaffFile,
+  uploadStaffFile,
+} from "../../../../service/staff";
 import { departmentOption } from "../../../../service/department";
 import { designationOption } from "../../../../service/designation";
-import dayjs from 'dayjs'
-
+import dayjs from "dayjs";
+import {
+  getAllTransportRoutes,
+  getAssignedVehicleForARoute,
+  getTransportPickUpPointsForRouteId,
+} from "../../../../service/api";
+import { allHostel, getAllRoomForAHostel } from "../../../../service/hostel";
 
 export interface StaffData {
   firstname: string;
@@ -54,7 +62,6 @@ export interface StaffData {
   address: string;
   perm_address: string;
 
-
   // payroll
   epf_no: string;
   basic_salary: string;
@@ -77,23 +84,19 @@ export interface StaffData {
   branch_name: string;
 
   // transport info
-  route: string;
-  vehicle_num: string;
-  pickup_point: string;
+  route: number | null;
+  vehicle_num: number | null;
+  pickup_point: number | null;
 
   // hostel info
-  hostel: string;
-  room_num: string;
+  hostel: number | null;
+  room_num: number | null;
 
-
-  //  social media link 
+  //  social media link
   fac_link: string;
   inst_link: string;
   lin_link: string;
   twi_link: string;
-
-
-
 }
 
 const AddStaff = () => {
@@ -102,7 +105,7 @@ const AddStaff = () => {
   //   setOwner(newTags);
   // };
   const routes = all_routes;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [staffData, setStaffData] = useState<StaffData>({
     firstname: "",
@@ -152,14 +155,14 @@ const AddStaff = () => {
     ifsc_code: "",
     branch_name: "",
 
-    // Transport info
-    route: "",
-    vehicle_num: "",
-    pickup_point: "",
+    // transport info
+    route: null,
+    vehicle_num: null,
+    pickup_point: null,
 
-    // Hostel info
-    hostel: "",
-    room_num: "",
+    // hostel info
+    hostel: null,
+    room_num: null,
 
     // Social media
     fac_link: "",
@@ -168,7 +171,9 @@ const AddStaff = () => {
     twi_link: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof StaffData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof StaffData, string>>
+  >({});
 
   const [staffImg, setStaffImg] = useState<File | null>(null);
   const [staffResume, setStaffResume] = useState<File | null>(null);
@@ -180,7 +185,118 @@ const AddStaff = () => {
 
   const [staffImgid, setStaffImgid] = useState<number | null>(null);
   const [staffResumeid, setStaffResumeid] = useState<number | null>(null);
-  const [staffJoinLetterid, setStaffJoinLetterid] = useState<number | null>(null);
+  const [staffJoinLetterid, setStaffJoinLetterid] = useState<number | null>(
+    null
+  );
+
+  const [transportRouteOption, setTransportRouteOption] = useState<any[]>([]);
+  const [pickupPointOption, setPickupPointOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [vehicalOption, setVehicalOption] = useState<any[]>([]);
+  const [allhostels, setAllHostels] = useState<any[]>([]);
+  const [allRoomsOptions, setAllRoomsOptions] = useState<any[]>([]);
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        setTransportRouteOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load routes");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load routes");
+    }
+  };
+
+  const fetchPickupPoints = async (id: number) => {
+    try {
+      const { data } = await getTransportPickUpPointsForRouteId(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setPickupPointOption(
+          data.result.map((point: any) => ({
+            value: point.id,
+            label: point.pickPointName,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch pickup points");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch pickup points"
+      );
+    }
+  };
+  const fetchAssginedVehicle = async (id: number) => {
+    try {
+      const { data } = await getAssignedVehicleForARoute(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setVehicalOption(
+          data.result.map((item: any) => ({
+            value: item.vehicle_id,
+            label: item.vehicle_no,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch assigned vehicles");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch assigned vehicles"
+      );
+    }
+  };
+
+  const fetchHostels = async () => {
+    try {
+      const { data } = await allHostel();
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllHostels(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.hostelName,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const fetchHostelsRooms = async (id: number) => {
+    try {
+      const { data } = await getAllRoomForAHostel(id);
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllRoomsOptions(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.roomNo,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (staffData.hostel) {
+      fetchHostelsRooms(staffData.hostel);
+    }
+  }, [staffData.hostel]);
+
+  useEffect(() => {
+    if (staffData.route) {
+      fetchPickupPoints(staffData.route);
+      fetchAssginedVehicle(staffData.route);
+    }
+  }, [staffData.route]);
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -201,7 +317,6 @@ const AddStaff = () => {
         toast.error("File size should not exceed 4MB.");
         return;
       }
-
 
       setFile(file);
 
@@ -257,7 +372,9 @@ const AddStaff = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setStaffData((prev) => ({
       ...prev,
@@ -265,30 +382,30 @@ const AddStaff = () => {
     }));
   };
 
-
   const handleDateChange = (
     name: keyof StaffData,
     date: dayjs.Dayjs | null,
     dateString: string
   ) => {
-    console.log(date ? "" : "")
+    console.log(date ? "" : "");
     setStaffData((prev) => ({ ...prev, [name]: dateString }));
   };
 
   // Handle for CommonSelect
-  const handleSelectChange = (name: keyof StaffData, value: string | number) => {
+  const handleSelectChange = (
+    name: keyof StaffData,
+    value: string | number | null
+  ) => {
     setStaffData((prev) => ({ ...prev, [name]: value }));
   };
-
 
   // Generic tag handler
   const handleTagsChange = (field: keyof typeof staffData, tags: string[]) => {
     setStaffData((prev) => ({
       ...prev,
-      [field]: tags
+      [field]: tags,
     }));
   };
-
 
   // Validation function for staff
   const validateStaffData = (data: StaffData) => {
@@ -303,7 +420,8 @@ const AddStaff = () => {
       errors.email = "Valid email is required";
 
     if (!data.password.trim()) errors.password = "Password is required";
-    if (!data.conpassword.trim()) errors.conpassword = "Confirm Password is required";
+    if (!data.conpassword.trim())
+      errors.conpassword = "Confirm Password is required";
     if (data.password !== data.conpassword)
       errors.conpassword = "Password and Confirm Password do not match";
 
@@ -315,33 +433,42 @@ const AddStaff = () => {
     if (!data.desgination) errors.desgination = "Designation is required";
     if (!data.gender.trim()) errors.gender = "Gender is required";
     if (!data.dob.trim()) errors.dob = "Date of birth is required";
-    if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
+    if (!data.date_of_join.trim())
+      errors.date_of_join = "Date of joining is required";
     if (!data.fat_name.trim()) errors.fat_name = "Father's Name is required";
     if (!data.mot_name.trim()) errors.mot_name = "Mother's Name is required";
-    if (!data.qualification.trim()) errors.qualification = "Qualification is required";
+    if (!data.qualification.trim())
+      errors.qualification = "Qualification is required";
     if (!data.work_exp.trim()) errors.work_exp = "Work Experience is required";
     if (!data.address.trim()) errors.address = "Address is required";
-    if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
-    if (!data.blood_gp) errors.blood_gp = "Blood Group is required !"
-    if (data.lan_known.length === 0) errors.lan_known = 'Language known is required !'
+    if (!data.perm_address.trim())
+      errors.perm_address = "Permannent Address is required";
+    if (!data.blood_gp) errors.blood_gp = "Blood Group is required !";
+    if (data.lan_known.length === 0)
+      errors.lan_known = "Language known is required !";
 
     // 🔹 Payroll
     if (!data.epf_no) errors.epf_no = "EPF number is required";
-    if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
-    if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
-
-
+    if (!data.basic_salary.trim())
+      errors.basic_salary = "Basic salary is required";
+    if (!data.contract_type.trim())
+      errors.contract_type = "Contract type is required";
 
     // 🔹 Bank info
-    if (!data.account_name.trim()) errors.account_name = "Account name is required";
-    if (!data.account_num.trim()) errors.account_num = "Account number is required";
+    if (!data.account_name.trim())
+      errors.account_name = "Account name is required";
+    if (!data.account_num.trim())
+      errors.account_num = "Account number is required";
     if (!data.bank_name.trim()) errors.bank_name = "Bank name is required";
     if (!data.ifsc_code.trim()) errors.ifsc_code = "IFSC code is required";
-    if (!data.branch_name.trim()) errors.branch_name = "Branch name is required";
+    if (!data.branch_name.trim())
+      errors.branch_name = "Branch name is required";
 
     // leaves
-    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required !"
-    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required !"
+    if (!data.medical_leaves.trim())
+      errors.medical_leaves = "Medical leave is required !";
+    if (!data.casual_leaves.trim())
+      errors.casual_leaves = "Casual leave is required !";
 
     // 🔹 Optional file checks
     if (!staffImg) toast.error("Staff Image is required!");
@@ -353,48 +480,46 @@ const AddStaff = () => {
     return Object.keys(errors).length === 0;
   };
 
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-   
+    e.preventDefault();
+
     if (!validateStaffData(staffData)) {
-       toast.error("Required fileds must be filled !")
-      return
+      toast.error("Required fileds must be filled !");
+      return;
     }
-    
+
     try {
-      if (!staffData.password.trim() || staffData.password !== staffData.conpassword) {
-        toast.error('Password and Confirm Password do not match !')
-        return
+      if (
+        !staffData.password.trim() ||
+        staffData.password !== staffData.conpassword
+      ) {
+        toast.error("Password and Confirm Password do not match !");
+        return;
       }
-      const formData = new FormData()
+      const formData = new FormData();
       if (staffImg && staffResume && staffJoinLetter) {
-        formData.append('img_src', staffImgpath)
-        formData.append('resume_src', staffResumepath)
-        formData.append('letter_src', staffJoinLetterpath)
+        formData.append("img_src", staffImgpath);
+        formData.append("resume_src", staffResumepath);
+        formData.append("letter_src", staffJoinLetterpath);
       } else {
-        toast.error('All files are required !')
-        return
+        toast.error("All files are required !");
+        return;
       }
       Object.entries(staffData).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value))
+          formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value as string)
+          formData.append(key, value as string);
         }
-      })
-
+      });
 
       // for (const [key, value] of formData.entries()) {
       //   console.log(key, value)
       // }
 
-
-
-      const res = await addStaff(formData)
+      const res = await addStaff(formData);
       if (res.data.success) {
         toast.success(res.data.message);
-
 
         setStaffData({
           firstname: "",
@@ -404,7 +529,6 @@ const AddStaff = () => {
           password: "",
           conpassword: "",
           status: "",
-
 
           role: null,
           department: null,
@@ -423,7 +547,6 @@ const AddStaff = () => {
           address: "",
           perm_address: "",
 
-
           epf_no: "",
           basic_salary: "",
           contract_type: "",
@@ -431,12 +554,10 @@ const AddStaff = () => {
           work_location: "",
           date_of_leave: "",
 
-
           medical_leaves: "",
           casual_leaves: "",
           maternity_leaves: "",
           sick_leaves: "",
-
 
           account_name: "",
           account_num: "",
@@ -444,22 +565,20 @@ const AddStaff = () => {
           ifsc_code: "",
           branch_name: "",
 
+          // transport info
+          route: null,
+          vehicle_num: null,
+          pickup_point: null,
 
-          route: "",
-          vehicle_num: "",
-          pickup_point: "",
-
-
-          hostel: "",
-          room_num: "",
-
+          // hostel info
+          hostel: null,
+          room_num: null,
 
           fac_link: "",
           inst_link: "",
           lin_link: "",
           twi_link: "",
-        })
-
+        });
 
         // File states reset
         setStaffImg(null);
@@ -473,18 +592,16 @@ const AddStaff = () => {
         setStaffImgid(null);
         setStaffResumeid(null);
         setStaffJoinLetterid(null);
-        navigate(-1)
-
+        navigate(-1);
       }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     }
-  }
-
+  };
 
   const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     setStaffData({
       firstname: "",
       lastname: "",
@@ -533,22 +650,21 @@ const AddStaff = () => {
       ifsc_code: "",
       branch_name: "",
 
-      // Transport info
-      route: "",
-      vehicle_num: "",
-      pickup_point: "",
+      // transport info
+      route: null,
+      vehicle_num: null,
+      pickup_point: null,
 
-      // Hostel info
-      hostel: "",
-      room_num: "",
+      // hostel info
+      hostel: null,
+      room_num: null,
 
       // Social media
       fac_link: "",
       inst_link: "",
       lin_link: "",
       twi_link: "",
-    })
-
+    });
 
     // File states reset
     setStaffImg(null);
@@ -562,10 +678,8 @@ const AddStaff = () => {
     setStaffImgid(null);
     setStaffResumeid(null);
     setStaffJoinLetterid(null);
-    navigate(-1)
-
-  }
-
+    navigate(-1);
+  };
 
   // data for option
   interface OptionType {
@@ -577,9 +691,7 @@ const AddStaff = () => {
   const [desgiOptions, setDesgiOption] = useState<OptionType[]>([]);
 
   const fetchDepartMentAndDesginationOption = async () => {
-
     try {
-
       const [departRes, desgiRes] = await Promise.all([
         departmentOption(),
         designationOption(),
@@ -610,9 +722,10 @@ const AddStaff = () => {
   };
 
   useEffect(() => {
+    fetchHostels();
     fetchDepartMentAndDesginationOption();
+    fetchRoutes();
   }, []);
-
 
   return (
     <div>
@@ -640,7 +753,7 @@ const AddStaff = () => {
             {/* /Page Header */}
             <div className="row">
               <div className="col-md-12">
-                <form onSubmit={handleSubmit} >
+                <form onSubmit={handleSubmit}>
                   {/* Personal Information */}
                   <div className="card">
                     <div className="card-header bg-light">
@@ -654,15 +767,23 @@ const AddStaff = () => {
                     <div className="card-body pb-1">
                       <div className="add-section">
                         <div className="row">
-
-
                           <div className="col-md-12">
                             <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                              {
-                                !staffImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                  <i className="ti ti-photo-plus fs-16" />
-                                </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(staffImg)} alt="" /></p>
-                              }
+                              {!staffImg ? (
+                                <>
+                                  <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                    <i className="ti ti-photo-plus fs-16" />
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                  <img
+                                    className=""
+                                    src={URL.createObjectURL(staffImg)}
+                                    alt=""
+                                  />
+                                </p>
+                              )}
                               <div className="profile-upload">
                                 <div className="profile-uploader d-flex align-items-center">
                                   <div className="drag-upload-btn mb-3">
@@ -671,13 +792,24 @@ const AddStaff = () => {
                                       type="file"
                                       accept="image/*"
                                       className="form-control image-sign"
-                                      onChange={(e) => handleFileChange(e, setStaffImg, 'staffImgpath')}
-
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          setStaffImg,
+                                          "staffImgpath"
+                                        )
+                                      }
                                     />
-                                  </div><span className="text-danger"> *</span>
-                                  {staffImgid && (<div onClick={() => deleteFile(staffImgid)} className="btn btn-outline-danger mb-3 ">
-                                    Remove
-                                  </div>)}
+                                  </div>
+                                  <span className="text-danger"> *</span>
+                                  {staffImgid && (
+                                    <div
+                                      onClick={() => deleteFile(staffImgid)}
+                                      className="btn btn-outline-danger mb-3 "
+                                    >
+                                      Remove
+                                    </div>
+                                  )}
                                 </div>
                                 <p className="fs-12">
                                   Upload image size 4MB, Format JPG, PNG
@@ -685,17 +817,16 @@ const AddStaff = () => {
                               </div>
                             </div>
                           </div>
-
-
                         </div>
 
-
                         <div className="row row-cols-xxl-5 row-cols-md-6">
-
                           {/* First Name */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">First Name <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                First Name{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="firstname"
@@ -703,14 +834,23 @@ const AddStaff = () => {
                                 value={staffData.firstname}
                                 onChange={handleInputChange}
                               />
-                              {errors.firstname && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.firstname}</div>}
+                              {errors.firstname && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.firstname}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Last Name */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Last Name <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Last Name <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="lastname"
@@ -718,82 +858,163 @@ const AddStaff = () => {
                                 value={staffData.lastname}
                                 onChange={handleInputChange}
                               />
-                              {errors.lastname && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.lastname}</div>}
+                              {errors.lastname && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.lastname}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Role */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Role<span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Role<span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select"
                                 options={staffrole}
                                 value={staffData.role}
-                                onChange={(option) => handleSelectChange("role", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "role",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.role && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.role}</div>}
+                              {errors.role && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.role}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Department */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Department<span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Department<span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select text-capitalize"
                                 options={departOptions}
                                 value={staffData.department}
-                                onChange={(option) => handleSelectChange("department", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "department",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.department && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.department}</div>}
+                              {errors.department && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.department}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Designation */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Designation <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Designation{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select text-capitalize"
                                 options={desgiOptions}
                                 value={staffData.desgination}
-                                onChange={(option) => handleSelectChange("desgination", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "desgination",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.desgination && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.desgination}</div>}
+                              {errors.desgination && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.desgination}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Gender */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Gender <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Gender <span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select"
                                 options={gender}
                                 value={staffData.gender}
-                                onChange={(option) => handleSelectChange("gender", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "gender",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.gender && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.gender}</div>}
+                              {errors.gender && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.gender}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Status <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Status <span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select"
                                 options={status}
                                 value={staffData.status}
-                                onChange={(option) => handleSelectChange("status", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "status",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.status && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.status}</div>}
+                              {errors.status && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.status}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Primary Contact */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Primary Contact Number <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Primary Contact Number{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -801,14 +1022,24 @@ const AddStaff = () => {
                                 name="primarycont"
                                 onChange={handleInputChange}
                               />
-                              {errors.primarycont && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.primarycont}</div>}
+                              {errors.primarycont && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.primarycont}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Email */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Email Address <span className="text-danger">*</span> </label>
+                              <label className="form-label">
+                                Email Address{" "}
+                                <span className="text-danger">*</span>{" "}
+                              </label>
                               <input
                                 type="email"
                                 className="form-control"
@@ -816,33 +1047,62 @@ const AddStaff = () => {
                                 name="email"
                                 onChange={handleInputChange}
                               />
-                              {errors.email && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.email}</div>}
+                              {errors.email && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.email}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Blood Group */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Blood Group <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Blood Group{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <CommonSelect
                                 className="select"
                                 options={bloodGroup}
                                 value={staffData.blood_gp}
-                                onChange={(option) => handleSelectChange("blood_gp", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "blood_gp",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
-                              {errors.blood_gp && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.blood_gp}</div>}
+                              {errors.blood_gp && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.blood_gp}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Marital Status */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Marital Status </label>
+                              <label className="form-label">
+                                Marital Status{" "}
+                              </label>
                               <CommonSelect
                                 className="select"
                                 options={Marital}
                                 value={staffData.marital_status}
-                                onChange={(option) => handleSelectChange("marital_status", option ? option.value : "")}
+                                onChange={(option) =>
+                                  handleSelectChange(
+                                    "marital_status",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
                               {/* {errors.marital_status && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.marital_status}</div>} */}
                             </div>
@@ -851,7 +1111,10 @@ const AddStaff = () => {
                           {/* Father's Name */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Father’s Name <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Father’s Name{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -859,14 +1122,24 @@ const AddStaff = () => {
                                 value={staffData.fat_name}
                                 onChange={handleInputChange}
                               />
-                              {errors.fat_name && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.fat_name}</div>}
+                              {errors.fat_name && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.fat_name}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Mother's Name */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Mother’s Name <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Mother’s Name{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -874,26 +1147,55 @@ const AddStaff = () => {
                                 value={staffData.mot_name}
                                 onChange={handleInputChange}
                               />
-                              {errors.mot_name && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.mot_name}</div>}
+                              {errors.mot_name && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.mot_name}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Date of Birth */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Date of Birth <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Date of Birth{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <div className="input-icon position-relative">
                                 <DatePicker
                                   className="form-control datetimepicker"
                                   format="DD MMM YYYY"
-                                  value={staffData.dob ? dayjs(staffData.dob, 'DD MMM YYYY') : null}
+                                  value={
+                                    staffData.dob
+                                      ? dayjs(staffData.dob, "DD MMM YYYY")
+                                      : null
+                                  }
                                   placeholder="Select Date"
                                   onChange={(date, dateString) =>
-                                    handleDateChange("dob", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                    handleDateChange(
+                                      "dob",
+                                      date,
+                                      Array.isArray(dateString)
+                                        ? dateString[0]
+                                        : dateString
+                                    )
                                   }
                                 />
-                                <span className="input-icon-addon"><i className="ti ti-calendar" /></span>
-                                {errors.dob && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.dob}</div>}
+                                <span className="input-icon-addon">
+                                  <i className="ti ti-calendar" />
+                                </span>
+                                {errors.dob && (
+                                  <div
+                                    className="text-danger"
+                                    style={{ fontSize: "11px" }}
+                                  >
+                                    {errors.dob}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -901,19 +1203,44 @@ const AddStaff = () => {
                           {/* Date of Joining */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Date of Joining <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Date of Joining{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <div className="input-icon position-relative">
                                 <DatePicker
                                   className="form-control datetimepicker"
                                   format="DD MMM YYYY"
-                                  value={staffData.date_of_join ? dayjs(staffData.date_of_join, 'DD MMM YYYY') : null}
+                                  value={
+                                    staffData.date_of_join
+                                      ? dayjs(
+                                          staffData.date_of_join,
+                                          "DD MMM YYYY"
+                                        )
+                                      : null
+                                  }
                                   placeholder="Select Date"
                                   onChange={(date, dateString) =>
-                                    handleDateChange("date_of_join", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                    handleDateChange(
+                                      "date_of_join",
+                                      date,
+                                      Array.isArray(dateString)
+                                        ? dateString[0]
+                                        : dateString
+                                    )
                                   }
                                 />
-                                <span className="input-icon-addon"><i className="ti ti-calendar" /></span>
-                                {errors.date_of_join && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.date_of_join}</div>}
+                                <span className="input-icon-addon">
+                                  <i className="ti ti-calendar" />
+                                </span>
+                                {errors.date_of_join && (
+                                  <div
+                                    className="text-danger"
+                                    style={{ fontSize: "11px" }}
+                                  >
+                                    {errors.date_of_join}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -921,19 +1248,34 @@ const AddStaff = () => {
                           {/* Language Known */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Language Known <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Language Known{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <TagInput
                                 initialTags={staffData.lan_known}
-                                onTagsChange={(tags) => handleTagsChange('lan_known', tags)}
+                                onTagsChange={(tags) =>
+                                  handleTagsChange("lan_known", tags)
+                                }
                               />
-                              {errors.lan_known && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.lan_known}</div>}
+                              {errors.lan_known && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.lan_known}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Qualification */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Qualification <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Qualification{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="qualification"
@@ -941,14 +1283,24 @@ const AddStaff = () => {
                                 value={staffData.qualification}
                                 onChange={handleInputChange}
                               />
-                              {errors.qualification && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.qualification}</div>}
+                              {errors.qualification && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.qualification}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Work Experience */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Work Experience <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Work Experience{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="work_exp"
@@ -956,7 +1308,14 @@ const AddStaff = () => {
                                 value={staffData.work_exp}
                                 onChange={handleInputChange}
                               />
-                              {errors.work_exp && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.work_exp}</div>}
+                              {errors.work_exp && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.work_exp}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -977,7 +1336,9 @@ const AddStaff = () => {
                           {/* Address */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Address <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Address <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="address"
@@ -985,14 +1346,24 @@ const AddStaff = () => {
                                 value={staffData.address}
                                 onChange={handleInputChange}
                               />
-                              {errors.address && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.address}</div>}
+                              {errors.address && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.address}
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Permanent Address */}
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Permanent Address <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Permanent Address{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="perm_address"
@@ -1000,19 +1371,21 @@ const AddStaff = () => {
                                 value={staffData.perm_address}
                                 onChange={handleInputChange}
                               />
-                              {errors.perm_address && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.perm_address}</div>}
+                              {errors.perm_address && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.perm_address}
+                                </div>
+                              )}
                             </div>
                           </div>
-
                         </div>
-
-
-
                       </div>
                     </div>
                   </div>
                   {/* /Personal Information */}
-
 
                   {/* Payroll */}
                   <div className="card">
@@ -1028,7 +1401,9 @@ const AddStaff = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">EPF No <span className="text-danger">*</span> </label>
+                            <label className="form-label">
+                              EPF No <span className="text-danger">*</span>{" "}
+                            </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1037,13 +1412,19 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.epf_no && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.epf_no}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.epf_no}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Basic Salary</label><span className="text-danger"> *</span>
+                            <label className="form-label">Basic Salary</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1052,21 +1433,37 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.basic_salary && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.basic_salary}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.basic_salary}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Contract Type</label><span className="text-danger"> *</span>
+                            <label className="form-label">Contract Type</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={Contract}
                               value={staffData.contract_type}
-                              onChange={(option) => handleSelectChange("contract_type", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "contract_type",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.contract_type && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.contract_type}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.contract_type}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1077,7 +1474,12 @@ const AddStaff = () => {
                               className="select"
                               options={Shift}
                               value={staffData.work_sift}
-                              onChange={(option) => handleSelectChange("work_sift", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "work_sift",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1104,15 +1506,22 @@ const AddStaff = () => {
                                 format="DD MMM YYYY"
                                 value={
                                   staffData.date_of_leave
-                                    ? dayjs(staffData.date_of_leave, 'DD MMM YYYY')
+                                    ? dayjs(
+                                        staffData.date_of_leave,
+                                        "DD MMM YYYY"
+                                      )
                                     : null
                                 }
                                 placeholder="Select Date"
-
                                 onChange={(date, dateString) =>
-                                  handleDateChange("date_of_leave", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                  handleDateChange(
+                                    "date_of_leave",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
                                 }
-
                               />
                               <span className="input-icon-addon">
                                 <i className="ti ti-calendar" />
@@ -1124,7 +1533,6 @@ const AddStaff = () => {
                     </div>
                   </div>
                   {/* /Payroll */}
-
 
                   {/* Leaves */}
                   <div className="card">
@@ -1140,7 +1548,10 @@ const AddStaff = () => {
                       <div className="row">
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Medical Leavesspa <span className="text-danger">*</span> </label>
+                            <label className="form-label">
+                              Medical Leavesspa{" "}
+                              <span className="text-danger">*</span>{" "}
+                            </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1149,13 +1560,21 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.medical_leaves && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.medical_leaves}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.medical_leaves}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Casual Leaves <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Casual Leaves{" "}
+                              <span className="text-danger">*</span>
+                            </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1164,7 +1583,12 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.casual_leaves && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.casual_leaves}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.casual_leaves}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1199,7 +1623,6 @@ const AddStaff = () => {
                   </div>
                   {/* /Leaves */}
 
-
                   {/* Bank Details */}
                   <div className="card">
                     <div className="card-header bg-light">
@@ -1214,7 +1637,8 @@ const AddStaff = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Account Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Account Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1223,13 +1647,19 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.account_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Account Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">Account Number</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="account_num"
@@ -1238,30 +1668,40 @@ const AddStaff = () => {
                               onChange={handleInputChange}
                             />
                             {errors.account_num && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_num}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_num}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Bank Name</label><span className="text-danger">*</span>
+                            <label className="form-label">Bank Name</label>
+                            <span className="text-danger">*</span>
                             <input
                               type="text"
                               name="bank_name"
                               onChange={handleInputChange}
                               className="form-control"
-                              value={
-                                staffData.bank_name
-                              }
+                              value={staffData.bank_name}
                             />
                             {errors.bank_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.bank_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.bank_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">IFSC Code</label><span className="text-danger"> *</span>
+                            <label className="form-label">IFSC Code</label>
+                            <span className="text-danger"> *</span>
                             <input
                               onChange={handleInputChange}
                               type="text"
@@ -1270,13 +1710,19 @@ const AddStaff = () => {
                               value={staffData.ifsc_code}
                             />
                             {errors.ifsc_code && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.ifsc_code}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.ifsc_code}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Branch Name</label><span className="text-danger">*</span>
+                            <label className="form-label">Branch Name</label>
+                            <span className="text-danger">*</span>
                             <input
                               onChange={handleInputChange}
                               type="text"
@@ -1285,7 +1731,12 @@ const AddStaff = () => {
                               value={staffData.branch_name}
                             />
                             {errors.branch_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.branch_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.branch_name}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1293,8 +1744,6 @@ const AddStaff = () => {
                     </div>
                   </div>
                   {/* /Bank Details */}
-
-
 
                   {/* Transport Information */}
                   <div className="card">
@@ -1305,7 +1754,6 @@ const AddStaff = () => {
                         </span>
                         <h4 className="text-dark">Transport Information</h4>
                       </div>
-
                     </div>
                     {/* <div className="form-check form-switch">
                     <input
@@ -1321,20 +1769,14 @@ const AddStaff = () => {
                             <label className="form-label">Route</label>
                             <CommonSelect
                               className="select"
-                              options={route}
+                              options={transportRouteOption}
                               value={staffData.route}
-                              onChange={(option) => handleSelectChange("route", option ? option.value : "")}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-lg-4 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Vehicle Number</label>
-                            <CommonSelect
-                              className="select"
-                              options={VehicleNumber}
-                              value={staffData.vehicle_num}
-                              onChange={(option) => handleSelectChange("vehicle_num", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "route",
+                                  option ? option.value : null
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1343,9 +1785,30 @@ const AddStaff = () => {
                             <label className="form-label">Pickup Point</label>
                             <CommonSelect
                               className="select"
-                              options={PickupPoint}
+                              options={pickupPointOption}
                               value={staffData.pickup_point}
-                              onChange={(option) => handleSelectChange("pickup_point", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "pickup_point",
+                                  option ? option.value : null
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="col-lg-4 col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label">Vehicle Number</label>
+                            <CommonSelect
+                              className="select"
+                              options={vehicalOption}
+                              value={staffData.vehicle_num}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "vehicle_num",
+                                  option ? option.value : null
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1353,7 +1816,6 @@ const AddStaff = () => {
                     </div>
                   </div>
                   {/* /Transport Information */}
-
 
                   {/* Hostel Information */}
                   <div className="card">
@@ -1379,9 +1841,14 @@ const AddStaff = () => {
                             <label className="form-label">Hostel</label>
                             <CommonSelect
                               className="select"
-                              options={Hostel}
+                              options={allhostels}
                               value={staffData.hostel}
-                              onChange={(option) => handleSelectChange("hostel", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "hostel",
+                                  option ? option.value : null
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1390,9 +1857,14 @@ const AddStaff = () => {
                             <label className="form-label">Room No</label>
                             <CommonSelect
                               className="select"
-                              options={roomNO}
+                              options={allRoomsOptions}
                               value={staffData.room_num}
-                              onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "room_num",
+                                  option ? option.value : null
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1400,7 +1872,6 @@ const AddStaff = () => {
                     </div>
                   </div>
                   {/* /Hostel Information */}
-
 
                   {/* Social Media Links */}
                   <div className="card">
@@ -1421,9 +1892,7 @@ const AddStaff = () => {
                               type="text"
                               className="form-control"
                               name="fac_link"
-                              value={
-                                staffData.fac_link
-                              }
+                              value={staffData.fac_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1435,9 +1904,7 @@ const AddStaff = () => {
                               type="text"
                               className="form-control"
                               name="inst_link"
-                              value={
-                                staffData.inst_link
-                              }
+                              value={staffData.inst_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1449,9 +1916,7 @@ const AddStaff = () => {
                               type="text"
                               className="form-control"
                               name="lin_link"
-                              value={
-                                staffData.lin_link
-                              }
+                              value={staffData.lin_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1463,9 +1928,7 @@ const AddStaff = () => {
                               type="text"
                               className="form-control"
                               name="twi_link"
-                              value={
-                                staffData.twi_link
-                              }
+                              value={staffData.twi_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1474,7 +1937,6 @@ const AddStaff = () => {
                     </div>
                   </div>
                   {/* /Social Media Links */}
-
 
                   {/* Documents */}
                   <div className="card">
@@ -1493,7 +1955,8 @@ const AddStaff = () => {
                             <div className="mb-3">
                               <label className="form-label">
                                 Upload Resume
-                              </label><span className="text-danger"> *</span>
+                              </label>
+                              <span className="text-danger"> *</span>
                               <p>
                                 Upload image size of 4MB, Accepted Format PDF
                               </p>
@@ -1506,12 +1969,23 @@ const AddStaff = () => {
                                   type="file"
                                   className="form-control image_sign"
                                   accept="application/pdf"
-                                  onChange={(e) => handleFileChange(e, setStaffResume, 'staffResumepath')}
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setStaffResume,
+                                      "staffResumepath"
+                                    )
+                                  }
                                 />
                               </div>
-                              {staffResumeid && (<div onClick={() => deleteFile(staffResumeid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                Remove
-                              </div>)}
+                              {staffResumeid && (
+                                <div
+                                  onClick={() => deleteFile(staffResumeid)}
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1520,7 +1994,8 @@ const AddStaff = () => {
                             <div className="mb-3">
                               <label className="form-label">
                                 Upload Joining Letter
-                              </label><span className="text-danger"> *</span>
+                              </label>
+                              <span className="text-danger"> *</span>
                               <p>
                                 Upload image size of 4MB, Accepted Format PDF
                               </p>
@@ -1533,12 +2008,23 @@ const AddStaff = () => {
                                   type="file"
                                   className="form-control image_sign"
                                   accept="application/pdf"
-                                  onChange={(e) => handleFileChange(e, setStaffJoinLetter, 'staffJoinLetterpath')}
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setStaffJoinLetter,
+                                      "staffJoinLetterpath"
+                                    )
+                                  }
                                 />
                               </div>
-                              {staffJoinLetterid && (<div onClick={() => deleteFile(staffJoinLetterid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                Remove
-                              </div>)}
+                              {staffJoinLetterid && (
+                                <div
+                                  onClick={() => deleteFile(staffJoinLetterid)}
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1561,10 +2047,22 @@ const AddStaff = () => {
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Password</label><span className="text-danger"> *</span>
-                            <input type="password" className="form-control" value={staffData.password} name="password" onChange={handleInputChange} />
+                            <label className="form-label">Password</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="password"
+                              className="form-control"
+                              value={staffData.password}
+                              name="password"
+                              onChange={handleInputChange}
+                            />
                             {errors.password && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.password}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.password}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1572,10 +2070,22 @@ const AddStaff = () => {
                           <div className="mb-3">
                             <label className="form-label">
                               Confirm Password
-                            </label><span className="text-danger"> *</span>
-                            <input type="password" className="form-control" value={staffData.conpassword} name="conpassword" onChange={handleInputChange} />
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="password"
+                              className="form-control"
+                              value={staffData.conpassword}
+                              name="conpassword"
+                              onChange={handleInputChange}
+                            />
                             {errors.conpassword && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.conpassword}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.conpassword}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1585,7 +2095,11 @@ const AddStaff = () => {
                   {/* /Password */}
 
                   <div className="text-end">
-                    <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-3">
+                    <button
+                      type="button"
+                      onClick={(e) => handleCancel(e)}
+                      className="btn btn-light me-3"
+                    >
                       Cancel
                     </button>
                     <button type="submit" className="btn btn-primary">
