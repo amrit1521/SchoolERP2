@@ -277,8 +277,6 @@ const AddInvoice: React.FC = () => {
     }
   };
 
-
-
   const deleteImage = async (id: number) => {
     if (!id) return;
 
@@ -655,7 +653,7 @@ const AddInvoice: React.FC = () => {
               <div className="card-body pb-0">
                 <div className="row align-items-end">
                   <div className="col-lg-3 col-md-6">
-                    <label className="form-label">Product Name <span className="text-danger">*</span></label>
+                    <label className="form-label">Invoice Item <span className="text-danger">*</span></label>
                     <CommonSelect
                       className={`select`}
                       options={productName}

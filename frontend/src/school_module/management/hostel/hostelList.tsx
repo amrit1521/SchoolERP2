@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
-  hostelName,
+  Hostel,
   hostelType,
   moreFilterHostel,
 } from "../../../core/common/selectoption/selectoption";
@@ -183,7 +183,7 @@ const HostelList = () => {
                               <label className="form-label">Name</label>
                               <CommonSelect
                                 className="select"
-                                options={hostelName}
+                                options={Hostel}
                                 defaultValue={undefined}
                               />
                             </div>

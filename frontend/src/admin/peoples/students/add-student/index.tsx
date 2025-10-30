@@ -19,7 +19,7 @@ import {
   // names,
   religion,
   // rollno,
-  roomNO,
+  roomNo,
   route,
   status,
 } from "../../../../core/common/selectoption/selectoption";
@@ -1822,7 +1822,7 @@ const AddStudent = () => {
                           <label className="form-label">Room No</label>
                           <CommonSelect
                             className="select"
-                            options={roomNO}
+                            options={roomNo}
                             value={studentData.room_num}
                             onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
                           />

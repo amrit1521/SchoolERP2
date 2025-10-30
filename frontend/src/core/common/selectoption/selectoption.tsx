@@ -423,31 +423,7 @@ export const PickupPoint = [
   { value: "Illinois", label: "Illinois" },
   { value: "Morgan", label: "Morgan" },
 ];
-export const Hostel = [
-  { value: "Phoenix Residence", label: "Phoenix Residence" },
-  { value: "Tranquil Haven", label: "Tranquil Haven" },
-  { value: "Radiant Towers", label: "Radiant Towers" },
-  { value: "Nova Nest", label: "Nova Nest" },
-];
-export const roomNO = [
-  { value: "12", label: "12" },
-  { value: "20", label: "20" },
-  { value: "21", label: "21" },
-  { value: "22", label: "22" },
-  { value: "23", label: "23" },
-  { value: "24", label: "24" },
-  { value: "25", label: "25" },
-  { value: "26", label: "26" },
-  { value: "27", label: "27" },
-  { value: "28", label: "28" },
-  { value: "29", label: "29" },
-  { value: "30", label: "30" },
-  { value: "101", label: "101" },
-  { value: "102", label: "102" },
-  { value: "201", label: "201" },
-  { value: "202", label: "202" },
-  { value: "223", label: "223" },
-];
+ 
 
 export const paymentType = [
   { value: "Paytm", label: "Paytm" },
@@ -525,6 +501,7 @@ export const allSubject = [
   { value: "Spanish", label: "Spanish" },
 ];
 export const academicYear = [
+  { value: "June 2025/26", label: "June 2025/26" },
   { value: "June 2024/25", label: "June 2024/25" },
   { value: "June 2023/24", label: "June 2023/24" },
   { value: "June 2022/23", label: "June 2022/23" },
@@ -749,8 +726,8 @@ export const Shift = [
   { value: "Afternoon", label: "Afternoon" },
 ];
 export const promotion = [
-  { value: "No Promotion", label: "No Promotion" },
-  { value: "Promote to IV", label: "Promote to IV" },
+  { value: "0", label: "No Promotion" },
+  { value: "1", label: "Promote" },
 ];
 
 export const teacher = [
@@ -869,7 +846,7 @@ export const staffrole = [
   { value: "Accountant", label: "Accountant" },
   { value: "Librarian", label: "Librarian" },
 ];
-export const roomno = [
+export const roomNo = [
   { value: "20", label: "20" },
   { value: "22", label: "22" },
   { value: "24", label: "24" },
@@ -996,7 +973,7 @@ export const coachName = [
   { value: "Nicholas", label: "Nicholas" },
   { value: "Sandra", label: "Sandra" },
 ];
-export const hostelName = [
+export const Hostel = [
   { value: "1", label: "Phoenix Residence" },
   { value: "2", label: "Tranquil Haven" },
   { value: "3", label: "Radiant Towers" },
