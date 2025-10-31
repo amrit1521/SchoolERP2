@@ -579,7 +579,7 @@ const StudentPromotion = () => {
                           <div className="card-body">
                             <div className="mb-3">
                               <label className="form-label">
-                                Promote to Session{" "}
+                                To Class{" "}
                                 <span className="text-danger"> *</span>
                               </label>
                               <div className="form-control-plaintext p-0">{classOptions.filter((item: any) => toClassData.class == item.value)[0]?.label}</div>

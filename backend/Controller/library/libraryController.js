@@ -56,32 +56,39 @@ exports.addLibraryMember = async (req, res) => {
 };
 
 exports.allLibraryMember = async (req, res) => {
-  try {
-    const baseUrl = `${req.protocol}://${req.get("host")}/api/stu/uploads`;
-    const sql = `SELECT id, img_src, folder, name, cardno, email, date_of_join, phone_no 
-                 FROM librarymember 
-                 ORDER BY created_at DESC`;
+    try {
+    const sql = `
+      SELECT 
+        sf.id AS staff_id,
+        sf.img_src,
+        sf.date_of_join,
+        sf.cardNo,
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.mobile,
+        u.email
+      FROM staffs sf
+      JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+    `;
 
     const [rows] = await db.query(sql);
-    const members = rows.map(member => ({
-      ...member,
-      image_url: `${baseUrl}/${member.folder}/${member.img_src}`
-    }));
 
     return res.status(200).json({
+      message: "All librarien fetched successfully!",
       success: true,
-      message: "All library members fetched successfully!",
-      data: members
+      data: rows,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching librarien details:", error);
     return res.status(500).json({
+      message: "Internal server error!",
       success: false,
-      message: "Internal server error!"
     });
   }
 };
+
+
 
 
 exports.deleteLibraryMember = async (req, res) => {

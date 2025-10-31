@@ -15,7 +15,7 @@ import {
 } from "../../../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
 import { addStaff, deleteStaffFile, uploadStaffFile } from "../../../../service/staff";

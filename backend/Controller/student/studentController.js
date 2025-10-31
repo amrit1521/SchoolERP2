@@ -871,8 +871,7 @@ exports.studentLeaveReport = async (req, res) => {
     `;
 
     const [rows] = await db.query(sql);
-
-
+    
     // Transform rows into student-wise structure
     const studentMap = {};
 

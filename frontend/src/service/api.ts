@@ -321,6 +321,7 @@ export const uploadTeacherFile = (data: object) =>
   api2.post("/teacher/upload", data);
 export const deleteTeacherFile = (id: number) =>
   api.delete(`/teacher/deletefile/${id}`);
+export const teacherLeaveReport = ()=>api.get(`teacher/teacherleavereport`)
 
 // homwwork=================================================================
 export const addHomeWork = (data: object) =>
