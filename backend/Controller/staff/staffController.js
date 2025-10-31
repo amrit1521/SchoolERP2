@@ -73,7 +73,7 @@ exports.addStaff = async (req, res) => {
 
     // 🔹 Insert into staffs
     const staffCols = [
-      'user_id', 'role','cardNo', 'department', 'designation', 'gender', 'blood_gp', 'marital_status',
+      'user_id', 'role','cardNo','driveLic', 'department', 'designation', 'gender', 'blood_gp', 'marital_status',
       'fat_name', 'mot_name', 'dob', 'date_of_join', 'lan_known', 'qualification', 'work_exp',
       'note', 'address', 'perm_address', 'fac_link', 'twi_link', 'link_link', 'inst_link',
       'img_src', 'resume_src', 'letter_src', 'created_at', 'updated_at'
@@ -83,6 +83,7 @@ exports.addStaff = async (req, res) => {
       userId,
       data.role,
       cardNo,
+      data.driveLic||null,
       data.department,
       data.desgination,
       data.gender || null,
@@ -263,7 +264,7 @@ exports.filterSpeDetailsAllStaff = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark = "staff"
       WHERE sf.department =? AND sf.designation=?
     `;
 
@@ -338,7 +339,7 @@ exports.fetchSpecficStaffDeatils = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark = 'staff'
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ?
     `;
@@ -437,7 +438,7 @@ exports.fetchStaffDataForEditById = async (req, res) => {
       LEFT JOIN leaves_info le ON sf.user_id = le.user_id
       LEFT JOIN hostel_info hs ON sf.user_id = hs.user_id
       LEFT JOIN transport_info tp ON sf.user_id = tp.user_id 
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark="staff"
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ? AND u.remark = 'staff'
       LIMIT 1
@@ -494,6 +495,7 @@ exports.updateStaff = async (req, res) => {
       data.role,
       data.department,
       data.desgination,
+      data.driveLic||null,
       data.gender || null,
       data.blood_gp || null,
       data.marital_status || "single",
@@ -519,7 +521,7 @@ exports.updateStaff = async (req, res) => {
 
     await connection.query(
       `UPDATE staffs SET 
-        role=?, department=?, designation=?, gender=?, blood_gp=?, marital_status=?,
+        role=?, department=?, designation=?,driveLic=?, gender=?, blood_gp=?, marital_status=?,
         fat_name=?, mot_name=?, dob=?, date_of_join=?, lan_known=?, qualification=?,
         work_exp=?, note=?, address=?, perm_address=?, fac_link=?, twi_link=?, link_link=?, inst_link=?,
         img_src=?, resume_src=?, letter_src=? 

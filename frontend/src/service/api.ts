@@ -379,3 +379,6 @@ export const updateAssignedVehicle = (data: object, id: number) =>
   api.patch(`/transport/update-assigned-vehicle/${id}`, data);
 export const deleteAssignedVehicleById = (id: number) =>
   api.delete(`/transport/delete-assigned-vehicle/${id}`);
+
+
+export const allDrivers = ()=>api.get('/transport/alldrivers')

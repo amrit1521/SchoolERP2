@@ -15,7 +15,7 @@ import {
 } from "../../../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { Link, useNavigate } from "react-router-dom";
-import { all_routes } from "../../../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
 import { addStaff, deleteStaffFile, uploadStaffFile } from "../../../../service/staff";
@@ -52,6 +52,7 @@ export interface StaffData {
   note: string;
   address: string;
   perm_address: string;
+  driveLic: string;
 
 
   // payroll
@@ -129,6 +130,7 @@ const AddStaff = () => {
     note: "",
     address: "",
     perm_address: "",
+    driveLic: "",
 
     // Payroll
     epf_no: "",
@@ -293,11 +295,21 @@ const AddStaff = () => {
   const validateStaffData = (data: StaffData) => {
     const errors: Partial<Record<keyof StaffData, string>> = {};
 
+
+    const isDriver = roleOptions
+      .find((item) => item.value === data.role)
+      ?.label.toLowerCase()
+      .includes("driver");
+
+    const dlRegex = /^[A-Z]{2}\d{2}\s?\d{4}\s?\d{7}$/;
+
     // 🔹 Basic personal info
     if (!data.firstname.trim()) errors.firstname = "First name is required";
     if (!data.lastname.trim()) errors.lastname = "Last name is required";
+
     if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont))
       errors.primarycont = "Valid 10-digit contact number is required";
+
     if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
       errors.email = "Valid email is required";
 
@@ -307,6 +319,15 @@ const AddStaff = () => {
       errors.conpassword = "Password and Confirm Password do not match";
 
     if (!data.status.trim()) errors.status = "Status is required";
+
+
+    if (isDriver) {
+      if (!data.driveLic.trim()) {
+        errors.driveLic = "Driving License is required for drivers.";
+      } else if (!dlRegex.test(data.driveLic.trim().toUpperCase())) {
+        errors.driveLic = "Invalid Driving License format (e.g., UP32 20150012345)";
+      }
+    }
 
     // 🔹 Staff info
     if (!data.role) errors.role = "Role is required";
@@ -320,16 +341,14 @@ const AddStaff = () => {
     if (!data.qualification.trim()) errors.qualification = "Qualification is required";
     if (!data.work_exp.trim()) errors.work_exp = "Work Experience is required";
     if (!data.address.trim()) errors.address = "Address is required";
-    if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
-    if (!data.blood_gp) errors.blood_gp = "Blood Group is required !"
-    if (data.lan_known.length === 0) errors.lan_known = 'Language known is required !'
+    if (!data.perm_address.trim()) errors.perm_address = "Permanent Address is required";
+    if (!data.blood_gp) errors.blood_gp = "Blood Group is required";
+    if (data.lan_known.length === 0) errors.lan_known = "Language known is required";
 
     // 🔹 Payroll
     if (!data.epf_no) errors.epf_no = "EPF number is required";
     if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
     if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
-
-
 
     // 🔹 Bank info
     if (!data.account_name.trim()) errors.account_name = "Account name is required";
@@ -338,29 +357,30 @@ const AddStaff = () => {
     if (!data.ifsc_code.trim()) errors.ifsc_code = "IFSC code is required";
     if (!data.branch_name.trim()) errors.branch_name = "Branch name is required";
 
-    // leaves
-    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required !"
-    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required !"
+    // 🔹 Leaves
+    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required";
+    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required";
 
-    // 🔹 Optional file checks
+    // 🔹 Optional file checks (toast instead of field errors)
     if (!staffImg) toast.error("Staff Image is required!");
     if (!staffResume) toast.error("Staff Resume is required!");
     if (!staffJoinLetter) toast.error("Staff Join Letter is required!");
 
-    // 🔹 Set errors state
+    // 🔹 Set errors and return
     setErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
 
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-   
+
     if (!validateStaffData(staffData)) {
-       toast.error("Required fileds must be filled !")
+      toast.error("Required fileds must be filled !")
       return
     }
-    
+
     try {
       if (!staffData.password.trim() || staffData.password !== staffData.conpassword) {
         toast.error('Password and Confirm Password do not match !')
@@ -421,6 +441,7 @@ const AddStaff = () => {
           note: "",
           address: "",
           perm_address: "",
+          driveLic: "",
 
 
           epf_no: "",
@@ -510,6 +531,7 @@ const AddStaff = () => {
       note: "",
       address: "",
       perm_address: "",
+      driveLic: "",
 
       // Payroll
       epf_no: "",
@@ -574,7 +596,7 @@ const AddStaff = () => {
 
   const [departOptions, setDepartOption] = useState<OptionType[]>([]);
   const [desgiOptions, setDesgiOption] = useState<OptionType[]>([]);
-  const [roleOptions , setRoleOptions] = useState<OptionType[]>([])
+  const [roleOptions, setRoleOptions] = useState<OptionType[]>([])
 
   const fetchDepartMentAndDesginationOption = async () => {
 
@@ -610,21 +632,21 @@ const AddStaff = () => {
   };
 
   const fetchRoles = async () => {
-      try {
-        const { data } = await getAllRoles();
-        if (data.success) {
-         
-          setRoleOptions(
-            data.result.map((item: any) => ({
-              value: item.id,
-              label: item.role_name,
-            }))
-          );
-        }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load roles data");
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+
+        setRoleOptions(
+          data.result.map((item: any) => ({
+            value: item.id,
+            label: item.role_name,
+          }))
+        );
       }
-    };
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
 
   useEffect(() => {
     fetchDepartMentAndDesginationOption();
@@ -779,6 +801,20 @@ const AddStaff = () => {
                                 onChange={(option) => handleSelectChange("desgination", option ? option.value : "")}
                               />
                               {errors.desgination && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.desgination}</div>}
+                            </div>
+                          </div>
+
+                          <div className="col-xxl col-xl-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Driving License <span className="text-danger">*</span></label>
+                              <input
+                                type="text"
+                                name="driveLic"
+                                className="form-control"
+                                value={staffData.driveLic}
+                                onChange={handleInputChange}
+                              />
+                              {errors.driveLic && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.driveLic}</div>}
                             </div>
                           </div>
 

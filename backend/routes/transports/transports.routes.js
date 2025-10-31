@@ -57,4 +57,8 @@ router.patch(
   transportController.updateAssignedVehicle
 );
 
+
+router.get('/alldrivers' , transportController.allDrivers)
+router.get('/alldriversforopt' , transportController.driversForOption)
+
 module.exports = router;

@@ -656,3 +656,77 @@ export const deleteAssignedVehicleById = async (req, res) => {
     });
   }
 };
+
+// all transport drivers
+export const allDrivers = async (req, res) => {
+  try {
+    const roleKeyword = "driver";
+
+    const sql = `
+      SELECT 
+        sf.id AS staff_id,
+        sf.img_src,
+        sf.date_of_join,
+        sf.driveLic,
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.mobile,
+        u.email,
+        u.status
+      FROM staffs sf
+      JOIN users u ON sf.user_id = u.id
+      JOIN roles r ON u.roll_id = r.id
+      WHERE INSTR(LOWER(r.role_name), ?) > 0
+    `;
+
+    const [rows] = await db.query(sql, [roleKeyword.toLowerCase()]);
+
+    return res.status(200).json({
+      message: "All drivers fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching driver details:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+export const driversForOption = async (req, res) => {
+  try {
+    const roleKeyword = "driver";
+
+    const sql = `
+      SELECT 
+        sf.id AS staff_id,
+        CONCAT(u.firstname, " ", u.lastname) AS name
+      FROM staffs sf
+      JOIN users u ON sf.user_id = u.id
+      JOIN roles r ON u.roll_id = r.id
+      WHERE u.status = '1' 
+      AND INSTR(LOWER(r.role_name), ?) > 0
+    `;
+
+    const [rows] = await db.query(sql, [roleKeyword.toLowerCase()]);
+
+    return res.status(200).json({
+      message: "All drivers fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching driver details:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+
+
