@@ -56,7 +56,10 @@ exports.addLibraryMember = async (req, res) => {
 };
 
 exports.allLibraryMember = async (req, res) => {
-    try {
+  try {
+
+    const roleKeyword = "librar"; 
+
     const sql = `
       SELECT 
         sf.id AS staff_id,
@@ -67,28 +70,29 @@ exports.allLibraryMember = async (req, res) => {
         u.firstname,
         u.lastname,
         u.mobile,
-        u.email
+        u.email,
+        u.status
       FROM staffs sf
-      JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      JOIN users u ON sf.user_id = u.id
+      JOIN roles r ON u.roll_id = r.id
+      WHERE INSTR(LOWER(r.role_name), ?) > 0
     `;
 
-    const [rows] = await db.query(sql);
+    const [rows] = await db.query(sql, [roleKeyword.toLowerCase()]);
 
     return res.status(200).json({
-      message: "All librarien fetched successfully!",
+      message: "All library members fetched successfully!",
       success: true,
       data: rows,
     });
   } catch (error) {
-    console.error("Error fetching librarien details:", error);
+    console.error("Error fetching library member details:", error);
     return res.status(500).json({
       message: "Internal server error!",
       success: false,
     });
   }
 };
-
-
 
 
 exports.deleteLibraryMember = async (req, res) => {
