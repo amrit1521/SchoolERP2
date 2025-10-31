@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import Table from "../../../core/common/dataTable/index";
-import type { TableData } from "../../../core/data/interface";
+import Table from "../../../core/common/dataTable";
+// import type { TableData } from "../../../core/data/interface";
 import {
   classes,
   sections,
@@ -11,58 +11,64 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import { all_routes } from "../../../router/all_routes";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { studentLeaveReport } from "../../../service/reports";
 import { Spinner } from "../../../spinner";
 import { Imageurl } from "../../../service/api";
+import { teacherLeaveReport } from "../../../service/api";
 
-const LeaveReport = () => {
+const TeacherLeaveReport = () => {
   const routes = all_routes;
   const [leaveReportData, setLeaveReportData] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // ============================================================
+  // ✅ Fetch Teacher Leave Report
+  // ============================================================
   const fetchReportData = async () => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 400));
+
     try {
-      const { data } = await studentLeaveReport();
+      const { data } = await teacherLeaveReport();
 
       if (data.success && data.data.length > 0) {
-        const students = data.data;
-        const leaveTypes = Object.keys(students[0].leaves);
-        const transformed = students.map((student: any) => {
+        const teachers = data.data;
+
+        // 1️⃣ Get all unique leave types dynamically
+        const leaveTypes = Object.keys(teachers[0].leaves);
+
+        // 2️⃣ Transform data
+        const transformed = teachers.map((t: any) => {
           const row: any = {
-            admissionNo: student.admissionNo,
-            rollNo: student.rollNo,
-            studentName: student.studentName,
-            stu_img: student.stu_img,
-            stu_id: student.stu_id,
+            teacherId: t.teacherId,
+            teacherName: t.teacherName || "Teacher",
+            teacher_img: t.img,
+            userId: t.userId,
           };
 
-          leaveTypes.forEach((leaveType) => {
-            const leave = student.leaves[leaveType];
-            row[`${leaveType}_used`] = leave.used;
-            row[`${leaveType}_available`] = leave.available;
-            row[`${leaveType}_total`] = leave.total;
+          leaveTypes.forEach((type) => {
+            const leave = t.leaves[type];
+            row[`${type}_used`] = leave?.used || 0;
+            row[`${type}_available`] = leave?.available || 0;
+            row[`${type}_total`] = leave?.total || 0;
           });
 
           return row;
         });
 
-
+        // 3️⃣ Dynamic Columns
         const dynamicColumns = [
           {
             title: "",
             children: [
               {
-                title: "Admission No",
-                dataIndex: "admissionNo",
-                key: "admissionNo",
-                sorter: (a: TableData, b: TableData) =>
-                  a.admissionNo.localeCompare(b.admissionNo),
+                title: "Teacher ID",
+                dataIndex: "teacherId",
+                key: "teacherId",
+                sorter: (a: any, b: any) => a.teacherId - b.teacherId,
                 render: (text: any) => (
                   <Link to="#" className="link-primary">
-                    {text}
+                    TEA{text}
                   </Link>
                 ),
               },
@@ -72,39 +78,39 @@ const LeaveReport = () => {
             title: "",
             children: [
               {
-                title: "Student Name",
-                dataIndex: "studentName",
-                key: "studentName",
+                title: "Teacher Name",
+                dataIndex: "teacherName",
+                key: "teacherName",
                 render: (text: any, record: any) => (
                   <div className="d-flex align-items-center">
                     <Link
-                      to={`${routes.studentLeaves}/${record.rollNo}`}
+                      to={`${routes.teacherLeaves}/${record.teacherId}`}
                       className="avatar avatar-md"
                     >
                       <img
-                        src={`${Imageurl}/${record.stu_img}`}
+                        src={`${Imageurl}/${record.teacher_img}`}
                         alt="avatar"
                         className="img-fluid rounded-circle"
                       />
                     </Link>
                     <div className="ms-2">
                       <p className="text-dark mb-0">
-                        <Link to={`${routes.studentLeaves}/${record.rollNo}`}>
+                        <Link to={`${routes.teacherLeaves}/${record.teacherId}`}>
                           {text}
                         </Link>
                       </p>
-                      <span className="fs-12">Roll No : {record.rollNo}</span>
                     </div>
                   </div>
                 ),
-                sorter: (a: TableData, b: TableData) =>
-                  a.studentName.localeCompare(b.studentName),
+                sorter: (a: any, b: any) =>
+                  a.teacherName.localeCompare(b.teacherName),
               },
             ],
           },
 
+          // 4️⃣ Create dynamic columns for each leave type
           ...leaveTypes.map((leaveType) => ({
-            title: `${leaveType} (${students[0].leaves[leaveType].total})`,
+            title: `${leaveType} (${teachers[0].leaves[leaveType].total})`,
             children: [
               {
                 title: "Used",
@@ -115,8 +121,9 @@ const LeaveReport = () => {
                   Number(b[`${leaveType}_used`]),
                 render: (text: any) => (
                   <span
-                    className={`${Number(text) > 0 ? "text-danger fw-bold" : "text-dark"
-                      }`}
+                    className={`${
+                      Number(text) > 0 ? "text-danger fw-bold" : "text-dark"
+                    }`}
                   >
                     {text}
                   </span>
@@ -136,9 +143,12 @@ const LeaveReport = () => {
 
         setLeaveReportData(transformed);
         setColumns(dynamicColumns);
+      } else {
+        setLeaveReportData([]);
+        setColumns([]);
       }
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
       toast.error(error.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -149,6 +159,9 @@ const LeaveReport = () => {
     fetchReportData();
   }, []);
 
+  // ============================================================
+  // ✅ Render Page
+  // ============================================================
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -174,29 +187,30 @@ const LeaveReport = () => {
             <TooltipOption />
           </div>
         </div>
+
+        {/* Filter Tabs */}
         <div className="filter-wrapper">
-          {/* List Tab */}
           <div className="list-tab">
             <ul>
               <li>
-                <Link to={routes.leaveReport} className="active">
-                  Student Leave Report
-                </Link>
-              </li>
-
-              <li>
-                <Link to={routes.teacherLeaveReport} >Teacher Leave Report</Link>
+                <Link to={routes.leaveReport}>Student Leave Report</Link>
               </li>
               <li>
-                <Link to={routes.staffLeaveReport}>
-                  Staff Leave Report
+                <Link
+                  to={routes.teacherLeaveReport}
+                  className="active"
+                >
+                  Teacher Leave Report
                 </Link>
+              </li>
+              <li>
+                <Link to={routes.staffLeaveReport}>Staff Leave Report</Link>
               </li>
             </ul>
           </div>
-          {/* /List Tab */}
         </div>
-        {/* Card */}
+
+        {/* Card Table */}
         <div className="card">
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
             <h4 className="mb-3">Leave Report List</h4>
@@ -257,7 +271,7 @@ const LeaveReport = () => {
             </div>
           </div>
 
-          {/* Table Section */}
+          {/* Table */}
           <div className="card-body p-0 py-3">
             {loading ? (
               <Spinner />
@@ -271,4 +285,4 @@ const LeaveReport = () => {
   );
 };
 
-export default LeaveReport;
+export default TeacherLeaveReport;

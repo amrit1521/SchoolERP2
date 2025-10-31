@@ -1670,13 +1670,13 @@ export const ParentSidebarData = [
     submenuHdr: "Main",
     submenuItems: [
       {
-        label: "Student Dashboard",
+        label: "Parent Dashboard",
         icon: "ti ti-layout-dashboard",
         submenu: true,
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Student Dashboard", link: routes.studentDashboard },
+          { label: "Parent Dashboard", link: routes.parentDashboard },
         ],
       },
       {

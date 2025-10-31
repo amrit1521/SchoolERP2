@@ -778,3 +778,69 @@ exports.getTeacherLeaveData = async (req, res) => {
   }
 }
 
+// get teacher leave report
+exports.teacherLeaveReport = async (req, res) => {
+
+  try {
+    const sql = `
+      SELECT 
+        t.id,
+        t.teacher_id AS teacherId, 
+        t.img_src,
+        t.user_id,
+        u.firstname,
+        u.lastname,
+        lt.name AS leaveType,
+        lt.total_allowed,
+        IFNULL(SUM(la.no_of_days), 0) AS used,
+        (lt.total_allowed - IFNULL(SUM(la.no_of_days), 0)) AS available
+      FROM teachers t
+      INNER JOIN users u ON t.user_id = u.id
+      CROSS JOIN leaves_type lt
+      LEFT JOIN leave_application la 
+        ON la.leave_type_id = lt.id 
+        AND la.id_or_rollnum = t.teacher_id 
+        AND la.status = "1"
+      GROUP BY t.teacher_id, t.img_src, u.firstname, u.lastname, lt.id
+      ORDER BY t.teacher_id, lt.id;
+    `;
+
+    const [rows] = await db.query(sql);
+    
+    // Transform rows into student-wise structure
+    const teacherMap = {};
+
+    rows.forEach((row) => {
+      if (!teacherMap[row.teacherId]) {
+         teacherMap[row.teacherId] = {
+          teacherId: row.teacherId,
+          teacherName: row.firstname + " " + row.lastname,
+          img: row.img_src,
+          userId: row.user_id,
+          leaves: {},
+        };
+      }
+
+      teacherMap[row.teacherId].leaves[row.leaveType] = {
+        used: row.used,
+        available: row.available,
+        total: row.total_allowed,
+      };
+    });
+
+    const result = Object.values(teacherMap);
+
+    return res.status(200).json({
+      message: "Leave report fetched successfully!",
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: error.message,
+      success: false,
+    });
+  }
+};
+

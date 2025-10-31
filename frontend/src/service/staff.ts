@@ -8,6 +8,7 @@ export const staffForEdit = (staffid:number)=>api.get(`/staff/staffforedit/${sta
 export const editStaff = (data:object ,staffid:number)=>api.put(`/staff/editstaff/${staffid}` , data)
 export const deleteStaff = (staffid:number)=>api.delete(`/staff/deletestaff/${staffid}`)
 export const filterStaff = (data:object)=>api.post('/staff/filterstaff' , data)
+export const staffLeaveReport = ()=>api.get(`staff//staffleavereport`)
 
 // leave
 export const getStaffLeaveData = (staffid:number)=>api.get(`/staff/leavedata/${staffid}`)

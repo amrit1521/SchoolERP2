@@ -14,21 +14,20 @@ import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 // import { librarymemberList } from "../../../core/data/json/libraryMemberList";
 // import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { addLibrarymember, deleteLibraryMember, getAllLibraryMember } from "../../../service/api";
+import { addLibrarymember, deleteLibraryMember, getAllLibraryMember, Imageurl } from "../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { DatePicker } from "antd";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 interface LibraryMember {
-  id: number;
-  name: string;
-  cardno: string;
+  staff_id: number;
+  firstname: string;
+  lastname: string;
+  cardNo: string;
   email: string;
   date_of_join: string;
-  phone_no: string;
-  image_url: string;
-  folder?: string;
-  img_src?: string;
+  mobile: string;
+  img_src: string;
 
 }
 
@@ -91,14 +90,14 @@ const LibraryMember = () => {
   }, [])
 
   const tabledata = libraryMembers.map((item) => ({
-    key: item.id,
-    id: item.id,
-    name: item.name,
-    cardNo: item.cardno,
+    key: item.staff_id,
+    id: item.staff_id,
+    name: `${item.firstname} ${item.lastname}`,
+    cardNo: item.cardNo,
     email: item.email,
     dateOfJoin: dayjs(item.date_of_join).format('DD MMM YYYY'),
-    mobile: item.phone_no,
-    img: item.image_url,
+    mobile: item.mobile,
+    img: item.img_src,
   }));
 
 
@@ -257,7 +256,7 @@ const LibraryMember = () => {
           <Link to="#" className="avatar avatar-md">
 
             <img
-              src={record.img}  //maine image ko direct full url bna diya h backend me hi
+              src={`${Imageurl}/${record.img}`}  //maine image ko direct full url bna diya h backend me hi
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -314,9 +313,8 @@ const LibraryMember = () => {
               <li>
                 <Link
                   className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_library_members"
+                    to={`${routes.editStaff}/${key}`}
+
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -367,10 +365,9 @@ const LibraryMember = () => {
               <TooltipOption />
               <div className="mb-2">
                 <Link
-                  to="#"
+                  to={routes.addStaff}
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_library_members"
+                  
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Member

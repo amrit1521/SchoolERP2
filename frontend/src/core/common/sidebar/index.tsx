@@ -38,7 +38,7 @@ const Sidebar = () => {
       } else if (token.role == "3") {
         setCustomSide([...StudentSidebarData]);
          navigate(`${routes.studentDashboard}`)
-      } else if (token.role == '4') {
+      } else if (token.role == '6') {
         setCustomSide([...ParentSidebarData]);
          navigate(`${routes.parentDashboard}`)
       }
