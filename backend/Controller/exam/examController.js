@@ -1646,3 +1646,260 @@ exports.editMark = async (req, res) => {
     });
   }
 };
+
+exports.getClassSectionToppers = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        en.examName,
+        s.rollnum,
+        s.admissionnum,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        cl.class_name,
+        se.section_name,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      LEFT JOIN users u ON s.stu_id = u.id
+      WHERE en.examName IN ('Semester1', 'Semester2')
+      ORDER BY s.class_id, s.section_id, s.rollnum, en.examName
+    `;
+
+    const [rows] = await db.query(sql);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No semester results found!"
+      });
+    }
+
+    // Step 1: Structure data by class, section, student, and semester
+    const dataMap = {};
+
+    rows.forEach(row => {
+      const { class_id, section_id, rollnum, examName } = row;
+      const semester = examName.trim();
+
+      if (!dataMap[class_id]) dataMap[class_id] = {};
+      if (!dataMap[class_id][section_id]) dataMap[class_id][section_id] = {};
+      if (!dataMap[class_id][section_id][rollnum])
+        dataMap[class_id][section_id][rollnum] = {
+          studentName: `${row.firstname} ${row.lastname}`,
+          class_id,
+          class_name: row.class_name,
+          section_id,
+          section_name: row.section_name,
+          rollnum,
+          admissionnum: row.admissionnum,
+          semesters: {},
+          img:row.stu_img,
+        };
+
+      const student = dataMap[class_id][section_id][rollnum];
+
+      if (!student.semesters[semester])
+        student.semesters[semester] = { totalObtained: 0, totalMax: 0 };
+
+      student.semesters[semester].totalObtained += row.mark_obtained || 0;
+      student.semesters[semester].totalMax += row.max_mark || 0;
+    });
+
+    //Step 2: Calculate percentage and combine semester totals
+    const toppers = [];
+
+    for (const classId in dataMap) {
+      for (const sectionId in dataMap[classId]) {
+        const students = Object.values(dataMap[classId][sectionId]).map(stu => {
+          const sem1 = stu.semesters["Semester1"] || { totalObtained: 0, totalMax: 0 };
+          const sem2 = stu.semesters["Semester2"] || { totalObtained: 0, totalMax: 0 };
+
+          const sem1Percent = sem1.totalMax ? (sem1.totalObtained / sem1.totalMax) * 100 : 0;
+          const sem2Percent = sem2.totalMax ? (sem2.totalObtained / sem2.totalMax) * 100 : 0;
+
+          let combinedTotal = 0;
+          let combinedMax = 0;
+
+          // If both semesters exist → combine; else take existing one
+          if (sem1.totalMax > 0 && sem2.totalMax > 0) {
+            combinedTotal = sem1.totalObtained + sem2.totalObtained;
+            combinedMax = sem1.totalMax + sem2.totalMax;
+          } else if (sem1.totalMax > 0) {
+            combinedTotal = sem1.totalObtained;
+            combinedMax = sem1.totalMax;
+          } else if (sem2.totalMax > 0) {
+            combinedTotal = sem2.totalObtained;
+            combinedMax = sem2.totalMax;
+          }
+
+          const overallPercent = combinedMax ? (combinedTotal / combinedMax) * 100 : 0;
+
+          return {
+            ...stu,
+            semester1: { ...sem1, percent: Number(sem1Percent.toFixed(2)) },
+            semester2: { ...sem2, percent: Number(sem2Percent.toFixed(2)) },
+            combined: {
+              totalObtained: combinedTotal,
+              totalMax: combinedMax,
+              percent: Number(overallPercent.toFixed(2)),
+            },
+          };
+        });
+
+        // Step 3: Find topper in this class-section
+        const topper = students.sort(
+          (a, b) => b.combined.percent - a.combined.percent
+        )[0];
+
+        if (topper) {
+          toppers.push({
+            class_id: topper.class_id,
+            class_name: topper.class_name,
+            section_id: topper.section_id,
+            section_name: topper.section_name,
+            rollnum: topper.rollnum,
+            studentName: topper.studentName,
+            admissionnum: topper.admissionnum,
+            semester1: topper.semester1,
+            semester2: topper.semester2,
+            overall: topper.combined,
+            image:topper.img,
+            rank: 1,
+          });
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Class-section toppers fetched successfully!",
+      data: toppers,
+    });
+
+  } catch (error) {
+    console.error("Error in getClassSectionToppers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};
+
+exports.getPerformanceCategoryCountPerClass = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        s.class_id,
+        s.section_id,
+        cl.class_name,
+        se.section_name,
+        en.examName,
+        s.rollnum,
+        s.admissionnum,
+        u.firstname,
+        u.lastname,
+        er.mark_obtained,
+        er.max_mark
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      LEFT JOIN users u ON s.stu_id = u.id
+      WHERE en.examName IN ('Semester1', 'Semester2')
+      ORDER BY s.class_id, s.section_id, s.rollnum, en.examName
+    `;
+
+    const [rows] = await db.query(sql);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No results found!"
+      });
+    }
+
+    const classMap = {};
+
+    rows.forEach(row => {
+      const { class_id, section_id, rollnum } = row;
+
+      if (!classMap[class_id]) {
+        classMap[class_id] = {
+          class_id,
+          class_name: row.class_name,
+          sections: {},
+        };
+      }
+
+      if (!classMap[class_id].sections[section_id]) {
+        classMap[class_id].sections[section_id] = {
+          section_id,
+          section_name: row.section_name,
+          students: {},
+        };
+      }
+
+      const studentKey = rollnum;
+
+      if (!classMap[class_id].sections[section_id].students[studentKey]) {
+        classMap[class_id].sections[section_id].students[studentKey] = {
+          rollnum,
+          studentName: `${row.firstname} ${row.lastname}`,
+          totalObtained: 0,
+          totalMax: 0,
+        };
+      }
+
+      const stu = classMap[class_id].sections[section_id].students[studentKey];
+      stu.totalObtained += row.mark_obtained || 0;
+      stu.totalMax += row.max_mark || 0;
+    });
+
+    const classPerformance = [];
+
+    Object.values(classMap).forEach(cls => {
+      let top = 0, average = 0, below = 0;
+
+      Object.values(cls.sections).forEach(sec => {
+        Object.values(sec.students).forEach(stu => {
+          const percent = stu.totalMax ? (stu.totalObtained / stu.totalMax) * 100 : 0;
+
+          if (percent >= 75) top++;
+          else if (percent >= 40) average++;
+          else below++;
+        });
+      });
+
+      classPerformance.push({
+        class_id: cls.class_id,
+        class_name: cls.class_name,
+        top,
+        average,
+        below_avg: below,
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Performance categories fetched successfully!",
+      data: classPerformance,
+    });
+
+  } catch (error) {
+    console.error("Error in getPerformanceCategoryCountPerClass:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};

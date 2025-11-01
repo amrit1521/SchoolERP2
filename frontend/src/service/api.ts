@@ -17,10 +17,20 @@ export const api2 = axios.create({
   withCredentials: true,
 });
 
+//dashboard apis-----------------
+export const getAllUserCountForRole = () => api.get('/admindashboard/getrolecountforrole');
+export const getTotalSubjectCounts = () => api.get('/admindashboard/gettotalsubjectcounts');
+export const getTodayStudentAttendanceCounts = () => api.get('/admindashboard/gettoday-student-attendancecount');
+export const getTodayTeacherAttendanceCounts = () => api.get('/admindashboard/gettoday-teacher-attendancecount');
+export const getTodayStaffAttendanceCounts = () => api.get('/admindashboard/gettoday-staff-attendancecount');
+
+
 //user apis-------------------
 export const allUsers = () => api.get("/user/all-users");
 export const deleteUsersById = (id: number) =>
   api.delete(`/user/delete-users/${id}`);
+export const getUsersById = (id: number) =>
+  api.get(`/user/getuserbyid/${id}`);
 export const getAllRoles = () => api.get("/user/all-roles");
 export const updateRoles = (data: object, id: number | null) =>
   api.patch(`/user/update-roles/${id}`, data);
@@ -45,6 +55,7 @@ export const getAllNotice = () => api.get("/notification/all-notice");
 export const deleteNotice = (data:any) => api.post("/notification/delete-notice",data);
 export const updateNotice = (data:any) => api.patch("/notification/update-notice",data);
 
+export const getUpcommingEvents = () => api.get('/notification/upcomming-events');
 export const CreateEvent = (data: any) =>
   api.post("/notification/create-event", data);
 export const UploadEventFile = (data: object) =>
@@ -254,6 +265,10 @@ export const getSpeExamResult = (data: object) =>
   api.post("/exam/getspeexamresult", data);
 export const getStudentExamResultEditList = (data: object) =>
   api.post("/exam/getstudentexamresultlist", data);
+export const getTopperResult = () =>
+  api.get(`/exam/gettopperofclass`);
+export const getPerforamanceCountPerClass = () =>
+  api.get(`/exam/getperformancecountperclass`);
 
 // academic reasons==================================================
 export const addAcademicReason = (data: object) =>
