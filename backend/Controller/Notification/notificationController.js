@@ -2,6 +2,7 @@ import { success } from "zod";
 import db from "../../config/db.js";
 import transporter from "../../utils/sendEmail.js";
 import cron from "node-cron";
+import moment from "moment/moment.js";
 
 export const sendNoticeMail = async (
   recipientRoles,
@@ -341,10 +342,20 @@ export const getAllNotice = async (req, res) => {
       });
     }
 
+    const now = moment();
+    const mapped = rows.map((r) => {
+      const created = moment(r.created_at);
+      const days = now.diff(created, "days");
+      return {
+        ...r,
+        days: `${Math.abs(days)} Days${days < 0 ? " (in future)" : ""}`,
+      };
+    });
+
     return res.status(200).json({
       message: "Notices fetched successfully",
       success: true,
-      result: rows,
+      result: mapped,
     });
   } catch (error) {
     console.error("Error fetching notices:", error);
@@ -672,6 +683,58 @@ export const getAllEvents = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching events:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export const getUpcomingEvents = async (req, res) => {
+  try {
+    const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    
+    const sql = `
+      SELECT 
+        JSON_ARRAYAGG(n.id) AS id,
+        n.title,
+        n.message,
+        n.attachment,
+        n.event_category,
+        n.event_date,
+        n.event_time,
+        n.created_at,
+        JSON_ARRAYAGG(n.roll_id) AS role_id
+      FROM notifications n
+      WHERE n.type = 'event'
+      AND CONCAT(n.event_date, ' ', n.event_time) >= ?
+      GROUP BY 
+        n.title, 
+        n.message, 
+        n.attachment, 
+        n.event_category, 
+        n.event_date, 
+        n.event_time
+      ORDER BY n.created_at DESC
+    `;
+
+    const [rows] = await db.execute(sql, [currentDateTime]);
+
+    if (!rows || rows.length === 0) {
+      return res.status(200).json({
+        message: "No upcoming events found",
+        success: false,
+        result: [],
+      });
+    }
+
+    return res.status(200).json({
+      message: "Upcoming events fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching upcoming events:", error);
     res.status(500).json({
       message: "Internal server error",
       error: error.message,
