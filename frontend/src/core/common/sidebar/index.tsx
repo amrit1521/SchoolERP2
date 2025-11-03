@@ -25,10 +25,10 @@ const Sidebar = () => {
 
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
-
+     
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
-
+        // console.log(token.role)
       if (token.role == "1") {
         setCustomSide([...SidebarData]);
          navigate(`${routes.adminDashboard}`)

@@ -3,6 +3,8 @@ const express = require("express");
 const cors = require("cors");
 require('dotenv').config()   
 const path = require('path')
+const {Server} = require('socket.io')
+const http  = require('http')
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -23,12 +25,6 @@ app.use('/api/stu/uploads/image', express.static(path.join(__dirname, 'uploads/i
 // for document
 app.use('/api/stu/uploads/document', express.static(path.join(__dirname, 'uploads/document')))
 
-
-
-app.use((err, req, res, next) => {
-  console.error("🔥 Server Error:", err.stack);
-  res.status(500).json({ message: "Something went wrong on the server" });
-});
 
 
 // routes
@@ -59,9 +55,25 @@ app.use('/api/transport' , require('./routes/transports/transports.routes'))
 app.use('/api/salary' , require('./routes/payment_salary/paymentSalaryRoutes'))
 app.use('/api/sport' , require('./routes/sports/sportsRoutes'))
 app.use('/api/account' , require('./routes/accounts/accountsRoutes'))
+app.use('/api/chat' , require('./routes/chat/chatRoutes'))
+app.use('/api/message' , require('./routes/chat/messageRoutes'))
+
+app.use((err, req, res, next) => {
+  console.error("🔥 Server Error:", err.stack);
+  res.status(500).json({ message: "Something went wrong on the server" });
+});
 
 
+const server = http.createServer(app)
+const io = new Server(server , {
+   cors: {
+    origin: process.env.CORS_URL || "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+})
+
+require('./socket/socketHandler')(io)
 
 
-
-app.listen(port, () => console.log(`✅ Server is running on port ${port}`));
+server.listen(port, () => console.log(`✅ Server is running on port ${port}`));
