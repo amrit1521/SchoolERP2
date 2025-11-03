@@ -382,3 +382,4 @@ export const deleteAssignedVehicleById = (id: number) =>
 
 
 export const allDrivers = ()=>api.get('/transport/alldrivers')
+export const allDriversForOption = ()=>api.get('/transport/alldriversforopt')
