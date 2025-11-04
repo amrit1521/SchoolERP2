@@ -6,11 +6,9 @@ const upload = require('../../multer/multer');
 
 
 // get messages of a conversation
-router.get('/:conversationId/messages', messageController.getMessages);
-
-// send text message (also can be used by socket send_message)
+router.get('/specoversation/:conversationId', messageController.getMessages);
+router.get('/allcoversation/:userId', messageController.getLastMessageAllConverationForSpecficUser);
 router.post('/send', messageController.sendMessage);
-
 // endpoint for file upload + message send
 router.post('/send-file', upload.single('chatfile'), messageController.sendFileMessage);
 

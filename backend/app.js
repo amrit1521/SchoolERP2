@@ -55,6 +55,7 @@ app.use('/api/transport' , require('./routes/transports/transports.routes'))
 app.use('/api/salary' , require('./routes/payment_salary/paymentSalaryRoutes'))
 app.use('/api/sport' , require('./routes/sports/sportsRoutes'))
 app.use('/api/account' , require('./routes/accounts/accountsRoutes'))
+app.use('/api/chatusers' , require('./routes/chat/chatUsersRoutes'))
 app.use('/api/chat' , require('./routes/chat/chatRoutes'))
 app.use('/api/message' , require('./routes/chat/messageRoutes'))
 

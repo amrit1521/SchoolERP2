@@ -28,7 +28,7 @@ const Sidebar = () => {
      
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
-        // console.log(token.role)
+        console.log(token.role)
       if (token.role == "1") {
         setCustomSide([...SidebarData]);
          navigate(`${routes.adminDashboard}`)
