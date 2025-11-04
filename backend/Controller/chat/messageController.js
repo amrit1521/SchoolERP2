@@ -1,6 +1,5 @@
 const db = require('../../config/db');
 
-
 // ✅ Get all messages in a conversation
 exports.getMessages = async (req, res) => {
   const { conversationId } = req.params;
@@ -8,8 +7,7 @@ exports.getMessages = async (req, res) => {
     const [rows] = await db.query(
       `SELECT 
         m.*, 
-        u.firstname, 
-        u.lastname 
+        CONCAT(u.firstname," " ,u.lastname ) AS name
        FROM messages m 
        LEFT JOIN users u ON m.sender_id = u.id 
        WHERE m.conversation_id = ? 
@@ -34,6 +32,8 @@ exports.getMessages = async (req, res) => {
 
 // ✅ Send a text / image / voice message
 exports.sendMessage = async (req, res) => {
+
+  console.log(req.body)
   try {
     const {
       conversation_id,
@@ -53,7 +53,7 @@ exports.sendMessage = async (req, res) => {
 
     const messageId = result.insertId;
 
-    // Fetch complete message details with user info
+    // Fetch message details with sender info
     const [rows] = await db.query(
       `SELECT 
         m.*, 
@@ -67,7 +67,7 @@ exports.sendMessage = async (req, res) => {
 
     const messageRow = rows[0];
 
-    // Emit the message via Socket.IO
+    // Emit message via Socket.IO
     const io = req.app.get('io');
     if (io) {
       const room = `conversation_${conversation_id}`;
@@ -102,10 +102,8 @@ exports.sendFileMessage = async (req, res) => {
       });
     }
 
-    // Generate file URL (adjust this path based on your project)
     const fileUrl = `/api/stu/uploads/image/${file.filename}`;
 
-    // Insert message record
     const [result] = await db.query(
       `INSERT INTO messages 
         (conversation_id, sender_id, message_text, message_type, file_url) 
@@ -126,7 +124,6 @@ exports.sendFileMessage = async (req, res) => {
 
     const messageRow = rows[0];
 
-    // Emit file message through Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.to(`conversation_${conversation_id}`).emit('new_message', messageRow);
@@ -148,35 +145,90 @@ exports.sendFileMessage = async (req, res) => {
 };
 
 
-exports.getLastMessageAllConverationForSpecficUser  =async(req,res)=>{
 
-    const {id} = req.params;
-    const sql = `
+exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
+  const { userId } = req.params;
+
+  const sql = `
     SELECT 
-  c.id AS conversation_id,
-  c.type,
-  CASE 
-    WHEN c.type = 'private' THEN 
-      (SELECT CONCAT(u.firstname, ' ', u.lastname) 
-       FROM users u 
-       JOIN conversation_members cm2 ON cm2.user_id = u.id 
-       WHERE cm2.conversation_id = c.id AND u.id != :userId LIMIT 1)
-    ELSE c.name 
-  END AS conversation_name,
-  (SELECT message_text FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message,
-  (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) AS last_message_time
-FROM conversations c
-JOIN conversation_members cm ON cm.conversation_id = c.id
-WHERE cm.user_id = :userId
-ORDER BY last_message_time DESC;
-`
+      c.id AS conversation_id,
+      c.type,
 
-    try {
+     
+      CASE 
+        WHEN c.type = 'private' THEN 
+          (
+            SELECT u.id
+            FROM users u
+            JOIN conversation_members cm2 ON cm2.user_id = u.id
+            WHERE cm2.conversation_id = c.id AND u.id != ?
+            LIMIT 1
+          )
+        ELSE NULL
+      END AS other_user_id,
+      CASE 
+        WHEN c.type = 'private' THEN 
+          (
+            SELECT CONCAT(u.firstname, ' ', u.lastname)
+            FROM users u
+            JOIN conversation_members cm2 ON cm2.user_id = u.id
+            WHERE cm2.conversation_id = c.id AND u.id != ?
+            LIMIT 1
+          )
+        ELSE c.name
+      END AS name,
 
-        const [rows] = await db.query(sql , userId)
-        
-    } catch (error) {
-        
-    }
-}
+
+      (
+        SELECT m.message_text 
+        FROM messages m
+        WHERE m.conversation_id = c.id 
+        ORDER BY m.created_at DESC 
+        LIMIT 1
+      ) AS last_message,
+
+    
+      (
+        SELECT m.message_type 
+        FROM messages m
+        WHERE m.conversation_id = c.id 
+        ORDER BY m.created_at DESC 
+        LIMIT 1
+      ) AS last_message_type,
+
+  
+      (
+        SELECT m.created_at 
+        FROM messages m 
+        WHERE m.conversation_id = c.id 
+        ORDER BY m.created_at DESC 
+        LIMIT 1
+      ) AS last_message_time
+
+    FROM conversations c
+    JOIN conversation_members cm ON cm.conversation_id = c.id
+    WHERE cm.user_id = ?
+    ORDER BY last_message_time DESC;
+  `;
+
+  try {
+    // userId used 3 times → pass 3 copies
+    const [rows] = await db.query(sql, [userId, userId, userId]);
+
+    return res.status(200).json({
+      success: true,
+      message: "All conversations with last message fetched successfully.",
+      data: rows,
+    });
+  } catch (error) {
+    console.error("getLastMessageAllConverationForSpecficUser Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching conversations.",
+      error: error.message,
+    });
+  }
+};
+
+
 
