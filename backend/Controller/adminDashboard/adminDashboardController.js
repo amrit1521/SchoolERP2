@@ -1,5 +1,5 @@
 const db = require("../../config/db");
-const moment = require('moment/moment.js');
+const moment = require("moment/moment.js");
 
 exports.getRoleCountForRole = async (req, res) => {
   try {
@@ -66,7 +66,7 @@ exports.getTotalSubjectCount = async (req, res) => {
 };
 
 exports.getTodayStudentAttendanceCount = async (req, res) => {
-  const currentDate = moment().format("YYYY-MM-DD");
+  const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
   console.log("curentDate: ", currentDate);
   try {
     const sql = `SELECT 
@@ -79,8 +79,8 @@ exports.getTodayStudentAttendanceCount = async (req, res) => {
                 WHERE DATE(ai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log('rows: ',rows);
-    rows[0]['present_count'] += rows[0].late_count + rows[0].halfday_count;
+    console.log("rows: ", rows);
+    rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
         message: "No attendance data found.",
@@ -100,7 +100,7 @@ exports.getTodayStudentAttendanceCount = async (req, res) => {
 };
 
 exports.getTodayTeacherAttendanceCount = async (req, res) => {
-  const currentDate = moment().format("YYYY-MM-DD");
+  const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
   console.log("curentDate: ", currentDate);
   try {
     const sql = `SELECT 
@@ -113,8 +113,8 @@ exports.getTodayTeacherAttendanceCount = async (req, res) => {
             WHERE DATE(tai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log('rows: ',rows);
-    rows[0]['present_count'] += rows[0].late_count + rows[0].halfday_count;
+    console.log("rows: ", rows);
+    rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
         message: "No attendance data found.",
@@ -134,7 +134,7 @@ exports.getTodayTeacherAttendanceCount = async (req, res) => {
 };
 
 exports.getTodayStaffAttendanceCount = async (req, res) => {
-  const currentDate = moment().format("YYYY-MM-DD");
+  const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
   console.log("curentDate: ", currentDate);
   try {
     const sql = `SELECT 
@@ -147,8 +147,8 @@ exports.getTodayStaffAttendanceCount = async (req, res) => {
                 WHERE DATE(sai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log('rows: ',rows);
-    rows[0]['present_count'] += rows[0].late_count + rows[0].halfday_count;
+    console.log("rows: ", rows);
+    rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
         message: "No attendance data found.",
@@ -167,10 +167,105 @@ exports.getTodayStaffAttendanceCount = async (req, res) => {
   }
 };
 
+exports.getLeaveRequest = async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        la.id,
+        la.id_or_rollnum AS user_id,
+        la.from_date,
+        la.to_date,
+        la.no_of_days,
+        la.applied_on,
+        la.role_id,
+        lt.name AS leave_type,
+        la.status,
+        r.role_name,
+        -- Conditional joins for both teacher and student
+        CASE 
+          WHEN la.role_id = 2 THEN CONCAT(u1.firstname, ' ', u1.lastname)
+          WHEN la.role_id = 3 THEN CONCAT(u2.firstname, ' ', u2.lastname)
+          ELSE NULL
+        END AS user_name,
+        CASE 
+          WHEN la.role_id = 2 THEN t.img_src
+          WHEN la.role_id = 3 THEN s.stu_img
+          ELSE NULL
+        END AS img
+      FROM leave_application la
+      LEFT JOIN leaves_type lt ON lt.id = la.leave_type_id
+      LEFT JOIN teachers t ON t.teacher_id = la.id_or_rollnum
+      LEFT JOIN users u1 ON u1.id = t.user_id
+      LEFT JOIN students s ON s.rollnum = la.id_or_rollnum
+      LEFT JOIN users u2 ON u2.id = s.stu_id
+      LEFT JOIN roles r ON r.id = la.role_id
+      where la.status = '0'
+      ORDER BY la.applied_on DESC
+    `;
 
-exports.getLeaveRequest = (req,res) =>{
-  const sql = `SELECT la.id,la.id_or_rollnum as user_id,la.from_date,la.to_date,la.applied_on,la.role_id,lt.name
-   from leave_application la
-   JOIN leaves_type lt
- WHERE role_id in(2,3);`;
-}
+    const [results] = await db.execute(sql);
+
+    if (results.length === 0) {
+      return res.status(200).json({
+        message: "No leave requests found.",
+        success: false,
+        result: [],
+      });
+    }
+
+    return res.status(200).json({
+      message: "Leave requests fetched successfully.",
+      success: true,
+      result: results,
+    });
+  } catch (error) {
+    console.error("Error fetching leave requests:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.ActionOnLeaveRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = req.body.status;
+
+    // if (!status) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Status is required.",
+    //   });
+    // }
+
+    console.log('status: ', status, typeof status, id);
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Request ID is required.",
+      });
+    }
+
+    const sql = `UPDATE leave_application SET status=? WHERE id=?`;
+    const [rows] = await db.execute(sql, [status, id]);
+
+    if (rows.affectedRows === 0) {
+      return res.status(200).json({
+        message: "No status updated for leave request. Either the request doesn't exist or no changes were made.",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Status updated for leave request.",
+      success: true,
+      result: rows,
+    });
+
+  } catch (error) {
+    console.error("Error approving/rejecting leave request:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};

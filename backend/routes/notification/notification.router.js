@@ -18,5 +18,6 @@ router.patch('/update-event',notificationController.updateEvent);
 router.post('/delete-event',notificationController.deleteEvent);
 router.post("/event/upload", upload.single("eventfile"), fileController.uploadFile);
 router.get('/upcomming-events',notificationController.getUpcomingEvents);
+router.get('/spec-upcomming-events/:rollId',notificationController.getUpcomingEventsForSpecRole);
 
 module.exports = router;

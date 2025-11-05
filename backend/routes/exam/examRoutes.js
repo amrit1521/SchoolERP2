@@ -48,6 +48,10 @@ router.get(
   examController.getClassSectionToppers
 );
 router.get(
+  "/gettopthreerankerofclass/:class_id/:section_id",
+  examController.getTopThreeRankers
+);
+router.get(
   "/getperformancecountperclass",
   examController.getPerformanceCategoryCountPerClass
 );

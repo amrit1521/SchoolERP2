@@ -20,9 +20,19 @@ export const api2 = axios.create({
 //dashboard apis-----------------
 export const getAllUserCountForRole = () => api.get('/admindashboard/getrolecountforrole');
 export const getTotalSubjectCounts = () => api.get('/admindashboard/gettotalsubjectcounts');
-export const getTodayStudentAttendanceCounts = () => api.get('/admindashboard/gettoday-student-attendancecount');
-export const getTodayTeacherAttendanceCounts = () => api.get('/admindashboard/gettoday-teacher-attendancecount');
-export const getTodayStaffAttendanceCounts = () => api.get('/admindashboard/gettoday-staff-attendancecount');
+export const getTodayStudentAttendanceCounts = (date:any) => api.get(`/admindashboard/gettoday-student-attendancecount?date=${date}`);
+export const getTodayTeacherAttendanceCounts = (date:any) => api.get(`/admindashboard/gettoday-teacher-attendancecount?date=${date}`);
+export const getTodayStaffAttendanceCounts = (date:any) => api.get(`/admindashboard/gettoday-staff-attendancecount?date=${date}`);
+export const getAllLeaveRequest = () => api.get('/admindashboard/getleaverequest');
+export const ActionOnLeaveRequest = (data:any,id:number) => api.patch(`/admindashboard/actionleaverequest/${id}`,data);
+
+// teacher dashboard apis:
+export const getSpecTeacherAttendance = (id:number) => api.get(`/teacherdashboard/getspecteacher-attendance/${id}`);
+export const getTopRankerResult = (classId:number,sectionId:number) => api.get(`/exam/gettopthreerankerofclass/${classId}/${sectionId}`);
+
+//student dashboard apis: 
+export const getSpecStudentAttendance = (rollNum:number) => api.get(`/studentdashboard/studentspecAttendance/${rollNum}`);
+export const getStudentHomework = (classId:number,sectionId:number) => api.get(`/studentdashboard/getstudentHomework/${classId}/${sectionId}`);
 
 
 //user apis-------------------
@@ -56,6 +66,7 @@ export const deleteNotice = (data:any) => api.post("/notification/delete-notice"
 export const updateNotice = (data:any) => api.patch("/notification/update-notice",data);
 
 export const getUpcommingEvents = () => api.get('/notification/upcomming-events');
+export const getSpecUpcommingEvents = (id:number) => api.get(`/notification/spec-upcomming-events/${id}`);
 export const CreateEvent = (data: any) =>
   api.post("/notification/create-event", data);
 export const UploadEventFile = (data: object) =>

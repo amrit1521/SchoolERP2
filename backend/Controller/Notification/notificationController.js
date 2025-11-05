@@ -1,10 +1,11 @@
-import { success } from "zod";
-import db from "../../config/db.js";
-import transporter from "../../utils/sendEmail.js";
-import cron from "node-cron";
-import moment from "moment/moment.js";
+const { success } = require("zod");
+const db = require("../../config/db");
+const transporter = require("../../utils/sendEmail.js");
+const cron = require("node-cron");
+const moment = require("moment");
+const path = require("path");
 
-export const sendNoticeMail = async (
+const sendNoticeMail = async (
   recipientRoles,
   title,
   message,
@@ -19,8 +20,8 @@ export const sendNoticeMail = async (
     const placeholders = recipientRoles.map(() => "?").join(",");
     const sql = `SELECT email FROM users WHERE roll_id IN (${placeholders}) AND email IS NOT NULL`;
     const [rows] = await db.query(sql, recipientRoles);
-    console.log("rows: ", rows, placeholders);
-    const emails = rows.map((r) => r.email).filter(Boolean);
+
+    const emails = Array.isArray(rows) ? rows.map((r) => r.email).filter(Boolean) : [];
     if (emails.length === 0) {
       console.log("No valid recipient emails found.");
       return;
@@ -61,12 +62,34 @@ export const sendNoticeMail = async (
       </div>
     `;
 
-    console.log(`🚀 Sending notice mail to ${emails.length} recipients...`);
+    const buildAttachments = (att) => {
+      if (!att) return undefined;
+      if (Array.isArray(att) && att.length > 0) {
+        return att.map((file) => ({
+          filename: path.basename(file),
+          path: path.resolve(process.cwd(), file),
+        }));
+      }
+      if (typeof att === "string" && att.trim()) {
+        return [
+          {
+            filename: path.basename(att),
+            path: path.resolve(process.cwd(), att),
+          },
+        ];
+      }
+      return undefined;
+    };
+
+    const mailAttachments = buildAttachments(attachments);
+
+    console.log(`Sending notice mail to ${emails.length} recipients...`);
     const batchSize = 50;
     const delay = 1500;
 
     for (let i = 0; i < emails.length; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
+
       await Promise.allSettled(
         batch.map(async (email) => {
           try {
@@ -75,33 +98,29 @@ export const sendNoticeMail = async (
               to: email,
               subject: title,
               html: htmlTemplate,
-              attachments: [
-                {
-                  filename: attachments,
-                  path: `./${attachments}`,
-                },
-              ],
+              ...(mailAttachments ? { attachments: mailAttachments } : {}),
             });
             console.log(`Notice sent to ${email}`);
           } catch (err) {
-            console.error(`Failed to send to ${email}:`, err.message);
+            console.error(`Failed to send to ${email}:`, err.message || err);
           }
         })
       );
 
       if (i + batchSize < emails.length) {
-        console.log(`Waiting ${delay / 1000}s before next batch...`);
         await new Promise((res) => setTimeout(res, delay));
       }
     }
 
     console.log("All notice emails have been sent successfully!");
+    return true;
   } catch (error) {
     console.error("Error in sendNoticeMail:", error);
+    return false;
   }
 };
 
-export const sendEventMail = async (
+const sendEventMail = async (
   recipientRoles,
   title,
   message,
@@ -276,7 +295,38 @@ cron.schedule("* * * * *", async () => {
   }
 });
 
-export const addNotice = async (req, res) => {
+cron.schedule("* * * * *", async () => {
+  try {
+    const [rows] = await db.query(`
+      SELECT *
+      FROM notifications
+      WHERE type = 'notice'
+        AND mail_10min_sent = false
+        AND created_at <= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+    `);
+
+    if (!rows || rows.length === 0) return;
+
+    for (const notice of rows) {
+      try {
+        const roles = [notice.roll_id];
+        await sendNoticeMail(roles, notice.title, notice.message, notice.attachment);
+
+        await db.execute("UPDATE notifications SET mail_10min_sent = true WHERE id = ?", [
+          notice.id,
+        ]);
+
+        console.log("10-min notice mail sent for notification id:", notice.id);
+      } catch (err) {
+        console.error("Failed to send 10-min notice mail for id:", notice.id, err);
+      }
+    }
+  } catch (err) {
+    console.error("Error in notice scheduler:", err);
+  }
+});
+
+exports.addNotice = async (req, res) => {
   const { title, message, attachement, messageTo, docsId } = req.body;
 
   try {
@@ -288,8 +338,8 @@ export const addNotice = async (req, res) => {
     }
 
     const insertSql = `
-      INSERT INTO notifications (title, message, attachment, roll_id, type)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO notifications (title, message, attachment, roll_id, type,mail_10min_sent, mail_5hr_sent)
+      VALUES (?, ?, ?, ?, ?,false,false)
     `;
 
     const insertPromises = messageTo.map((id) =>
@@ -302,7 +352,6 @@ export const addNotice = async (req, res) => {
       const updateSql = "UPDATE files SET status = 1 WHERE id = ?";
       await db.execute(updateSql, [docsId]);
     }
-    await sendNoticeMail(messageTo, title, message, attachement);
     return res.status(201).json({
       message: "Notice(s) created successfully.",
       success: true,
@@ -316,7 +365,7 @@ export const addNotice = async (req, res) => {
   }
 };
 
-export const getAllNotice = async (req, res) => {
+exports.getAllNotice = async (req, res) => {
   try {
     const sql = `
       SELECT 
@@ -365,7 +414,7 @@ export const getAllNotice = async (req, res) => {
   }
 };
 
-export const updateNotice = async (req, res) => {
+exports.updateNotice = async (req, res) => {
   const { title, message, attachement, messageTo, docsId, noticeId } = req.body;
   try {
     if (!noticeId) {
@@ -420,7 +469,7 @@ export const updateNotice = async (req, res) => {
   }
 };
 
-export const deleteNotice = async (req, res) => {
+exports.deleteNotice = async (req, res) => {
   try {
     const ids = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -461,7 +510,7 @@ export const deleteNotice = async (req, res) => {
 
 //Events Api Module:
 
-export const createEvent = async (req, res) => {
+exports.createEvent = async (req, res) => {
   const {
     title,
     message,
@@ -519,7 +568,7 @@ export const createEvent = async (req, res) => {
   }
 };
 
-export const updateEvent = async (req, res) => {
+exports.updateEvent = async (req, res) => {
   const {
     title,
     message,
@@ -596,7 +645,7 @@ export const updateEvent = async (req, res) => {
   }
 };
 
-export const deleteEvent = async (req, res) => {
+exports.deleteEvent = async (req, res) => {
   try {
     const ids = req.body;
 
@@ -641,29 +690,29 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
-export const getAllEvents = async (req, res) => {
+exports.getAllEvents = async (req, res) => {
   try {
     const sql = `
       SELECT 
-        JSON_ARRAYAGG(n.id) AS id,
-        n.title,
-        n.message,
-        n.attachment,
-        n.event_category,
-        n.event_date,
-        n.event_time,
-        n.created_at,
-        JSON_ARRAYAGG(n.roll_id) AS role_id
-      FROM notifications n
-      WHERE n.type = 'event'
-      GROUP BY 
-        n.title, 
-        n.message, 
-        n.attachment, 
-        n.event_category, 
-        n.event_date, 
-        n.event_time 
-      ORDER BY n.created_at DESC
+      JSON_ARRAYAGG(n.id) AS id,
+      n.title,
+      n.message,
+      n.attachment,
+      n.event_category,
+      n.event_date,
+      n.event_time,
+      MAX(n.created_at) AS created_at,
+      JSON_ARRAYAGG(n.roll_id) AS role_id
+    FROM notifications n
+    WHERE n.type = 'event'
+    GROUP BY 
+      n.title, 
+      n.message, 
+      n.attachment, 
+      n.event_category, 
+      n.event_date, 
+      n.event_time
+    ORDER BY created_at DESC;
     `;
 
     const [rows] = await db.execute(sql);
@@ -690,24 +739,22 @@ export const getAllEvents = async (req, res) => {
   }
 };
 
-export const getUpcomingEvents = async (req, res) => {
+exports.getUpcomingEvents = async (req, res) => {
   try {
-    const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    
     const sql = `
       SELECT 
-        JSON_ARRAYAGG(n.id) AS id,
+        JSON_ARRAYAGG(n.id) AS ids,
         n.title,
         n.message,
         n.attachment,
         n.event_category,
         n.event_date,
         n.event_time,
-        n.created_at,
-        JSON_ARRAYAGG(n.roll_id) AS role_id
+        MAX(n.created_at) AS created_at,
+        JSON_ARRAYAGG(n.roll_id) AS role_ids
       FROM notifications n
       WHERE n.type = 'event'
-      AND CONCAT(n.event_date, ' ', n.event_time) >= ?
+        AND STR_TO_DATE(CONCAT(SUBSTRING_INDEX(n.event_date, '|', 1), ' ', SUBSTRING_INDEX(n.event_time, '|', 1)), '%Y-%m-%d %H:%i:%s') >= NOW()
       GROUP BY 
         n.title, 
         n.message, 
@@ -715,10 +762,11 @@ export const getUpcomingEvents = async (req, res) => {
         n.event_category, 
         n.event_date, 
         n.event_time
-      ORDER BY n.created_at DESC
+      where n.roll_id = ?
+      ORDER BY created_at DESC;
     `;
 
-    const [rows] = await db.execute(sql, [currentDateTime]);
+    const [rows] = await db.execute(sql);
 
     if (!rows || rows.length === 0) {
       return res.status(200).json({
@@ -733,9 +781,76 @@ export const getUpcomingEvents = async (req, res) => {
       success: true,
       result: rows,
     });
+
   } catch (error) {
     console.error("Error fetching upcoming events:", error);
-    res.status(500).json({
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getUpcomingEventsForSpecRole = async (req, res) => {
+  const {rollId} = req.params;
+  try {
+    const sql = `
+        SELECT 
+          JSON_ARRAYAGG(n.id) AS ids,
+          n.title,
+          n.message,
+          n.attachment,
+          n.event_category,
+          n.event_date,
+          n.event_time,
+          MAX(n.created_at) AS created_at,
+          JSON_ARRAYAGG(n.roll_id) AS role_ids
+        FROM notifications n
+        WHERE n.type = 'event'
+          AND n.roll_id = ?
+        GROUP BY 
+          n.title, 
+          n.message, 
+          n.attachment, 
+          n.event_category, 
+          n.event_date, 
+          n.event_time
+        ORDER BY created_at DESC;
+    `;
+
+    const [rows] = await db.execute(sql,[rollId]);
+    const now = moment();
+    const mapped = rows.map((r) => {
+      const eventDateStr = r.event_date.split('|')[0];
+      const eventTimeStr = r.event_time ? r.event_time.split('|')[0] : "00:00:00";
+
+      const eventMoment = moment(`${eventDateStr} ${eventTimeStr}`, "YYYY-MM-DD HH:mm:ss");
+
+      const daysLeft = eventMoment.diff(now, "days");
+      return {
+        ...r,
+        days: `${Math.abs(daysLeft)} days ${daysLeft >= 0 ? "remaining" : "ago"}`,
+      };
+    });
+
+
+    if (!rows || rows.length === 0) {
+      return res.status(200).json({
+        message: "No upcoming events found",
+        success: false,
+        result: [],
+      });
+    }
+
+    return res.status(200).json({
+      message: "Upcoming events fetched successfully",
+      success: true,
+      result: mapped,
+    });
+
+  } catch (error) {
+    console.error("Error fetching upcoming events:", error);
+    return res.status(500).json({
       message: "Internal server error",
       error: error.message,
     });
