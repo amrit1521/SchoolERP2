@@ -1,8 +1,7 @@
-
-const db = require('../../config/db');
+const db = require("../../config/db");
 
 exports.getSpecStuAttendance = async (req, res) => {
-    const {rollNo} = req.params;
+  const { rollNo } = req.params;
   try {
     const sql = `
       SELECT  
@@ -22,7 +21,7 @@ exports.getSpecStuAttendance = async (req, res) => {
       WHERE a.student_rollnum = ?
     `;
 
-    const [rows] = await db.query(sql,[rollNo]);
+    const [rows] = await db.query(sql, [rollNo]);
 
     const report = rows.map((r) => {
       const Present = Number(r.Present) || 0;
@@ -30,9 +29,9 @@ exports.getSpecStuAttendance = async (req, res) => {
       const Absent = Number(r.Absent) || 0;
       const Halfday = Number(r.Halfday) || 0;
       const Holiday = Number(r.Holiday) || 0;
-      const TotalDays = Number(r.TotalDays) || 0; 
+      const TotalDays = Number(r.TotalDays) || 0;
       const totalWorkingDays = TotalDays - Holiday;
-      const totalPresentDays = Present + Late  + (Halfday * 0.5);
+      const totalPresentDays = Present + Late + Halfday * 0.5;
       const percentage =
         totalWorkingDays > 0
           ? ((totalPresentDays / totalWorkingDays) * 100).toFixed(1)
@@ -40,12 +39,12 @@ exports.getSpecStuAttendance = async (req, res) => {
       return {
         rollNo: r.roll_no,
         name: `${r.firstname} ${r.lastname} `,
-        img:r.stu_img,
-        p:Present,
-        l:Late,
-        a:Absent,
-        h:Halfday,
-        f:Holiday,
+        img: r.stu_img,
+        p: Present,
+        l: Late,
+        a: Absent,
+        h: Halfday,
+        f: Holiday,
         TotalDays,
         totalWorkingDays,
         totalPresentDays: totalPresentDays.toFixed(1),
@@ -66,9 +65,8 @@ exports.getSpecStuAttendance = async (req, res) => {
   }
 };
 
-
 exports.getStudentHomework = async (req, res) => {
-  const {classId,sectionId} = req.params;
+  const { classId, sectionId } = req.params;
   try {
     const sql = `
       SELECT 
@@ -96,19 +94,42 @@ exports.getStudentHomework = async (req, res) => {
       where hw.class_id = ? AND section_id = ?
       ORDER BY hw.created_at DESC;
     `;
-    const [rows] = await db.query(sql,[classId,sectionId]);
-    return res.status(200).json({ message: 'Fetched student homework successfully!', success: true, data: rows });
+    const [rows] = await db.query(sql, [classId, sectionId]);
+    return res.status(200).json({
+      message: "Fetched student homework successfully!",
+      success: true,
+      data: rows,
+    });
   } catch (error) {
     console.error("Error fetching homework:", error);
-    return res.status(500).json({ message: 'Error while fetching homework!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Error while fetching homework!", success: false });
   }
 };
 
+exports.getStudentFeeReminder = async (req, res) => {
+  try {
+    const { rollNum } = req.params;
+    const sql = `SELECT fa.AmountPay, fa.collectionDate, ft.name as fee_type FROM fees_assign fa
+    LEFT JOIN  fees_type ft ON ft.id = fa.fees_typeId
+    WHERE fa.student_rollnum = ?`;
 
-exports.getStudentFeeReminder = (req,res) =>{
-  const sql = `
-  SELECT fa.AmountPay, fa.collectionDate, ft.name as fee_type FROM fees_assign fa
-		LEFT JOIN  fees_type ft ON ft.id = fa.fees_typeId
-        WHERE fa.student_rollnum = ?
-  `;
-}
+    const [rows] = await db.execute(sql, [rollNum]);
+    if (rows.length <= 0) {
+      return res.status(200).json({
+        success: false,
+        data: rows,
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching fee reminder:", error);
+    return res
+      .status(500)
+      .json({ message: "Error while fetching fee reminder!", success: false });
+  }
+};
