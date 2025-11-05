@@ -4,6 +4,7 @@ const BASE_URL: string = import.meta.env.VITE_SERVERURL || "http://localhost:300
 export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;
+export const Audiourl = `${API_URL}/chat/uploads/audio/`;
 
 export const api = axios.create({
   baseURL: API_URL,
