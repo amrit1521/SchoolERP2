@@ -1903,3 +1903,143 @@ exports.getPerformanceCategoryCountPerClass = async (req, res) => {
     });
   }
 };
+
+exports.getTopThreeRankers = async (req, res) => {
+  try {
+    const { class_id, section_id } = req.params;
+
+    if (!class_id || !section_id) {
+      return res.status(400).json({
+        success: false,
+        message: "class_id and section_id are required parameters!",
+      });
+    }
+
+    const sql = `
+      SELECT 
+        er.id,
+        er.mark_obtained,
+        er.max_mark,
+        en.examName,
+        s.rollnum,
+        s.admissionnum,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        cl.class_name,
+        se.section_name,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      LEFT JOIN users u ON s.stu_id = u.id
+      WHERE en.examName IN ('Semester1', 'Semester2')
+        AND s.class_id = ?
+        AND s.section_id = ?
+      ORDER BY s.rollnum, en.examName
+    `;
+
+    const [rows] = await db.query(sql, [class_id, section_id]);
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No results found for this class and section!",
+      });
+    }
+
+    const studentMap = {};
+
+    rows.forEach(row => {
+      const { rollnum, examName } = row;
+      const semester = examName.trim();
+
+      if (!studentMap[rollnum]) {
+        studentMap[rollnum] = {
+          studentName: `${row.firstname} ${row.lastname}`,
+          class_id: row.class_id,
+          class_name: row.class_name,
+          section_id: row.section_id,
+          section_name: row.section_name,
+          rollnum: row.rollnum,
+          admissionnum: row.admissionnum,
+          img: row.stu_img,
+          semesters: {},
+        };
+      }
+
+      const student = studentMap[rollnum];
+
+      if (!student.semesters[semester])
+        student.semesters[semester] = { totalObtained: 0, totalMax: 0 };
+
+      student.semesters[semester].totalObtained += row.mark_obtained || 0;
+      student.semesters[semester].totalMax += row.max_mark || 0;
+    });
+
+    const students = Object.values(studentMap).map(stu => {
+      const sem1 = stu.semesters["Semester1"] || { totalObtained: 0, totalMax: 0 };
+      const sem2 = stu.semesters["Semester2"] || { totalObtained: 0, totalMax: 0 };
+
+      const sem1Percent = sem1.totalMax ? (sem1.totalObtained / sem1.totalMax) * 100 : 0;
+      const sem2Percent = sem2.totalMax ? (sem2.totalObtained / sem2.totalMax) * 100 : 0;
+
+      const combinedTotal = sem1.totalObtained + sem2.totalObtained;
+      const combinedMax = sem1.totalMax + sem2.totalMax;
+      const combinedPercent = combinedMax ? (combinedTotal / combinedMax) * 100 : 0;
+
+      return {
+        ...stu,
+        semester1: { ...sem1, percent: Number(sem1Percent.toFixed(2)) },
+        semester2: { ...sem2, percent: Number(sem2Percent.toFixed(2)) },
+        overall: {
+          totalObtained: combinedTotal,
+          totalMax: combinedMax,
+          percent: Number(combinedPercent.toFixed(2)),
+        },
+      };
+    });
+
+    const sortedStudents = students.sort(
+      (a, b) => b.overall.percent - a.overall.percent
+    );
+
+    const top3 = sortedStudents.slice(0, 3).map((stu, index) => ({
+      class_id: stu.class_id,
+      class_name: stu.class_name,
+      section_id: stu.section_id,
+      section_name: stu.section_name,
+      rollnum: stu.rollnum,
+      studentName: stu.studentName,
+      admissionnum: stu.admissionnum,
+      semester1: stu.semester1,
+      semester2: stu.semester2,
+      overall: stu.overall,
+      image: stu.img,
+      rank: index + 1,
+    }));
+
+    if (!top3.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No results found for this class and section!",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Top 3 rankers fetched successfully!",
+      data: top3,
+    });
+
+  } catch (error) {
+    console.error("Error in getTopThreeRankers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+    });
+  }
+};

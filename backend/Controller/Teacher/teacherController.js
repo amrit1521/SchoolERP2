@@ -699,6 +699,8 @@ exports.getTeacherByToken = async (req, res) => {
         u.status,
         u.mobile,
         u.email,
+        cc.id as class_id,
+        s.id as section_id,
         cf.class_name AS fromclass,
         ct.class_name AS toclass,
         cc.class_name AS class,

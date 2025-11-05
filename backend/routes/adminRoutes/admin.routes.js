@@ -11,6 +11,7 @@ router.get('/gettotalsubjectcounts',adminDashboardController.getTotalSubjectCoun
 router.get('/gettoday-student-attendancecount',adminDashboardController.getTodayStudentAttendanceCount);
 router.get('/gettoday-teacher-attendancecount',adminDashboardController.getTodayTeacherAttendanceCount);
 router.get('/gettoday-staff-attendancecount',adminDashboardController.getTodayStaffAttendanceCount);
-
+router.get('/getleaverequest',adminDashboardController.getLeaveRequest);
+router.patch('/actionleaverequest/:id',adminDashboardController.ActionOnLeaveRequest);
 
 module.exports = router;

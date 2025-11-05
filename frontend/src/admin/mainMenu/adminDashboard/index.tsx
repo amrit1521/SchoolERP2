@@ -8,10 +8,13 @@ import "bootstrap-daterangepicker/daterangepicker.css";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { all_routes } from "../../router/all_routes";
 import Slider from "react-slick";
+import dayjs, { Dayjs } from "dayjs";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import AdminDashboardModal from "./adminDashboardModal";
 import {
+  ActionOnLeaveRequest,
+  getAllLeaveRequest,
   getAllNotice,
   getAllUserCountForRole,
   getPerforamanceCountPerClass,
@@ -29,6 +32,7 @@ import { allPlayer } from "../../../service/sport";
 import { allExpense, allIncome } from "../../../service/accounts";
 import { allClassRoutine } from "../../../service/classApi";
 import Table from "../../../core/common/dataTable/index";
+import { DatePicker } from "antd";
 
 interface UserRoleCount {
   imagePath: string;
@@ -138,7 +142,7 @@ const AdminDashboard = () => {
     prevArrow: <SamplePrevArrow />,
   };
   const [studentDonutChart, setStudentDonutChart] = useState<any>({
-    series: [4, 2],
+    series: [0, 0],
     options: {
       chart: {
         height: 218,
@@ -177,7 +181,7 @@ const AdminDashboard = () => {
     },
   });
   const [teacherDonutChart, SetTeacherDonutChart] = useState<any>({
-    series: [4, 2],
+    series: [0, 0],
     options: {
       chart: {
         height: 218,
@@ -216,7 +220,7 @@ const AdminDashboard = () => {
     },
   });
   const [staffDonutChart, SetStaffDonutChart] = useState<any>({
-    series: [4, 2],
+    series: [0, 0],
     options: {
       chart: {
         height: 218,
@@ -470,6 +474,10 @@ const AdminDashboard = () => {
     below_avg: 0,
   };
   const [allRoutine, setAllRoutine] = useState<ClassRoutine[]>([]);
+  const [allLeaveRequest, setLeaveRequest] = useState<any[]>([]);
+  const [filteredLeaves, setFilteredLeaves] = useState<any[]>([]);
+  const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
+  const [filterType, setFilterType] = useState("today");
 
   const fetchStudent = async (id: number) => {
     try {
@@ -494,7 +502,9 @@ const AdminDashboard = () => {
 
   const fetchStudentAttendanceCount = async () => {
     try {
-      const { data } = await getTodayStudentAttendanceCounts();
+      const { data } = await getTodayStudentAttendanceCounts(
+        filter.date ? filter?.date : new Date()
+      );
       if (data.success) {
         console.log("today attendance: ", data.result);
         setSudentAttendanceCount(data?.result);
@@ -510,7 +520,9 @@ const AdminDashboard = () => {
 
   const fetchTeacherAttendanceCount = async () => {
     try {
-      const { data } = await getTodayTeacherAttendanceCounts();
+      const { data } = await getTodayTeacherAttendanceCounts(
+        filter.date ? filter?.date : new Date()
+      );
       if (data.success) {
         console.log("teacher attendance: ", data.result);
         setTeacherAttendanceCount(data?.result);
@@ -525,7 +537,9 @@ const AdminDashboard = () => {
   };
   const fetchStaffAttendanceCount = async () => {
     try {
-      const { data } = await getTodayStaffAttendanceCounts();
+      const { data } = await getTodayStaffAttendanceCounts(
+        filter.date ? filter?.date : new Date()
+      );
       if (data.success) {
         console.log("staff attendance: ", data.result);
         setStaffAttendanceCount(data?.result);
@@ -730,6 +744,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAllLeaveRequest = async () => {
+    try {
+      const { data } = await getAllLeaveRequest();
+      if (data.success) {
+        console.log("leave Request: ", data.result);
+        setLeaveRequest(data.result);
+      }
+    } catch (error) {
+      console.error("Error fetching leave request:", error);
+    }
+  };
+
   useEffect(() => {
     const cls = performanceCategoryCount.find(
       (c) => c.class_name === selectedClass
@@ -753,6 +779,50 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    if (filter?.date) {
+      fetchStudentAttendanceCount();
+      fetchTeacherAttendanceCount();
+      fetchStaffAttendanceCount();
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    if (!allLeaveRequest || allLeaveRequest.length === 0) return;
+    const today = dayjs().startOf("day");
+    const startOfThisWeek = dayjs().startOf("week");
+    const endOfThisWeek = dayjs().endOf("week");
+
+    const startOfLastWeek = dayjs().subtract(1, "week").startOf("week");
+    const endOfLastWeek = dayjs().subtract(1, "week").endOf("week");
+
+    const filtered = allLeaveRequest.filter((leave) => {
+      const appliedDate = dayjs(leave.applied_on);
+
+      if (filterType === "today") {
+        return appliedDate.isSame(today, "day");
+      }
+
+      if (filterType === "thisWeek") {
+        return (
+          appliedDate.isSameOrAfter(startOfThisWeek, "day") &&
+          appliedDate.isSameOrBefore(endOfThisWeek, "day")
+        );
+      }
+
+      if (filterType === "lastWeek") {
+        return (
+          appliedDate.isSameOrAfter(startOfLastWeek, "day") &&
+          appliedDate.isSameOrBefore(endOfLastWeek, "day")
+        );
+      }
+
+      return true;
+    });
+
+    setFilteredLeaves(filtered);
+  }, [filterType, allLeaveRequest]);
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       const parsetoken = JSON.parse(token);
@@ -770,7 +840,33 @@ const AdminDashboard = () => {
     fetchClassTopperStudent();
     fetchPerformanceCountPerClass();
     fetchRoutines();
+    fetchAllLeaveRequest();
   }, []);
+
+  const handleApplyApproveRequest = async (id: number) => {
+    try {
+      const { data } = await ActionOnLeaveRequest({ status: true }, id);
+      if (data.success) {
+        console.log("leave Request approved: ", data);
+        fetchAllLeaveRequest();
+        toast.success("leave Request Approved Successfully.");
+      }
+    } catch (error) {
+      console.error("Error in approving leave request:", error);
+    }
+  };
+  const handleApplyRejectRequest = async (id: number) => {
+    try {
+      const { data } = await ActionOnLeaveRequest({ status: false }, id);
+      if (data.success) {
+        console.log("leave Request rejected: ", data);
+        toast.success("leave Request rejected.");
+        fetchAllLeaveRequest();
+      }
+    } catch (error) {
+      console.error("Error in rejecting leave request:", error);
+    }
+  };
 
   const columns = [
     {
@@ -807,6 +903,7 @@ const AdminDashboard = () => {
     //   dataIndex: "room_no",
     // },
   ];
+  console.log("filtered Leaves : ", filteredLeaves);
 
   return (
     <>
@@ -1287,32 +1384,18 @@ const AdminDashboard = () => {
                 <div className="card">
                   <div className="card-header d-flex align-items-center justify-content-between">
                     <h4 className="card-title">Attendance</h4>
-                    <div className="dropdown">
-                      <Link
-                        to="#"
-                        className="bg-white dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                      >
-                        <i className="ti ti-calendar-due me-1" />
-                        Today
-                      </Link>
-                      <ul className="dropdown-menu mt-2 p-3">
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            This Week
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Last Week
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Last Week
-                          </Link>
-                        </li>
-                      </ul>
+                    <div className="dropdown d-flex align-items-center">
+                      <i className="ti ti-calendar-due me-1" />
+                      <DatePicker
+                        className="form-control datetimepicker"
+                        format="DD MMM YYYY"
+                        placeholder="Select Date"
+                        onChange={(date: Dayjs | null) => {
+                          setFilter({
+                            date: date ? date.format("YYYY-MM-DD") : null,
+                          });
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="card-body">
@@ -1724,10 +1807,10 @@ const AdminDashboard = () => {
                   <div className="card-header d-flex align-items-center justify-content-between">
                     <h4 className="card-title">Class Routine</h4>
                     <Link
-                      to="#"
+                      to={routes?.classRoutine}
                       className="link-primary fw-medium"
-                      data-bs-toggle="modal"
-                      data-bs-target="#add_class_routine"
+                      // data-bs-toggle="modal"
+                      // data-bs-target="#add_class_routine"
                     >
                       <i className="ti ti-square-plus me-1" />
                       Add New
@@ -1928,88 +2011,141 @@ const AdminDashboard = () => {
               {/* Leave Requests */}
               <div className="col-xxl-4 col-xl-6 d-flex">
                 <div className="card flex-fill">
-                  <div className="card-header  d-flex align-items-center justify-content-between">
+                  <div className="card-header d-flex align-items-center justify-content-between">
                     <h4 className="card-title">Leave Requests</h4>
                     <div className="dropdown">
-                      <Link
-                        to="#"
-                        className="bg-white dropdown-toggle"
+                      <button
+                        className="btn btn-white dropdown-toggle d-flex align-items-center"
+                        type="button"
+                        id="leaveFilterDropdown"
                         data-bs-toggle="dropdown"
+                        aria-expanded="false"
                       >
                         <i className="ti ti-calendar-due me-1" />
-                        Today
-                      </Link>
-                      <ul className="dropdown-menu mt-2 p-3">
+                        {filterType === "today"
+                          ? "Today"
+                          : filterType === "thisWeek"
+                          ? "This Week"
+                          : "Last Week"}
+                      </button>
+                      <ul
+                        className="dropdown-menu mt-2 p-2"
+                        aria-labelledby="leaveFilterDropdown"
+                      >
                         <li>
-                          <Link to="#" className="dropdown-item rounded-1">
+                          <Link
+                            to="#"
+                            className="dropdown-item rounded-1"
+                            onClick={() => setFilterType("today")}
+                          >
+                            Today
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            to="#"
+                            className="dropdown-item rounded-1"
+                            onClick={() => setFilterType("thisWeek")}
+                          >
                             This Week
                           </Link>
                         </li>
                         <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Last Week
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
+                          <Link
+                            to="#"
+                            className="dropdown-item rounded-1"
+                            onClick={() => setFilterType("lastWeek")}
+                          >
                             Last Week
                           </Link>
                         </li>
                       </ul>
                     </div>
                   </div>
-                  <div className="card-body">
+                  <div
+                    className="card-body"
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
                     <div className="card mb-2">
-                      <div className="card-body p-3">
-                        <div className="d-flex align-items-center justify-content-between mb-3">
-                          <div className="d-flex align-items-center overflow-hidden me-2">
-                            <Link
-                              to="#"
-                              className="avatar avatar-lg flex-shrink-0 me-2"
-                            >
-                              <ImageWithBasePath
-                                src="assets/img/profiles/avatar-14.jpg"
-                                alt="student"
-                              />
-                            </Link>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                <Link to="#">James</Link>
-                                <span className="badge badge-soft-danger ms-1">
-                                  Emergency
-                                </span>
-                              </h6>
-                              <p className="text-truncate">Physics Teacher</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center">
-                            <Link
-                              to="#"
-                              className="avatar avatar-xs p-0 btn btn-success me-1"
-                            >
-                              <i className="ti ti-checks" />
-                            </Link>
-                            <Link
-                              to="#"
-                              className="avatar avatar-xs p-0 btn btn-danger"
-                            >
-                              <i className="ti ti-x" />
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-between border-top pt-3">
-                          <p className="mb-0">
-                            Leave :{" "}
-                            <span className="fw-semibold">12 -13 May</span>
-                          </p>
-                          <p>
-                            Apply on :{" "}
-                            <span className="fw-semibold">12 May</span>
-                          </p>
-                        </div>
-                      </div>
+                      {filteredLeaves
+                        ? filteredLeaves
+                            .filter((item) => item.role_id != 0)
+                            .map((leave: any) => {
+                              return (
+                                <div className="card-body p-3">
+                                  <div className="d-flex align-items-center justify-content-between mb-3">
+                                    <div className="d-flex align-items-center overflow-hidden me-2">
+                                      <Link
+                                        to="#"
+                                        className="avatar avatar-lg flex-shrink-0 me-2"
+                                      >
+                                        <img
+                                          src={`${Imageurl}/${leave?.img}`}
+                                          alt="student"
+                                        />
+                                      </Link>
+                                      <div className="overflow-hidden">
+                                        <h6 className="mb-1 text-truncate">
+                                          <Link to="#">{leave?.user_name}</Link>
+                                          <span className="badge badge-soft-danger ms-1">
+                                            {leave?.leave_type}
+                                          </span>
+                                        </h6>
+                                        <p className="text-truncate">
+                                          {leave?.role_name}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="d-flex align-items-center">
+                                      <Link
+                                        to="#"
+                                        className="avatar avatar-xs p-0 btn btn-success me-1"
+                                        onClick={() =>
+                                          handleApplyApproveRequest(leave?.id)
+                                        }
+                                      >
+                                        <i className="ti ti-checks" />
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        className="avatar avatar-xs p-0 btn btn-danger"
+                                        onClick={() =>
+                                          handleApplyRejectRequest(leave?.id)
+                                        }
+                                      >
+                                        <i className="ti ti-x" />
+                                      </Link>
+                                    </div>
+                                  </div>
+                                  <div className="d-flex align-items-center justify-content-between border-top pt-3">
+                                    <p className="mb-0">
+                                      Leave :{" "}
+                                      <span className="fw-semibold">
+                                        {[
+                                          dayjs(leave?.from_date),
+                                          dayjs(leave?.to_date),
+                                        ]
+                                          .sort((a: any, b: any) => a - b)
+                                          .map((d) => d.format("D MMM"))
+                                          .join("–")}
+                                      </span>
+                                    </p>
+                                    <p>
+                                      Apply on :{" "}
+                                      <span className="fw-semibold">
+                                        {" "}
+                                        {dayjs(leave?.applied_on).format(
+                                          "D MMM"
+                                        )}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })
+                        : ""}
                     </div>
-                    <div className="card mb-0">
+                    {/* <div className="card mb-0">
                       <div className="card-body p-3">
                         <div className="d-flex align-items-center justify-content-between mb-3">
                           <div className="d-flex align-items-center overflow-hidden me-2">
@@ -2058,7 +2194,7 @@ const AdminDashboard = () => {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
