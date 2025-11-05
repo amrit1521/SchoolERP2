@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Link, useLocation } from "react-router-dom";
 import { all_routes } from "../router/all_routes";
@@ -13,10 +13,17 @@ import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
+import { format, isToday, isYesterday } from 'date-fns';
+import { CiMicrophoneOn } from "react-icons/ci";
+import { CiPause1 } from "react-icons/ci";
+import { GrResume } from "react-icons/gr";
+import { FaStopCircle } from "react-icons/fa";
+import { Audiourl } from "../../service/api";
+// import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // interface Message {
 //   id?: number;
@@ -47,9 +54,8 @@ const Chat = () => {
   useBodyClass("app-chat");
 
   const routes = all_routes;
-  const [open1, setOpen1] = React.useState(false);
+  // const [open1, setOpen1] = React.useState(false);
   const [open2, setOpen2] = React.useState(false);
-
   const [isShow, setShow] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showEmoji2, setShowEmoji2] = useState(false);
@@ -114,7 +120,6 @@ const Chat = () => {
   const [users, setUsers] = useState<any>([])
   const [isNewChat, setIsNewChat] = useState<boolean>(false)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
-  console.log(currentUserId)
   const [allConversationUser, setAllConverSationUser] = useState<any>([])
   const [loading1, setLoading1] = useState<boolean>(false)
   const [speRoomConv, setSpeRoomConv] = useState<any>([])
@@ -122,9 +127,16 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading3, setLoading3] = useState(false);
- 
   const [socket, setSocket] = useState<Socket | null>(null)
   const [conversationId, setConversationId] = useState<number | null>(null)
+  const [otherUser, setOtherUser] = useState<any>({})
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordTime, setRecordTime] = useState(0);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ✅ socket initialization
   useEffect(() => {
@@ -142,12 +154,16 @@ const Chat = () => {
 
     // ✅ listen for new messages globally (from backend)
     newSocket.on("new_message", (msg: any) => {
-      console.log("🟢 New message received:", msg);
-
       // show message only if user is in same conversation
       if (msg.conversation_id === conversationId) {
         setSpeRoomConv((prev: any) => [...prev, msg]);
       }
+    });
+
+    newSocket.on("message_deleted", ({ messageId }) => {
+      setSpeRoomConv((prev: any) =>
+        prev.filter((msg: any) => msg.id !== messageId)
+      );
     });
 
     // cleanup
@@ -160,8 +176,6 @@ const Chat = () => {
   useEffect(() => {
     if (socket && conversationId) {
       socket.emit("join_conversation", conversationId);
-      console.log("Joined conversation:", conversationId);
-
       return () => {
         socket.emit("leave_conversation", conversationId);
       };
@@ -183,7 +197,6 @@ const Chat = () => {
     setLoading1(true);
     try {
       const { data } = await allConversationforSpecficUser(id);
-      console.log(data.data);
       if (data.success) {
         setAllConverSationUser(data.data);
       }
@@ -194,12 +207,13 @@ const Chat = () => {
     }
   };
 
-  const fetchSpeRoomConv = async (roomId: number) => {
+  const fetchSpeRoomConv = async (roomId: number, userId: number) => {
     setLoading2(true);
     try {
-      const { data } = await speConversationForARoom(roomId);
+      const { data } = await speConversationForARoom(roomId, userId);
       if (data.success) {
         setSpeRoomConv(data.data);
+        setOtherUser(data.userData)
         setConversationId(roomId);
       }
     } catch (error) {
@@ -223,7 +237,7 @@ const Chat = () => {
     try {
       const { data } = await createPrivateRoom(payload);
       if (data.success) {
-        fetchSpeRoomConv(data.data.conversation_id);
+        fetchSpeRoomConv(data.data.conversation_id, id);
         setIsNewChat(false);
       }
     } catch (error: any) {
@@ -241,10 +255,10 @@ const Chat = () => {
     }
   }, []);
 
-  // ✅ handle send message (text only)
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!message.trim() && !file) return; // nothing to send
+    if (!message.trim() && !file) return;
     if (!conversationId || !currentUserId) return;
     setLoading3(true);
 
@@ -260,17 +274,13 @@ const Chat = () => {
           message_type: "text",
         };
 
-        // const { data } = await sendMessage(payload);
+        const { data } = await sendMessage(payload);
 
-        // if (data.success) {
+        if (data.success) {
           // const newMessage = data.data;
-
-          // ✅ Emit via socket (this sends real-time message to backend)
-          socket?.emit("send_message", payload);
-
-          // ✅ Also show immediately on sender screen
+          // socket?.emit("send_message", payload);
           // setSpeRoomConv((prev: any) => [...prev, newMessage]);
-        // }
+        }
       }
 
       // Clear input
@@ -285,9 +295,129 @@ const Chat = () => {
   };
 
 
+  // for audio recording
+
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      timerRef.current = setInterval(() => {
+        setRecordTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording, isPaused]);
 
 
-  // helper functions
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunks.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/webm" });
+        setRecordTime(0);
+        const file = new File([audioBlob], "voice-message.webm", {
+          type: "audio/webm",
+        });
+
+        if (!conversationId || !currentUserId) {
+          toast.error("First select user !")
+          return;
+
+        }
+        const formData = new FormData();
+        formData.append("sender_id", String(currentUserId))
+        formData.append("conversation_id", String(conversationId))
+        formData.append("chatfile", file, "audioMessage.webm");
+        const { data } = await sendFile(formData)
+        if (data.success) {
+          const newMessage = data.data;
+          // ✅ Emit via socket (this sends real-time message to backend)
+          socket?.emit("send_message", formData);
+          // ✅ Also show immediately on sender screen
+          setSpeRoomConv((prev: any) => [...prev, newMessage]);
+        }
+      };
+
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setIsPaused(false);
+      setRecordTime(0);
+    } catch (err: any) {
+      console.error("Error accessing microphone:", err);
+      toast.error(err.response.data.message)
+    }
+  };
+
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+    }
+  };
+
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+    }
+  };
+
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsPaused(false);
+    }
+  }
+
+  // delete message
+
+  const deleteUserMessage = async (id: number) => {
+    if (!id) {
+      toast.error('Id Not Provided or This message already deleted !')
+      return
+    }
+    try {
+      const { data } = await deleteMessage(id)
+      if (data.success) {
+        setSpeRoomConv((prev: any) => prev.filter((msg: any) => msg.id !== id));
+        toast.success("Message deleted successfully");
+      }
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
+  // formate time
+
   function formatTimeAgo(dateString: any) {
     const date = new Date(dateString);
     const now = new Date();
@@ -309,6 +439,15 @@ const Chat = () => {
       year: "numeric",
     });
   }
+
+
+  const formatMessageTimeInConversation = (dateString: any) => {
+
+    const date = new Date(dateString);
+    if (isToday(date)) return format(date, 'hh:mm a');
+    if (isYesterday(date)) return `Yesterday, ${format(date, 'hh:mm a')}`;
+    return format(date, 'dd MMM, hh:mm a');
+  };
 
 
   return (
@@ -508,111 +647,6 @@ const Chat = () => {
                             }
 
                           </ul></> : <>
-                          {/* <h5 className="mb-3">Pinned Chat</h5> */}
-                          {/* /Left Chat Title */}
-                          {/* <ul className="mb-3">
-                            <li className="user-list-item">
-                              <Link
-                                to="#"
-                                className="p-2 border rounded d-block mb-2"
-                              >
-                                <div className="d-flex align-items-center">
-                                  <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                    <ImageWithBasePath
-                                      src="assets/img/profiles/avatar-02.jpg"
-                                      className="rounded-circle"
-                                      alt="image"
-                                    />
-                                  </div>
-                                  <div className="flex-grow-1 overflow-hidden me-2">
-                                    <h6 className="mb-1 text-truncate">
-                                      Mark Villiams
-                                    </h6>
-                                    <p className="text-truncate">
-                                      Have you called them?
-                                    </p>
-                                  </div>
-                                  <div className="flex-shrink-0 align-self-start text-end">
-                                    <small className="text-muted">
-                                      10:20 PM
-                                    </small>
-                                    <div className="chat-pin">
-                                      <i className="bx bx-pin me-2" />
-                                      <i className="bx bx-check-double" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </Link>
-                            </li>
-                            <li className="user-list-item">
-                              <Link
-                                to="#"
-                                className="p-2 border rounded d-block mb-2"
-                              >
-                                <div className="d-flex align-items-center">
-                                  <div className="avatar  avatar-lg me-2 flex-shrink-0">
-                                    <ImageWithBasePath
-                                      src="assets/img/profiles/avatar-01.jpg"
-                                      className="rounded-circle"
-                                      alt="image"
-                                    />
-                                  </div>
-                                  <div className="flex-grow-1 overflow-hidden me-2">
-                                    <h6 className="mb-1 text-truncate">
-                                      Elizabeth Sosa
-                                    </h6>
-                                    <p className="text-truncate">
-                                      <span className="animate-typing-col me-1">
-                                        Typing
-                                        <span className="dot me-1 ms-1" />
-                                        <span className="dot me-1" />
-                                        <span className="dot" />
-                                      </span>
-                                    </p>
-                                  </div>
-                                  <div className="flex-shrink-0 align-self-start text-end">
-                                    <small className="text-muted">
-                                      Yesterday
-                                    </small>
-                                    <div className="chat-pin">
-                                      <i className="bx bx-pin me-2" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </Link>
-                            </li>
-                            <li className="user-list-item">
-                              <Link
-                                to="#"
-                                className="p-2 border rounded d-block mb-2"
-                              >
-                                <div className="d-flex align-items-center">
-                                  <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                    <ImageWithBasePath
-                                      src="assets/img/profiles/avatar-05.jpg"
-                                      className="rounded-circle"
-                                      alt="image"
-                                    />
-                                  </div>
-                                  <div className="flex-grow-1 overflow-hidden me-2">
-                                    <h6 className="mb-1 text-truncate">
-                                      Michael Howard
-                                    </h6>
-                                    <p className="text-truncate">Thank you</p>
-                                  </div>
-                                  <div className="flex-shrink-0 align-self-start text-end">
-                                    <small className="text-muted">
-                                      10:20 PM
-                                    </small>
-                                    <div>
-                                      <i className="bx bx-pin me-2" />
-                                      <i className="bx bx-check-double" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </Link>
-                            </li>
-                          </ul> */}
                           {/* Left Chat Title */}
                           {
                             loading1 ? <Spinner /> : (<>
@@ -623,7 +657,7 @@ const Chat = () => {
                                 allConversationUser && allConversationUser.map((u: any) => (
                                   <ul className="user-list">
 
-                                    <li key={u.conversation_id} onClick={() => fetchSpeRoomConv(u.conversation_id)} className="user-list-item">
+                                    <li key={u.conversation_id} onClick={() => fetchSpeRoomConv(u.conversation_id, u.other_user_id)} className="user-list-item">
                                       <div
 
                                         className="p-2 border rounded d-block mb-2"
@@ -647,203 +681,16 @@ const Chat = () => {
                                           </div>
                                           <div className="flex-shrink-0 align-self-start text-end">
                                             <small className="text-muted">
-                                              {formatTimeAgo(u.last_message_time)}
+                                              {u.last_message_time ? formatTimeAgo(u.last_message_time) : ""}
                                             </small>
                                             <div>
-                                              <i className="bx bx-check-double" />
+                                              {/* <i className="bx bx-check-double" /> */}
                                             </div>
                                           </div>
                                         </div>
                                       </div>
                                     </li>
-                                    {/* <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-03.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              Horace Keene
-                                            </h6>
-                                            <p className="text-truncate">
-                                              Have you called them?
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              Just Now
-                                            </small>
-                                            <div>
-                                              <span className="badge bg-primary rounded-circle p-1 fs-8">
-                                                11
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li> */}
-                                    {/* <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-15.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              James Albert
-                                            </h6>
-                                            <p className="text-truncate">
-                                              Project Tools.doc
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              10:20 PM
-                                            </small>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li>
-                                    <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-09.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              Debra Jones
-                                            </h6>
-                                            <p className="text-truncate">
-                                              <i className="bx bx-microphone me-1" />
-                                              Audio
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              12:30 PM
-                                            </small>
-                                            <div>
-                                              <i className="bx bx-check-double text-success" />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li>
-                                    <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg  me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-07.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              Dina Brown
-                                            </h6>
-                                            <p className="text-truncate">
-                                              Have you called them?
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              Yesterday
-                                            </small>
-                                            <div>
-                                              <i className="bx bx-microphone-off" />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li>
-                                    <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg  me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-08.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              Judy Mercer
-                                            </h6>
-                                            <p className="text-truncate text-danger">
-                                              <i className="bx bx-phone-incoming me-1" />
-                                              Missed Call
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              25/July/23
-                                            </small>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li>
-                                    <li className="user-list-item">
-                                      <Link
-                                        to="#"
-                                        className="p-2 border rounded d-block mb-2"
-                                      >
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg  me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-06.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
-                                          </div>
-                                          <div className="flex-grow-1 overflow-hidden me-2">
-                                            <h6 className="mb-1 text-truncate">
-                                              Richard Ohare
-                                            </h6>
-                                            <p className="text-truncate">
-                                              <i className="bx bx-image-alt me-1" />
-                                              Photo
-                                            </p>
-                                          </div>
-                                          <div className="flex-shrink-0 align-self-start text-end">
-                                            <small className="text-muted">
-                                              27/06/24
-                                            </small>
-                                          </div>
-                                        </div>
-                                      </Link>
-                                    </li> */}
+
                                   </ul>
                                 ))
                               }
@@ -888,9 +735,9 @@ const Chat = () => {
                           />
                         </div>
                         <div>
-                          <h6>Mark Villiams</h6>
+                          <h6>{otherUser ? otherUser.name : "Select User"}</h6>
                           <small className="last-seen">
-                            Last Seen at 07:15 PM
+                            {otherUser.is_online == 1 ? 'Online' : `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`}
                           </small>
                         </div>
                       </div>
@@ -1040,13 +887,15 @@ const Chat = () => {
                       <div className="messages">
                         {
                           loading2 ? <Spinner /> : (
-                            speRoomConv && speRoomConv.map((m: any) => (
 
+                            speRoomConv.length == 0 ? <div className="d-flex align-items-center">
+                              start chat
+                            </div> : (speRoomConv && speRoomConv.map((m: any) => (
                               m.sender_id === currentUserId ? <> <div className="chats chats-right">
                                 <div className="chat-content">
                                   <div className="chat-profile-name text-end">
                                     <h6>
-                                      {m.name}<span>{formatTimeAgo(m.created_at)}</span>
+                                      {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
                                     </h6>
                                     <div className="chat-action-btns ms-3">
                                       <div className="chat-action-col">
@@ -1107,23 +956,30 @@ const Chat = () => {
                                             </span>
                                             Report
                                           </Link>
-                                          <Link
-                                            to="#"
+                                          <button
+
+                                            onClick={() => deleteUserMessage(m.id)}
                                             className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete-message"
+                                          // data-bs-toggle="modal"
+                                          // data-bs-target="#delete-message"
                                           >
                                             <span>
                                               <i className="bx bx-trash" />
                                             </span>
                                             Delete
-                                          </Link>
+                                          </button>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                   <div className="message-content ">
-                                    {m.message_text}
+                                    {m.message_type == 'text' && (<span>  {m.message_text}</span>)}
+                                    {m.message_type === 'audio' && (
+                                      <audio controls preload="auto" src={`${Audiourl}/${m.file_url}`}>
+                                        Your browser does not support the audio element.
+                                      </audio>
+                                    )}
+
                                     <div className="emoj-group rig-emoji-group">
                                       <ul>
                                         <li className="emoj-action">
@@ -1235,7 +1091,7 @@ const Chat = () => {
                                 <div className="chat-content">
                                   <div className="chat-profile-name">
                                     <h6>
-                                      {m.name}<span>{formatTimeAgo(m.created_at)}</span>
+                                      {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
                                     </h6>
                                     <div className="chat-action-btns ms-3">
                                       <div className="chat-action-col">
@@ -1296,7 +1152,7 @@ const Chat = () => {
                                             </span>
                                             Report
                                           </Link>
-                                          <Link
+                                          {/* <Link
                                             to="#"
                                             className="dropdown-item"
                                             data-bs-toggle="modal"
@@ -1306,13 +1162,21 @@ const Chat = () => {
                                               <i className="bx bx-trash" />
                                             </span>
                                             Delete
-                                          </Link>
+                                          </Link> */}
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                   <div className="message-content">
-                                    {m.message_text}
+
+                                   {m.message_type == 'text' && (<span>  {m.message_text}</span>)}
+                                    {m.message_type === 'audio' && (
+                                      <audio controls preload="auto" src={`${Audiourl}/${m.file_url}`}>
+                                        Your browser does not support the audio element.
+                                      </audio>
+                                    )}
+
+
                                     <div className="emoj-group">
                                       <ul>
                                         <li className="emoj-action">
@@ -1385,13 +1249,15 @@ const Chat = () => {
                                     </div>
                                   </div>
                                 </div>
-                              </div></>
+                              </div>
+                              </>
 
-                            ))
+                            )))
                           )
                         }
 
-                        <div className="chats">
+
+                        {/* <div className="chats">
                           <div className="chat-avatar">
                             <ImageWithBasePath
                               src="assets/img/profiles/avatar-02.jpg"
@@ -2608,7 +2474,8 @@ const Chat = () => {
                               Thank you for your support
                             </div>
                           </div>
-                        </div>
+                        </div> */}
+
                       </div>
                     </div>
                   </PerfectScrollbar>
@@ -2625,43 +2492,28 @@ const Chat = () => {
                           >
                             <i className="bx bx-dots-vertical-rounded" />
                           </Link>
-                          <div className="dropdown-menu dropdown-menu-end">
-                            <Link to="#" className="dropdown-item ">
+                          <div className="dropdown-menu dropdown-menu-start">
+                            <div className="dropdown-item ">
                               <span>
                                 <i className="bx bx-file" />
                               </span>
-                              Document
-                            </Link>
-                            <Link to="#" className="dropdown-item">
-                              <span>
-                                <i className="bx bx-camera" />
-                              </span>
-                              Camera
-                            </Link>
-                            <Link to="#" className="dropdown-item">
+                              <label htmlFor="doc">Document</label>
+
+                              <input type="file" name="doc" id="doc" accept="applcation/pdf" className="d-none" />
+
+
+                            </div>
+
+                            <div className="dropdown-item ">
                               <span>
                                 <i className="bx bx-image" />
                               </span>
-                              Gallery
-                            </Link>
-                            <Link to="#" className="dropdown-item">
-                              <span>
-                                <i className="bx bx-volume-full" />
-                              </span>
-                              Audio
-                            </Link>
-                            <Link to="#" className="dropdown-item">
-                              <span>
-                                <i className="bx bx-map" />
-                              </span>
-                              Location
-                            </Link>
-                            <Link to="#" className="dropdown-item">
-                              <span>
-                                <i className="bx bx-user-pin" />
-                              </span>
-                              Contact
-                            </Link>
+                              <label htmlFor="img">Image</label>
+
+                              <input type="file" name="img" id="img" accept="image/*" className="d-none" />
+
+
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2729,9 +2581,31 @@ const Chat = () => {
                       </div>
                     </div>
                     <div className="smile-foot">
-                      <Link to="#" className="action-circle">
-                        <i className="bx bx-microphone-off" />
-                      </Link>
+                      <div className="d-flex align-items-center justify-content-center gap-1">
+                        {!isRecording ? (
+                          <CiMicrophoneOn size={25} onClick={startRecording} />
+                        ) : (
+                          <>
+                            {!isPaused ? (
+                              <CiPause1 size={25} onClick={pauseRecording} />
+                            ) : (
+                              <GrResume size={25} onClick={resumeRecording} />
+                            )}
+
+                            <FaStopCircle onClick={stopRecording} size={25} />
+                          </>
+                        )}
+
+                        {isRecording && (<p >{formatTime(recordTime)}</p>)}
+
+
+                        {/* {audioURL && (
+                          <div >
+                            <h4>Preview</h4>
+                            <audio controls src={audioURL}></audio>
+                          </div>
+                        )} */}
+                      </div>
                     </div>
                     <input
                       onChange={(e) => setMessage(e.target.value)}
@@ -2742,7 +2616,7 @@ const Chat = () => {
                     />
                     <div className="form-buttons">
                       <button className="btn send-btn" type="submit">
-                        {loading3?<>sending...</>:( <i className="bx bx-paper-plane" /> )}
+                        {loading3 ? <>sending...</> : (<i className="bx bx-paper-plane" />)}
                       </button>
                     </div>
                   </form>

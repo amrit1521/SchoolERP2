@@ -2,7 +2,8 @@ const db = require('../../config/db');
 
 // ✅ Get all messages in a conversation
 exports.getMessages = async (req, res) => {
-  const { conversationId } = req.params;
+  const { conversationId, userId } = req.params;
+  console.log(userId)
   try {
     const [rows] = await db.query(
       `SELECT 
@@ -15,10 +16,19 @@ exports.getMessages = async (req, res) => {
       [conversationId]
     );
 
+    const [userData] = await db.query(
+      `
+        SELECT CONCAT(firstname, " ",lastname) AS name , last_seen , is_online FROM users WHERE id = ?
+      `, [userId]
+    )
+
+
+
     return res.json({
       success: true,
       message: 'Messages fetched successfully.',
       data: rows,
+      userData: userData[0]
     });
   } catch (err) {
     console.error('getMessages Error:', err);
@@ -32,78 +42,74 @@ exports.getMessages = async (req, res) => {
 
 // ✅ Send a text / image / voice message
 exports.sendMessage = async (req, res) => {
-
-  console.log(req.body)
   try {
-    const {
-      conversation_id,
-      sender_id,
-      message_text,
-      message_type = 'text',
-      file_url = null,
-    } = req.body;
+    const { conversation_id, sender_id, message_text, message_type = 'text', file_url = null } = req.body;
+    if (!conversation_id || !sender_id)
+      return res.status(400).json({ success: false, message: 'conversation_id and sender_id required' });
 
-    // Insert new message
     const [result] = await db.query(
-      `INSERT INTO messages 
-        (conversation_id, sender_id, message_text, message_type, file_url)
+      `INSERT INTO messages (conversation_id, sender_id, message_text, message_type, file_url)
        VALUES (?, ?, ?, ?, ?)`,
       [conversation_id, sender_id, message_text, message_type, file_url]
     );
 
-    const messageId = result.insertId;
-
-    // Fetch message details with sender info
     const [rows] = await db.query(
-      `SELECT 
-        m.*, 
-        u.firstname, 
-        u.lastname 
+      `SELECT m.*, u.firstname, u.lastname 
        FROM messages m 
        JOIN users u ON m.sender_id = u.id 
        WHERE m.id = ?`,
-      [messageId]
+      [result.insertId]
     );
 
     const messageRow = rows[0];
-
-    // Emit message via Socket.IO
     const io = req.app.get('io');
-    if (io) {
-      const room = `conversation_${conversation_id}`;
-      io.to(room).emit('new_message', messageRow);
-    }
+    if (io) io.to(`conversation_${conversation_id}`).emit('new_message', messageRow);
 
-    return res.json({
-      success: true,
-      message: 'Message sent successfully.',
-      data: messageRow,
-    });
+    res.json({ success: true, message: 'Message sent successfully.', data: messageRow });
   } catch (err) {
     console.error('sendMessage Error:', err);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error while sending message.',
-      error: err.message,
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
 // ✅ Send message with file (image, video, pdf, etc.)
 exports.sendFileMessage = async (req, res) => {
   try {
-    const { conversation_id, sender_id, message_type = 'file' } = req.body;
+    const { conversation_id, sender_id } = req.body;
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({
         success: false,
-        message: 'File is required.',
+        message: "File is required.",
       });
     }
 
-    const fileUrl = `/api/stu/uploads/image/${file.filename}`;
+    // 🧩 Determine folder and message_type dynamically
+    let folder = "others";
+    let message_type = "file"; // default
 
+    if (file.mimetype.startsWith("image/")) {
+      folder = "image";
+      message_type = "image";
+    } else if (file.mimetype.startsWith("video/")) {
+      folder = "video";
+      message_type = "video";
+    } else if (file.mimetype.startsWith("audio/")) {
+      folder = "audio";
+      message_type = "audio";
+    } else if (
+      file.mimetype === "application/pdf" ||
+      file.mimetype.includes("document")
+    ) {
+      folder = "document";
+      message_type = "document";
+    }
+
+    // ✅ Construct public file URL
+    const fileUrl = `${file.filename}`;
+
+    // 🧠 Save message in DB
     const [result] = await db.query(
       `INSERT INTO messages 
         (conversation_id, sender_id, message_text, message_type, file_url) 
@@ -111,11 +117,12 @@ exports.sendFileMessage = async (req, res) => {
       [conversation_id, sender_id, file.originalname, message_type, fileUrl]
     );
 
+    // 🔍 Fetch full message with sender info
     const [rows] = await db.query(
       `SELECT 
-        m.*, 
-        u.firstname, 
-        u.lastname 
+          m.*, 
+          u.firstname, 
+          u.lastname 
        FROM messages m 
        JOIN users u ON m.sender_id = u.id 
        WHERE m.id = ?`,
@@ -124,26 +131,27 @@ exports.sendFileMessage = async (req, res) => {
 
     const messageRow = rows[0];
 
-    const io = req.app.get('io');
+    // 🚀 Real-time broadcast using Socket.io
+    const io = req.app.get("io");
     if (io) {
-      io.to(`conversation_${conversation_id}`).emit('new_message', messageRow);
+      io.to(`conversation_${conversation_id}`).emit("new_message", messageRow);
     }
 
+    // ✅ Send response
     return res.json({
       success: true,
-      message: 'File message sent successfully.',
+      message: "File message sent successfully.",
       data: messageRow,
     });
   } catch (err) {
-    console.error('sendFileMessage Error:', err);
+    console.error("sendFileMessage Error:", err);
     return res.status(500).json({
       success: false,
-      message: 'Server error while sending file message.',
+      message: "Server error while sending file message.",
       error: err.message,
     });
   }
 };
-
 
 
 exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
@@ -229,6 +237,43 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
     });
   }
 };
+
+// ✅ Delete a message
+exports.deleteMessage = async (req, res) => {
+  const { messageId } = req.params;
+
+  try {
+    const [message] = await db.query(`SELECT * FROM messages WHERE id = ?`, [messageId]);
+    if (message.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found.',
+      });
+    }
+    const messageData = message[0];
+    await db.query(`DELETE FROM messages WHERE id = ?`, [messageId]);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`conversation_${messageData.conversation_id}`).emit('message_deleted', {
+        messageId: messageId,
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: 'Message deleted successfully.',
+      deletedMessageId: messageId,
+    });
+  } catch (err) {
+    console.error('deleteMessage Error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while deleting message.',
+      error: err.message,
+    });
+  }
+};
+
 
 
 

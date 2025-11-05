@@ -19,6 +19,7 @@ app.use(cors({
 
 app.use(express.json());
 
+app.use('/api/chat/uploads/audio', express.static(path.join(__dirname, 'uploads/audio')));
 // for image
 app.use('/api/stu/uploads/image', express.static(path.join(__dirname, 'uploads/image')))
 
@@ -73,7 +74,7 @@ const io = new Server(server , {
     credentials: true
   },
 })
-
+app.set('io' ,io)
 require('./socket/socketHandler')(io)
 
 

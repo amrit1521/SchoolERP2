@@ -2,14 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const messageController = require('../../Controller/chat/messageController');
-const upload = require('../../multer/multer');
+const upload = require('../../multer/multerForChat');
 
 
 // get messages of a conversation
-router.get('/specoversation/:conversationId', messageController.getMessages);
+router.get('/specoversation/:conversationId/:userId', messageController.getMessages);
 router.get('/allcoversation/:userId', messageController.getLastMessageAllConverationForSpecficUser);
 router.post('/send', messageController.sendMessage);
-// endpoint for file upload + message send
 router.post('/send-file', upload.single('chatfile'), messageController.sendFileMessage);
+router.delete('/delmessage/:messageId', messageController.deleteMessage)
 
 module.exports = router;
