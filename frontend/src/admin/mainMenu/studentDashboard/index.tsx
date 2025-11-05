@@ -19,6 +19,7 @@ import {
   getSpecStudentAttendance,
   getSpecUpcommingEvents,
   getStuByToken,
+  getStudentFeeReminder,
   getStudentHomework,
   Imageurl,
 } from "../../../service/api";
@@ -292,6 +293,7 @@ const StudentDasboard = () => {
   const [selectedExamType, setSelectedExamType] = useState<any>(null);
   const [examResult, setExamResult] = useState<any>(null);
   const [filteredExamResult, setFilteredExamResult] = useState<any>(null);
+  const [feeReminder, setFeeReminder] = useState<any[]>([]);
   const fetchStudentAttendance = async (rollNo: number) => {
     try {
       const { data } = await getSpecStudentAttendance(rollNo);
@@ -392,7 +394,6 @@ const StudentDasboard = () => {
       const { data } = await getExamResult(rollNum);
 
       if (data?.success) {
-        console.log("student exam result data: ", data.data);
         const studentData = data.data[0];
         setExamResult(studentData);
         const selectedLabel =
@@ -420,7 +421,6 @@ const StudentDasboard = () => {
               result?.subjects?.map((sub: any) => sub.subject_name) || [],
           },
         }));
-        console.log("filtered exam result:", result);
         setFilteredExamResult(result || []);
       } else {
         console.warn("Failed to fetch exam result data");
@@ -447,6 +447,21 @@ const StudentDasboard = () => {
       }
     } catch (error) {
       console.error("Error fetching exams:", error);
+    }
+  };
+
+  const fetchFeeReminder = async (rollNum: number) => {
+    try {
+      const { data } = await getStudentFeeReminder(rollNum);
+      if (data?.success) {
+        console.log("fee reminder: ", data.data);
+        setFeeReminder(data.data);
+      } else {
+        console.warn("Failed to fetch fee reminder data");
+        setFeeReminder([]);
+      }
+    } catch (error) {
+      console.error("Error fetching fee reminder data:", error);
     }
   };
 
@@ -492,6 +507,7 @@ const StudentDasboard = () => {
       fetchLeave(student?.rollnum);
       fetchHomeWork(student?.class_id, student?.section_id);
       fetchExamOptions(student?.class_id, student?.section_id);
+      fetchFeeReminder(student?.rollnum);
     }
   }, [student]);
   console.log("selectedExam: ", filteredExamResult);
@@ -768,58 +784,6 @@ const StudentDasboard = () => {
                             height={255}
                           />
                         </div>
-                        {/* <div className="bg-light-300 rounded border p-3 mb-0">
-                          <div className="d-flex align-items-center justify-content-between flex-wrap mb-1">
-                            <h6 className="mb-2">Last 7 Days </h6>
-                            <p className="fs-12 mb-2">
-                              14 May 2024 - 21 May 2024
-                            </p>
-                          </div>
-                          <div className="d-flex align-items-center rounded gap-1 flex-wrap">
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-success text-white"
-                            >
-                              M
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-success text-white"
-                            >
-                              T
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-success text-white"
-                            >
-                              W
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-success text-white"
-                            >
-                              T
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-danger text-white"
-                            >
-                              F
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg bg-white border text-default"
-                            >
-                              S
-                            </Link>
-                            <Link
-                              to="#"
-                              className="badge badge-lg  bg-white border text-gray-1"
-                            >
-                              S
-                            </Link>
-                          </div>
-                        </div> */}
                       </div>
                     </div>
                   </div>
@@ -1444,7 +1408,10 @@ const StudentDasboard = () => {
                     </ul>
                   </div>
                 </div>
-                <div className="card-body">
+                <div
+                  className="card-body"
+                  style={{ maxHeight: "450px", overflowY: "auto" }}
+                >
                   {leaveData
                     ? leaveData?.map((leave: any, index: number) => {
                         return (
@@ -1511,15 +1478,6 @@ const StudentDasboard = () => {
                           );
                         })
                       : ""}
-                    {/* <span className="badge badge-soft-success badge-md me-1 mb-3">
-                      Phy: 92
-                    </span>
-                    <span className="badge badge-soft-warning badge-md me-1 mb-3">
-                      Che : 90
-                    </span>
-                    <span className="badge badge-soft-danger badge-md mb-3">
-                      Eng : 80
-                    </span> */}
                   </div>
                   <ReactApexChart
                     id="exam-result-chart"
@@ -1544,88 +1502,40 @@ const StudentDasboard = () => {
                     View All
                   </Link>
                 </div>
-                <div className="card-body py-1">
-                  <div className="d-flex align-items-center justify-content-between py-3">
-                    <div className="d-flex align-items-center overflow-hidden me-2">
-                      <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                        <i className="ti ti-bus-stop fs-16" />
-                      </span>
-                      <div className="overflow-hidden">
-                        <h6 className="text-truncate mb-1">Transport Fees</h6>
-                        <p>$2500</p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h6 className="mb-1">Last Date</h6>
-                      <p>25 May 2024</p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between py-3">
-                    <div className="d-flex align-items-center overflow-hidden me-2">
-                      <span className="bg-success-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                        <i className="ti ti-books fs-16" />
-                      </span>
-                      <div className="overflow-hidden">
-                        <h6 className="text-truncate mb-1">Book Fees</h6>
-                        <p>$2500</p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h6 className="mb-1">Last Date</h6>
-                      <p>25 May 2024</p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between py-3">
-                    <div className="d-flex align-items-center overflow-hidden me-2">
-                      <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                        <i className="ti ti-report-money fs-16" />
-                      </span>
-                      <div className="overflow-hidden">
-                        <h6 className="text-truncate mb-1">Exam Fees</h6>
-                        <p>$2500</p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h6 className="mb-1">Last Date</h6>
-                      <p>25 May 2024</p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between py-3">
-                    <div className="d-flex align-items-center overflow-hidden me-2">
-                      <span className="bg-skyblue-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                        <i className="ti ti-meat fs-16" />
-                      </span>
-                      <div className="overflow-hidden">
-                        <h6 className="text-truncate mb-1">
-                          Mess Fees{" "}
-                          <span className="d-inline-flex align-items-center badge badge-soft-danger">
-                            <i className="ti ti-circle-filled me-1 fs-5" />
-                            Due
-                          </span>
-                        </h6>
-                        <p className="text-danger">$2500 + $150</p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h6 className="mb-1">Last Date</h6>
-                      <p>27 May 2024</p>
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between py-3">
-                    <div className="d-flex align-items-center overflow-hidden me-2">
-                      <span className="bg-danger-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                        <i className="ti ti-report-money fs-16" />
-                      </span>
-                      <div className="overflow-hidden">
-                        <h6 className="text-truncate mb-1">Hostel</h6>
-                        <p>$2500</p>
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <h6 className="mb-1">Last Date</h6>
-                      <p>25 May 2024</p>
-                    </div>
-                  </div>
+                <div
+                  className="card-body py-1"
+                  style={{ maxHeight: "450px", overflowY: "auto" }}
+                >
+                  {feeReminder
+                    ? feeReminder.map((reminder: any, index: number) => {
+                        return (
+                          <div
+                            className="d-flex align-items-center justify-content-between py-3"
+                            key={index}
+                          >
+                            <div className="d-flex align-items-center overflow-hidden me-2">
+                              <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
+                                <i className="ti ti-bus-stop fs-16" />
+                              </span>
+                              <div className="overflow-hidden">
+                                <h6 className="text-truncate mb-1">
+                                  {reminder?.fee_type}
+                                </h6>
+                                <p>{reminder?.AmountPay}</p>
+                              </div>
+                            </div>
+                            <div className="text-end">
+                              <h6 className="mb-1">Last Date</h6>
+                              <p>
+                                {dayjs(reminder?.collectionDate).format(
+                                  "D MMM YYYY"
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    : ""}
                 </div>
               </div>
             </div>
