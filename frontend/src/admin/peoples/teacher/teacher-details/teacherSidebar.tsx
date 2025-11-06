@@ -9,8 +9,6 @@ type Props = {
 };
 
 const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
-
- 
   return (
     <div className="col-xxl-3 col-xl-4 theiaStickySidebar">
       {loading ? (
@@ -124,14 +122,14 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
             <div className="card-body">
               <h5 className="mb-3">Basic Information</h5>
               <dl className="row mb-0">
-                <dt className="col-6 fw-medium text-dark mb-3">
-                  Class Range
-                </dt>
+                <dt className="col-6 fw-medium text-dark mb-3">Class Range</dt>
                 <dd className="col-6 mb-3 text-uppercase">{`${teacher.fromclass} To ${teacher.toclass}`}</dd>
                 <dt className="col-6 fw-medium text-dark mb-3">
                   Class & Section
                 </dt>
-                <dd className="col-6 mb-3 text-uppercase">{teacher.class}-{teacher.section}</dd>
+                <dd className="col-6 mb-3 text-uppercase">
+                  {teacher.class}-{teacher.section}
+                </dd>
                 <dt className="col-6 fw-medium text-dark mb-3">Subject</dt>
                 <dd className="col-6 mb-3">{teacher.subject}</dd>
                 <dt className="col-6 fw-medium text-dark mb-3">Gender</dt>
@@ -142,7 +140,7 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
                 <dd className="col-6 mb-0">
                   {teacher.lan_known && (
                     <span className="badge badge-light text-dark me-2">
-                      {JSON.parse(teacher.lan_known).join(',')}
+                      {JSON.parse(teacher.lan_known).join(",")}
                     </span>
                   )}
                 </dd>
@@ -168,7 +166,9 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
                   <i className="ti ti-mail" />
                 </span>
                 <div>
-                  <span className="text-dark fw-medium mb-1">Email Address</span>
+                  <span className="text-dark fw-medium mb-1">
+                    Email Address
+                  </span>
                   <p>{teacher.email}</p>
                 </div>
               </div>
@@ -180,12 +180,20 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
             <div className="card-body pb-1">
               <ul className="nav nav-tabs nav-tabs-bottom mb-3">
                 <li className="nav-item">
-                  <Link className="nav-link active" to="#hostel" data-bs-toggle="tab">
+                  <Link
+                    className="nav-link active"
+                    to="#hostel"
+                    data-bs-toggle="tab"
+                  >
                     Hostel
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="#transport" data-bs-toggle="tab">
+                  <Link
+                    className="nav-link"
+                    to="#transport"
+                    data-bs-toggle="tab"
+                  >
                     Transportation
                   </Link>
                 </li>
@@ -197,8 +205,10 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
                       <i className="ti ti-building-fortress fs-16" />
                     </span>
                     <div>
-                      <h6 className="fs-14 mb-1">{teacher.hostel}</h6>
-                      <p className="text-primary">Room No : {teacher.room_num}</p>
+                      <h6 className="fs-14 mb-1">{teacher.hostel_name}</h6>
+                      <p className="text-primary">
+                        Room No : {teacher.hostel_room_number}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -209,20 +219,20 @@ const TeacherSidebar: React.FC<Props> = ({ teacher, loading }) => {
                     </span>
                     <div>
                       <span className="fs-12 mb-1">Route</span>
-                      <p className="text-dark">{teacher.route}</p>
+                      <p className="text-dark">{teacher.route_name}</p>
                     </div>
                   </div>
                   <div className="row">
                     <div className="col-sm-6">
                       <div className="mb-3">
                         <span className="fs-12 mb-1">Bus Number</span>
-                        <p className="text-dark">{teacher.vehicle_num}</p>
+                        <p className="text-dark">{teacher.vehical_number}</p>
                       </div>
                     </div>
                     <div className="col-sm-6">
                       <div className="mb-3">
                         <span className="fs-12 mb-1">Pickup Point</span>
-                        <p className="text-dark">{teacher.pickup_point}</p>
+                        <p className="text-dark">{teacher.pickup_pointName}</p>
                       </div>
                     </div>
                   </div>

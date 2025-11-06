@@ -421,6 +421,39 @@ exports.getHostelRooms = async (req, res) => {
   }
 };
 
+exports.getAllRoomsForAHostel = async (req, res) => {
+  const {id} = req.params;
+   if(!id){
+    return res.status(200).json({
+      message: "hostel Id not passed.",
+      success: false,
+    });
+  }
+  try {
+    const sql = `SELECT 
+         hr.id,
+         hr.room_num AS roomNo,
+         hr.hostel_id as hostel_id
+       FROM hostel_room hr
+       where hr.hostel_id=?
+       ORDER BY hr.id DESC;`;
+    const [rows] = await db.query(
+      sql,[id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching hostel rooms:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
 
 exports.getHostelRoomById = async (req, res) => {
   const { id } = req.params;

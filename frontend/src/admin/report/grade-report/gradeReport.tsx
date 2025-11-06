@@ -1,22 +1,260 @@
-
 import { Link } from "react-router-dom";
 import Table from "../../../core/common/dataTable/index";
-import { grade_report_data } from "../../../core/data/json/grade_report_data";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { all_routes } from "../../router/all_routes";
 import type { TableData } from "../../../core/data/interface";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
-import {
-  classes,
-  examtwo,
-  sections,
-} from "../../../core/common/selectoption/selectoption";
 import TooltipOption from "../../../core/common/tooltipOption";
+import { toast } from "react-toastify";
+import { useEffect, useRef, useState } from "react";
+import { allRealClasses } from "../../../service/classApi";
+import {
+  examNameForOption,
+  getAllSectionForAClass,
+  getStudentExamResultEditList,
+  Imageurl,
+} from "../../../service/api";
+import { Spinner } from "../../../spinner";
+
+interface FilterData {
+  class: number | null;
+  section: number | null;
+  exam_type: number | null;
+}
+
+interface StudentExamResult {
+  admissionNo: string;
+  studentName: string;
+  total: number;
+  rollNo: number;
+  subjects: any[];
+  img: string;
+  percent: number;
+  grade: string;
+}
 
 const GradeReport = () => {
   const routes = all_routes;
-  const data = grade_report_data;
+  const [allClass, setAllClass] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [examOptions, setExamOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [allSections, setAllSections] = useState<any[]>([]);
+  const [studentExamDetails, setStudentExamDetails] = useState<
+    StudentExamResult[]
+  >([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
+  const fetchInitialResultData = async () => {
+    try {
+      setLoading(true);
+      const { data: classData } = await allRealClasses();
+      if (!classData.success || !Array.isArray(classData.data)) return;
+
+      for (const cls of classData.data) {
+        const { data: sectionData } = await getAllSectionForAClass(cls.id);
+        if (!sectionData.success || !Array.isArray(sectionData.data)) continue;
+
+        for (const sec of sectionData.data) {
+          const { data: examData } = await examNameForOption({
+            class: cls.id,
+            section: sec.id,
+          });
+          if (!examData.success || !Array.isArray(examData.data)) continue;
+
+          // Try each exam
+          for (const exam of examData.data) {
+            const filtred = {
+              className: cls.id,
+              section: sec.id,
+              examName: exam.id,
+            };
+            const { data: resultData } = await getStudentExamResultEditList(
+              filtred
+            );
+
+            if (
+              resultData.success &&
+              Array.isArray(resultData.data) &&
+              resultData.data.length > 0
+            ) {
+              setFilterData({
+                class: cls.id,
+                section: sec.id,
+                exam_type: exam.id,
+              });
+
+              setStudentExamDetails(
+                resultData.data.map((item: any) => ({
+                  admissionNo: item.admissionNum,
+                  studentName: item.name,
+                  total: item.totalObtained,
+                  rollNo: item.rollNum,
+                  subjects: item.subject,
+                  img: item.img,
+                  percent: item.percentage,
+                  grade: item.grade,
+                }))
+              );
+              setSubjects(resultData.data[0]?.subject || []);
+              setLoading(false);
+              return; // stop here once you find one valid dataset
+            }
+          }
+        }
+      }
+
+      toast.info("No exam results found yet!");
+      setLoading(false);
+    } catch (error) {
+      console.error("Error auto-fetching result data:", error);
+      toast.error("Error loading initial data!");
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    (async () => {
+      await fetchClasses();
+      await fetchInitialResultData();
+    })();
+  }, []);
+
+  // handle Filter:
+  const [filterData, setFilterData] = useState<FilterData>({
+    class: null,
+    section: null,
+    exam_type: null,
+  });
+  const [isApplyDisabled, setIsApplyDisabled] = useState(true);
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const fetchExamOptions = async (cls: number, section: number) => {
+    try {
+      const { data } = await examNameForOption({ class: cls, section });
+      if (data.success && Array.isArray(data.data)) {
+        setExamOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.examName }))
+        );
+      } else {
+        setExamOptions([]);
+        toast.warning("No exams found for this class & section.");
+      }
+    } catch (error) {
+      console.error("Error fetching exams:", error);
+      toast.error("Error fetching exam names!");
+    }
+  };
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        const { data } = await getAllSectionForAClass(id);
+        const options: any[] = [];
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          options.push(
+            ...data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+          setAllSections(options);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
+
+  const handleFilterSelectChange = (
+    name: keyof FilterData,
+    value: string | number | null
+  ) => {
+    setFilterData((prev) => {
+      const updated = { ...prev, [name]: value } as FilterData;
+      if (name === "section") {
+        updated.exam_type = null;
+        if (updated.class && updated.section) {
+          fetchExamOptions(updated.class, updated.section);
+        } else setExamOptions([]);
+      }
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    setIsApplyDisabled(!filterData.exam_type);
+  }, [filterData.exam_type]);
+
+  useEffect(() => {
+    if (filterData.class) {
+      fetchSections(filterData.class);
+    }
+  }, [filterData.class]);
+
+  const handleApplyClick = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!filterData.class || !filterData.section || !filterData.exam_type) {
+      toast.warning("Please select class, section, and exam type first!");
+      return;
+    }
+
+    try {
+      const filtred: any = {
+        className: filterData?.class,
+        section: filterData?.section,
+        examName: filterData?.exam_type,
+      };
+      console.log("filtred: ", filtred);
+      const { data } = await getStudentExamResultEditList(filtred);
+      if (data.success) {
+        console.log("result data: ", data);
+        setStudentExamDetails(
+          data.data.map((item: any) => ({
+            admissionNo: item.admissionNum,
+            studentName: item.name,
+            total: item.totalObtained,
+            rollNo: item.rollNum,
+            subjects: item.subject,
+            img: item.img,
+            percent: item.percentage,
+            grade: item.grade,
+          }))
+        );
+        const subjList = data.data[0]?.subject || [];
+        setSubjects(subjList);
+      }
+    } catch (error) {
+      console.error("Filter apply error:", error);
+      toast.error("Failed to apply filter!");
+    }
+  };
+
+  const handleResetFilter = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    setFilterData({ class: null, section: null, exam_type: null });
+    setExamOptions([]);
+    console.log(filterData);
+    setIsApplyDisabled(true);
+    dropdownMenuRef.current?.classList.remove("show");
+  };
+
   const columns = [
     {
       title: "Admission No",
@@ -39,10 +277,10 @@ const GradeReport = () => {
       render: (text: any, record: any) => (
         <div className="d-flex align-items-center">
           <Link to={routes.studentDetail} className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.avatar}
+            <img
+              src={`${Imageurl}/${record.img}`}
+              alt="avatar"
               className="img-fluid rounded-circle"
-              alt="img"
             />
           </Link>
           <div className="ms-2">
@@ -54,54 +292,17 @@ const GradeReport = () => {
         </div>
       ),
     },
-    {
-      title: "English",
-      dataIndex: "english",
-      key: "english",
-      sorter: (a: TableData, b: TableData) =>
-        a.english.length - b.english.length,
-    },
-    {
-      title: "Spanish",
-      dataIndex: "spanish",
-      key: "spanish",
-      sorter: (a: TableData, b: TableData) =>
-        a.spanish.length - b.spanish.length,
-    },
-    {
-      title: "Physics",
-      dataIndex: "physics",
-      key: "physics",
-      sorter: (a: TableData, b: TableData) =>
-        a.physics.length - b.physics.length,
-    },
-    {
-      title: "Chemistry",
-      dataIndex: "chemistry",
-      key: "chemistry",
-      sorter: (a: TableData, b: TableData) =>
-        a.chemistry.length - b.chemistry.length,
-    },
-    {
-      title: "Maths",
-      dataIndex: "maths",
-      key: "maths",
-      sorter: (a: TableData, b: TableData) => a.maths.length - b.maths.length,
-    },
-    {
-      title: "Computer",
-      dataIndex: "computer",
-      key: "computer",
-      sorter: (a: TableData, b: TableData) =>
-        a.computer.length - b.computer.length,
-    },
-    {
-      title: "Env Science",
-      dataIndex: "envScience",
-      key: "envScience",
-      sorter: (a: TableData, b: TableData) =>
-        a.envScience.length - b.envScience.length,
-    },
+    ...subjects.map((sub: any) => ({
+      title: sub?.subject_name,
+      dataIndex: sub?.subject_name?.toLowerCase(),
+      key: sub?.subject_name?.toLowerCase(),
+      render: (_: any, record: any) => {
+        const subjectMarks = record.subjects.find(
+          (subject: any) => subject.subject_id === sub.subject_id
+        );
+        return <span>{subjectMarks ? subjectMarks.mark_obtained : 0}</span>;
+      },
+    })),
     {
       title: "Total",
       dataIndex: "total",
@@ -153,7 +354,7 @@ const GradeReport = () => {
               </nav>
             </div>
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-             <TooltipOption />
+              <TooltipOption />
             </div>
           </div>
           {/* /Page Header */}
@@ -175,7 +376,10 @@ const GradeReport = () => {
                     <i className="ti ti-filter me-2" />
                     Filter
                   </Link>
-                  <div className="dropdown-menu drop-width">
+                  <div
+                    className="dropdown-menu drop-width"
+                    ref={dropdownMenuRef}
+                  >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
                         <h4>Filter</h4>
@@ -187,8 +391,14 @@ const GradeReport = () => {
                               <label className="form-label">Class</label>
                               <CommonSelect
                                 className="select"
-                                options={classes}
-                                defaultValue={classes[0]}
+                                options={allClass}
+                                value={filterData.class}
+                                onChange={(option) =>
+                                  handleFilterSelectChange(
+                                    "class",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
                             </div>
                           </div>
@@ -197,8 +407,14 @@ const GradeReport = () => {
                               <label className="form-label">Section</label>
                               <CommonSelect
                                 className="select"
-                                options={sections}
-                                defaultValue={sections[0]}
+                                options={allSections}
+                                value={filterData.section}
+                                onChange={(option) =>
+                                  handleFilterSelectChange(
+                                    "section",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
                             </div>
                           </div>
@@ -207,18 +423,33 @@ const GradeReport = () => {
                               <label className="form-label">Exam Type</label>
                               <CommonSelect
                                 className="select"
-                                options={examtwo}
-                                defaultValue={examtwo[0]}
+                                options={examOptions}
+                                value={filterData.exam_type}
+                                onChange={(option) =>
+                                  handleFilterSelectChange(
+                                    "exam_type",
+                                    option ? option.value : ""
+                                  )
+                                }
                               />
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="p-3 d-flex align-items-center justify-content-end">
-                        <Link to="#" className="btn btn-light me-3">
+                        <Link
+                          to="#"
+                          className="btn btn-light me-3"
+                          onClick={handleResetFilter}
+                        >
                           Reset
                         </Link>
-                        <button type="submit" className="btn btn-primary">
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          onClick={handleApplyClick}
+                          disabled={isApplyDisabled}
+                        >
                           Apply
                         </button>
                       </div>
@@ -261,7 +492,15 @@ const GradeReport = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={studentExamDetails}
+                  columns={columns}
+                  Selection={true}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

@@ -242,7 +242,7 @@ const Events = () => {
 
   const handleDeleteEvent = async (ids: string) => {
     try {
-      ids = JSON.parse(ids);
+      ids = ids;
       if (ids) {
         console.log("slectedEvent: ", ids);
         const { data } = await deleteEvent(ids);
@@ -765,7 +765,7 @@ const Events = () => {
               <h6>
                 {selectedEvent &&
                   selectedEvent.roles &&
-                  JSON.parse(selectedEvent.roles)
+                  selectedEvent.roles
                     .map((roleId: any) => {
                       const role: any = allRoles.find(
                         (r: any) => r.id === roleId

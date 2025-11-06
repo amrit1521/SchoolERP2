@@ -1,30 +1,78 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
-import CommonSelect from "../../../core/common/commonSelect";
+// import CommonSelect from "../../../core/common/commonSelect";
 import Table from "../../../core/common/dataTable/index";
-import {
-  allClass,
-  allSection,
-  date,
-} from "../../../core/common/selectoption/selectoption";
+// import {
+//   allClass,
+//   allSection,
+//   date,
+// } from "../../../core/common/selectoption/selectoption";
 
 import type { TableData } from "../../../core/data/interface";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { staffDayWiseData } from "../../../core/data/json/staff_day_wise";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import { staffDayWiseData } from "../../../core/data/json/staff_day_wise";
+import { dailyStaffAttendanceReport } from "../../../service/reports";
+import { toast } from "react-toastify";
+import { DatePicker } from "antd";
+import type { Dayjs } from "dayjs";
+import { Imageurl } from "../../../service/api";
+import { Spinner } from "../../../spinner";
+
+interface attendaceFormat {
+  key: number;
+  id: number;
+  img: string;
+  name: string;
+  department: string;
+  role: string;
+  attendance: string;
+}
 
 const StaffDayWise = () => {
   const routes = all_routes;
-
+  const [loading, setLoading] = useState<boolean>(false);
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  // const data = staffDayWiseData;
+  const [dailyStaffAttendance, setdailyStaffAttendance] = useState<
+    attendaceFormat[]
+  >([]);
+  const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
+  const fetchDailyAttendance = async (date?: any) => {
+    setLoading(true);
+    const { data } = await dailyStaffAttendanceReport(date ? date : new Date());
+    if (data.success) {
+      setdailyStaffAttendance(
+        data.data.map((attendance: any, index: number) => ({
+          key: index + 1,
+          id: attendance.staff_id,
+          img: attendance.img_src,
+          name: attendance.name,
+          department: attendance.department,
+          role: attendance.role,
+          attendance: attendance.attendance,
+        }))
+      );
+    }
+    setLoading(false);
+  };
+
   const handleApplyClick = () => {
+    if (!filter.date) {
+      toast.error("please select any valid date.");
+      return;
+    }
+    fetchDailyAttendance(filter.date);
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-  const data = staffDayWiseData;
+
+  useEffect(() => {
+    fetchDailyAttendance();
+  }, []);
 
   const columns = [
     {
@@ -44,8 +92,8 @@ const StaffDayWise = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -60,21 +108,29 @@ const StaffDayWise = () => {
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
     {
-        title: " Department",
-        dataIndex: "department",
-        sorter: (a: TableData, b: TableData) => a.department.length - b.department.length,
-      },
+      title: " Department",
+      dataIndex: "department",
+      sorter: (a: TableData, b: TableData) =>
+        a.department.length - b.department.length,
+    },
     {
-        title: " Role",
-        dataIndex: "role",
-        sorter: (a: TableData, b: TableData) => a.role.length - b.role.length,
-      },
+      title: " Role",
+      dataIndex: "role",
+      sorter: (a: TableData, b: TableData) => a.role.length - b.role.length,
+    },
     {
       title: " Attendance",
       dataIndex: "attendance",
       render: (text: string, record: any) => (
-        <span className={`${record.class} d-inline-flex align-items-center`}>
-          <i className="ti ti-circle-filled fs-5 me-1"></i>{text}
+        <span
+          className={`${
+            record.attendance == "Present"
+              ? "badge badge-soft-success"
+              : "badge badge-soft-danger"
+          } d-inline-flex align-items-center`}
+        >
+          <i className="ti ti-circle-filled fs-5 me-1"></i>
+          {text}
         </span>
       ),
       sorter: (a: TableData, b: TableData) =>
@@ -99,7 +155,7 @@ const StaffDayWise = () => {
                     <Link to="#">Report</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
-                  Staff Day Wise Report
+                    Staff Day Wise Report
                   </li>
                 </ol>
               </nav>
@@ -150,9 +206,7 @@ const StaffDayWise = () => {
                   <Link to={routes.dailyAttendance}>Daily Attendance</Link>
                 </li>
                 <li>
-                  <Link to={routes.studentDayWise}>
-                    Student Day Wise
-                  </Link>
+                  <Link to={routes.studentDayWise}>Student Day Wise</Link>
                 </li>
                 <li>
                   <Link to={routes.teacherDayWise}>Teacher Day Wise</Link>
@@ -161,7 +215,9 @@ const StaffDayWise = () => {
                   <Link to={routes.teacherReport}>Teacher Report</Link>
                 </li>
                 <li>
-                  <Link to={routes.staffDayWise} className="active">Staff Day Wise</Link>
+                  <Link to={routes.staffDayWise} className="active">
+                    Staff Day Wise
+                  </Link>
                 </li>
                 <li>
                   <Link to={routes.staffReport}>Staff Report</Link>
@@ -194,6 +250,7 @@ const StaffDayWise = () => {
                     className="dropdown-menu drop-width"
                     ref={dropdownMenuRef}
                     id="modal-datepicker"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
@@ -201,7 +258,7 @@ const StaffDayWise = () => {
                       </div>
                       <div className="p-3 border-bottom">
                         <div className="row">
-                          <div className="col-md-6">
+                          {/* <div className="col-md-6">
                             <div className="mb-3">
                               <label className="form-label">Class</label>
 
@@ -221,17 +278,24 @@ const StaffDayWise = () => {
                                 defaultValue={undefined}
                               />
                             </div>
-                          </div>
+                          </div> */}
                           <div className="col-md-12">
                             <div className="mb-3">
                               <label className="form-label">
                                 Attendance Date
                               </label>
 
-                              <CommonSelect
-                                className="select"
-                                options={date}
-                                defaultValue={undefined}
+                              <DatePicker
+                                className="form-control datetimepicker"
+                                format="DD MMM YYYY"
+                                placeholder="Select Date"
+                                onChange={(date: Dayjs | null) => {
+                                  setFilter({
+                                    date: date
+                                      ? date.format("YYYY-MM-DD")
+                                      : null,
+                                  });
+                                }}
                               />
                             </div>
                           </div>
@@ -288,7 +352,15 @@ const StaffDayWise = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table dataSource={data} columns={columns} Selection={false} />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={dailyStaffAttendance}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

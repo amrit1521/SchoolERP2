@@ -8,18 +8,14 @@ import type { TableData } from "../../../core/data/interface";
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
-import {
-  classSection,
-  classSylabus,
-  gender,
-  status,
-  studentName,
-} from "../../../core/common/selectoption/selectoption";
+import { status } from "../../../core/common/selectoption/selectoption";
 
 import { studentReport } from "../../../service/reports";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
 import { Spinner } from "../../../spinner";
-import { Imageurl } from "../../../service/api";
+import { getAllSectionForAClass, Imageurl } from "../../../service/api";
+import { allRealClasses } from "../../../service/classApi";
+import { toast } from "react-toastify";
 
 export interface StudentData {
   student_id: number;
@@ -40,56 +36,160 @@ export interface StudentData {
   father_img: string;
 }
 
-
 const StudentReport = () => {
-  // const data = studentreport;
   const routes = all_routes;
 
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  const [students, setStudents] = useState<any[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [allClass, setAllClass] = useState<any[]>([]);
+  const [allSections, setAllSections] = useState<any[]>([]);
+  const [filter, setFilter] = useState<{
+    class: number | null;
+    section: number | null;
+    status: string;
+  }>({ class: null, section: null, status: "1" });
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
 
-  const [students, setStudents] = useState<StudentData[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        const { data } = await getAllSectionForAClass(id);
+        const options: any[] = [];
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          options.push(
+            ...data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+          setAllSections(options);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
 
   const fetchStudents = async () => {
-    setLoading(true)
-    await new Promise((res) => setTimeout(res, 500))
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500));
     try {
-
-      const { data } = await studentReport()
+      const { data } = await studentReport();
       if (data.success) {
-        setStudents(data.data)
+        setStudents(data.data);
+        setFilteredStudents(
+          data.data.map((student: any) => ({
+            key: student.student_id,
+            stu_id: student.stu_id,
+            admissionNo: student.admissionnum,
+            rollNo: student.rollnum,
+            name: `${student.firstname} ${student.lastname}`,
+            stuImg: student.stu_img,
+            class: student.class,
+            section: student.section,
+            gender: student.gender,
+            parent: student.father_name,
+            parentImg: student.father_img,
+            dateOfJoin: dayjs(student.admissiondate).format("DD MMM YYYY"),
+            dob: dayjs(student.dob).format("DD MMM YYYY"),
+            status: student.status,
+          }))
+        );
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchStudents()
-  }, [])
+    if (filter.class) {
+      fetchSections(filter.class);
+    }
+  }, [filter.class]);
 
+  useEffect(() => {
+    fetchClasses();
+    fetchStudents();
+  }, []);
 
-  const tableData = students.map((student) => ({
-    key: student.student_id, 
-    stu_id:student.stu_id,
-    admissionNo: student.admissionnum, 
-    rollNo: student.rollnum, 
-    name: `${student.firstname} ${student.lastname}`, 
-    stuImg: student.stu_img, 
-    class: student.class,
-    section: student.section, 
-    gender: student.gender, 
-    parent: student.father_name, 
-    parentImg: student.father_img, 
-    dateOfJoin: dayjs(student.admissiondate).format("DD MMM YYYY"),
-    dob: dayjs(student.dob).format("DD MMM YYYY"), 
-    status: student.status, 
-  }));
+  const handleApplyFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!filter.class || !filter.section) {
+      toast.error("please select both field.");
+      return;
+    }
+    const filteredResult: any[] = students
+      .filter(
+        (item: any) =>
+          item.class_id == filter.class &&
+          item.section_id == filter.section &&
+          item.status == filter.status
+      )
+      .map((student: any) => ({
+        key: student.student_id,
+        stu_id: student.stu_id,
+        admissionNo: student.admissionnum,
+        rollNo: student.rollnum,
+        name: `${student.firstname} ${student.lastname}`,
+        stuImg: student.stu_img,
+        class: student.class,
+        section: student.section,
+        gender: student.gender,
+        parent: student.father_name,
+        parentImg: student.father_img,
+        dateOfJoin: dayjs(student.admissiondate).format("DD MMM YYYY"),
+        dob: dayjs(student.dob).format("DD MMM YYYY"),
+        status: student.status,
+      }));
+    setFilteredStudents(filteredResult);
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
 
-
-
+  const handleResetFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilteredStudents(
+      students.map((student: any) => ({
+        key: student.student_id,
+        stu_id: student.stu_id,
+        admissionNo: student.admissionnum,
+        rollNo: student.rollnum,
+        name: `${student.firstname} ${student.lastname}`,
+        stuImg: student.stu_img,
+        class: student.class,
+        section: student.section,
+        gender: student.gender,
+        parent: student.father_name,
+        parentImg: student.father_img,
+        dateOfJoin: dayjs(student.admissiondate).format("DD MMM YYYY"),
+        dob: dayjs(student.dob).format("DD MMM YYYY"),
+        status: student.status,
+      }))
+    );
+    dropdownMenuRef.current?.classList.remove("show");
+  };
 
   const columns = [
     {
@@ -117,7 +217,10 @@ const StudentReport = () => {
       render: (text: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to={`${routes.studentDetail}/${record.rollNo}`} className="avatar avatar-md">
+            <Link
+              to={`${routes.studentDetail}/${record.rollNo}`}
+              className="avatar avatar-md"
+            >
               <img
                 src={`${Imageurl}/${record.stuImg}`}
                 className="img-fluid rounded-circle"
@@ -126,7 +229,9 @@ const StudentReport = () => {
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to={`${routes.studentDetail}/${record.rollNo}`}>{text}</Link>
+                <Link to={`${routes.studentDetail}/${record.rollNo}`}>
+                  {text}
+                </Link>
               </p>
             </div>
           </div>
@@ -206,12 +311,6 @@ const StudentReport = () => {
     },
   ];
 
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
   return (
     <div>
       <>
@@ -274,7 +373,14 @@ const StudentReport = () => {
                                 <label className="form-label">Class</label>
                                 <CommonSelect
                                   className="select"
-                                  options={classSylabus}
+                                  options={allClass}
+                                  value={filter?.class}
+                                  onChange={(opt: any) =>
+                                    setFilter((prev: any) => ({
+                                      ...prev,
+                                      class: opt.value,
+                                    }))
+                                  }
                                 />
                               </div>
                             </div>
@@ -283,11 +389,18 @@ const StudentReport = () => {
                                 <label className="form-label">Section</label>
                                 <CommonSelect
                                   className="select"
-                                  options={classSection}
+                                  options={allSections}
+                                  value={filter?.section}
+                                  onChange={(opt: any) =>
+                                    setFilter((prev: any) => ({
+                                      ...prev,
+                                      section: opt.value,
+                                    }))
+                                  }
                                 />
                               </div>
                             </div>
-                            <div className="col-md-12">
+                            {/* <div className="col-md-12">
                               <div className="mb-3">
                                 <label className="form-label">Name</label>
                                 <CommonSelect
@@ -295,8 +408,8 @@ const StudentReport = () => {
                                   options={studentName}
                                 />
                               </div>
-                            </div>
-                            <div className="col-md-6">
+                            </div> */}
+                            {/* <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">Gender</label>
                                 <CommonSelect
@@ -304,34 +417,45 @@ const StudentReport = () => {
                                   options={gender}
                                 />
                               </div>
-                            </div>
+                            </div> */}
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">Status</label>
                                 <CommonSelect
                                   className="select"
                                   options={status}
+                                  value={filter?.status}
+                                  onChange={(opt: any) =>
+                                    setFilter((prev: any) => ({
+                                      ...prev,
+                                      status: opt.value,
+                                    }))
+                                  }
                                 />
                               </div>
                             </div>
-                            <div className="col-md-12">
+                            {/* <div className="col-md-12">
                               <div className="mb-0">
                                 <label className="form-label">
                                   Date of Join
                                 </label>
                                 <input type="date" className="form-control" />
                               </div>
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                         <div className="p-3 d-flex align-items-center justify-content-end">
-                          <Link to="#" className="btn btn-light me-3">
+                          <Link
+                            to="#"
+                            className="btn btn-light me-3"
+                            onClick={handleResetFilter}
+                          >
                             Reset
                           </Link>
                           <Link
                             to="#"
                             className="btn btn-primary"
-                            onClick={handleApplyClick}
+                            onClick={handleApplyFilter}
                           >
                             Apply
                           </Link>
@@ -375,9 +499,15 @@ const StudentReport = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Student List */}
-                {
-                  loading ? <Spinner /> : (<Table columns={columns} dataSource={tableData} Selection={true} />)
-                }
+                {loading ? (
+                  <Spinner />
+                ) : (
+                  <Table
+                    columns={columns}
+                    dataSource={filteredStudents}
+                    Selection={true}
+                  />
+                )}
                 {/* /Student List */}
               </div>
             </div>
