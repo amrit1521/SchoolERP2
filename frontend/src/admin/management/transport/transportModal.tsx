@@ -13,6 +13,7 @@ import {
   addPickUpPoints,
   addRoutes,
   addVehicle,
+  allDriversForOption,
   assignVehicleToRoute,
   getAllAssignedVehicles,
   getAllTransportRoutes,
@@ -273,6 +274,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
   };
 
   // Add New Vehicle Module:
+  const [driveropt, setDriveropt] = useState<{ value: number, label: string }[]>([])
   const [vehicleNo, setVehicleNo] = useState("");
   const [vehicleModel, setVehicleModel] = useState("");
   const [madeOfYear, setMadeOfYear] = useState("");
@@ -280,10 +282,28 @@ const TransportModal: React.FC<TransportModalProps> = ({
   const [chassisNo, setChassisNo] = useState("");
   const [seatCapacity, setSeatCapacity] = useState("");
   const [gpsTrackingId, setGpsTrackingId] = useState("");
-  const [driver, setDriver] = useState<any>("");
-  const [driverLicense, setDriverLicense] = useState("");
-  const [driverContactNo, setDriverContactNo] = useState("");
-  const [driverAddress, setDriverAddress] = useState("");
+  const [driver, setDriver] = useState<number | null>(null);
+
+  const fetchAllDriversForOption = async () => {
+    try {
+      const { data } = await allDriversForOption();
+
+      if (data.success) {
+        setDriveropt(
+          data.data.map((d: any) => ({
+            value: d.id,
+            label: d.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllDriversForOption()
+  }, [])
 
   const vehicleFormReset = () => {
     setVehicleNo("");
@@ -293,10 +313,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
     setChassisNo("");
     setSeatCapacity("");
     setGpsTrackingId("");
-    setDriver("");
-    setDriverLicense("");
-    setDriverContactNo("");
-    setDriverAddress("");
+    setDriver(null);
+
   };
 
   const handleAddNewVehicle = async (e: React.FormEvent) => {
@@ -306,8 +324,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
       !vehicleNo ||
       !vehicleModel ||
       !registrationNo ||
-      !driver ||
-      !driverLicense
+      !driver
+
     ) {
       alert("Please fill in all required fields!");
       return;
@@ -321,9 +339,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
       seatCapacity,
       gpsTrackingId,
       driver,
-      driverLicense,
-      driverContactNo,
-      driverAddress,
       status: 1,
     };
     // : madeOfYear ? dayjs(madeOfYear).year() : undefined
@@ -356,10 +371,8 @@ const TransportModal: React.FC<TransportModalProps> = ({
       setChassisNo(selectedItem.chassisNo || "");
       setSeatCapacity(selectedItem.seatCapacity || "");
       setGpsTrackingId(selectedItem.gpsTrackingId || "");
-      setDriver(String(selectedItem.driver) || "");
-      setDriverLicense(selectedItem.driverLicense || "");
-      setDriverContactNo(selectedItem.driverContactNo || "");
-      setDriverAddress(selectedItem.driverAddress || "");
+      setDriver(selectedItem.driverId);
+
     } else {
       vehicleFormReset();
     }
@@ -378,9 +391,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
       seatCapacity,
       gpsTrackingId,
       driver,
-      driverLicense,
-      driverContactNo,
-      driverAddress,
       status: 1,
     };
     try {
@@ -435,19 +445,19 @@ const TransportModal: React.FC<TransportModalProps> = ({
       if (data.success) {
         const unassignedVehicles = selectedItem?.routeId
           ? data.result.filter(
-              (vehicle: any) =>
-                !result.data.result.some(
-                  (assigned: any) =>
-                    assigned.vehicle_no === vehicle.vehicle_no &&
-                    assigned.route_id !== selectAssignRoute?.value
-                )
-            )
+            (vehicle: any) =>
+              !result.data.result.some(
+                (assigned: any) =>
+                  assigned.vehicle_no === vehicle.vehicle_no &&
+                  assigned.route_id !== selectAssignRoute?.value
+              )
+          )
           : data.result.filter(
-              (vehicle: any) =>
-                !result.data.result.some(
-                  (assigned: any) => assigned.vehicle_no === vehicle.vehicle_no
-                )
-            );
+            (vehicle: any) =>
+              !result.data.result.some(
+                (assigned: any) => assigned.vehicle_no === vehicle.vehicle_no
+              )
+          );
         setVehicleOption(
           unassignedVehicles.map((v: any) => ({
             value: v.id,
@@ -1391,49 +1401,14 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <label className="form-label">Select Driver</label>
                         <CommonSelect
                           className="select"
-                          options={driverName}
+                          options={driveropt}
                           value={driver}
-                          onChange={(opt) => setDriver(opt?.value || "")}
+                          onChange={(opt) => setDriver(opt ? Number(opt.value) : null)}
                         />
                       </div>
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Driver License</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={driverLicense}
-                              onChange={(e) => setDriverLicense(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Driver Contact No
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={driverContactNo}
-                              onChange={(e) =>
-                                setDriverContactNo(e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
+
                     </div>
-                    <div className="mb-0">
-                      <label className="form-label">Driver Address</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={driverAddress}
-                        onChange={(e) => setDriverAddress(e.target.value)}
-                      />
-                    </div>
+
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -1513,26 +1488,18 @@ const TransportModal: React.FC<TransportModalProps> = ({
                             <div className="date-pic">
                               <DatePicker
                                 className="form-control datetimepicker"
-                                format={{
-                                  format: "DD-MM-YYYY",
-                                  type: "mask",
-                                }}
+                                format="DD-MM-YYYY"
                                 getPopupContainer={getModalContainer2}
-                                defaultValue={
-                                  madeOfYear
-                                    ? dayjs(madeOfYear).format("DD-MM-YYYY")
-                                    : null
-                                }
+                                value={madeOfYear ? dayjs(madeOfYear) : null}
                                 onChange={(date) =>
-                                  setMadeOfYear(
-                                    dayjs(date).format("YYYY-MM-DD")
-                                  )
+                                  setMadeOfYear(date ? dayjs(date).format("YYYY-MM-DD") : "")
                                 }
                               />
                               <span className="cal-icon">
                                 <i className="ti ti-calendar" />
                               </span>
                             </div>
+
                           </div>
                         </div>
                         <div className="col-md-6">
@@ -1593,52 +1560,14 @@ const TransportModal: React.FC<TransportModalProps> = ({
                         <label className="form-label">Select Driver</label>
                         <CommonSelect
                           className="select"
-                          options={driverName}
+                          options={driveropt}
                           value={driver}
-                          onChange={(opt) => setDriver(opt?.value || "")}
+                          onChange={(opt) => setDriver(opt ? Number(opt.value) : null)}
                         />
                       </div>
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Driver License</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Enter Driver License"
-                              value={driverLicense}
-                              onChange={(e) => setDriverLicense(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Driver Contact No
-                            </label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Enter Driver Contact No"
-                              value={driverContactNo}
-                              onChange={(e) =>
-                                setDriverContactNo(e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
+
                     </div>
-                    <div className="mb-0">
-                      <label className="form-label">Driver Address</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter Driver Address"
-                        value={driverAddress}
-                        onChange={(e) => setDriverAddress(e.target.value)}
-                      />
-                    </div>
+
                   </div>
                 </div>
                 <div className="modal-footer">

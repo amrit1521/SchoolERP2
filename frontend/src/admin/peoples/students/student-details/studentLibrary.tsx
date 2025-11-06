@@ -15,7 +15,7 @@ export interface IssuedBook {
   takenOn: string;
   last_date: string;
   bookId: string;
-  img_src: string;
+  bookImg: string;
   bookName: string;
   status: string;
 }
@@ -230,7 +230,7 @@ const StudentLibrary = () => {
 
                                     <span className="avatar avatar-xl mb-3">
                                       <img
-                                        src={`${Imageurl}/${book.img_src}`}
+                                        src={`${Imageurl}/${book.bookImg}`}
                                         className="img-fluid rounded"
                                         alt={book.bookName}
                                       />

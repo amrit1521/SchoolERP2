@@ -55,7 +55,7 @@ const NoticeBoard = () => {
     try {
       const { data } = await getAllRoles();
       if (data.success) {
-        console.log("roles data: ", data.result);
+       
         setAllRoles(
           data.result.map((item: any) => ({
             id: item.id,

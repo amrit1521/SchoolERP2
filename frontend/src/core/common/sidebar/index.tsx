@@ -25,10 +25,10 @@ const Sidebar = () => {
 
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
-
+     
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
-
+        console.log(token.role)
       if (token.role == "1") {
         setCustomSide([...SidebarData]);
          navigate(`${routes.adminDashboard}`)
@@ -38,7 +38,7 @@ const Sidebar = () => {
       } else if (token.role == "3") {
         setCustomSide([...StudentSidebarData]);
          navigate(`${routes.studentDashboard}`)
-      } else if (token.role == '4') {
+      } else if (token.role == '6') {
         setCustomSide([...ParentSidebarData]);
          navigate(`${routes.parentDashboard}`)
       }

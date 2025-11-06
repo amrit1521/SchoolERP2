@@ -2,17 +2,38 @@
 import { useEffect, useState } from "react";
 import { Table } from "antd";
 import type { DatatableProps } from "../../data/interface"; // Ensure correct path
-// Ensure correct path
 
+// ✅ Add the prop to your interface in "../../data/interface"
+//
+// interface DatatableProps {
+//   columns: any[];
+//   dataSource: any[];
+//   Selection?: boolean;
+//   onSelectionChange?: (selectedRows: any[]) => void; // 👈 add this line
+// }
 
-const Datatable: React.FC<DatatableProps> = ({ columns, dataSource, Selection }) => {
+const Datatable: React.FC<DatatableProps> = ({
+  columns,
+  dataSource,
+  Selection,
+  onSelectionChange, // 👈 added here
+}) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<any[]>([]);
   const [searchText, setSearchText] = useState<string>("");
   const [Selections, setSelections] = useState<any>(true);
   const [filteredDataSource, setFilteredDataSource] = useState(dataSource);
 
+  // ✅ Handle checkbox selection change
   const onSelectChange = (newSelectedRowKeys: any[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
+
+    // 👇 notify parent about selected rows
+    if (onSelectionChange) {
+      const selectedRows = dataSource.filter((item) =>
+        newSelectedRowKeys.includes(item.key)
+      );
+      onSelectionChange(selectedRows);
+    }
   };
 
   const handleSearch = (value: string) => {
@@ -24,36 +45,43 @@ const Datatable: React.FC<DatatableProps> = ({ columns, dataSource, Selection })
     );
     setFilteredDataSource(filteredData);
   };
-  
-  useEffect(()=>{
+
+  useEffect(() => {
     setFilteredDataSource(dataSource);
-  },[dataSource]);
+  }, [dataSource]);
 
   const rowSelection = {
     selectedRowKeys,
     onChange: onSelectChange,
   };
-  useEffect(() => {
-    setFilteredDataSource(dataSource)
-  }, [dataSource])
-  useEffect(() => {
-    return setSelections(Selection);
-  }, [Selection])
 
+  useEffect(() => {
+    setFilteredDataSource(dataSource);
+  }, [dataSource]);
+
+  useEffect(() => {
+    setSelections(Selection);
+  }, [Selection]);
 
   return (
     <>
       <div className="table-top-data d-flex px-3 justify-content-between">
-        <div className="page-range">
-        </div>
+        <div className="page-range"></div>
         <div className="serch-global text-right">
-          <input type="search" className="form-control form-control-sm mb-3 w-auto float-end" value={searchText} placeholder="Search" onChange={(e) => handleSearch(e.target.value)} aria-controls="DataTables_Table_0"></input>
+          <input
+            type="search"
+            className="form-control form-control-sm mb-3 w-auto float-end"
+            value={searchText}
+            placeholder="Search"
+            onChange={(e) => handleSearch(e.target.value)}
+            aria-controls="DataTables_Table_0"
+          />
         </div>
       </div>
-      {!Selections ?
+
+      {!Selections ? (
         <Table
           className="table datanew dataTable no-footer"
-
           columns={columns}
           rowHoverable={false}
           dataSource={filteredDataSource}
@@ -65,7 +93,8 @@ const Datatable: React.FC<DatatableProps> = ({ columns, dataSource, Selection })
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "30"],
           }}
-        /> :
+        />
+      ) : (
         <Table
           className="table datanew dataTable no-footer"
           rowSelection={rowSelection}
@@ -80,8 +109,8 @@ const Datatable: React.FC<DatatableProps> = ({ columns, dataSource, Selection })
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "30"],
           }}
-        />}
-
+        />
+      )}
     </>
   );
 };

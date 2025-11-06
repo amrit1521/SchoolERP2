@@ -34,6 +34,8 @@ router.get('/gettrans' , accountController.transactionsData)
 router.post('/addinvoice' , accountController.addInvoice)
 router.get('/allinvoices' , accountController.getAllInvoices)
 router.delete('/delinvoice/:id' , accountController.deleteInvoice)
+router.get('/speinvoice/:id', accountController.getInvoiceById)
+router.put(`/editinvoice/:id` , accountController.updateInvoice)
 router.get('/geninvoice/:id' , accountController.generateInvoicePDF)
 
 // files

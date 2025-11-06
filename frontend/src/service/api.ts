@@ -5,6 +5,7 @@ const BASE_URL: string =
 export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;
+export const Audiourl = `${API_URL}/chat/uploads/audio/`;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -117,6 +118,9 @@ export const deleteStudent = (rollnum: number) =>
 export const getStuByToken = (userId: number) =>
   api.get(`/stu/getstubytoken/${userId}`);
 export const stuForOption = () => api.get(`/stu/stuforoption`);
+export const stuForOption2 = () => api.get(`/stu/stuforoption2`);
+export const studentsForParmotion = (data: object) => api.post('/stu/filterstudentsforparmotion', data)
+export const parmoteStudents = (data: object) => api.post('/stu/parmotestudents', data)
 
 export const uploadStudentFile = (data: object) =>
   api2.post("/stu/upload", data);
@@ -166,25 +170,27 @@ export const filterTimeTable = (data: object) =>
   api.post("/table/filtertable", data);
 
 // library routes---------------------------
-export const addLibrarymember = (data: object) =>
-  api2.post("/library/addlibrarymember", data);
+export const addLibrarymember = (data: object) => api2.post("/library/addlibrarymember", data);
 export const getAllLibraryMember = () => api.get("/library");
-export const adddBookInLibrary = (data: object) =>
-  api2.post("/library/addbook", data);
+export const deleteLibraryMember = (id: number) => api.delete(`/library/deletelibrarymember/${id}`)
+
+
+export const adddBookInLibrary = (data: object) => api.post("/library/addbook", data);
 export const getallbook = () => api.get("/library/allbook");
-export const getStuIssueBookData = (rollnum: number) =>
-  api.get(`/library/stuissuebookdata/${rollnum}`);
-export const stuDataForIssueBook = () =>
-  api.get("/library/studataforissuebook");
-export const bookDataForIssueBook = () =>
-  api.get("/library/bookdataforissuebook");
-export const issuBookToStu = (data: object) =>
-  api.post("/library/issuebook", data);
+export const speBook = (id: number) => api.get(`/library/spebook/${id}`)
+export const editBook = (data: object, id: number) => api.put(`/library/editbook/${id}`, data)
+export const deleteBook = (id: number) => api.delete(`/library/deletebook/${id}`)
+
+export const uploadBookImg = (data: object) => api2.post("/library/upload", data);
+export const deleteBookImg = (id: number) => api.delete(`/library/deletefile/${id}`);
+
+export const getStuIssueBookData = (rollnum: number) => api.get(`/library/stuissuebookdata/${rollnum}`);
+export const stuDataForIssueBook = () => api.get("/library/studataforissuebook");
+export const bookDataForIssueBook = () => api.get("/library/bookdataforissuebook");
+export const issuBookToStu = (data: object) => api.post("/library/issuebook", data);
 export const getAllStuIssueBook = () => api.get("/library/getallstuissuebook");
-export const speStuNotReturnBookData = (rollnum: number) =>
-  api.get(`/library/spestunotretubookdata/${rollnum}`);
-export const returnBook = (data: object) =>
-  api.put("/library/returnbook", data);
+export const speStuNotReturnBookData = (rollnum: number) => api.get(`/library/spestunotretubookdata/${rollnum}`);
+export const returnBook = (data: object) => api.put("/library/returnbook", data);
 
 // attendance routes----------------------------
 export const markAttendance = (data: object) =>
@@ -358,6 +364,7 @@ export const uploadTeacherFile = (data: object) =>
   api2.post("/teacher/upload", data);
 export const deleteTeacherFile = (id: number) =>
   api.delete(`/teacher/deletefile/${id}`);
+export const teacherLeaveReport = ()=>api.get(`teacher/teacherleavereport`)
 
 // homwwork=================================================================
 export const addHomeWork = (data: object) =>
@@ -419,3 +426,7 @@ export const updateAssignedVehicle = (data: object, id: number) =>
   api.patch(`/transport/update-assigned-vehicle/${id}`, data);
 export const deleteAssignedVehicleById = (id: number) =>
   api.delete(`/transport/delete-assigned-vehicle/${id}`);
+
+
+export const allDrivers = ()=>api.get('/transport/alldrivers')
+export const allDriversForOption = ()=>api.get('/transport/alldriversforopt')
