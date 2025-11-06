@@ -153,6 +153,8 @@ import ClassReport from "../admin/report/class-report/classReport";
 import FeesReport from "../admin/report/fees-report/feesReport";
 import GradeReport from "../admin/report/grade-report/gradeReport";
 import LeaveReport from "../admin/report/leave-report/leaveReport";
+import StaffLeaveReport from "../admin/report/leave-report/staffLeaveReport.tsx";
+import TeacherLeaveReport from "../admin/report/leave-report/teacherLeaveReport.tsx";
 import StudentReport from "../admin/report/student-report/studentReport";
 import Religion from "../admin/settings/academicSettings/religion";
 import SchoolSettings from "../admin/settings/academicSettings/schoolSettings";
@@ -1177,7 +1179,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path: routes.editInvoice,
+    path: `${routes.editInvoice}/:id`,
     element: <EditInvoice />,
     route: Route,
   },
@@ -1379,6 +1381,16 @@ export const publicRoutes = [
   {
     path: routes.leaveReport,
     element: <LeaveReport />,
+    route: Route,
+  },
+  {
+    path: routes.staffLeaveReport,
+    element: <StaffLeaveReport />,
+    route: Route,
+  },
+  {
+    path: routes.teacherLeaveReport,
+    element: <TeacherLeaveReport />,
     route: Route,
   },
   {

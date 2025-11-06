@@ -5,7 +5,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
   bedcount,
-  hostelName,
+  Hostel,
   HostelroomNo,
   hostelType,
   moreFilterRoom,
@@ -424,7 +424,7 @@ const HostelRooms = () => {
                               <label className="form-label">Name</label>
                               <CommonSelect
                                 className="select"
-                                options={hostelName}
+                                options={Hostel}
                               // defaultValue={hostelName[0]}
                               />
                             </div>

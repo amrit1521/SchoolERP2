@@ -46,7 +46,7 @@ const Staff = () => {
   };
 
   // TanStack Query for fetching staff
-  const { data: staffData, isLoading, isError, error, refetch } = useQuery<Staff[], Error>({
+  const { data: staffData, isLoading, isError, error,isFetching, refetch } = useQuery<Staff[], Error>({
     queryKey: ["all-staff"],
     queryFn: async () => {
       const res = await speDetailsForAllStaff();
@@ -89,7 +89,7 @@ const Staff = () => {
             />
           </Link>
           <div className="ms-2">
-            <p className="text-dark mb-0">
+            <p className="text-dark mb-0 text-capitalize">
               <Link to={`${routes.staffDetails}/${record.id}`}>{record.name}</Link>
             </p>
           </div>
@@ -231,9 +231,9 @@ const Staff = () => {
                 Add Staff
               </Link>
             </div>
-            {/* <button className="btn btn-outline-secondary ms-2 mb-2" onClick={() => refetch()} disabled={isFetching}>
+            <button className="btn btn-outline-secondary ms-2 mb-2" onClick={() => refetch()} disabled={isFetching}>
               {isFetching ? "Refreshing..." : "Refresh"}
-            </button> */}
+            </button>
           </div>
         </div>
 

@@ -1,20 +1,264 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import { all_routes } from "../../../router/all_routes";
 import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
-import { Studentlist } from '../../../../core/data/json/studentList';
+// import { Studentlist } from '../../../../core/data/json/studentList';
 import CommonSelect from '../../../../core/common/commonSelect';
-import { promotion, academicYear, allClass, allSection } from '../../../../core/common/selectoption/selectoption';
-import PredefinedDateRanges from '../../../../core/common/datePicker';
+import { academicYear } from '../../../../core/common/selectoption/selectoption';
+// import PredefinedDateRanges from '../../../../core/common/datePicker';
 import TooltipOption from '../../../../core/common/tooltipOption';
+import { getAllSectionForAClass, Imageurl, parmoteStudents, studentsForParmotion } from '../../../../service/api';
+import { toast } from 'react-toastify';
+import { allRealClasses } from '../../../../service/classApi';
+import { Spinner } from '../../../../spinner';
+
+interface FromClass {
+  class: number | null,
+  section: number | null
+}
+
+interface ToClass {
+  class: number | null,
+  section: number | null,
+  acedmicyear: string;
+}
 
 const StudentPromotion = () => {
   const [isPromotion, setIsPromotion] = useState<boolean>(false);
   const routes = all_routes;
-  const data = Studentlist;
+  const [students, setStudents] = useState<any[]>([]);
+  const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
+  const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([])
+  const [sectionOptions2, setSectionOptions2] = useState<{ value: number, label: string }[]>([])
+  const [fromClassData, setFromClassData] = useState<FromClass>({
+    class: null,
+    section: null
+  })
+  const [toClassData, setToClassData] = useState<ToClass>({
+    class: null,
+    section: null,
+    acedmicyear: ""
+  })
+  const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState<boolean>(false)
 
+  const fetchClass = async () => {
+    try {
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+
+        setClassOptions(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setClassOptions([]);
+      }
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch classes !");
+    }
+  };
+  const fetchSection = async () => {
+    try {
+      if (fromClassData.class || toClassData.class) {
+        const { data } = await getAllSectionForAClass(Number(fromClassData.class));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+  const fetchSection2 = async () => {
+    try {
+      if (toClassData.class) {
+        const { data } = await getAllSectionForAClass(Number(toClassData.class));
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setSectionOptions2(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+        } else {
+          setSectionOptions2([]);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch section !");
+    }
+  }
+
+
+  useEffect(() => {
+    fetchClass()
+  }, [])
+
+
+  useEffect(() => {
+    if (toClassData.class) {
+      fetchSection2()
+    }
+  }, [toClassData.class])
+
+  useEffect(() => {
+    if (fromClassData.class) {
+      fetchSection()
+    }
+  }, [fromClassData.class])
+
+
+
+  const handleSelectChnage = (name: keyof FromClass, value: string | number) => {
+    setFromClassData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSelectChnage2 = (name: keyof ToClass, value: string | number) => {
+
+    setToClassData((prev) => ({ ...prev, [name]: value }))
+
+  }
+
+
+  const apiGetStudentsForParmotion = async (payload: object) => {
+    try {
+      const { data } = await studentsForParmotion(payload)
+      if (data.success) {
+        return data
+      }
+    } catch (err) {
+      console.error("apiGetStudentsForClass error:", err);
+      throw err;
+    }
+  };
+
+  const apiPromoteStudents = async (payload: {
+    studentIds: number[];
+    toClassId: number;
+    toSectionId: number;
+    toAcademicYear: string;
+  }) => {
+    console.log(payload)
+    try {
+      const { data } = await parmoteStudents(payload)
+      if (data.success) {
+        return data
+      }
+    } catch (err) {
+      console.error("apiPromoteStudents error:", err);
+      throw err;
+    }
+  };
+
+  const handleManagePromotion = async () => {
+    if (!fromClassData.class || !fromClassData.section) {
+      toast.error("Please select From Class and Section before managing promotion!");
+      return;
+    }
+    try {
+      setLoadingStudents(true);
+      await new Promise((res) => setTimeout(res, 500))
+      const json = await apiGetStudentsForParmotion(fromClassData);
+
+
+      if (json && json.success) {
+        setStudents(Array.isArray(json.students) ? json.students : []);
+        setIsPromotion(true);
+        setSelectedStudents([]);
+      } else {
+        setStudents([]);
+        toast.error(json?.message || "No students found");
+      }
+    } catch (err) {
+      setStudents([]);
+      toast.error("Failed to fetch students");
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+
+  const onTableSelectionChange = (selectedRows: any[]) => {
+    if (!Array.isArray(selectedRows)) {
+      setSelectedStudents([]);
+      return;
+    }
+
+    const passIds = selectedRows.filter(r => r.result === "Pass").map(r => r.id);
+    setSelectedStudents(passIds);
+
+    const attemptedFailSelection = selectedRows.filter(r => r.result !== "Pass");
+    if (attemptedFailSelection.length > 0) {
+      toast.info(`${attemptedFailSelection.length} student(s) are not eligible for promotion (Fail). Only "Pass" students will be promoted.`);
+    }
+  };
+
+
+  const handlePromoteStudents = async () => {
+    try {
+      if (fromClassData.class == toClassData.class) {
+        toast.error('Studnet cannot parmote in same class ! Choose different Class')
+        return
+      }
+      if (!toClassData.class || !toClassData.section || !toClassData.acedmicyear) {
+        toast.error("Please select target Class, Section and Academic Year!");
+        return;
+      }
+      if (selectedStudents.length === 0) {
+        toast.error("No eligible (Pass) students selected for promotion!");
+        return;
+      }
+
+      const payload = {
+        studentIds: selectedStudents,
+        toClassId: Number(toClassData.class),
+        toSectionId: Number(toClassData.section),
+        toAcademicYear: toClassData.acedmicyear
+      };
+
+      const json = await apiPromoteStudents(payload);
+      if (json && json.success) {
+        toast.success(json.message);
+        setSelectedStudents([]);
+        setIsPromotion(false);
+        setSectionOptions([])
+        setSectionOptions2([])
+        setFromClassData({
+          class: null,
+          section: null,
+
+        })
+        setToClassData({
+          class: null,
+          section: null,
+          acedmicyear: ""
+        })
+      } else {
+        toast.error(json?.message || "Promotion failed!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error while promoting students!");
+    }
+  };
+
+  const tableData = students.map((s: any) => ({
+    key: s.student_id,
+    id: s.student_id,
+    AdmissionNo: s.admissionnum,
+    RollNo: s.rollnum,
+    name: `${s.firstname} ${s.lastname}`,
+    img: s.stu_img,
+    class: s.class,
+    section: s.section,
+    percent: s.percent,
+    result: s.result
+
+  }))
 
   const columns = [
     {
@@ -40,8 +284,8 @@ const StudentPromotion = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.imgSrc}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -68,7 +312,17 @@ const StudentPromotion = () => {
       sorter: (a: TableData, b: TableData) =>
         a.section.length - b.section.length,
     },
-
+    {
+      title: "Percent",
+      dataIndex: "percent",
+      render: (text: string) => (
+        <span className={`${Number(text) < 33 ? "text-danger" : "text-success"}`}>
+          {text}%
+        </span>
+      ),
+      sorter: (a: TableData, b: TableData) => a.percent - b.percent,
+    }
+    ,
     {
       title: "Exam Result",
       dataIndex: "result",
@@ -93,23 +347,25 @@ const StudentPromotion = () => {
       sorter: (a: TableData, b: TableData) =>
         a.result.length - b.result.length,
     },
-    {
-      title: "Action",
-      dataIndex: "promotion",
-      render: (res: any) => (
-        <>
-          <div className="table-select mb-0">
-            <CommonSelect
-              className="select"
-              options={promotion}
-              // defaultValue={promotion[res]}
-            />
-            {res?"":""}
-          </div>
-        </>
-      ),
+    // {
+    //   title: "Action",
+    //   dataIndex: "promotion",
+    //   render: (res: any, record: any) => (
+    //     <>
+    //       <div className="table-select mb-0">
+    //         <CommonSelect
+    //           className="select"
+    //           options={promotion}
+    //           // defaultValue based on result — promote option only for Pass
+    //           value={record.result === "Pass" ? promotion.find((p: any) => p.value === "1") : promotion.find((p: any) => p.value === "0")}
+    //           isDisabled={record.result !== "Pass"}
+    //         />
+    //         {res ? "" : ""}
+    //       </div>
+    //     </>
+    //   ),
 
-    },
+    // },
   ];
 
 
@@ -177,16 +433,19 @@ const StudentPromotion = () => {
                                 <label className="form-label">Class</label>
                                 <CommonSelect
                                   className="select"
-                                  options={allClass}
-                                  // defaultValue={allClass[0]}
+                                  options={classOptions}
+                                  value={fromClassData.class}
+                                  onChange={(opt: any) => handleSelectChnage('class', opt ? opt.value : null)}
+
                                 />
                               </div>
                               <div className=" flex-fill mb-0">
                                 <label className="form-label">Section</label>
                                 <CommonSelect
                                   className="select"
-                                  options={allSection}
-                                  // defaultValue={allSection[0]}
+                                  options={sectionOptions}
+                                  value={fromClassData.section}
+                                  onChange={(opt: any) => handleSelectChnage('section', opt ? opt.value : null)}
                                 />
                               </div>
                             </div>
@@ -211,7 +470,8 @@ const StudentPromotion = () => {
                             <CommonSelect
                               className="select"
                               options={academicYear}
-                              // defaultValue={academicYear[0]}
+                              value={toClassData.acedmicyear}
+                              onChange={(opt: any) => handleSelectChnage2('acedmicyear', opt ? opt.value : "")}
                             />
                           </div>
                           <div>
@@ -224,16 +484,18 @@ const StudentPromotion = () => {
                                 <label className="form-label">Class</label>
                                 <CommonSelect
                                   className="select"
-                                  options={allClass}
-                                  // defaultValue={allClass[0]}
+                                  options={classOptions}
+                                  value={toClassData.class}
+                                  onChange={(opt: any) => handleSelectChnage2('class', opt ? opt.value : null)}
                                 />
                               </div>
                               <div className=" flex-fill ">
                                 <label className="form-label">Section</label>
                                 <CommonSelect
                                   className="select"
-                                  options={allSection}
-                                  // defaultValue={allSection[0]}
+                                  options={sectionOptions2}
+                                  value={toClassData.section}
+                                  onChange={(opt: any) => handleSelectChnage2('section', opt ? opt.value : null)}
                                 />
                               </div>
                             </div>
@@ -246,22 +508,36 @@ const StudentPromotion = () => {
                         <button
                           type="reset"
                           className="btn btn-light reset-promote me-3"
-                          onClick={() => setIsPromotion(false)}
+                          onClick={() => {
+                            setIsPromotion(false);
+                            setStudents([]);
+                            setSelectedStudents([]);
+                            setFromClassData({
+                              class: null,
+                              section: null,
+                            })
+                            setToClassData({
+                              class: null,
+                              section: null,
+                              acedmicyear: ""
+                            })
+                          }}
                         >
                           Reset Promotion
                         </button>
                         <button
                           type="button"
                           className="btn btn-primary promote-students-btn"
-                          onClick={() => setIsPromotion(true)}
+                          onClick={() => handleManagePromotion()}
                         >
-                          Manage Promotion
+                         {loadingStudents?"Managing...":"Manage Promotion"}
                         </button>
                       </div>
                     </div>
                   </form>
                 </div>
               </div>
+
               <div className={`promote-card-main ${isPromotion && 'promote-card-main-show'}`}>
                 <div className="card">
                   <div className="card-header border-0 pb-0">
@@ -279,18 +555,15 @@ const StudentPromotion = () => {
                               <label className="form-label">
                                 From Class<span className="text-danger">*</span>
                               </label>
-                              <div className="form-control-plaintext p-0">III</div>
+                              <div className="form-control-plaintext p-0">{classOptions.filter((item: any) => fromClassData.class == item.value)[0]?.label}</div>
                             </div>
                             <div className="mb-0">
                               <label className="form-label d-block mb-3">
                                 Promotion from Section
                                 <span className="text-danger"> *</span>
                               </label>
-                              <label className="form-label d-block mb-2">
-                                Student From Section
-                                <span className="text-danger"> *</span>
-                              </label>
-                              <div className="form-control-plaintext p-0">A</div>
+
+                              <div className="form-control-plaintext p-0">{sectionOptions.filter((item: any) => fromClassData.section == item.value)[0]?.label}</div>
                             </div>
                           </div>
                         </div>
@@ -306,26 +579,17 @@ const StudentPromotion = () => {
                           <div className="card-body">
                             <div className="mb-3">
                               <label className="form-label">
-                                Promote to Session{" "}
+                                To Class{" "}
                                 <span className="text-danger"> *</span>
                               </label>
-                              <div className="form-control-plaintext p-0">IV</div>
+                              <div className="form-control-plaintext p-0">{classOptions.filter((item: any) => toClassData.class == item.value)[0]?.label}</div>
                             </div>
                             <div>
                               <label className="form-label mb-2">
                                 Assign to Section
                                 <span className="text-danger"> *</span>
                               </label>
-                              <div className="d-block d-md-flex">
-                                <div className=" flex-fill me-0">
-                                  <label className="form-label">Class</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={allClass}
-                                    // defaultValue={allClass[0]}
-                                  />
-                                </div>
-                              </div>
+                              <div className="form-control-plaintext p-0">{sectionOptions2.filter((item: any) => toClassData.section == item.value)[0]?.label}</div>
                             </div>
                           </div>
                         </div>
@@ -337,7 +601,7 @@ const StudentPromotion = () => {
                 <div className="card">
                   <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
                     <h4 className="mb-3">Students List</h4>
-                    <div className="d-flex align-items-center flex-wrap">
+                    {/* <div className="d-flex align-items-center flex-wrap">
                       <div className="input-icon-start mb-3 me-2 position-relative">
 
                         <PredefinedDateRanges />
@@ -386,11 +650,18 @@ const StudentPromotion = () => {
                           </li>
                         </ul>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                   <div className="card-body p-0 py-3">
                     {/* Student List */}
-                    <Table dataSource={data} columns={columns} Selection={true} />
+                    {
+                      loadingStudents ? <Spinner /> : (<Table
+                        dataSource={tableData}
+                        columns={columns}
+                        Selection={true}
+                        onSelectionChange={(selectedRows: any[]) => onTableSelectionChange(selectedRows)}
+                      />)
+                    }
                     {/* /Student List */}
                   </div>
                 </div>
@@ -438,18 +709,21 @@ const StudentPromotion = () => {
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
       </div>
+
+
       <div className="modal fade" id="student_promote">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-body text-center">
               <h4>Confirm Promotion</h4>
               <p>
-                Are you Sure, want to promote all 57 selected students to the next
-                academic session
+                Are you Sure, want to promote all {selectedStudents.length} selected students to the next
+                Academic Session
               </p>
               <div className="d-flex justify-content-center">
                 <Link
@@ -464,6 +738,10 @@ const StudentPromotion = () => {
                   className="btn btn-danger"
                   id="toprightToastBtn"
                   data-bs-dismiss="modal"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePromoteStudents();
+                  }}
                 >
                   Promote
                 </Link>

@@ -6,7 +6,7 @@ import {
   Hostel,
   Marital,
   PickupPoint,
-  roomno,
+  roomNo,
   route,
   Shift,
   staffDepartment,
@@ -586,8 +586,8 @@ const EditStaff = () => {
                             <label className="form-label">Room No</label>
                             <CommonSelect
                               className="select"
-                              options={roomno}
-                              defaultValue={roomno[0].value}
+                              options={roomNo}
+                              defaultValue={roomNo[0].value}
                             />
                           </div>
                         </div>

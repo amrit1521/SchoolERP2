@@ -13,6 +13,7 @@ router.get('/staffforedit/:staffid' , staffController.fetchStaffDataForEditById)
 router.put('/editstaff/:staffid' , staffController.updateStaff)
 router.delete('/deletestaff/:staffid' , staffController.deleteStaff)
 router.post('/filterstaff' , staffController.filterSpeDetailsAllStaff)
+router.get('/staffleavereport' , staffController.staffLeaveReport)
 
 // leave
 router.get('/leavedata/:staffid', staffController.getStaffLeaveData)

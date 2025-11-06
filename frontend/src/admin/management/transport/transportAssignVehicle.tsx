@@ -5,7 +5,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
   // driverFilter3,
-  driverName,
+  // driverName,
   // PickupPoint2,
   // routesList,
   // status,
@@ -15,13 +15,14 @@ import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 import TransportModal from "./transportModal";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 // import { transportAssignData } from "../../../core/data/json/transport_assign";
 import {
   deleteAssignedVehicleById,
   getAllAssignedVehicles,
   getAllTransportRoutes,
   getAllVehicle,
+  Imageurl,
 } from "../../../service/api";
 import { toast } from "react-toastify";
 
@@ -33,7 +34,9 @@ interface TransportAssignVehicleProps {
   vehicleId?: number;
   driver: string;
   driverPhone: string;
+  name:string;
   status: number;
+  img_src:string;
 }
 
 interface FilterState {
@@ -72,6 +75,8 @@ const TransportAssignVehicle = () => {
             driver: item.driver_id,
             driverPhone: item.driver_contact_no,
             status: item.status,
+            name:item.name,
+            img:item.img_src,
           }))
         );
         setFilteredAssignedVehicles(
@@ -84,6 +89,8 @@ const TransportAssignVehicle = () => {
             driver: item.driver_id,
             driverPhone: item.driver_contact_no,
             status: item.status,
+            name:item.name,
+            img:item.img_src,
           }))
         );
       } else {
@@ -220,12 +227,12 @@ const TransportAssignVehicle = () => {
     },
     {
       title: "Driver",
-      dataIndex: "driver",
+      dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -233,7 +240,7 @@ const TransportAssignVehicle = () => {
           <div className="ms-2">
             <p className="text-dark mb-0">
               <Link to="#">
-                {driverName.find((item) => item.value == text)?.label}
+                {text}
               </Link>
             </p>
             <span className="fs-12">{record.driverPhone}</span>
