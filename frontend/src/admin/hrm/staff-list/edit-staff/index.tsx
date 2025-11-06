@@ -4,14 +4,9 @@ import {
   bloodGroup,
   Contract,
   gender,
-  Hostel,
   Marital,
-  PickupPoint,
-  roomNO,
-  route,
   Shift,
   status,
-  VehicleNumber,
 } from "../../../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -28,6 +23,7 @@ import { departmentOption } from "../../../../service/department";
 import { designationOption } from "../../../../service/designation";
 import dayjs from "dayjs";
 import {
+  getAllRoles,
   getAllTransportRoutes,
   getAssignedVehicleForARoute,
   getTransportPickUpPointsForRouteId,
