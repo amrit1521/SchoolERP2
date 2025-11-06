@@ -47,6 +47,8 @@ export const getStudentHomework = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/getstudentHomework/${classId}/${sectionId}`);
 export const getStudentFeeReminder = (rollNum: number) =>
   api.get(`/studentdashboard/getstudentfeereminder/${rollNum}`);
+export const getStudentClassTeachersList = (classId: number,sectionId:number) =>
+  api.get(`/studentdashboard/student-class-teachers?classId=${classId}&sectionId=${sectionId}`);
 
 //user apis-------------------
 export const allUsers = () => api.get("/user/all-users");
