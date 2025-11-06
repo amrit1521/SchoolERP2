@@ -13,6 +13,7 @@
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@tanstack/react-query": "^5.90.2",
+    "@zegocloud/zego-uikit-prebuilt": "^2.17.0",
     "axios": "^1.11.0",
     "dotenv": "^17.2.3",
     "file-saver": "^2.0.5",
@@ -26,13 +27,17 @@
     "overlayscrollbars-react": "^0.5.6",
     "react": "^19.1.1",
     "react-apexcharts": "^1.7.0",
+    "react-audio-voice-recorder": "^2.2.0",
     "react-hook-form": "^7.63.0",
     "react-loading-skeleton": "^3.5.0",
+    "react-media-recorder": "^1.7.2",
     "react-perfect-scrollbar": "^1.5.8",
     "react-toastify": "^11.0.5",
+    "react-use-audio-recorder": "^0.4.2",
     "select2": "^4.1.0-rc.0",
     "simplebar": "^6.3.1",
-    "simplebar-react": "^3.3.1"
+    "simplebar-react": "^3.3.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@ant-design/icons": "^5.6.1",

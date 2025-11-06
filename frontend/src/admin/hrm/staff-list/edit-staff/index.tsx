@@ -10,7 +10,6 @@ import {
   roomNO,
   route,
   Shift,
-  staffrole,
   status,
   VehicleNumber,
 } from "../../../../core/common/selectoption/selectoption";
@@ -63,6 +62,7 @@ export interface StaffData {
   note: string;
   address: string;
   perm_address: string;
+  driveLic:string;
 
   // payroll
   epf_no: string;
@@ -136,6 +136,7 @@ const EditStaff = () => {
     note: "",
     address: "",
     perm_address: "",
+    driveLic:"",
 
     // Payroll
     epf_no: "",
@@ -341,6 +342,7 @@ const EditStaff = () => {
           note: staff.note || "",
           address: staff.address || "",
           perm_address: staff.perm_address || "",
+          driveLic:staff.driveLic||"",
 
           epf_no: staff.epf_no || "",
           basic_salary: staff.basic_salary || "",
@@ -505,6 +507,14 @@ const EditStaff = () => {
   const validateStaffData = (data: StaffData) => {
     const errors: Partial<Record<keyof StaffData, string>> = {};
 
+    const isDriver = roleOptions
+      .find((item) => item.value === data.role)
+      ?.label.toLowerCase()
+      .includes("driver");
+
+    const dlRegex = /^[A-Z]{2}\d{2}\s?\d{4}\s?\d{7}$/;
+
+
     // 🔹 Basic personal info
     if (!data.firstname.trim()) errors.firstname = "First name is required";
     if (!data.lastname.trim()) errors.lastname = "Last name is required";
@@ -534,6 +544,14 @@ const EditStaff = () => {
     if (!data.blood_gp) errors.blood_gp = "Blood Group is required !";
     if (data.lan_known.length === 0)
       errors.lan_known = "Language known is required !";
+
+    if (isDriver) {
+      if (!data.driveLic.trim()) {
+        errors.driveLic = "Driving License is required for drivers.";
+      } else if (!dlRegex.test(data.driveLic.trim().toUpperCase())) {
+        errors.driveLic = "Invalid Driving License format (e.g., UP32 20150012345)";
+      }
+    }
 
     // 🔹 Payroll
     if (!data.epf_no) errors.epf_no = "EPF number is required";
@@ -644,6 +662,7 @@ const EditStaff = () => {
           note: "",
           address: "",
           perm_address: "",
+          driveLic:"",
 
           epf_no: "",
           basic_salary: "",
@@ -726,7 +745,7 @@ const EditStaff = () => {
       note: "",
       address: "",
       perm_address: "",
-
+      driveLic:"",
       // Payroll
       epf_no: "",
       basic_salary: "",
@@ -786,6 +805,7 @@ const EditStaff = () => {
 
   const [departOptions, setDepartOption] = useState<OptionType[]>([]);
   const [desgiOptions, setDesgiOption] = useState<OptionType[]>([]);
+  const [roleOptions, setRoleOptions] = useState<OptionType[]>([])
 
   const fetchDepartMentAndDesginationOption = async () => {
     try {
@@ -818,10 +838,29 @@ const EditStaff = () => {
     }
   };
 
+
+  const fetchRoles = async () => {
+    try {
+      const { data } = await getAllRoles();
+      if (data.success) {
+
+        setRoleOptions(
+          data.result.map((item: any) => ({
+            value: item.id,
+            label: item.role_name,
+          }))
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load roles data");
+    }
+  };
+
   useEffect(() => {
     fetchRoutes();
     fetchDepartMentAndDesginationOption();
     fetchHostels();
+    fetchRoles()
   }, []);
 
   return (
@@ -981,8 +1020,8 @@ const EditStaff = () => {
                                 Role<span className="text-danger">*</span>
                               </label>
                               <CommonSelect
-                                className="select"
-                                options={staffrole}
+                                className="select text-capitalize"
+                                options={roleOptions}
                                 value={staffData.role}
                                 onChange={(option) =>
                                   handleSelectChange(
@@ -1056,6 +1095,20 @@ const EditStaff = () => {
                                   {errors.desgination}
                                 </div>
                               )}
+                            </div>
+                          </div>
+
+                          <div className="col-xxl col-xl-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Driving License <span className="text-danger">*</span></label>
+                              <input
+                                type="text"
+                                name="driveLic"
+                                className="form-control"
+                                value={staffData.driveLic}
+                                onChange={handleInputChange}
+                              />
+                              {errors.driveLic && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.driveLic}</div>}
                             </div>
                           </div>
 

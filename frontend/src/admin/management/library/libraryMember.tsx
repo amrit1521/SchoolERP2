@@ -12,13 +12,24 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
-import LibraryModal from "./libraryModal";
 // import { librarymemberList } from "../../../core/data/json/libraryMemberList";
 // import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { getAllLibraryMember } from "../../../service/api";
+import {getAllLibraryMember, Imageurl } from "../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
+import { Spinner } from "../../../spinner";
+interface LibraryMember {
+  staff_id: number;
+  firstname: string;
+  lastname: string;
+  cardNo: string;
+  email: string;
+  date_of_join: string;
+  mobile: string;
+  img_src: string;
+  status: string;
 
+}
 const LibraryMember = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
@@ -28,36 +39,23 @@ const LibraryMember = () => {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-
-  interface LibraryMember {
-    id: number;
-    name: string;
-    cardno: string;
-    email: string;
-    date_of_join: string;
-    phone_no: string;
-    image_url: string;
-    folder?: string;
-    img_src?: string;
-
-  }
-
-
   const [libraryMembers, setLibraryMembers] = useState<LibraryMember[]>([])
-  const [loading ,setloading] = useState<boolean>(false)
+  const [loading, setloading] = useState<boolean>(false)
+
 
   const fetchLibraryMember = async () => {
     try {
       setloading(true)
+       await new Promise((res)=>setTimeout(res,400))
       const { data } = await getAllLibraryMember()
-      
+
       if (data.success) {
         setLibraryMembers(data.data)
       }
     } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
-    }finally{
+    } finally {
       setloading(false)
     }
   }
@@ -67,18 +65,16 @@ const LibraryMember = () => {
 
   }, [])
 
-
-
-
   const tabledata = libraryMembers.map((item) => ({
-    key: item.id,
-    id: item.id,
-    name:item.name,
-    cardNo: item.cardno,
+    key: item.staff_id,
+    id: item.staff_id,
+    name: `${item.firstname} ${item.lastname}`,
+    cardNo: item.cardNo,
     email: item.email,
     dateOfJoin: dayjs(item.date_of_join).format('DD MMM YYYY'),
-    mobile: item.phone_no,
-    img: item.image_url,
+    mobile: item.mobile,
+    img: item.img_src,
+    status: item.status,
   }));
 
 
@@ -95,19 +91,19 @@ const LibraryMember = () => {
       title: "Member",
       dataIndex: "name",
       render: (text: string, record: any) => (
-       
+
         <div className="d-flex align-items-center">
-          <Link to="#" className="avatar avatar-md">
-          
+          <Link to={`${routes.staffDetails}/${record.id}`} className="avatar avatar-md">
+
             <img
-              src={record.img}  //maine image ko direct full url bna diya h backend me hi
+              src={`${Imageurl}/${record.img}`}  //maine image ko direct full url bna diya h backend me hi
               className="img-fluid rounded-circle"
               alt="img"
             />
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to="#">{text}</Link>
+              <Link to={`${routes.staffDetails}/${record.id}`} >{text}</Link>
             </p>
           </div>
         </div>
@@ -140,6 +136,27 @@ const LibraryMember = () => {
         a.mobile.localeCompare(b.mobile),
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      render: (text: string) => (
+        <>
+          {text === "1" ? (
+            <span className="badge badge-soft-success d-inline-flex align-items-center">
+              <i className="ti ti-circle-filled fs-5 me-1"></i>
+              Active
+            </span>
+          ) : (
+            <span className="badge badge-soft-danger d-inline-flex align-items-center">
+              <i className="ti ti-circle-filled fs-5 me-1"></i>
+              Inactive
+            </span>
+          )}
+        </>
+      ),
+      sorter: (a: TableData, b: TableData) =>
+        a.email.localeCompare(b.email),
+    },
+    {
       title: "Action",
       dataIndex: "key",
       render: (key: number) => (
@@ -157,9 +174,8 @@ const LibraryMember = () => {
               <li>
                 <Link
                   className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_library_members"
+                  to={`${routes.editStaff}/${key}`}
+
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -168,7 +184,7 @@ const LibraryMember = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={()=>handleDelete(key)}
+                  // onClick={() => setDeleteId(key)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
@@ -182,17 +198,6 @@ const LibraryMember = () => {
       ),
     },
   ];
-
-
-  const callFunOnSubmit = ()=>{
-     fetchLibraryMember();
-  }
-
-  const [deleteMemberId , setDeleteMemberId] = useState<number | null>(null)
-
-  const handleDelete = (id:number)=>{
-    setDeleteMemberId(id)
-  }
 
   return (
     <>
@@ -221,10 +226,9 @@ const LibraryMember = () => {
               <TooltipOption />
               <div className="mb-2">
                 <Link
-                  to="#"
+                  to={routes.addStaff}
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_library_members"
+
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Member
@@ -277,7 +281,7 @@ const LibraryMember = () => {
                               <CommonSelect
                                 className="select"
                                 options={cardNo}
-                                // defaultValue={cardNo[0]}
+                              // defaultValue={cardNo[0]}
                               />
                             </div>
                           </div>
@@ -287,7 +291,7 @@ const LibraryMember = () => {
                               <CommonSelect
                                 className="select"
                                 options={moreFilter}
-                                // defaultValue={moreFilter[0]}
+                              // defaultValue={moreFilter[0]}
                               />
                             </div>
                           </div>
@@ -346,17 +350,13 @@ const LibraryMember = () => {
               {/* Student List */}
               {/* <p>hey this is saurabh</p> */}
               {
-                loading?
-               <><div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                    <div className="spinner-border text-dark" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div></> 
-                :
-                <Table dataSource={tabledata} columns={columns} Selection={true} />
+                loading ?
+                   <Spinner/>
+                  :
+                  <Table dataSource={tabledata} columns={columns} Selection={true} />
 
               }
-          
+
               {/* /Student List */}
             </div>
           </div>
@@ -364,7 +364,7 @@ const LibraryMember = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-     {tabledata&&( <LibraryModal onAdd={callFunOnSubmit} deleteMemberId = {deleteMemberId} />)}
+
     </>
   );
 };

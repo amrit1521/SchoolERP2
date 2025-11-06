@@ -16,7 +16,7 @@ import {
   allSubject,
   bloodGroup,
   gender,
-  roomNO,
+  roomNo,
   route,
   status,
 
@@ -54,7 +54,7 @@ const TeacherForm = () => {
     }
   }, [location.pathname]);
 
-  console.log(defaultDate?"":"")
+  console.log(defaultDate ? "" : "")
   interface TeacherData {
 
     first_name: string;
@@ -1260,8 +1260,8 @@ const TeacherForm = () => {
                           <label className="form-label">Room No</label>
                           <CommonSelect
                             className="select"
-                            options={roomNO}
-                            defaultValue={isEdit ? roomNO[0].value : undefined}
+                            options={roomNo}
+                            defaultValue={isEdit ? roomNo[0].value : undefined}
                             onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
                           />
                         </div>

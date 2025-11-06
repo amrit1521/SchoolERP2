@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../router/all_routes";
 import { Link } from "react-router-dom";
 import PredefinedDateRanges from "../../../core/common/datePicker";
@@ -266,7 +266,8 @@ const ReturnBook = () => {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e:React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     setReturnBookForm({
       studentRollNo: "",
       bookId: [],
@@ -439,6 +440,7 @@ const ReturnBook = () => {
               <h4 className="modal-title">Return Book</h4>
               <button
                 type="button"
+                  onClick={(e)=>handleCancel(e)}
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
@@ -528,7 +530,8 @@ const ReturnBook = () => {
               {/* Footer */}
               <div className="modal-footer">
                 <button
-                  onClick={handleCancel}
+                  type="button"
+                  onClick={(e)=>handleCancel(e)}
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
                 >
