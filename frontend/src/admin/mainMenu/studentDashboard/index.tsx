@@ -392,7 +392,6 @@ const StudentDasboard = () => {
 
       if (data?.success) {
         const studentData = data.data[0];
-        console.log("studentExam Result: ", studentData);
         const performanceResult = studentData?.exams.map((exam: any) => {
           return {
             exam_name: exam?.exam_name,
@@ -422,7 +421,6 @@ const StudentDasboard = () => {
           },
         }));
 
-        console.log("performance: ", performanceResult);
         setExamResult(studentData);
         const selectedLabel =
           selectedExamType?.label ||
@@ -461,7 +459,6 @@ const StudentDasboard = () => {
       setFilteredExamResult([]);
     }
   };
-  console.log("perfromance chart : ", performanceChart);
 
   const fetchExamOptions = async (cls: number, section: number) => {
     try {
@@ -500,7 +497,6 @@ const StudentDasboard = () => {
     try {
       const { data } = await getStudentClassTeachersList(classId, sectionId);
       if (data?.success) {
-        console.log("class Teacher List Data: ", data.data);
         setStudentClassTeachers(data.data);
       } else {
         console.warn("Failed to fetch class teacher data");
@@ -562,7 +558,7 @@ const StudentDasboard = () => {
       })();
     }
   }, [student]);
-  console.log("selectedExam: ", filteredExamResult);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {

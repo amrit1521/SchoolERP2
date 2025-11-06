@@ -249,6 +249,8 @@ import StudentGrid from "../admin/peoples/students/student-grid/index.tsx";
 import Storage from "../admin/settings/otherSettings/storage.tsx";
 import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
 import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
+import { student_routes } from "../admin/router/student_routes.tsx";
+import HomeWork from "../student/homeWork.tsx";
 const routes = all_routes;
 
 export const publicRoutes = [
@@ -295,6 +297,11 @@ export const publicRoutes = [
     route: Route,
   },
 
+  {
+    path: student_routes.homeWork,
+    element: <HomeWork />,
+    route: Route,
+  },
   {
     path: routes.connectedApps,
     element: <ConnectedApps />,
@@ -716,7 +723,6 @@ export const publicRoutes = [
     route: Route,
   },
 
-
   {
     path: routes.placeholder,
     element: <Placeholder />,
@@ -828,13 +834,11 @@ export const publicRoutes = [
     path: routes.classRoom,
     element: <ClassRoom />,
     route: Route,
-
   },
   {
     path: routes.classRoutine,
     element: <ClassRoutine />,
     route: Route,
-
   },
   {
     path: routes.sheduleClasses,
@@ -851,7 +855,6 @@ export const publicRoutes = [
     path: routes.examSchedule,
     element: <ExamSchedule />,
     route: Route,
-
   },
   {
     path: routes.grade,
@@ -975,7 +978,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path:`${routes.staffDetails}/:staffid`,
+    path: `${routes.staffDetails}/:staffid`,
     element: <StaffDetails />,
     route: Route,
   },
@@ -1135,7 +1138,6 @@ export const publicRoutes = [
     element: <TeacherAttendance />,
     route: Route,
   },
-
 
   {
     path: routes.staffAttendance,
@@ -1590,10 +1592,10 @@ export const authRoutes = [
   //     path: routes.lockScreen,
   //     element: <LockScreen />,
   //   },
-    {
-      path: routes.resetPasswordSuccess,
-      element: <ResetPasswordSuccess />,
-    },
+  {
+    path: routes.resetPasswordSuccess,
+    element: <ResetPasswordSuccess />,
+  },
   //   {
   //     path: routes.resetPasswordSuccess2,
   //     element: <ResetPasswordSuccess2 />,
