@@ -5,32 +5,39 @@ import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { all_routes } from "../../../router/all_routes";
 import {
-
   Contract,
-  Hostel,
+  // Hostel,
+  // PickupPoint,
+  // VehicleNumber,
+  // roomNO,
+  // route,
   Marital,
-  PickupPoint,
   Shift,
-  VehicleNumber,
   allSubject,
   bloodGroup,
   gender,
-  roomNo,
-  route,
   status,
-
 } from "../../../../core/common/selectoption/selectoption";
 
 import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import { toast } from "react-toastify";
-import { addTeacher, deleteTeacherFile,  getAllSectionForAClass, uploadTeacherFile } from "../../../../service/api";
+import {
+  addTeacher,
+  deleteTeacherFile,
+  getAllSectionForAClass,
+  getAllTransportRoutes,
+  getAssignedVehicleForARoute,
+  getTransportPickUpPointsForRouteId,
+  uploadTeacherFile,
+} from "../../../../service/api";
 import { allRealClasses } from "../../../../service/classApi";
+import { allHostel, getAllRoomForAHostel } from "../../../../service/hostel";
 
 const TeacherForm = () => {
   const routes = all_routes;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // const [isEdit, setIsEdit] = useState<boolean>(false);
 
@@ -58,7 +65,6 @@ const TeacherForm = () => {
   // console.log(defaultDate ? "" : "")
 
   interface TeacherData {
-
     first_name: string;
     last_name: string;
     primarycont: string;
@@ -114,24 +120,19 @@ const TeacherForm = () => {
     branch_name: string;
 
     // transport info
-    route: string;
-    vehicle_num: string;
-    pickup_point: string;
+    route: number | null;
+    vehicle_num: number | null;
+    pickup_point: number | null;
 
     // hostel info
-    hostel: string;
-    room_num: string;
+    hostel: number | null;
+    room_num: number | null;
 
-
-    //  social media link 
+    //  social media link
     facebook_link: string;
     instagram_link: string;
     linked_link: string;
     twitter_link: string;
-
-
-
-
   }
 
   const [teacherData, setTeacherData] = useState<TeacherData>({
@@ -181,22 +182,22 @@ const TeacherForm = () => {
     ifsc_code: "",
     branch_name: "",
     // transport info
-    route: "",
-    vehicle_num: "",
-    pickup_point: "",
+    route: null,
+    vehicle_num: null,
+    pickup_point: null,
 
     // hostel info
-    hostel: "",
-    room_num: "",
+    hostel: null,
+    room_num: null,
 
     facebook_link: "",
     instagram_link: "",
     linked_link: "",
     twitter_link: "",
-
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof TeacherData, string>>>({});
-
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof TeacherData, string>>
+  >({});
 
   const [teacherImg, setTeacherImg] = useState<File | null>(null);
   const [teacherResume, setTeacherResume] = useState<File | null>(null);
@@ -204,11 +205,122 @@ const TeacherForm = () => {
 
   const [teacherImgpath, setTeacherImgpath] = useState<string>("");
   const [teacherResumepath, setTeacherResumepath] = useState<string>("");
-  const [teacherJoinLetterpath, setTeacherJoinLetterpath] = useState<string>("");
+  const [teacherJoinLetterpath, setTeacherJoinLetterpath] =
+    useState<string>("");
 
   const [teacherImgid, setTeacherImgid] = useState<number | null>(null);
   const [teacherResumeid, setTeacherResumeid] = useState<number | null>(null);
-  const [teacherJoinLetterid, setTeacherJoinLetterid] = useState<number | null>(null);
+  const [teacherJoinLetterid, setTeacherJoinLetterid] = useState<number | null>(
+    null
+  );
+  const [transportRouteOption, setTransportRouteOption] = useState<any[]>([]);
+  const [pickupPointOption, setPickupPointOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [vehicalOption, setVehicalOption] = useState<any[]>([]);
+  const [allhostels, setAllHostels] = useState<any[]>([]);
+  const [allRoomsOptions, setAllRoomsOptions] = useState<any[]>([]);
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        setTransportRouteOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load routes");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load routes");
+    }
+  };
+
+  const fetchPickupPoints = async (id: number) => {
+    try {
+      const { data } = await getTransportPickUpPointsForRouteId(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setPickupPointOption(
+          data.result.map((point: any) => ({
+            value: point.id,
+            label: point.pickPointName,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch pickup points");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch pickup points"
+      );
+    }
+  };
+  const fetchAssginedVehicle = async (id: number) => {
+    try {
+      const { data } = await getAssignedVehicleForARoute(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setVehicalOption(
+          data.result.map((item: any) => ({
+            value: item.vehicle_id,
+            label: item.vehicle_no,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch assigned vehicles");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch assigned vehicles"
+      );
+    }
+  };
+
+  const fetchHostels = async () => {
+    try {
+      const { data } = await allHostel();
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllHostels(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.hostelName,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const fetchHostelsRooms = async (id: number) => {
+    try {
+      const { data } = await getAllRoomForAHostel(id);
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllRoomsOptions(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.roomNo,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    if (teacherData.hostel) {
+      fetchHostelsRooms(teacherData.hostel);
+    }
+  }, [teacherData.hostel]);
+
+  useEffect(() => {
+    if (teacherData.route) {
+      fetchPickupPoints(teacherData.route);
+      fetchAssginedVehicle(teacherData.route);
+    }
+  }, [teacherData.route]);
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -229,7 +341,6 @@ const TeacherForm = () => {
         toast.error("File size should not exceed 4MB.");
         return;
       }
-
 
       setFile(file);
 
@@ -285,9 +396,9 @@ const TeacherForm = () => {
     }
   };
 
-
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setTeacherData((prev) => ({
       ...prev,
@@ -295,41 +406,45 @@ const TeacherForm = () => {
     }));
   };
 
-
   const handleDateChange = (
     name: keyof TeacherData,
     date: dayjs.Dayjs | null,
     dateString: string
   ) => {
-    console.log(date ? "" : "")
+    console.log(date ? "" : "");
     setTeacherData((prev) => ({ ...prev, [name]: dateString }));
   };
 
-
-  const handleSelectChange = (name: keyof TeacherData, value: string | number) => {
+  const handleSelectChange = (
+    name: keyof TeacherData,
+    value: string | number | null
+  ) => {
     setTeacherData((prev) => ({ ...prev, [name]: value }));
   };
 
-
-
-  const handleTagsChange = (field: keyof typeof teacherData, tags: string[]) => {
+  const handleTagsChange = (
+    field: keyof typeof teacherData,
+    tags: string[]
+  ) => {
     setTeacherData((prev) => ({
       ...prev,
-      [field]: tags
+      [field]: tags,
     }));
   };
-
 
   const validateTeacherData = (data: TeacherData) => {
     const errors: Partial<Record<keyof TeacherData, string>> = {};
 
     if (!data.first_name.trim()) errors.first_name = "First name is required";
     if (!data.last_name.trim()) errors.last_name = "Last name is required";
-    if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont)) errors.primarycont = "Valid 10-digit contact number is required";
-    if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Valid email is required";
+    if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont))
+      errors.primarycont = "Valid 10-digit contact number is required";
+    if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
+      errors.email = "Valid email is required";
 
     if (!data.password.trim()) errors.password = "Password is required";
-    if (!data.conpassword.trim()) errors.conpassword = "Confirm Password is required";
+    if (!data.conpassword.trim())
+      errors.conpassword = "Confirm Password is required";
     // if (data.password !== data.conpassword) errors.password = "Password and confirm password do not match";
 
     if (!data.teacher_id.trim()) errors.teacher_id = "Teacher ID is required";
@@ -339,84 +454,94 @@ const TeacherForm = () => {
     if (!data.section) errors.section = "Section is required";
     if (!data.subject.trim()) errors.subject = "Subject is required";
     if (!data.gender.trim()) errors.gender = "Gender is required";
-    if (!data.date_of_join.trim()) errors.date_of_join = "Date of joining is required";
+    if (!data.date_of_join.trim())
+      errors.date_of_join = "Date of joining is required";
     if (!data.dob.trim()) errors.dob = "Date of birth is required";
     if (!data.fat_name.trim()) errors.fat_name = "Father's Name is required";
     if (!data.mot_name.trim()) errors.mot_name = "Mother's Name is required";
-    if (!data.qualification.trim()) errors.qualification = "Qualification is required";
+    if (!data.qualification.trim())
+      errors.qualification = "Qualification is required";
     if (!data.work_exp.trim()) errors.work_exp = "Work Experience is required";
     if (!data.address.trim()) errors.address = "Address is required";
-    if (!data.perm_address.trim()) errors.perm_address = "Permannent Address is required";
+    if (!data.perm_address.trim())
+      errors.perm_address = "Permannent Address is required";
     if (!data.pan_or_id.trim()) errors.pan_or_id = "Pan Or Id is required";
 
     if (!data.epf_no) errors.epf_no = "EPF number is required";
-    if (!data.basic_salary.trim()) errors.basic_salary = "Basic salary is required";
-    if (!data.contract_type.trim()) errors.contract_type = "Contract type is required";
+    if (!data.basic_salary.trim())
+      errors.basic_salary = "Basic salary is required";
+    if (!data.contract_type.trim())
+      errors.contract_type = "Contract type is required";
 
+    if (!data.medical_leaves.trim())
+      errors.medical_leaves = "Medical leave is required !";
+    if (!data.casual_leaves.trim())
+      errors.casual_leaves = "Casual leave is required !";
 
-    if (!data.medical_leaves.trim()) errors.medical_leaves = "Medical leave is required !"
-    if (!data.casual_leaves.trim()) errors.casual_leaves = "Casual leave is required !"
-
-    if (!data.account_name.trim()) errors.account_name = "Account name is required";
-    if (!data.account_num.trim()) errors.account_num = "Bank account number is required";
+    if (!data.account_name.trim())
+      errors.account_name = "Account name is required";
+    if (!data.account_num.trim())
+      errors.account_num = "Bank account number is required";
     if (!data.ifsc_code.trim()) errors.ifsc_code = "IFSC code is required";
     if (!data.bank_name.trim()) errors.bank_name = "Bank name is required";
-    if (!data.branch_name.trim()) errors.branch_name = "Branch name is required";
+    if (!data.branch_name.trim())
+      errors.branch_name = "Branch name is required";
 
     if (!teacherImg) {
-      toast.error("Teacher Image is Required !")
+      toast.error("Teacher Image is Required !");
     }
     if (!teacherResume) {
-      toast.error("Teacher Resume is Required !")
+      toast.error("Teacher Resume is Required !");
     }
     if (!teacherJoinLetter) {
-      toast.error("Teacher Join Letter is Required !")
+      toast.error("Teacher Join Letter is Required !");
     }
 
-    setErrors(errors)
+    setErrors(errors);
 
-    return Object.keys(errors).length === 0
+    return Object.keys(errors).length === 0;
   };
 
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateTeacherData(teacherData)) {
-      toast.error("Required fileds must be filled !")
-      return
+      toast.error("Required fileds must be filled !");
+      return;
     }
 
     try {
-      if (!teacherData.password.trim() || teacherData.password !== teacherData.conpassword) {
-        toast.error('Password and Confirm Password do not match !')
-        return
+      if (
+        !teacherData.password.trim() ||
+        teacherData.password !== teacherData.conpassword
+      ) {
+        toast.error("Password and Confirm Password do not match !");
+        return;
       }
 
-
-      const formData = new FormData()
+      const formData = new FormData();
       if (teacherImg && teacherResume && teacherJoinLetter) {
-        formData.append('img_src', teacherImgpath)
-        formData.append('resume_src', teacherResumepath)
-        formData.append('letter_src', teacherJoinLetterpath)
+        formData.append("img_src", teacherImgpath);
+        formData.append("resume_src", teacherResumepath);
+        formData.append("letter_src", teacherJoinLetterpath);
       } else {
-        toast.error('All files are required !')
-        return
+        toast.error("All files are required !");
+        return;
       }
 
       Object.entries(teacherData).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value))
+          formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value as string)
+          formData.append(key, value as string);
         }
-      })
+      });
 
       // Object.entries(formData).forEach(([key, value]) => {
       //   console.log(key, value)
       // })
 
-      const res = await addTeacher(formData)
+      const res = await addTeacher(formData);
       if (res.data.success) {
         toast.success(res.data.message);
 
@@ -467,11 +592,11 @@ const TeacherForm = () => {
           bank_name: "",
           ifsc_code: "",
           branch_name: "",
-          route: "",
-          vehicle_num: "",
-          pickup_point: "",
-          hostel: "",
-          room_num: "",
+          route: null,
+          vehicle_num: null,
+          pickup_point: null,
+          hostel: null,
+          room_num: null,
           facebook_link: "",
           instagram_link: "",
           linked_link: "",
@@ -490,18 +615,16 @@ const TeacherForm = () => {
         setTeacherImgid(null);
         setTeacherResumeid(null);
         setTeacherJoinLetterid(null);
-        navigate(-1)
-
+        navigate(-1);
       }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     }
-  }
-
+  };
 
   const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     setTeacherData({
       first_name: "",
       last_name: "",
@@ -548,11 +671,11 @@ const TeacherForm = () => {
       bank_name: "",
       ifsc_code: "",
       branch_name: "",
-      route: "",
-      vehicle_num: "",
-      pickup_point: "",
-      hostel: "",
-      room_num: "",
+      route: null,
+      vehicle_num: null,
+      pickup_point: null,
+      hostel: null,
+      room_num: null,
       facebook_link: "",
       instagram_link: "",
       linked_link: "",
@@ -571,41 +694,43 @@ const TeacherForm = () => {
     setTeacherImgid(null);
     setTeacherResumeid(null);
     setTeacherJoinLetterid(null);
-    navigate(-1)
-
-  }
-
+    navigate(-1);
+  };
 
   // options
 
-  const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
-  const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([])
-
+  const [classOptions, setClassOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [sectionOptions, setSectionOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   const fetchClass = async () => {
     try {
       const { data } = await allRealClasses();
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-
         setClassOptions(
           data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
         );
       } else {
         setClassOptions([]);
       }
-
     } catch (error) {
       console.log(error);
       toast.error("Error to fetch classes !");
-
     }
   };
   const fetchSection = async () => {
     try {
       if (teacherData.class) {
-        const { data } = await getAllSectionForAClass(Number(teacherData.class));
+        const { data } = await getAllSectionForAClass(
+          Number(teacherData.class)
+        );
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+          setSectionOptions(
+            data.data.map((e: any) => ({ value: e.id, label: e.section_name }))
+          );
         } else {
           setSectionOptions([]);
         }
@@ -614,20 +739,19 @@ const TeacherForm = () => {
       console.log(error);
       toast.error("Error to fetch section !");
     }
-  }
-
+  };
 
   useEffect(() => {
-    fetchClass()
-  }, [])
+    fetchClass();
+    fetchRoutes();
+    fetchHostels();
+  }, []);
 
   useEffect(() => {
     if (teacherData.class) {
-      fetchSection()
+      fetchSection();
     }
-  }, [teacherData.class])
-
-
+  }, [teacherData.class]);
 
   return (
     <>
@@ -672,11 +796,21 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-md-12">
                           <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {
-                              !teacherImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                <i className="ti ti-photo-plus fs-16" />
-                              </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(teacherImg)} alt="" /></p>
-                            }
+                            {!teacherImg ? (
+                              <>
+                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                  <i className="ti ti-photo-plus fs-16" />
+                                </div>
+                              </>
+                            ) : (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={URL.createObjectURL(teacherImg)}
+                                  alt=""
+                                />
+                              </p>
+                            )}
                             <div className="profile-upload">
                               <div className="profile-uploader d-flex align-items-center">
                                 <div className="drag-upload-btn mb-3">
@@ -685,13 +819,24 @@ const TeacherForm = () => {
                                     type="file"
                                     accept="image/*"
                                     className="form-control image-sign"
-                                    onChange={(e) => handleFileChange(e, setTeacherImg, 'teacherImgpath')}
-
+                                    onChange={(e) =>
+                                      handleFileChange(
+                                        e,
+                                        setTeacherImg,
+                                        "teacherImgpath"
+                                      )
+                                    }
                                   />
-                                </div><span className="text-danger"> *</span>
-                                {teacherImgid && (<div onClick={() => deleteFile(teacherImgid)} className="btn btn-outline-danger mb-3 ">
-                                  Remove
-                                </div>)}
+                                </div>
+                                <span className="text-danger"> *</span>
+                                {teacherImgid && (
+                                  <div
+                                    onClick={() => deleteFile(teacherImgid)}
+                                    className="btn btn-outline-danger mb-3 "
+                                  >
+                                    Remove
+                                  </div>
+                                )}
                               </div>
                               <p className="fs-12">
                                 Upload image size 4MB, Format JPG, PNG
@@ -703,7 +848,8 @@ const TeacherForm = () => {
                       <div className="row row-cols-xxl-5 row-cols-md-6">
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Teacher ID</label><span className="text-danger"> *</span>
+                            <label className="form-label">Teacher ID</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="teacher_id"
@@ -712,14 +858,20 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.teacher_id && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.teacher_id}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.teacher_id}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">First Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">First Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="first_name"
@@ -728,14 +880,20 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.first_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.first_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.first_name}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Last Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Last Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="last_name"
@@ -744,101 +902,175 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.last_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.last_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.last_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">From Class</label><span className="text-danger"> *</span>
+                            <label className="form-label">From Class</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={classOptions}
                               value={teacherData.fromclass}
-                              onChange={(option) => handleSelectChange("fromclass", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "fromclass",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.fromclass && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.fromclass}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fromclass}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">To Class</label><span className="text-danger"> *</span>
+                            <label className="form-label">To Class</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={classOptions}
                               value={teacherData.toclass}
-                              onChange={(option) => handleSelectChange("toclass", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "toclass",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.toclass && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.toclass}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.toclass}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Class</label><span className="text-danger"> *</span>
+                            <label className="form-label">Class</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={classOptions}
                               value={teacherData.class}
-                              onChange={(option) => handleSelectChange("class", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "class",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.class && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.class}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.class}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Section</label><span className="text-danger"> *</span>
+                            <label className="form-label">Section</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select text-capitalize"
                               options={sectionOptions}
                               value={teacherData.section}
-                              onChange={(option) => handleSelectChange("section", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "section",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.section && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.section}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.section}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Subject</label><span className="text-danger"> *</span>
+                            <label className="form-label">Subject</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={allSubject}
                               value={teacherData.subject}
-                              onChange={(option) => handleSelectChange("subject", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "subject",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.subject && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.subject}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.subject}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Gender</label><span className="text-danger"> *</span>
+                            <label className="form-label">Gender</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={gender}
                               value={teacherData.gender}
-                              onChange={(option) => handleSelectChange("gender", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "gender",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.gender && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.gender}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.gender}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Primary Contact Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">
+                              Primary Contact Number
+                            </label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="primarycont"
@@ -847,14 +1079,20 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.primarycont && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.primarycont}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.primarycont}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Email Address</label><span className="text-danger"> *</span>
+                            <label className="form-label">Email Address</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="email"
                               name="email"
@@ -863,7 +1101,12 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.email && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.email}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.email}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -875,32 +1118,52 @@ const TeacherForm = () => {
                               className="select"
                               options={bloodGroup}
                               value={teacherData.blood_gp}
-                              onChange={(option) => handleSelectChange("blood_gp", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "blood_gp",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Date of Joining</label><span className="text-danger"> *</span>
+                            <label className="form-label">
+                              Date of Joining
+                            </label>
+                            <span className="text-danger"> *</span>
                             <div className="input-icon position-relative">
                               <DatePicker
                                 className="form-control datetimepicker"
                                 format="DD MMM YYYY"
                                 value={
                                   teacherData.date_of_join
-                                    ? dayjs(teacherData.date_of_join, 'DD MMM YYYY')
+                                    ? dayjs(
+                                        teacherData.date_of_join,
+                                        "DD MMM YYYY"
+                                      )
                                     : null
                                 }
                                 placeholder="Select Date"
-
                                 onChange={(date, dateString) =>
-                                  handleDateChange("date_of_join", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                  handleDateChange(
+                                    "date_of_join",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
                                 }
-
                               />
                               {errors.date_of_join && (
-                                <div style={{ fontSize: '11px' }} className="text-danger">{errors.date_of_join}</div>
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.date_of_join}
+                                </div>
                               )}
                               <span className="input-icon-addon">
                                 <i className="ti ti-calendar" />
@@ -911,7 +1174,8 @@ const TeacherForm = () => {
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Father’s Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Father’s Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="fat_name"
@@ -920,14 +1184,20 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.fat_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.fat_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fat_name}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Mother’s Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Mother’s Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="mot_name"
@@ -936,32 +1206,47 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.mot_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.mot_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.mot_name}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Date of Birth</label><span className="text-danger"> *</span>
+                            <label className="form-label">Date of Birth</label>
+                            <span className="text-danger"> *</span>
                             <div className="input-icon position-relative">
                               <DatePicker
                                 className="form-control datetimepicker"
                                 format="DD MMM YYYY"
                                 value={
                                   teacherData.dob
-                                    ? dayjs(teacherData.dob, 'DD MMM YYYY')
+                                    ? dayjs(teacherData.dob, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
-
                                 onChange={(date, dateString) =>
-                                  handleDateChange("dob", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                  handleDateChange(
+                                    "dob",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
                                 }
-
                               />
                               {errors.dob && (
-                                <div style={{ fontSize: '11px' }} className="text-danger">{errors.dob}</div>
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.dob}
+                                </div>
                               )}
                               <span className="input-icon-addon">
                                 <i className="ti ti-calendar" />
@@ -977,7 +1262,12 @@ const TeacherForm = () => {
                               className="select"
                               options={Marital}
                               value={teacherData.mari_status}
-                              onChange={(option) => handleSelectChange("mari_status", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "mari_status",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -987,13 +1277,17 @@ const TeacherForm = () => {
                             <label className="form-label">Language Known</label>
                             <TagInput
                               initialTags={teacherData.lan_known}
-                              onTagsChange={(tags) => handleTagsChange('lan_known', tags)} />
+                              onTagsChange={(tags) =>
+                                handleTagsChange("lan_known", tags)
+                              }
+                            />
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Qualification</label><span className="text-danger"> *</span>
+                            <label className="form-label">Qualification</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="qualification"
@@ -1001,13 +1295,23 @@ const TeacherForm = () => {
                               value={teacherData.qualification}
                               onChange={handleInputChange}
                             />
-                            {errors.qualification && (<div style={{ fontSize: '11px' }} className="text-danger">{errors.qualification}</div>)}
+                            {errors.qualification && (
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.qualification}
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Work Experience</label><span className="text-danger"> *</span>
+                            <label className="form-label">
+                              Work Experience
+                            </label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="work_exp"
@@ -1016,14 +1320,21 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.work_exp && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.work_exp}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.work_exp}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Previous School if Any</label>
+                            <label className="form-label">
+                              Previous School if Any
+                            </label>
                             <input
                               type="text"
                               name="prev_school"
@@ -1036,7 +1347,9 @@ const TeacherForm = () => {
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Previous School Address</label>
+                            <label className="form-label">
+                              Previous School Address
+                            </label>
                             <input
                               type="text"
                               name="prev_school_addr"
@@ -1049,7 +1362,9 @@ const TeacherForm = () => {
 
                         <div className="col-xxl col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Previous School Phone No</label>
+                            <label className="form-label">
+                              Previous School Phone No
+                            </label>
                             <input
                               type="text"
                               name="prev_school_num"
@@ -1062,7 +1377,8 @@ const TeacherForm = () => {
 
                         <div className="col-xxl-3 col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Address</label><span className="text-danger"> *</span>
+                            <label className="form-label">Address</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="address"
@@ -1071,14 +1387,22 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.address && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.address}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.address}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl-3 col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Permanent Address</label><span className="text-danger"> *</span>
+                            <label className="form-label">
+                              Permanent Address
+                            </label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="perm_address"
@@ -1087,14 +1411,22 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.perm_address && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.perm_address}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.perm_address}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <div className="col-xxl-3 col-xl-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">PAN Number / ID Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">
+                              PAN Number / ID Number
+                            </label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="pan_or_id"
@@ -1103,7 +1435,12 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.pan_or_id && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.pan_or_id}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.pan_or_id}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1115,7 +1452,12 @@ const TeacherForm = () => {
                               className="select"
                               options={status}
                               value={teacherData.status}
-                              onChange={(option) => handleSelectChange("status", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "status",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1134,7 +1476,6 @@ const TeacherForm = () => {
                           </div>
                         </div>
                       </div>
-
                     </div>
                   </div>
                   {/* /Personal Information */}
@@ -1155,7 +1496,8 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">EPF No</label><span className="text-danger">*</span>
+                            <label className="form-label">EPF No</label>
+                            <span className="text-danger">*</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1164,13 +1506,19 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.epf_no && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.epf_no}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.epf_no}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Basic Salary</label><span className="text-danger"> *</span>
+                            <label className="form-label">Basic Salary</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1179,21 +1527,37 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.basic_salary && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.basic_salary}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.basic_salary}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Contract Type</label><span className="text-danger"> *</span>
+                            <label className="form-label">Contract Type</label>
+                            <span className="text-danger"> *</span>
                             <CommonSelect
                               className="select"
                               options={Contract}
                               value={teacherData.contract_type}
-                              onChange={(option) => handleSelectChange("contract_type", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "contract_type",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                             {errors.contract_type && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.contract_type}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.contract_type}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1204,7 +1568,12 @@ const TeacherForm = () => {
                               className="select"
                               options={Shift}
                               value={teacherData.work_sift}
-                              onChange={(option) => handleSelectChange("work_sift", option ? option.value : "")}
+                              onChange={(option) =>
+                                handleSelectChange(
+                                  "work_sift",
+                                  option ? option.value : ""
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -1231,15 +1600,22 @@ const TeacherForm = () => {
                                 format="DD MMM YYYY"
                                 value={
                                   teacherData.date_of_leave
-                                    ? dayjs(teacherData.date_of_leave, 'DD MMM YYYY')
+                                    ? dayjs(
+                                        teacherData.date_of_leave,
+                                        "DD MMM YYYY"
+                                      )
                                     : null
                                 }
                                 placeholder="Select Date"
-
                                 onChange={(date, dateString) =>
-                                  handleDateChange("date_of_leave", date, Array.isArray(dateString) ? dateString[0] : dateString)
+                                  handleDateChange(
+                                    "date_of_leave",
+                                    date,
+                                    Array.isArray(dateString)
+                                      ? dateString[0]
+                                      : dateString
+                                  )
                                 }
-
                               />
                               <span className="input-icon-addon">
                                 <i className="ti ti-calendar" />
@@ -1265,7 +1641,10 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Medical Leaves<span className="text-danger">*</span> </label>
+                            <label className="form-label">
+                              Medical Leaves
+                              <span className="text-danger">*</span>{" "}
+                            </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1274,13 +1653,21 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.medical_leaves && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.medical_leaves}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.medical_leaves}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Casual Leaves <span className="text-danger">*</span></label>
+                            <label className="form-label">
+                              Casual Leaves{" "}
+                              <span className="text-danger">*</span>
+                            </label>
                             <input
                               type="text"
                               className="form-control"
@@ -1289,7 +1676,12 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.casual_leaves && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.casual_leaves}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.casual_leaves}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1324,7 +1716,6 @@ const TeacherForm = () => {
                   </div>
                   {/* /Leaves */}
 
-
                   {/* Bank Details */}
                   <div className="card">
                     <div className="card-header bg-light">
@@ -1339,7 +1730,8 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Account Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Account Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               className="form-control"
@@ -1348,13 +1740,19 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.account_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Account Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">Account Number</label>
+                            <span className="text-danger"> *</span>
                             <input
                               type="text"
                               name="account_num"
@@ -1363,30 +1761,40 @@ const TeacherForm = () => {
                               onChange={handleInputChange}
                             />
                             {errors.account_num && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.account_num}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.account_num}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Bank Name</label><span className="text-danger">*</span>
+                            <label className="form-label">Bank Name</label>
+                            <span className="text-danger">*</span>
                             <input
                               type="text"
                               name="bank_name"
                               onChange={handleInputChange}
                               className="form-control"
-                              value={
-                                teacherData.bank_name
-                              }
+                              value={teacherData.bank_name}
                             />
                             {errors.bank_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.bank_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.bank_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">IFSC Code</label><span className="text-danger"> *</span>
+                            <label className="form-label">IFSC Code</label>
+                            <span className="text-danger"> *</span>
                             <input
                               onChange={handleInputChange}
                               type="text"
@@ -1395,13 +1803,19 @@ const TeacherForm = () => {
                               value={teacherData.ifsc_code}
                             />
                             {errors.ifsc_code && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.ifsc_code}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.ifsc_code}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-4 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Branch Name</label><span className="text-danger">*</span>
+                            <label className="form-label">Branch Name</label>
+                            <span className="text-danger">*</span>
                             <input
                               onChange={handleInputChange}
                               type="text"
@@ -1410,7 +1824,12 @@ const TeacherForm = () => {
                               value={teacherData.branch_name}
                             />
                             {errors.branch_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.branch_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.branch_name}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1429,7 +1848,6 @@ const TeacherForm = () => {
                       </span>
                       <h4 className="text-dark">Transport Information</h4>
                     </div>
-
                   </div>
                   {/* <div className="form-check form-switch">
                     <input
@@ -1445,20 +1863,14 @@ const TeacherForm = () => {
                           <label className="form-label">Route</label>
                           <CommonSelect
                             className="select"
-                            options={route}
+                            options={transportRouteOption}
                             value={teacherData.route}
-                            onChange={(option) => handleSelectChange("route", option ? option.value : "")}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">Vehicle Number</label>
-                          <CommonSelect
-                            className="select"
-                            options={VehicleNumber}
-                            value={teacherData.vehicle_num}
-                            onChange={(option) => handleSelectChange("vehicle_num", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "route",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1467,9 +1879,30 @@ const TeacherForm = () => {
                           <label className="form-label">Pickup Point</label>
                           <CommonSelect
                             className="select"
-                            options={PickupPoint}
+                            options={pickupPointOption}
                             value={teacherData.pickup_point}
-                            onChange={(option) => handleSelectChange("pickup_point", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "pickup_point",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Vehicle Number</label>
+                          <CommonSelect
+                            className="select"
+                            options={vehicalOption}
+                            value={teacherData.vehicle_num}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "vehicle_num",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1477,7 +1910,6 @@ const TeacherForm = () => {
                   </div>
                 </div>
                 {/* /Transport Information */}
-
 
                 {/* Hostel Information */}
                 <div className="card">
@@ -1503,9 +1935,14 @@ const TeacherForm = () => {
                           <label className="form-label">Hostel</label>
                           <CommonSelect
                             className="select"
-                            options={Hostel}
+                            options={allhostels}
                             value={teacherData.hostel}
-                            onChange={(option) => handleSelectChange("hostel", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "hostel",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1514,9 +1951,14 @@ const TeacherForm = () => {
                           <label className="form-label">Room No</label>
                           <CommonSelect
                             className="select"
-                            options={roomNo}
+                            options={allRoomsOptions}
                             value={teacherData.room_num}
-                            onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "room_num",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1544,9 +1986,7 @@ const TeacherForm = () => {
                               type="text"
                               className="form-control"
                               name="facebook_link"
-                              value={
-                                teacherData.facebook_link
-                              }
+                              value={teacherData.facebook_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1558,9 +1998,7 @@ const TeacherForm = () => {
                               type="text"
                               className="form-control"
                               name="instagram_link"
-                              value={
-                                teacherData.instagram_link
-                              }
+                              value={teacherData.instagram_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1572,9 +2010,7 @@ const TeacherForm = () => {
                               type="text"
                               className="form-control"
                               name="linked_link"
-                              value={
-                                teacherData.linked_link
-                              }
+                              value={teacherData.linked_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1586,9 +2022,7 @@ const TeacherForm = () => {
                               type="text"
                               className="form-control"
                               name="twitter_link"
-                              value={
-                                teacherData.twitter_link
-                              }
+                              value={teacherData.twitter_link}
                               onChange={handleInputChange}
                             />
                           </div>
@@ -1614,7 +2048,8 @@ const TeacherForm = () => {
                             <div className="mb-3">
                               <label className="form-label">
                                 Upload Resume
-                              </label><span className="text-danger"> *</span>
+                              </label>
+                              <span className="text-danger"> *</span>
                               <p>
                                 Upload image size of 4MB, Accepted Format PDF
                               </p>
@@ -1627,12 +2062,23 @@ const TeacherForm = () => {
                                   type="file"
                                   className="form-control image_sign"
                                   accept="application/pdf"
-                                  onChange={(e) => handleFileChange(e, setTeacherResume, 'teacherResumepath')}
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setTeacherResume,
+                                      "teacherResumepath"
+                                    )
+                                  }
                                 />
                               </div>
-                              {teacherResumeid && (<div onClick={() => deleteFile(teacherResumeid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                Remove
-                              </div>)}
+                              {teacherResumeid && (
+                                <div
+                                  onClick={() => deleteFile(teacherResumeid)}
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1641,7 +2087,8 @@ const TeacherForm = () => {
                             <div className="mb-3">
                               <label className="form-label">
                                 Upload Joining Letter
-                              </label><span className="text-danger"> *</span>
+                              </label>
+                              <span className="text-danger"> *</span>
                               <p>
                                 Upload image size of 4MB, Accepted Format PDF
                               </p>
@@ -1654,12 +2101,25 @@ const TeacherForm = () => {
                                   type="file"
                                   className="form-control image_sign"
                                   accept="application/pdf"
-                                  onChange={(e) => handleFileChange(e, setTeacherJoinLetter, 'teacherJoinLetterpath')}
+                                  onChange={(e) =>
+                                    handleFileChange(
+                                      e,
+                                      setTeacherJoinLetter,
+                                      "teacherJoinLetterpath"
+                                    )
+                                  }
                                 />
                               </div>
-                              {teacherJoinLetterid && (<div onClick={() => deleteFile(teacherJoinLetterid)} className="btn btn-sm btn-outline-danger mb-2 ">
-                                Remove
-                              </div>)}
+                              {teacherJoinLetterid && (
+                                <div
+                                  onClick={() =>
+                                    deleteFile(teacherJoinLetterid)
+                                  }
+                                  className="btn btn-sm btn-outline-danger mb-2 "
+                                >
+                                  Remove
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1681,10 +2141,22 @@ const TeacherForm = () => {
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Password</label><span className="text-danger"> *</span>
-                            <input type="password" className="form-control" value={teacherData.password} name="password" onChange={handleInputChange} />
+                            <label className="form-label">Password</label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="password"
+                              className="form-control"
+                              value={teacherData.password}
+                              name="password"
+                              onChange={handleInputChange}
+                            />
                             {errors.password && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.password}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.password}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1692,10 +2164,22 @@ const TeacherForm = () => {
                           <div className="mb-3">
                             <label className="form-label">
                               Confirm Password
-                            </label><span className="text-danger"> *</span>
-                            <input type="password" className="form-control" value={teacherData.conpassword} name="conpassword" onChange={handleInputChange} />
+                            </label>
+                            <span className="text-danger"> *</span>
+                            <input
+                              type="password"
+                              className="form-control"
+                              value={teacherData.conpassword}
+                              name="conpassword"
+                              onChange={handleInputChange}
+                            />
                             {errors.conpassword && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.conpassword}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.conpassword}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1706,7 +2190,11 @@ const TeacherForm = () => {
                 </>
 
                 <div className="text-end">
-                  <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-3">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCancel(e)}
+                    className="btn btn-light me-3"
+                  >
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

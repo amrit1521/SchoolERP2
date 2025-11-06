@@ -6,11 +6,12 @@ import dayjs from "dayjs";
 import { all_routes } from "../../../router/all_routes";
 import {
   // AdmissionNo,
-  Hostel,
-  PickupPoint,
-  VehicleNumber,
+  // Hostel,
+  // PickupPoint,
+  // VehicleNumber,
+  // roomNO,
+  // route,
   academicYear,
- 
   bloodGroup,
   cast,
   gender,
@@ -19,18 +20,24 @@ import {
   // names,
   religion,
   // rollno,
-  roomNo,
-  route,
   status,
 } from "../../../../core/common/selectoption/selectoption";
 
 import CommonSelect from "../../../../core/common/commonSelect";
 import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
-import { addStundent, deleteFile, getAllSectionForAClass, uploadStudentFile } from '../../../../service/api'
-import { toast } from 'react-toastify'
+import {
+  addStundent,
+  deleteFile,
+  getAllSectionForAClass,
+  getAllTransportRoutes,
+  getAssignedVehicleForARoute,
+  getTransportPickUpPointsForRouteId,
+  uploadStudentFile,
+} from "../../../../service/api";
+import { toast } from "react-toastify";
 import { allRealClasses } from "../../../../service/classApi";
-
+import { allHostel, getAllRoomForAHostel } from "../../../../service/hostel";
 
 export interface StudentData {
   academicyear: string;
@@ -72,11 +79,11 @@ export interface StudentData {
   perm_address: string;
   prev_school: string;
   prev_school_address: string;
-  hostel: string;
-  room_num: string;
-  route: string;
-  vehicle_num: string;
-  picup_point: string;
+  hostel: number | null;
+  room_num: number | null;
+  route: number | null;
+  vehicle_num: number | null;
+  picup_point: number | null;
   bank_name: string;
   branch: string;
   ifsc_num: string;
@@ -144,7 +151,7 @@ const AddStudent = () => {
   const routes = all_routes;
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const location = useLocation();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.pathname === routes.editStudent) {
@@ -166,63 +173,59 @@ const AddStudent = () => {
     }
   }, [location.pathname]);
 
-
-
-
   const [studentData, setStudentData] = useState<StudentData>({
-    academicyear: '',
-    admissionnum: '',
-    admissiondate: '',
-    rollnum: '',
-    status: '',
-    firstname: '',
-    lastname: '',
+    academicyear: "",
+    admissionnum: "",
+    admissiondate: "",
+    rollnum: "",
+    status: "",
+    firstname: "",
+    lastname: "",
     class: null,
     section: null,
-    gender: '',
-    dob: '',
-    bloodgp: '',
-    house: '',
-    religion: '',
-    category: '',
-    primarycont: '',
-    email: '',
-    caste: '',
-    motherton: '',
+    gender: "",
+    dob: "",
+    bloodgp: "",
+    house: "",
+    religion: "",
+    category: "",
+    primarycont: "",
+    email: "",
+    caste: "",
+    motherton: "",
     lanknown: [],
-    fat_name: '',
-    fat_email: '',
-    fat_phone: '',
-    fat_occu: '',
-    mot_name: '',
-    mot_email: '',
-    mot_phone: '',
-    mot_occu: '',
-    guardianIs: 'parents',
-    gua_name: '',
-    gua_relation: '',
-    gua_phone: '',
-    gua_email: '',
-    gua_occu: '',
-    gua_address: '',
-    curr_address: '',
-    perm_address: '',
-    prev_school: '',
-    prev_school_address: '',
-    hostel: '',
-    room_num: '',
-    route: '',
-    vehicle_num: '',
-    picup_point: '',
-    bank_name: '',
-    branch: '',
-    ifsc_num: '',
-    other_det: '',
-    condition: 'good',
+    fat_name: "",
+    fat_email: "",
+    fat_phone: "",
+    fat_occu: "",
+    mot_name: "",
+    mot_email: "",
+    mot_phone: "",
+    mot_occu: "",
+    guardianIs: "parents",
+    gua_name: "",
+    gua_relation: "",
+    gua_phone: "",
+    gua_email: "",
+    gua_occu: "",
+    gua_address: "",
+    curr_address: "",
+    perm_address: "",
+    prev_school: "",
+    prev_school_address: "",
+    hostel: null,
+    room_num: null,
+    route: null,
+    vehicle_num: null,
+    picup_point: null,
+    bank_name: "",
+    branch: "",
+    ifsc_num: "",
+    other_det: "",
+    condition: "good",
     allergies: [],
-    medications: []
-  })
-
+    medications: [],
+  });
 
   const [stuImg, setStuImg] = useState<File | null>(null);
   const [fatImg, setFatImg] = useState<File | null>(null);
@@ -231,7 +234,6 @@ const AddStudent = () => {
   const [medicalCerti, setMedicalCerti] = useState<File | null>(null);
   const [transferCerti, setTransferCerti] = useState<File | null>(null);
 
-
   const [stuimgpath, setStuimgpath] = useState<string>("");
   const [fatimgpath, setFatimgpath] = useState<string>("");
   const [motimgpath, setMotimgpath] = useState<string>("");
@@ -239,17 +241,120 @@ const AddStudent = () => {
   const [medcertpath, setMedcertpath] = useState<string>("");
   const [transcertpath, setTranscertpath] = useState<string>("");
 
+  const [stuimgid, setStuimgid] = useState<number | null>(null);
+  const [fatimgid, setFatimgid] = useState<number | null>(null);
+  const [motimgid, setMotimgid] = useState<number | null>(null);
+  const [guaimgid, setGuaimgid] = useState<number | null>(null);
+  const [medcertid, setMedcertid] = useState<number | null>(null);
+  const [transcertid, setTranscertid] = useState<number | null>(null);
+  const [transportRouteOption, setTransportRouteOption] = useState<any[]>([]);
+  const [pickupPointOption, setPickupPointOption] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [vehicalOption, setVehicalOption] = useState<any[]>([]);
+  const [allhostels, setAllHostels] = useState<any[]>([]);
+  const [allRoomsOptions, setAllRoomsOptions] = useState<any[]>([]);
+  const fetchRoutes = async () => {
+    try {
+      const { data } = await getAllTransportRoutes();
+      if (data.success) {
+        setTransportRouteOption(
+          data.result.map((e: any) => ({ value: e.id, label: e.routeName }))
+        );
+      } else {
+        toast.error(data.message || "Failed to load routes");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to load routes");
+    }
+  };
 
-  const [stuimgid, setStuimgid] = useState<number | null>(null)
-  const [fatimgid, setFatimgid] = useState<number | null>(null)
-  const [motimgid, setMotimgid] = useState<number | null>(null)
-  const [guaimgid, setGuaimgid] = useState<number | null>(null)
-  const [medcertid, setMedcertid] = useState<number | null>(null)
-  const [transcertid, setTranscertid] = useState<number | null>(null)
+  const fetchPickupPoints = async (id: number) => {
+    try {
+      const { data } = await getTransportPickUpPointsForRouteId(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setPickupPointOption(
+          data.result.map((point: any) => ({
+            value: point.id,
+            label: point.pickPointName,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch pickup points");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch pickup points"
+      );
+    }
+  };
+  const fetchAssginedVehicle = async (id: number) => {
+    try {
+      const { data } = await getAssignedVehicleForARoute(id);
+      if (data.success) {
+        console.log("data: ", data);
+        setVehicalOption(
+          data.result.map((item: any) => ({
+            value: item.vehicle_id,
+            label: item.vehicle_no,
+          }))
+        );
+      } else {
+        toast.error(data.message || "Failed to fetch assigned vehicles");
+      }
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to fetch assigned vehicles"
+      );
+    }
+  };
 
+  const fetchHostels = async () => {
+    try {
+      const { data } = await allHostel();
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllHostels(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.hostelName,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const fetchHostelsRooms = async (id: number) => {
+    try {
+      const { data } = await getAllRoomForAHostel(id);
+      if (data.success) {
+        console.log("hostel: ", data);
+        setAllRoomsOptions(
+          data.data.map((item: any) => ({
+            value: item.id,
+            label: item.roomNo,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  useEffect(() => {
+    if (studentData.hostel) {
+      fetchHostelsRooms(studentData.hostel);
+    }
+  }, [studentData.hostel]);
 
-
+  useEffect(() => {
+    if (studentData.route) {
+      fetchPickupPoints(studentData.route);
+      fetchAssginedVehicle(studentData.route);
+    }
+  }, [studentData.route]);
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -271,53 +376,46 @@ const AddStudent = () => {
         return;
       }
 
-
       setFile(file);
 
       const formData = new FormData();
       formData.append("stufile", file);
 
       try {
-
-        const res = await uploadStudentFile(formData)
+        const res = await uploadStudentFile(formData);
         const uploadedPath = res.data.file;
         const id = res.data.insertId;
 
         if (fieldName === "stuimgpath") {
           setStuimgpath(uploadedPath);
-          setStuimgid(id)
-
+          setStuimgid(id);
         } else if (fieldName === "fatimgpath") {
           setFatimgpath(uploadedPath);
-          setFatimgid(id)
-
+          setFatimgid(id);
         } else if (fieldName === "motimgpath") {
           setMotimgpath(uploadedPath);
-          setMotimgid(id)
+          setMotimgid(id);
         } else if (fieldName === "guaimgpath") {
           setGuaimgpath(uploadedPath);
-          setGuaimgid(id)
+          setGuaimgid(id);
         } else if (fieldName === "medcertpath") {
           setMedcertpath(uploadedPath);
-          setMedcertid(id)
+          setMedcertid(id);
         } else if (fieldName === "transcertpath") {
           setTranscertpath(uploadedPath);
-          setTranscertid(id)
+          setTranscertid(id);
         }
-
       } catch (error) {
         console.error("Upload failed:", error);
       }
     }
   };
 
-
-
   const deleteImage = async (id: number) => {
     if (!id) return;
 
     try {
-      const deletefile = await deleteFile(id)
+      const deletefile = await deleteFile(id);
 
       if (deletefile.data.success) {
         // Student image
@@ -361,7 +459,6 @@ const AddStudent = () => {
           setTransferCerti(null);
           setTranscertpath("");
         }
-
       }
     } catch (error) {
       console.error("Error deleting file:", error);
@@ -378,38 +475,66 @@ const AddStudent = () => {
     }));
   };
 
-
   const handleDateChange = (
     name: keyof StudentData,
     // date: dayjs.Dayjs | null,
     dateString: string
   ) => {
-    setStudentData((prev) => ({ ...prev, [name]: dayjs(dateString).format('DD MMM YYYY') }));
+    setStudentData((prev) => ({
+      ...prev,
+      [name]: dayjs(dateString).format("DD MMM YYYY"),
+    }));
   };
 
-
-  const handleSelectChange = (name: keyof StudentData, value: string | number) => {
+  const handleSelectChange = (
+    name: keyof StudentData,
+    value: string | number | null
+  ) => {
     setStudentData((prev) => ({ ...prev, [name]: value }));
   };
 
-
-  const handleTagsChange = (field: keyof typeof studentData, tags: string[]) => {
+  const handleTagsChange = (
+    field: keyof typeof studentData,
+    tags: string[]
+  ) => {
     setStudentData((prev) => ({
       ...prev,
-      [field]: tags
+      [field]: tags,
     }));
   };
-  const [errors, setErrors] = useState<Partial<Record<keyof StudentData, string>>>({});
-
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof StudentData, string>>
+  >({});
 
   const validateStudentForm = (data: StudentData) => {
     const newErrors: Partial<Record<keyof StudentData, string>> = {};
 
-
     const requiredFields: (keyof StudentData)[] = [
-      "academicyear", "admissionnum", "admissiondate", "rollnum", "status",
-      "firstname", "lastname", "class", "section",
-      "gender", "dob", "religion", "category", "primarycont", "email", "caste", "motherton", "fat_name", "fat_email", "fat_phone", "mot_name", "mot_email", "mot_phone", "curr_address", "perm_address"
+      "academicyear",
+      "admissionnum",
+      "admissiondate",
+      "rollnum",
+      "status",
+      "firstname",
+      "lastname",
+      "class",
+      "section",
+      "gender",
+      "dob",
+      "religion",
+      "category",
+      "primarycont",
+      "email",
+      "caste",
+      "motherton",
+      "fat_name",
+      "fat_email",
+      "fat_phone",
+      "mot_name",
+      "mot_email",
+      "mot_phone",
+      "curr_address",
+      "perm_address",
     ];
 
     requiredFields.forEach((field) => {
@@ -417,7 +542,6 @@ const AddStudent = () => {
         newErrors[field] = `${fieldLabels[field]} is required`;
       }
     });
-
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (data.email && !emailRegex.test(data.email)) {
@@ -430,14 +554,12 @@ const AddStudent = () => {
       newErrors.mot_email = "Invalid mother email";
     }
 
-
     const phoneRegex = /^\d{10}$/;
 
-
     if (!data.primarycont) {
-      newErrors.primarycont = 'Contact number is required !'
+      newErrors.primarycont = "Contact number is required !";
     } else if (!phoneRegex.test(data.primarycont)) {
-      newErrors.primarycont = "Invalid student contact number !"
+      newErrors.primarycont = "Invalid student contact number !";
     }
     // if (data.primarycont && !phoneRegex.test(data.primarycont)) {
     //   newErrors.primarycont = "Invalid student contact number";
@@ -448,7 +570,6 @@ const AddStudent = () => {
     if (data.mot_phone && !phoneRegex.test(data.mot_phone)) {
       newErrors.mot_phone = "Invalid mother phone number";
     }
-
 
     if (!stuimgpath) {
       toast.error("Student image is required");
@@ -467,16 +588,14 @@ const AddStudent = () => {
 
     // });
 
-
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateStudentForm(studentData)) {
-      toast.error("Required fileds must be filled !")
-      return
+      toast.error("Required fileds must be filled !");
+      return;
     }
     try {
       const formData = new FormData();
@@ -492,7 +611,6 @@ const AddStudent = () => {
         formData.append("stuimg", stuimgpath);
         formData.append("fatimg", fatimgpath);
         formData.append("motimg", motimgpath);
-
       } else {
         toast.error("Required all Images !");
         return;
@@ -502,11 +620,11 @@ const AddStudent = () => {
         formData.append("guaimg", guaimgpath);
       }
       if (medicalCerti) {
-        formData.append('medicalcert', medcertpath)
+        formData.append("medicalcert", medcertpath);
       }
 
       if (transferCerti) {
-        formData.append('transfercert', transcertpath)
+        formData.append("transfercert", transcertpath);
       }
       // for (const [key, value] of formData.entries()) {
       //   console.log(key, value);
@@ -520,79 +638,78 @@ const AddStudent = () => {
 
         // Reset form
         setStudentData({
-          academicyear: '',
-          admissionnum: '',
-          admissiondate: '',
-          rollnum: '',
-          status: '',
-          firstname: '',
-          lastname: '',
+          academicyear: "",
+          admissionnum: "",
+          admissiondate: "",
+          rollnum: "",
+          status: "",
+          firstname: "",
+          lastname: "",
           class: null,
           section: null,
-          gender: '',
-          dob: '',
-          bloodgp: '',
-          house: '',
-          religion: '',
-          category: '',
-          primarycont: '',
-          email: '',
-          caste: '',
-          motherton: '',
+          gender: "",
+          dob: "",
+          bloodgp: "",
+          house: "",
+          religion: "",
+          category: "",
+          primarycont: "",
+          email: "",
+          caste: "",
+          motherton: "",
           lanknown: [],
-          fat_name: '',
-          fat_email: '',
-          fat_phone: '',
-          fat_occu: '',
-          mot_name: '',
-          mot_email: '',
-          mot_phone: '',
-          mot_occu: '',
-          guardianIs: 'parents',
-          gua_name: '',
-          gua_relation: '',
-          gua_phone: '',
-          gua_email: '',
-          gua_occu: '',
-          gua_address: '',
-          curr_address: '',
-          perm_address: '',
-          prev_school: '',
-          prev_school_address: '',
-          hostel: '',
-          room_num: '',
-          route: '',
-          vehicle_num: '',
-          picup_point: '',
-          bank_name: '',
-          branch: '',
-          ifsc_num: '',
-          other_det: '',
-          condition: 'good',
+          fat_name: "",
+          fat_email: "",
+          fat_phone: "",
+          fat_occu: "",
+          mot_name: "",
+          mot_email: "",
+          mot_phone: "",
+          mot_occu: "",
+          guardianIs: "parents",
+          gua_name: "",
+          gua_relation: "",
+          gua_phone: "",
+          gua_email: "",
+          gua_occu: "",
+          gua_address: "",
+          curr_address: "",
+          perm_address: "",
+          prev_school: "",
+          prev_school_address: "",
+          hostel: null,
+          room_num: null,
+          route: null,
+          vehicle_num: null,
+          picup_point: null,
+          bank_name: "",
+          branch: "",
+          ifsc_num: "",
+          other_det: "",
+          condition: "good",
           allergies: [],
-          medications: []
+          medications: [],
         });
-        setStuImg(null)
-        setFatImg(null)
-        setMotImg(null)
-        setGuaImg(null)
-        setMedicalCerti(null)
-        setTransferCerti(null)
-        setStuimgpath("")
-        setFatimgpath("")
-        setMotimgpath("")
-        setGuaimgpath("")
-        setMedcertpath("")
-        setTranscertpath("")
-        setStuimgid(null)
-        setFatimgid(null)
-        setMotimgid(null)
-        setGuaimgid(null)
-        setMedcertid(null)
-        setTranscertid(null)
-        navigate(-1)
+        setStuImg(null);
+        setFatImg(null);
+        setMotImg(null);
+        setGuaImg(null);
+        setMedicalCerti(null);
+        setTransferCerti(null);
+        setStuimgpath("");
+        setFatimgpath("");
+        setMotimgpath("");
+        setGuaimgpath("");
+        setMedcertpath("");
+        setTranscertpath("");
+        setStuimgid(null);
+        setFatimgid(null);
+        setMotimgid(null);
+        setGuaimgid(null);
+        setMedcertid(null);
+        setTranscertid(null);
+        navigate(-1);
       }
-
     } catch (error: any) {
       console.log(error.response);
       toast.error(error?.response?.data?.message || "Something went wrong");
@@ -600,109 +717,113 @@ const AddStudent = () => {
   };
 
   const cancelAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     setStudentData({
-      academicyear: '',
-      admissionnum: '',
-      admissiondate: '',
-      rollnum: '',
-      status: '',
-      firstname: '',
-      lastname: '',
+      academicyear: "",
+      admissionnum: "",
+      admissiondate: "",
+      rollnum: "",
+      status: "",
+      firstname: "",
+      lastname: "",
       class: null,
       section: null,
-      gender: '',
-      dob: '',
-      bloodgp: '',
-      house: '',
-      religion: '',
-      category: '',
-      primarycont: '',
-      email: '',
-      caste: '',
-      motherton: '',
+      gender: "",
+      dob: "",
+      bloodgp: "",
+      house: "",
+      religion: "",
+      category: "",
+      primarycont: "",
+      email: "",
+      caste: "",
+      motherton: "",
       lanknown: [],
-      fat_name: '',
-      fat_email: '',
-      fat_phone: '',
-      fat_occu: '',
-      mot_name: '',
-      mot_email: '',
-      mot_phone: '',
-      mot_occu: '',
-      guardianIs: 'parents',
-      gua_name: '',
-      gua_relation: '',
-      gua_phone: '',
-      gua_email: '',
-      gua_occu: '',
-      gua_address: '',
-      curr_address: '',
-      perm_address: '',
-      prev_school: '',
-      prev_school_address: '',
-      hostel: '',
-      room_num: '',
-      route: '',
-      vehicle_num: '',
-      picup_point: '',
-      bank_name: '',
-      branch: '',
-      ifsc_num: '',
-      other_det: '',
-      condition: 'good',
+      fat_name: "",
+      fat_email: "",
+      fat_phone: "",
+      fat_occu: "",
+      mot_name: "",
+      mot_email: "",
+      mot_phone: "",
+      mot_occu: "",
+      guardianIs: "parents",
+      gua_name: "",
+      gua_relation: "",
+      gua_phone: "",
+      gua_email: "",
+      gua_occu: "",
+      gua_address: "",
+      curr_address: "",
+      perm_address: "",
+      prev_school: "",
+      prev_school_address: "",
+      hostel: null,
+      room_num: null,
+      route: null,
+      vehicle_num: null,
+      picup_point: null,
+      bank_name: "",
+      branch: "",
+      ifsc_num: "",
+      other_det: "",
+      condition: "good",
       allergies: [],
-      medications: []
+      medications: [],
     });
-    setStuImg(null)
-    setFatImg(null)
-    setMotImg(null)
-    setGuaImg(null)
-    setMedicalCerti(null)
-    setTransferCerti(null)
-    setStuimgpath("")
-    setFatimgpath("")
-    setMotimgpath("")
-    setGuaimgpath("")
-    setMedcertpath("")
-    setTranscertpath("")
-    setStuimgid(null)
-    setFatimgid(null)
-    setMotimgid(null)
-    setGuaimgid(null)
-    setMedcertid(null)
-    setTranscertid(null)
-    navigate(-1)
-  }
+    setStuImg(null);
+    setFatImg(null);
+    setMotImg(null);
+    setGuaImg(null);
+    setMedicalCerti(null);
+    setTransferCerti(null);
+    setStuimgpath("");
+    setFatimgpath("");
+    setMotimgpath("");
+    setGuaimgpath("");
+    setMedcertpath("");
+    setTranscertpath("");
+    setStuimgid(null);
+    setFatimgid(null);
+    setMotimgid(null);
+    setGuaimgid(null);
+    setMedcertid(null);
+    setTranscertid(null);
+    navigate(-1);
+  };
 
-  const [classOptions, setClassOptions] = useState<{ value: number, label: string }[]>([])
-  const [sectionOptions , setSectionOptions] =  useState<{ value: number, label: string }[]>([])
-
+  const [classOptions, setClassOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
+  const [sectionOptions, setSectionOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   const fetchClass = async () => {
     try {
       const { data } = await allRealClasses();
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-
         setClassOptions(
           data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
         );
       } else {
         setClassOptions([]);
       }
-
     } catch (error) {
       console.log(error);
       toast.error("Error to fetch classes !");
-
     }
   };
   const fetchSection = async () => {
     try {
       if (studentData.class) {
-        const { data } = await getAllSectionForAClass(Number(studentData.class));
+        const { data } = await getAllSectionForAClass(
+          Number(studentData.class)
+        );
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setSectionOptions( data.data.map((e: any) => ({ value: e.id, label: e.section_name})) );
+          setSectionOptions(
+            data.data.map((e: any) => ({ value: e.id, label: e.section_name }))
+          );
         } else {
           setSectionOptions([]);
         }
@@ -711,21 +832,19 @@ const AddStudent = () => {
       console.log(error);
       toast.error("Error to fetch section !");
     }
-  }
-
+  };
 
   useEffect(() => {
-    fetchClass()
-  }, [])
+    fetchRoutes();
+    fetchClass();
+    fetchHostels();
+  }, []);
 
   useEffect(() => {
     if (studentData.class) {
-         fetchSection()
+      fetchSection();
     }
-  }, [studentData.class])
-
-
-
+  }, [studentData.class]);
 
   return (
     <>
@@ -769,11 +888,21 @@ const AddStudent = () => {
                     <div className="row">
                       <div className="col-md-12">
                         <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                          {
-                            !stuImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                              <i className="ti ti-photo-plus fs-16" />
-                            </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(stuImg)} alt="" /></p>
-                          }
+                          {!stuImg ? (
+                            <>
+                              <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                <i className="ti ti-photo-plus fs-16" />
+                              </div>
+                            </>
+                          ) : (
+                            <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                              <img
+                                className=""
+                                src={URL.createObjectURL(stuImg)}
+                                alt=""
+                              />
+                            </p>
+                          )}
                           <div className="profile-upload">
                             <div className="profile-uploader d-flex align-items-center">
                               <div className="drag-upload-btn mb-3">
@@ -781,13 +910,21 @@ const AddStudent = () => {
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  onChange={(e) => handleFileChange(e, setStuImg, 'stuimgpath')}
+                                  onChange={(e) =>
+                                    handleFileChange(e, setStuImg, "stuimgpath")
+                                  }
                                   className="form-control image-sign"
                                 />
-                              </div><span className="text-danger"> *</span>
-                              {stuimgid && (<div onClick={() => deleteImage(stuimgid)} className="btn btn-outline-danger mb-3 ">
-                                Remove
-                              </div>)}
+                              </div>
+                              <span className="text-danger"> *</span>
+                              {stuimgid && (
+                                <div
+                                  onClick={() => deleteImage(stuimgid)}
+                                  className="btn btn-outline-danger mb-3 "
+                                >
+                                  Remove
+                                </div>
+                              )}
                             </div>
                             <p className="fs-12">
                               Upload image size 4MB, Format JPG, PNG,
@@ -800,35 +937,51 @@ const AddStudent = () => {
                       {/* Academic Year */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Academic Year</label><span className="text-danger"> *</span>
+                          <label className="form-label">Academic Year</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
                             className={`select`}
                             options={academicYear}
                             value={studentData.academicyear}
-                            onChange={(option) => handleSelectChange("academicyear", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "academicyear",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.academicyear && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.academicyear}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.academicyear}
+                            </div>
                           )}
-
                         </div>
                       </div>
 
                       {/* Admission Number */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Admission Number</label><span className="text-danger"> *</span>
+                          <label className="form-label">Admission Number</label>
+                          <span className="text-danger"> *</span>
                           <input
                             type="text"
                             name="admissionnum"
                             className={`form-control`}
-
-                            value={isEdit ? "AD9892434" : studentData.admissionnum}
-
+                            value={
+                              isEdit ? "AD9892434" : studentData.admissionnum
+                            }
                             onChange={handleInputChange}
                           />
                           {errors.admissionnum && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.admissionnum}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.admissionnum}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -836,30 +989,43 @@ const AddStudent = () => {
                       {/* Admission Date */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Admission Date</label><span className="text-danger"> *</span>
+                          <label className="form-label">Admission Date</label>
+                          <span className="text-danger"> *</span>
                           <div className="input-icon position-relative">
                             <DatePicker
-
                               className={`form-control datetimepicker `}
                               format="DD MMM YYYY"
                               value={
                                 studentData.admissiondate
-                                  ? dayjs(studentData.admissiondate, 'DD MMM YYYY')
+                                  ? dayjs(
+                                      studentData.admissiondate,
+                                      "DD MMM YYYY"
+                                    )
                                   : null
                               }
                               placeholder="Select Date"
-
                               onChange={(dateString) =>
-                                handleDateChange("admissiondate", Array.isArray(dateString) ? dateString[0] : dateString)
+                                handleDateChange(
+                                  "admissiondate",
+                                  Array.isArray(dateString)
+                                    ? dateString[0]
+                                    : dateString
+                                )
                               }
-
                             />
                             {errors.admissiondate && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.admissiondate}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.admissiondate}
+                              </div>
                             )}
-                            {!errors.admissiondate && (<span className="input-icon-addon">
-                              <i className="ti ti-calendar" />
-                            </span>)}
+                            {!errors.admissiondate && (
+                              <span className="input-icon-addon">
+                                <i className="ti ti-calendar" />
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -867,7 +1033,8 @@ const AddStudent = () => {
                       {/* Roll Number */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Roll Number</label><span className="text-danger"> *</span>
+                          <label className="form-label">Roll Number</label>
+                          <span className="text-danger"> *</span>
                           <input
                             type="text"
                             name="rollnum"
@@ -876,7 +1043,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.rollnum && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.rollnum}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.rollnum}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -884,15 +1056,26 @@ const AddStudent = () => {
                       {/* Status */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Status</label><span className="text-danger"> *</span>
+                          <label className="form-label">Status</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
                             className={`select `}
                             options={status}
                             value={studentData.status}
-                            onChange={(option) => handleSelectChange("status", option ? option.value : '')}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "status",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.status && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.status}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.status}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -900,9 +1083,9 @@ const AddStudent = () => {
                       {/* First Name */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">First Name</label><span className="text-danger"> *</span>
+                          <label className="form-label">First Name</label>
+                          <span className="text-danger"> *</span>
                           <input
-
                             type="text"
                             name="firstname"
                             className={`form-control `}
@@ -910,7 +1093,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.firstname && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.firstname}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.firstname}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -918,9 +1106,9 @@ const AddStudent = () => {
                       {/* Last Name */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Last Name</label><span className="text-danger"> *</span>
+                          <label className="form-label">Last Name</label>
+                          <span className="text-danger"> *</span>
                           <input
-
                             type="text"
                             name="lastname"
                             className={`form-control `}
@@ -928,7 +1116,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.lastname && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.lastname}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.lastname}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -936,15 +1129,26 @@ const AddStudent = () => {
                       {/* Class */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Class</label><span className="text-danger"> *</span>
+                          <label className="form-label">Class</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
                             className={`select `}
                             options={classOptions}
                             value={studentData.class}
-                            onChange={(option) => handleSelectChange("class", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "class",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.class && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.class}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.class}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -952,15 +1156,28 @@ const AddStudent = () => {
                       {/* Section */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Section</label><span className="text-danger"> *</span>
+                          <label className="form-label">Section</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
+                            className={`select text-capitalize ${
+                              errors.section ? "is-invalid" : ""
+                            }`}
                             options={sectionOptions}
                             value={studentData.section}
-                            onChange={(option) => handleSelectChange("section", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "section",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.section && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.section}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.section}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -968,15 +1185,28 @@ const AddStudent = () => {
                       {/* Gender */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Gender</label><span className="text-danger"> *</span>
+                          <label className="form-label">Gender</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${errors.section ? "is-invalid" : ""}`}
+                            className={`select ${
+                              errors.section ? "is-invalid" : ""
+                            }`}
                             options={gender}
                             value={studentData.gender}
-                            onChange={(option) => handleSelectChange("gender", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "gender",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.gender && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.gender}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.gender}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -984,29 +1214,40 @@ const AddStudent = () => {
                       {/* Date of Birth */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Date of Birth</label><span className="text-danger"> *</span>
+                          <label className="form-label">Date of Birth</label>
+                          <span className="text-danger"> *</span>
                           <div className="input-icon position-relative">
                             <DatePicker
-
                               className={`form-control datetimepicker `}
                               format="DD MMM YYYY"
                               value={
                                 studentData.dob
-                                  ? dayjs(studentData.dob, 'DD MMM YYYY')
+                                  ? dayjs(studentData.dob, "DD MMM YYYY")
                                   : null
                               }
                               placeholder="Select Date"
                               onChange={(dateString) =>
-                                handleDateChange("dob", Array.isArray(dateString) ? dateString[0] : dateString)
+                                handleDateChange(
+                                  "dob",
+                                  Array.isArray(dateString)
+                                    ? dateString[0]
+                                    : dateString
+                                )
                               }
-
                             />
                             {errors.dob && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.dob}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.dob}
+                              </div>
                             )}
-                            {!errors.dob && (<span className="input-icon-addon">
-                              <i className="ti ti-calendar" />
-                            </span>)}
+                            {!errors.dob && (
+                              <span className="input-icon-addon">
+                                <i className="ti ti-calendar" />
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1019,7 +1260,12 @@ const AddStudent = () => {
                             className="select"
                             options={bloodGroup}
                             value={studentData.bloodgp}
-                            onChange={(option) => handleSelectChange("bloodgp", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "bloodgp",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1032,7 +1278,12 @@ const AddStudent = () => {
                             className="select"
                             options={house}
                             value={studentData.house}
-                            onChange={(option) => handleSelectChange("house", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "house",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1040,15 +1291,28 @@ const AddStudent = () => {
                       {/* Religion */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Religion</label><span className="text-danger"> *</span>
+                          <label className="form-label">Religion</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${errors.religion ? "is-invalid" : ""}`}
+                            className={`select ${
+                              errors.religion ? "is-invalid" : ""
+                            }`}
                             options={religion}
                             value={studentData.religion}
-                            onChange={(option) => handleSelectChange("religion", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "religion",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.religion && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.religion}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.religion}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1056,15 +1320,28 @@ const AddStudent = () => {
                       {/* Category */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Category</label><span className="text-danger"> *</span>
+                          <label className="form-label">Category</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${errors.category ? "is-invalid" : ""}`}
+                            className={`select ${
+                              errors.category ? "is-invalid" : ""
+                            }`}
                             options={cast}
                             value={studentData.category}
-                            onChange={(option) => handleSelectChange("category", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "category",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.category && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.category}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.category}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1072,7 +1349,10 @@ const AddStudent = () => {
                       {/* Primary Contact Number */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Primary Contact Number</label><span className="text-danger"> *</span>
+                          <label className="form-label">
+                            Primary Contact Number
+                          </label>
+                          <span className="text-danger"> *</span>
                           <input
                             type="text"
                             name="primarycont"
@@ -1081,7 +1361,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.primarycont && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.primarycont}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.primarycont}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1089,7 +1374,8 @@ const AddStudent = () => {
                       {/* Email Address */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Email Address</label><span className="text-danger"> *</span>
+                          <label className="form-label">Email Address</label>
+                          <span className="text-danger"> *</span>
                           <input
                             type="email"
                             name="email"
@@ -1098,7 +1384,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.email && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.email}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.email}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1106,7 +1397,8 @@ const AddStudent = () => {
                       {/* Caste */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Caste</label><span className="text-danger"> *</span>
+                          <label className="form-label">Caste</label>
+                          <span className="text-danger"> *</span>
                           <input
                             type="text"
                             name="caste"
@@ -1115,7 +1407,12 @@ const AddStudent = () => {
                             onChange={handleInputChange}
                           />
                           {errors.caste && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.caste}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.caste}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1123,15 +1420,28 @@ const AddStudent = () => {
                       {/* Mother Tongue */}
                       <div className="col-xxl col-xl-3 col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Mother Tongue</label><span className="text-danger"> *</span>
+                          <label className="form-label">Mother Tongue</label>
+                          <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${errors.motherton ? "is-invalid" : ""}`}
+                            className={`select ${
+                              errors.motherton ? "is-invalid" : ""
+                            }`}
                             options={mothertongue}
                             value={studentData.motherton}
-                            onChange={(option) => handleSelectChange("motherton", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "motherton",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                           {errors.motherton && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.motherton}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.motherton}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1142,7 +1452,9 @@ const AddStudent = () => {
                           <label className="form-label">Language Known</label>
                           <TagInput
                             initialTags={studentData.lanknown}
-                            onTagsChange={(tags) => handleTagsChange('lanknown', tags)}
+                            onTagsChange={(tags) =>
+                              handleTagsChange("lanknown", tags)
+                            }
                           />
                         </div>
                       </div>
@@ -1168,11 +1480,21 @@ const AddStudent = () => {
                       <div className="row">
                         <div className="col-md-12">
                           <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {
-                              !fatImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                <i className="ti ti-photo-plus fs-16" />
-                              </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(fatImg)} alt="" /></p>
-                            }
+                            {!fatImg ? (
+                              <>
+                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                  <i className="ti ti-photo-plus fs-16" />
+                                </div>
+                              </>
+                            ) : (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={URL.createObjectURL(fatImg)}
+                                  alt=""
+                                />
+                              </p>
+                            )}
                             <div className="profile-upload">
                               <div className="profile-uploader d-flex align-items-center">
                                 <div className="drag-upload-btn mb-3">
@@ -1180,13 +1502,25 @@ const AddStudent = () => {
                                   <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => handleFileChange(e, setFatImg, 'fatimgpath')}
+                                    onChange={(e) =>
+                                      handleFileChange(
+                                        e,
+                                        setFatImg,
+                                        "fatimgpath"
+                                      )
+                                    }
                                     className="form-control image-sign"
                                   />
-                                </div><span className="text-danger"> *</span>
-                                {fatimgid && (<div onClick={() => deleteImage(fatimgid)} className="btn btn-outline-danger mb-3">
-                                  Remove
-                                </div>)}
+                                </div>
+                                <span className="text-danger"> *</span>
+                                {fatimgid && (
+                                  <div
+                                    onClick={() => deleteImage(fatimgid)}
+                                    className="btn btn-outline-danger mb-3"
+                                  >
+                                    Remove
+                                  </div>
+                                )}
                               </div>
                               <p className="fs-12">
                                 Upload image size 4MB, Format JPG, PNG,
@@ -1196,52 +1530,76 @@ const AddStudent = () => {
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Father Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Father Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="fat_name"
                               type="text"
                               className={`form-control `}
                               value={
-                                isEdit ? "Jerald Vicinius" : studentData.fat_name
+                                isEdit
+                                  ? "Jerald Vicinius"
+                                  : studentData.fat_name
                               }
                               onChange={handleInputChange}
                             />
                             {errors.fat_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.fat_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fat_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Email</label><span className="text-danger"> *</span>
+                            <label className="form-label">Email</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="fat_email"
                               onChange={handleInputChange}
                               type="text"
                               className={`form-control `}
                               value={
-                                isEdit ? "jera@example.com" : studentData.fat_email
+                                isEdit
+                                  ? "jera@example.com"
+                                  : studentData.fat_email
                               }
                             />
                             {errors.fat_email && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.fat_email}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fat_email}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Phone Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">Phone Number</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="fat_phone"
                               onChange={handleInputChange}
                               type="text"
                               className={`form-control `}
                               value={
-                                isEdit ? "+1 45545 46464" : studentData.fat_phone
+                                isEdit
+                                  ? "+1 45545 46464"
+                                  : studentData.fat_phone
                               }
                             />
                             {errors.fat_phone && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.fat_phone}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.fat_phone}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1266,11 +1624,21 @@ const AddStudent = () => {
                       <div className="row">
                         <div className="col-md-12">
                           <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {
-                              !motImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                <i className="ti ti-photo-plus fs-16" />
-                              </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(motImg)} alt="" /></p>
-                            }
+                            {!motImg ? (
+                              <>
+                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                  <i className="ti ti-photo-plus fs-16" />
+                                </div>
+                              </>
+                            ) : (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={URL.createObjectURL(motImg)}
+                                  alt=""
+                                />
+                              </p>
+                            )}
                             <div className="profile-upload">
                               <div className="profile-uploader d-flex align-items-center">
                                 <div className="drag-upload-btn mb-3">
@@ -1278,13 +1646,25 @@ const AddStudent = () => {
                                   <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => handleFileChange(e, setMotImg, 'motimgpath')}
+                                    onChange={(e) =>
+                                      handleFileChange(
+                                        e,
+                                        setMotImg,
+                                        "motimgpath"
+                                      )
+                                    }
                                     className="form-control image-sign"
                                   />
-                                </div><span className="text-danger"> *</span>
-                                {motimgid && (<div onClick={() => deleteImage(motimgid)} className="btn btn-outline-danger mb-3">
-                                  Remove
-                                </div>)}
+                                </div>
+                                <span className="text-danger"> *</span>
+                                {motimgid && (
+                                  <div
+                                    onClick={() => deleteImage(motimgid)}
+                                    className="btn btn-outline-danger mb-3"
+                                  >
+                                    Remove
+                                  </div>
+                                )}
                               </div>
                               <p className="fs-12">
                                 Upload image size 4MB, Format JPG, PNG,
@@ -1294,7 +1674,8 @@ const AddStudent = () => {
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Mother Name</label><span className="text-danger"> *</span>
+                            <label className="form-label">Mother Name</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="mot_name"
                               onChange={handleInputChange}
@@ -1305,41 +1686,62 @@ const AddStudent = () => {
                               }
                             />
                             {errors.mot_name && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.mot_name}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.mot_name}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Email</label><span className="text-danger"> *</span>
+                            <label className="form-label">Email</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="mot_email"
                               onChange={handleInputChange}
                               type="text"
                               className="form-control"
                               value={
-                                isEdit ? "robe@example.com" : studentData.mot_email
+                                isEdit
+                                  ? "robe@example.com"
+                                  : studentData.mot_email
                               }
                             />
                             {errors.mot_email && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.mot_email}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.mot_email}
+                              </div>
                             )}
                           </div>
                         </div>
                         <div className="col-lg-3 col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">Phone Number</label><span className="text-danger"> *</span>
+                            <label className="form-label">Phone Number</label>
+                            <span className="text-danger"> *</span>
                             <input
                               name="mot_phone"
                               onChange={handleInputChange}
                               type="text"
                               className="form-control"
                               value={
-                                isEdit ? "+1 46499 24357" : studentData.mot_phone
+                                isEdit
+                                  ? "+1 46499 24357"
+                                  : studentData.mot_phone
                               }
                             />
                             {errors.mot_phone && (
-                              <div style={{ fontSize: '11px' }} className="text-danger">{errors.mot_phone}</div>
+                              <div
+                                style={{ fontSize: "11px" }}
+                                className="text-danger"
+                              >
+                                {errors.mot_phone}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1353,7 +1755,9 @@ const AddStudent = () => {
                               onChange={handleInputChange}
                               type="text"
                               className="form-control"
-                              value={isEdit ? "Homemaker" : studentData.mot_occu}
+                              value={
+                                isEdit ? "Homemaker" : studentData.mot_occu
+                              }
                             />
                           </div>
                         </div>
@@ -1379,7 +1783,10 @@ const AddStudent = () => {
                                   checked={studentData.guardianIs === "parents"}
                                   onChange={handleInputChange}
                                 />
-                                <label className="form-check-label" htmlFor="parents">
+                                <label
+                                  className="form-check-label"
+                                  htmlFor="parents"
+                                >
                                   Parents
                                 </label>
                               </div>
@@ -1391,10 +1798,15 @@ const AddStudent = () => {
                                   name="guardianIs"
                                   id="guardian"
                                   value="guardian"
-                                  checked={studentData.guardianIs === "guardian"}
+                                  checked={
+                                    studentData.guardianIs === "guardian"
+                                  }
                                   onChange={handleInputChange}
                                 />
-                                <label className="form-check-label" htmlFor="guardian">
+                                <label
+                                  className="form-check-label"
+                                  htmlFor="guardian"
+                                >
                                   Guardian
                                 </label>
                               </div>
@@ -1409,20 +1821,32 @@ const AddStudent = () => {
                                   checked={studentData.guardianIs === "other"}
                                   onChange={handleInputChange}
                                 />
-                                <label className="form-check-label" htmlFor="other">
+                                <label
+                                  className="form-check-label"
+                                  htmlFor="other"
+                                >
                                   Others
                                 </label>
                               </div>
                             </div>
-
                           </div>
 
                           <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {
-                              !guaImg ? <><div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                <i className="ti ti-photo-plus fs-16" />
-                              </div></> : <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames"><img className="" src={URL.createObjectURL(guaImg)} alt="" /></p>
-                            }
+                            {!guaImg ? (
+                              <>
+                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                  <i className="ti ti-photo-plus fs-16" />
+                                </div>
+                              </>
+                            ) : (
+                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                <img
+                                  className=""
+                                  src={URL.createObjectURL(guaImg)}
+                                  alt=""
+                                />
+                              </p>
+                            )}
                             <div className="profile-upload">
                               <div className="profile-uploader d-flex align-items-center">
                                 <div className="drag-upload-btn mb-3">
@@ -1430,13 +1854,24 @@ const AddStudent = () => {
                                   <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => handleFileChange(e, setGuaImg, 'guaimgpath')}
+                                    onChange={(e) =>
+                                      handleFileChange(
+                                        e,
+                                        setGuaImg,
+                                        "guaimgpath"
+                                      )
+                                    }
                                     className="form-control image-sign"
                                   />
                                 </div>
-                                {guaimgid && (<div onClick={() => deleteImage(guaimgid)} className="btn btn-outline-danger mb-3">
-                                  Remove
-                                </div>)}
+                                {guaimgid && (
+                                  <div
+                                    onClick={() => deleteImage(guaimgid)}
+                                    className="btn btn-outline-danger mb-3"
+                                  >
+                                    Remove
+                                  </div>
+                                )}
                               </div>
                               <p className="fs-12">
                                 Upload image size 4MB, Format JPG, PNG,
@@ -1453,7 +1888,9 @@ const AddStudent = () => {
                               type="text"
                               className="form-control"
                               value={
-                                isEdit ? "Jerald Vicinius" : studentData.gua_name
+                                isEdit
+                                  ? "Jerald Vicinius"
+                                  : studentData.gua_name
                               }
                             />
                           </div>
@@ -1468,7 +1905,9 @@ const AddStudent = () => {
                               onChange={handleInputChange}
                               type="text"
                               className="form-control"
-                              value={isEdit ? "Uncle" : studentData.gua_relation}
+                              value={
+                                isEdit ? "Uncle" : studentData.gua_relation
+                              }
                             />
                           </div>
                         </div>
@@ -1481,7 +1920,9 @@ const AddStudent = () => {
                               type="text"
                               className="form-control"
                               value={
-                                isEdit ? "+1 45545 46464" : studentData.gua_phone
+                                isEdit
+                                  ? "+1 45545 46464"
+                                  : studentData.gua_phone
                               }
                             />
                           </div>
@@ -1495,7 +1936,9 @@ const AddStudent = () => {
                               type="email"
                               className="form-control"
                               value={
-                                isEdit ? "jera@example.com" : studentData.gua_email
+                                isEdit
+                                  ? "jera@example.com"
+                                  : studentData.gua_email
                               }
                             />
                           </div>
@@ -1688,7 +2131,8 @@ const AddStudent = () => {
                     <div className="row">
                       <div className="col-md-6">
                         <div className="mb-3">
-                          <label className="form-label">Current Address</label><span className="text-danger"> *</span>
+                          <label className="form-label">Current Address</label>
+                          <span className="text-danger"> *</span>
                           <input
                             name="curr_address"
                             onChange={handleInputChange}
@@ -1701,7 +2145,12 @@ const AddStudent = () => {
                             }
                           />
                           {errors.curr_address && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.curr_address}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.curr_address}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1709,7 +2158,8 @@ const AddStudent = () => {
                         <div className="mb-3">
                           <label className="form-label">
                             Permanent Address
-                          </label><span className="text-danger"> *</span>
+                          </label>
+                          <span className="text-danger"> *</span>
                           <input
                             name="perm_address"
                             onChange={handleInputChange}
@@ -1722,7 +2172,12 @@ const AddStudent = () => {
                             }
                           />
                           {errors.perm_address && (
-                            <div style={{ fontSize: '11px' }} className="text-danger">{errors.perm_address}</div>
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.perm_address}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1754,20 +2209,14 @@ const AddStudent = () => {
                           <label className="form-label">Route</label>
                           <CommonSelect
                             className="select"
-                            options={route}
+                            options={transportRouteOption}
                             value={studentData.route}
-                            onChange={(option) => handleSelectChange("route", option ? option.value : "")}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-lg-4 col-md-6">
-                        <div className="mb-3">
-                          <label className="form-label">Vehicle Number</label>
-                          <CommonSelect
-                            className="select"
-                            options={VehicleNumber}
-                            value={studentData.vehicle_num}
-                            onChange={(option) => handleSelectChange("vehicle_num", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "route",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1776,9 +2225,30 @@ const AddStudent = () => {
                           <label className="form-label">Pickup Point</label>
                           <CommonSelect
                             className="select"
-                            options={PickupPoint}
-                            value={isEdit ? PickupPoint[0].label : undefined}
-                            onChange={(option) => handleSelectChange("picup_point", option ? option.value : "")}
+                            options={pickupPointOption}
+                            value={studentData.picup_point}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "picup_point",
+                                option ? option.value : null
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="col-lg-4 col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Vehicle Number</label>
+                          <CommonSelect
+                            className="select"
+                            options={vehicalOption}
+                            value={studentData.vehicle_num}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "vehicle_num",
+                                option ? option.value : null
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1806,14 +2276,18 @@ const AddStudent = () => {
                   <div className="card-body pb-1">
                     <div className="row">
                       <div className="col-md-6">
-
                         <div className="mb-3">
                           <label className="form-label">Hostel</label>
                           <CommonSelect
                             className="select"
-                            options={Hostel}
+                            options={allhostels}
                             value={studentData.hostel}
-                            onChange={(option) => handleSelectChange("hostel", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "hostel",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1822,9 +2296,14 @@ const AddStudent = () => {
                           <label className="form-label">Room No</label>
                           <CommonSelect
                             className="select"
-                            options={roomNo}
+                            options={allRoomsOptions}
                             value={studentData.room_num}
-                            onChange={(option) => handleSelectChange("room_num", option ? option.value : "")}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "room_num",
+                                option ? option.value : ""
+                              )
+                            }
                           />
                         </div>
                       </div>
@@ -1860,12 +2339,23 @@ const AddStudent = () => {
                                 type="file"
                                 className="form-control image_sign"
                                 accept="application/pdf, image/*"
-                                onChange={(e) => handleFileChange(e, setMedicalCerti, 'medcertpath')}
+                                onChange={(e) =>
+                                  handleFileChange(
+                                    e,
+                                    setMedicalCerti,
+                                    "medcertpath"
+                                  )
+                                }
                               />
                             </div>
-                            {medcertid && (<div onClick={() => deleteImage(medcertid)} className="btn btn-danger mb-2 btn-sm">
-                              Remove
-                            </div>)}
+                            {medcertid && (
+                              <div
+                                onClick={() => deleteImage(medcertid)}
+                                className="btn btn-danger mb-2 btn-sm"
+                              >
+                                Remove
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1885,13 +2375,23 @@ const AddStudent = () => {
                                 type="file"
                                 className="form-control image_sign"
                                 accept="application/pdf, image/*"
-                                onChange={(e) => handleFileChange(e, setTransferCerti, 'transcertpath')}
+                                onChange={(e) =>
+                                  handleFileChange(
+                                    e,
+                                    setTransferCerti,
+                                    "transcertpath"
+                                  )
+                                }
                               />
-
                             </div>
-                            {transcertid && (<div onClick={() => deleteImage(transcertid)} className="btn btn-danger btn-sm mb-2">
-                              Remove
-                            </div>)}
+                            {transcertid && (
+                              <div
+                                onClick={() => deleteImage(transcertid)}
+                                className="btn btn-danger btn-sm mb-2"
+                              >
+                                Remove
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1931,7 +2431,10 @@ const AddStudent = () => {
                                 checked={studentData.condition === "good"}
                                 onChange={handleInputChange}
                               />
-                              <label className="form-check-label" htmlFor="good">
+                              <label
+                                className="form-check-label"
+                                htmlFor="good"
+                              >
                                 Good
                               </label>
                             </div>
@@ -1961,12 +2464,14 @@ const AddStudent = () => {
                                 checked={studentData.condition === "others"}
                                 onChange={handleInputChange}
                               />
-                              <label className="form-check-label" htmlFor="others">
+                              <label
+                                className="form-check-label"
+                                htmlFor="others"
+                              >
                                 Others
                               </label>
                             </div>
                           </div>
-
                         </div>
                       </div>
                       <div className="mb-3">
@@ -1974,14 +2479,18 @@ const AddStudent = () => {
 
                         <TagInput
                           initialTags={studentData.allergies}
-                          onTagsChange={(tags) => handleTagsChange('allergies', tags)}
+                          onTagsChange={(tags) =>
+                            handleTagsChange("allergies", tags)
+                          }
                         />
                       </div>
                       <div className="mb-3">
                         <label className="form-label">Medications</label>
                         <TagInput
                           initialTags={studentData.medications}
-                          onTagsChange={(tags) => handleTagsChange('medications', tags)}
+                          onTagsChange={(tags) =>
+                            handleTagsChange("medications", tags)
+                          }
                         />
                       </div>
                     </div>
@@ -2009,7 +2518,9 @@ const AddStudent = () => {
                             type="text"
                             className="form-control"
                             value={
-                              isEdit ? "Oxford Matriculation, USA" : studentData.prev_school
+                              isEdit
+                                ? "Oxford Matriculation, USA"
+                                : studentData.prev_school
                             }
                           />
                         </div>
@@ -2080,7 +2591,9 @@ const AddStudent = () => {
                             name="ifsc_num"
                             type="text"
                             className="form-control"
-                            value={isEdit ? "BOA83209832" : studentData.ifsc_num}
+                            value={
+                              isEdit ? "BOA83209832" : studentData.ifsc_num
+                            }
                           />
                         </div>
                       </div>
@@ -2103,7 +2616,11 @@ const AddStudent = () => {
                 </div>
                 {/* /Other Details */}
                 <div className="text-end">
-                  <button type="button" onClick={(e) => cancelAdd(e)} className="btn btn-light me-3">
+                  <button
+                    type="button"
+                    onClick={(e) => cancelAdd(e)}
+                    className="btn btn-light me-3"
+                  >
                     Cancel
                   </button>
                   <button className="btn btn-primary">Add Student</button>
@@ -2111,8 +2628,6 @@ const AddStudent = () => {
               </form>
             </div>
           </div>
-
-
         </div>
       </div>
       {/* /Page Wrapper */}

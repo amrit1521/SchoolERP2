@@ -28,6 +28,7 @@ const RolesPermissions = () => {
   const [roleName, setRoleName] = useState<string>("");
   const [roleDescription, setRoleDescription] = useState<string>("");
   const [roleId, setRoleId] = useState<number | null>(null);
+  const [errors, setErrors] = useState<any>({});
   const fetchRoles = async () => {
     try {
       const { data } = await getAllRoles();
@@ -51,8 +52,25 @@ const RolesPermissions = () => {
     fetchRoles();
   }, []);
 
+  const validate = () => {
+    const newErrors: any = {};
+    if (!roleName.trim()) {
+      newErrors.roleName = "Role Name is required";
+    }
+    if (!roleDescription.trim()) {
+      newErrors.roleDescription = "Role Description is required";
+    }
+    return newErrors;
+  };
+
   const handleCreateRoles = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     try {
       const payload = {
         role_name: roleName,
@@ -72,6 +90,12 @@ const RolesPermissions = () => {
 
   const handleUpdateRole = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
     console.log("update Data: ", roleName, roleDescription, roleId);
     try {
       const payload = {
@@ -297,6 +321,11 @@ const RolesPermissions = () => {
                           value={roleName}
                           onChange={(e) => setRoleName(e.target.value)}
                         />
+                        {errors.roleName && (
+                          <div className="invalid-feedback">
+                            {errors.roleName}
+                          </div>
+                        )}
                       </div>
                       <div className="mb-0">
                         <label className="col-form-label">
@@ -308,6 +337,11 @@ const RolesPermissions = () => {
                           value={roleDescription}
                           onChange={(e) => setRoleDescription(e.target.value)}
                         />
+                        {errors.roleName && (
+                          <div className="invalid-feedback">
+                            {errors.roleDescription}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

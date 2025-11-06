@@ -24,6 +24,7 @@ router.get("/allhostelroom", hostelController.getHostelRooms)
 router.delete(`/deletehostelroom/:id`, hostelController.deleteHostelRoom)
 router.get(`/spehostelroom/:id`, hostelController.getHostelRoomById)
 router.put('/edithostelroom/:id', hostelController.updateHostelRoom)
+router.get('/getallroomforahostel/:id', hostelController.getAllRoomsForAHostel)
 
 
 module.exports = router
