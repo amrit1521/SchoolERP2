@@ -13,13 +13,14 @@ import CommonSelect from "../../core/common/commonSelect";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
-import ImageWithBasePath from "../../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import { useEffect, useState } from "react";
 import { allInvoice, deleteInvoice, genInvoice } from "../../service/accounts";
 import { Spinner } from "../../spinner";
 import dayjs from 'dayjs'
 import { handleModalPopUp } from "../../handlePopUpmodal";
 import { toast } from "react-toastify";
+import InvoicePreviewModal from "./invoicePreviewModal";
 
 export interface Invoice {
   id: number;
@@ -43,6 +44,8 @@ const AccountsInvoices = () => {
   const [genLoading, setGenLoading] = useState<boolean>(false)
   const [genId, setGenId] = useState<number | null>(null)
 
+
+
   const fetchInvData = async () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 400))
@@ -62,7 +65,10 @@ const AccountsInvoices = () => {
 
   useEffect(() => {
     fetchInvData()
+    
   }, [])
+
+
 
   const generateInv = async (id: number) => {
     setGenId(id)
@@ -75,13 +81,12 @@ const AccountsInvoices = () => {
 
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `expense-invoice-${id}.pdf`);
+      link.setAttribute("download", `invoice-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
 
       window.URL.revokeObjectURL(url);
-      console.log("Invoice downloaded successfully!");
     } catch (error) {
       console.error("Error generating invoice:", error);
     } finally {
@@ -203,7 +208,7 @@ const AccountsInvoices = () => {
       title: "Action",
       dataIndex: "action",
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
-      render: (_:any , record:any) => (
+      render: (_: any, record: any) => (
         <>
           {" "}
           <div className="dropdown">
@@ -230,7 +235,7 @@ const AccountsInvoices = () => {
               <li>
                 <Link
                   className="dropdown-item rounded-1"
-                  to={routes.editInvoice}
+                  to={`${routes.editInvoice}/${record.id}`}
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -406,7 +411,7 @@ const AccountsInvoices = () => {
       </div>
       {/* /Page Wrapper */}
       {/* View Modal */}
-      <div className="modal fade" id="view_invoice">
+      {/* <div className="modal fade" id="view_invoice">
         <div className="modal-dialog modal-dialog-centered  modal-xl invoice-modal">
           <div className="modal-content">
             <div className="modal-wrapper">
@@ -578,7 +583,9 @@ const AccountsInvoices = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
+      <InvoicePreviewModal/>
+      
       {/* /View Modal */}
       {/* Delete Modal */}
       <div className="modal fade" id="delete-modal">

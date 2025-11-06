@@ -167,311 +167,134 @@ useEffect(() => {
 
 // attendance ====================================
 
-  interface AttendanceData {
-    id: number;
-    attendance: string;
-    attendance_date_info: string;
 
 
+interface AttendanceData {
+  id: number;
+  attendance: string;
+  attendance_date_info: string;
+}
+
+const [attendanceSummary, setAttendanceSummary] = useState<any>({});
+const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
+
+const fetchStudentAttendance = async (rollnum: string) => {
+  try {
+    const { data } = await getStuAttendanceData(rollnum);
+    setAttendanceSummary(data.summary);
+    setAttendanceData(data.details);
+  } catch (error: any) {
+    console.log(error);
+    toast.error(error.response?.data?.message || "Failed to fetch attendance");
   }
+};
 
 
-  const [attendanceSummary, setAttendanceSummary] = useState<any>({})
-  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([])
-  
-
-  const fetchStudentAttendance = async (rollnum: string) => {
-    try {
-      // console.log(rollnum)
-      const { data } = await getStuAttendanceData(rollnum)
-      // console.log(data.details)
-      setAttendanceSummary(data.summary)
-      setAttendanceData(data.details)
-
-    } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.success)
-    }
-
-  }
+function getDaysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
 
 
-  function getOnlyDay(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.getDate().toString().padStart(2, "0");
-  }
+function generateAttendanceTable(attendanceData: AttendanceData[]) {
+  const monthNames = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
 
-  const getMonth = (dateStr: string) => {
-    const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-    return monthNames[new Date(dateStr).getMonth()];
-  };
 
+  const years = new Set(
+    attendanceData.map((item) =>
+      new Date(item.attendance_date_info).getFullYear()
+    )
+  );
 
-  const tabledata2: any[] = [];
-
+  // Prepare a map for faster lookup
+  const attendanceMap: Record<string, string> = {};
   attendanceData.forEach((item) => {
-    const day = getOnlyDay(item.attendance_date_info);
-    const month = getMonth(item.attendance_date_info);
-
-    // Find if a row for this day already exists
-    let row = tabledata2.find((r) => r.date === day);
-    if (!row) {
-      row = { key: day, date: day };
-      tabledata2.push(row);
-    }
-
-    row[month] = item.attendance;
+    const date = new Date(item.attendance_date_info);
+    const day = date.getDate();
+    const month = monthNames[date.getMonth()];
+    attendanceMap[`${month}-${day}`] = item.attendance;
   });
 
+  const rows: any[] = [];
+  const sampleYear = [...years][0] || new Date().getFullYear();
 
+  for (let m = 0; m < 12; m++) {
+    const daysInMonth = getDaysInMonth(sampleYear, m);
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayStr = d.toString().padStart(2, "0");
+      let row = rows.find((r) => r.date === dayStr);
+      if (!row) {
+        row = { key: dayStr, date: dayStr };
+        rows.push(row);
+      }
+      const month = monthNames[m];
+      row[month] = attendanceMap[`${month}-${d}`] || "";
+    }
+  }
 
-  const columns2 = [
-    {
-      title: "Date | Month",
-      dataIndex: "date",
-      sorter: (a: TableData, b: TableData) => a.date.localeCompare(b.date),
+  return rows;
+}
+
+const tabledata2 = generateAttendanceTable(attendanceData);
+const monthNames = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
+const columns2 = [
+  {
+    title: "Date | Month",
+    dataIndex: "date",
+    sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
+  },
+  ...monthNames.map((month) => ({
+    title: month.toUpperCase(),
+    dataIndex: month,
+    render: (text: string) => {
+      if (!text) return <span className="attendance-range bg-light"></span>;
+      const colorMap: Record<string, string> = {
+        Present: "bg-success",
+        Holiday: "bg-pending",
+        Halfday: "bg-dark",
+        Late: "bg-info",
+        Absent: "bg-danger",
+      };
+      return (
+        <span
+          className={`attendance-range ${
+            colorMap[text] || "bg-secondary"
+          }`}
+          title={text}
+        ></span>
+      );
     },
-    {
-      title: "Jan",
-      dataIndex: "jan",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.jan.localeCompare(b.jan),
-    },
-    {
-      title: "Feb",
-      dataIndex: "feb",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.feb.localeCompare(b.feb),
-    },
-    {
-      title: "Mar",
-      dataIndex: "mar",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.mar.localeCompare(b.mar),
-    },
-    {
-      title: "Apr",
-      dataIndex: "apr",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.apr.localeCompare(b.apr),
-    },
-    {
-      title: "May",
-      dataIndex: "may",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.may.localeCompare(b.may),
-    },
-    {
-      title: "Jun",
-      dataIndex: "jun",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.jun.localeCompare(b.jun),
-    },
-    {
-      title: "Jul",
-      dataIndex: "jul",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.jul.localeCompare(b.jul),
-    },
-    {
-      title: "Aug",
-      dataIndex: "aug",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.aug.localeCompare(b.aug),
-    },
-    {
-      title: "Sep",
-      dataIndex: "sep",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.sep.localeCompare(b.sep),
-    },
-    {
-      title: "Oct",
-      dataIndex: "oct",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.oct.localeCompare(b.oct),
-    },
-    {
-      title: "Nov",
-      dataIndex: "nov",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.nov.localeCompare(b.nov),
-    },
-    {
-      title: "Dec",
-      dataIndex: "dec",
-      render: (text: string) => (
-        <>
-          {text === "Present" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "Holiday" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "Halfday" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "Late" ? (
-            <span className="attendance-range bg-info"></span>
-          ) : (
-            <span className="attendance-range bg-danger"></span>
-          )}
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.dec.localeCompare(b.dec),
-    },
-  ];
+    sorter: (a: any, b: any) =>
+      (a[month] || "").localeCompare(b[month] || ""),
+  })),
+];
+
 
 
 

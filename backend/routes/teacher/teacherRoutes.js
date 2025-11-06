@@ -17,6 +17,7 @@ router.get('/teacherdataforedit/:teacher_id' , teacherController.teacherDataForE
 router.put('/editteacher/:teacher_id', teacherController.updateTeacher)
 router.delete('/deleteteacher/:teacher_id', teacherController.deleteTeacher)
 router.get(`/getteacbytoken/:userId` , teacherController.getTeacherByToken)
+router.get('/teacherleavereport' , teacherController.teacherLeaveReport)
 
 router.put('/disable/:teacher_id', teacherController.disableTeacher)
 router.put('/enable/:teacher_id', teacherController.enableTeacher)

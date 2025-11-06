@@ -1,31 +1,39 @@
 const express = require('express')
 const upload = require('../../multer/multer')
 const libraryController = require('../../Controller/library/libraryController')
+const fileController = require('../../Controller/file/fileController')
 
 
 
 const router = express.Router()
 
-router.post('/addlibrarymember' , upload.single('limember') ,libraryController.addLibraryMember )
-router.get('/' , libraryController.allLibraryMember)
+router.post('/addlibrarymember', upload.single('limember'), libraryController.addLibraryMember)
+router.get('/', libraryController.allLibraryMember)
+router.delete('/deletelibrarymember/:id' , libraryController.deleteLibraryMember)
 
 
 
 // book routes
-router.post('/addbook' ,upload.single('bookimg'), libraryController.addBook)
-router.get('/allbook' , libraryController.getAllBooks)
+router.post('/addbook', libraryController.addBook)
+router.get('/allbook', libraryController.getAllBooks)
+router.get('/spebook/:id' , libraryController.getBookById)
+router.put('/editbook/:id' , libraryController.updateBook)
+router.delete('/deletebook/:id', libraryController.deleteBook)
+
+router.post('/upload', upload.single('bookImg'), fileController.uploadFile);
+router.delete('/deletefile/:id', fileController.deleteFile)
 
 
 // issue book
-router.get('/studataforissuebook' , libraryController.stuDataForIssueBook)
-router.get('/bookdataforissuebook' , libraryController.bookDataForIssueBook)
-router.post('/issuebook' , libraryController.issueBook)
-router.get('/stuissuebookdata/:rollnum' , libraryController.getSpeStuIssueBookData)
-router.get('/getallstuissuebook' , libraryController.getAllStuIssueBook)
+router.get('/studataforissuebook', libraryController.stuDataForIssueBook)
+router.get('/bookdataforissuebook', libraryController.bookDataForIssueBook)
+router.post('/issuebook', libraryController.issueBook)
+router.get('/stuissuebookdata/:rollnum', libraryController.getSpeStuIssueBookData)
+router.get('/getallstuissuebook', libraryController.getAllStuIssueBook)
 
 // return book
-router.get('/spestunotretubookdata/:rollnum' , libraryController.bookTakenByStuAndNotReturn)
-router.put('/returnbook' , libraryController.returnBook)
+router.get('/spestunotretubookdata/:rollnum', libraryController.bookTakenByStuAndNotReturn)
+router.put('/returnbook', libraryController.returnBook)
 
 
 

@@ -201,7 +201,7 @@ exports.getSectionSpecClass = async (req,res) => {
       });
     }
 
-    const [rows] = await db.query(`SELECT id, section_name, status FROM sections WHERE class_id = ?`, [id]);
+    const [rows] = await db.query(`SELECT id, UPPER(section_name) AS section_name , status FROM sections WHERE class_id = ?`, [id]);
     
     if (rows.length === 0) {
       return res.status(200).json({

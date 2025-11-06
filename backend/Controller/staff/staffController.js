@@ -24,7 +24,6 @@ exports.addStaff = async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // 🔹 Check if user already exists
     const [existingUser] = await connection.query(
       "SELECT id FROM users WHERE email = ? LIMIT 1",
       [data.email]
@@ -34,11 +33,25 @@ exports.addStaff = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    // 🔹 Generate password
+
     const genPassword = data.password;
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
-    // 🔹 Insert into users
+    let cardNo;
+    let isUnique = false;
+    while (!isUnique) {
+      const randomNum = Math.floor(10000000 + Math.random() * 90000000); // 8-digit number
+      cardNo = `STF${randomNum}`;
+      const [existingCard] = await connection.query(
+        "SELECT id FROM staffs WHERE cardNo = ? LIMIT 1",
+        [cardNo]
+      );
+      if (existingCard.length === 0) {
+        isUnique = true;
+      }
+    }
+
+   
     const [userRes] = await connection.query(
       `INSERT INTO users (
         firstname, lastname, mobile, email, password, roll_id, status, remark, created_at, updated_at
@@ -49,7 +62,7 @@ exports.addStaff = async (req, res) => {
         data.primarycont,
         data.email,
         hashPassword,
-        4,
+        data.role,
         data.status || '1',
         "staff",
         new Date(),
@@ -60,7 +73,7 @@ exports.addStaff = async (req, res) => {
 
     // 🔹 Insert into staffs
     const staffCols = [
-      'user_id', 'role', 'department', 'designation', 'gender', 'blood_gp', 'marital_status',
+      'user_id', 'role','cardNo','driveLic', 'department', 'designation', 'gender', 'blood_gp', 'marital_status',
       'fat_name', 'mot_name', 'dob', 'date_of_join', 'lan_known', 'qualification', 'work_exp',
       'note', 'address', 'perm_address', 'fac_link', 'twi_link', 'link_link', 'inst_link',
       'img_src', 'resume_src', 'letter_src', 'created_at', 'updated_at'
@@ -69,6 +82,8 @@ exports.addStaff = async (req, res) => {
     const staffVals = [
       userId,
       data.role,
+      cardNo,
+      data.driveLic||null,
       data.department,
       data.desgination,
       data.gender || null,
@@ -214,7 +229,7 @@ exports.fetchSpeDetailsAllStaff = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark = 'staff'
     `;
 
     const [rows] = await db.query(sql);
@@ -249,7 +264,7 @@ exports.filterSpeDetailsAllStaff = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark = "staff"
       WHERE sf.department =? AND sf.designation=?
     `;
 
@@ -324,7 +339,7 @@ exports.fetchSpecficStaffDeatils = async (req, res) => {
       FROM staffs sf
       LEFT JOIN department dep ON sf.department = dep.id
       LEFT JOIN designation des ON sf.designation = des.id
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark = 'staff'
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ?
     `;
@@ -423,7 +438,7 @@ exports.fetchStaffDataForEditById = async (req, res) => {
       LEFT JOIN leaves_info le ON sf.user_id = le.user_id
       LEFT JOIN hostel_info hs ON sf.user_id = hs.user_id
       LEFT JOIN transport_info tp ON sf.user_id = tp.user_id 
-      LEFT JOIN users u ON sf.user_id = u.id AND u.roll_id = 4
+      LEFT JOIN users u ON sf.user_id = u.id AND u.remark="staff"
       LEFT JOIN bank_info b ON sf.user_id = b.user_id
       WHERE sf.id = ? AND u.remark = 'staff'
       LIMIT 1
@@ -471,8 +486,8 @@ exports.updateStaff = async (req, res) => {
 
     // 🔹 Update users table
     await connection.query(
-      `UPDATE users SET firstname=?, lastname=?, mobile=?, email=?, status=? WHERE id=?`,
-      [data.firstname, data.lastname, data.primarycont, data.email, data.status, userId]
+      `UPDATE users SET firstname=?, lastname=?, mobile=?,roll_id=?, email=?, status=? WHERE id=?`,
+      [data.firstname, data.lastname, data.primarycont,data.role, data.email, data.status, userId]
     );
 
 
@@ -480,6 +495,7 @@ exports.updateStaff = async (req, res) => {
       data.role,
       data.department,
       data.desgination,
+      data.driveLic||null,
       data.gender || null,
       data.blood_gp || null,
       data.marital_status || "single",
@@ -505,7 +521,7 @@ exports.updateStaff = async (req, res) => {
 
     await connection.query(
       `UPDATE staffs SET 
-        role=?, department=?, designation=?, gender=?, blood_gp=?, marital_status=?,
+        role=?, department=?, designation=?,driveLic=?, gender=?, blood_gp=?, marital_status=?,
         fat_name=?, mot_name=?, dob=?, date_of_join=?, lan_known=?, qualification=?,
         work_exp=?, note=?, address=?, perm_address=?, fac_link=?, twi_link=?, link_link=?, inst_link=?,
         img_src=?, resume_src=?, letter_src=? 
@@ -680,6 +696,71 @@ exports.getStaffLeaveData = async (req, res) => {
     });
   }
 }
+
+
+exports.staffLeaveReport = async (req, res) => {
+
+  try {
+    const sql = `
+      SELECT 
+        st.id AS staffId,
+        st.img_src,
+        st.user_id,
+        u.firstname,
+        u.lastname,
+        lt.name AS leaveType,
+        lt.total_allowed,
+        IFNULL(SUM(la.no_of_days), 0) AS used,
+        (lt.total_allowed - IFNULL(SUM(la.no_of_days), 0)) AS available
+      FROM staffs st
+      INNER JOIN users u ON st.user_id = u.id
+      CROSS JOIN leaves_type lt
+      LEFT JOIN leave_application la 
+        ON la.leave_type_id = lt.id 
+        AND la.id_or_rollnum = st.id 
+        AND la.status = "1"
+      GROUP BY st.id, st.img_src, u.firstname, u.lastname, lt.id
+      ORDER BY st.id, lt.id;
+    `;
+
+    const [rows] = await db.query(sql);
+    
+    // Transform rows into student-wise structure
+    const staffMap = {};
+
+    rows.forEach((row) => {
+      if (!staffMap[row.staffId]) {
+         staffMap[row.staffId] = {
+          staffId: `${row.staffId}`,
+          staffName: row.firstname + " " + row.lastname,
+          img: row.img_src,
+          userId: row.user_id,
+          leaves: {},
+        };
+      }
+
+      staffMap[row.staffId].leaves[row.leaveType] = {
+        used: row.used,
+        available: row.available,
+        total: row.total_allowed,
+      };
+    });
+
+    const result = Object.values(staffMap);
+
+    return res.status(200).json({
+      message: "Leave report fetched successfully!",
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: error.message,
+      success: false,
+    });
+  }
+};
 
 
 

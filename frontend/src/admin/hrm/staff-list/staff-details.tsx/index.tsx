@@ -21,7 +21,7 @@ const StaffDetails = () => {
     try {
 
       const { data } = await speStaffDetails(staffid)
-      // console.log(data)
+      console.log(data)
       if (data.success) {
         setStaffData(data.data)
       }

@@ -378,15 +378,12 @@ export const addVehicle = async (req, res) => {
     seatCapacity,
     gpsTrackingId,
     driver,
-    driverLicense,
-    driverContactNo,
-    driverAddress,
     status,
   } = req.body;
 
   try {
     const sql =
-      "INSERT INTO vehicle_info (vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id, driver_license, driver_contact_no, driver_address, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO vehicle_info (vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id,  status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const [rows] = await db.query(sql, [
       vehicleNo,
       vehicleModel,
@@ -396,9 +393,6 @@ export const addVehicle = async (req, res) => {
       seatCapacity,
       gpsTrackingId,
       driver,
-      driverLicense,
-      driverContactNo,
-      driverAddress,
       status,
     ]);
     return res.status(201).json({
@@ -416,8 +410,35 @@ export const addVehicle = async (req, res) => {
 };
 export const getAllVehicles = async (req, res) => {
   try {
-    const sql =
-      "Select id, vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id, driver_license, driver_contact_no, driver_address, status from vehicle_info";
+    // const sql =
+    //   "Select id, vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id, driver_license, driver_contact_no, driver_address, status from vehicle_info";
+
+
+    const sql = `Select
+       v.id,
+      v.vehicle_no,
+      v.vehicle_model,
+      v.made_of_year,
+      v.registration_no, 
+      v.chassis_no, 
+      v.seat_capacity,
+      v.gps_tracking_id,
+      v.driver_id AS driverId, 
+      v.status ,
+      s.driveLic AS driver_license,
+      s.address AS driver_address,
+      s.img_src,
+      u.firstname,
+      u.lastname,
+      u.mobile AS driver_contact_no
+             FROM
+              vehicle_info v
+              JOIN staffs s ON s.id = v.driver_id
+              JOIN users u ON u.id = s.user_id
+              ORDER BY v.id
+              
+              `;
+
     const [rows] = await db.query(sql);
     if (rows.length < 0) {
       return res.status(200).json({
@@ -482,9 +503,6 @@ export const updateVehicle = async (req, res) => {
     seatCapacity,
     gpsTrackingId,
     driver,
-    driverLicense,
-    driverContactNo,
-    driverAddress,
     status,
   } = req.body;
   const { id } = req.params;
@@ -502,7 +520,7 @@ export const updateVehicle = async (req, res) => {
   }
   try {
     const sql =
-      "UPDATE vehicle_info SET vehicle_no=?, vehicle_model=?, made_of_year=?, registration_no=?, chassis_no=?, seat_capacity=?,gps_tracking_id=?,driver_id=?,driver_license=?,driver_contact_no=?,driver_address=?, status=? where id=?";
+      "UPDATE vehicle_info SET vehicle_no=?, vehicle_model=?, made_of_year=?, registration_no=?, chassis_no=?, seat_capacity=?,gps_tracking_id=?,driver_id=?, status=? where id=?";
     const [rows] = await db.query(sql, [
       vehicleNo,
       vehicleModel,
@@ -512,9 +530,6 @@ export const updateVehicle = async (req, res) => {
       seatCapacity,
       gpsTrackingId,
       driver,
-      driverLicense,
-      driverContactNo,
-      driverAddress,
       status,
       id,
     ]);
@@ -596,10 +611,22 @@ export const assignVehicleToRoute = async (req, res) => {
 export const getAllAssignedVehicles = async (req, res) => {
   try {
     const sql = `
-      SELECT tva.id, tr.routeName, tr.id as route_id, vi.vehicle_no, vi.vehicle_model, vi.id as vehicle_id, vi.driver_id, vi.driver_contact_no, tva.status
+      SELECT
+       tva.id,
+        tr.routeName,
+         tr.id as route_id,
+          vi.vehicle_no, 
+          vi.vehicle_model,
+           vi.id as vehicle_id,
+      vi.driver_id,      
+      s.img_src,
+      CONCAT( u.firstname ," " ,u.lastname) AS name,
+      tva.status
       FROM transport_vehicle_assigned tva
       JOIN transport_routes tr ON tva.route_id = tr.id 
       JOIN vehicle_info vi ON tva.vehicle_id = vi.id
+      JOIN staffs s ON s.id = vi.driver_id
+      JOIN users u ON u.id = s.user_id
       ORDER BY tva.id ASC;
     `;
     const [rows] = await db.query(sql);
@@ -724,3 +751,77 @@ export const deleteAssignedVehicleById = async (req, res) => {
     });
   }
 };
+
+// all transport drivers
+export const allDrivers = async (req, res) => {
+  try {
+    const roleKeyword = "driver";
+
+    const sql = `
+      SELECT 
+        sf.id AS staff_id,
+        sf.img_src,
+        sf.date_of_join,
+        sf.driveLic,
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.mobile,
+        u.email,
+        u.status
+      FROM staffs sf
+      JOIN users u ON sf.user_id = u.id
+      JOIN roles r ON u.roll_id = r.id
+      WHERE INSTR(LOWER(r.role_name), ?) > 0
+    `;
+
+    const [rows] = await db.query(sql, [roleKeyword.toLowerCase()]);
+
+    return res.status(200).json({
+      message: "All drivers fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching driver details:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+export const driversForOption = async (req, res) => {
+  try {
+    const roleKeyword = "driver";
+
+    const sql = `
+      SELECT 
+        sf.id,
+        CONCAT(u.firstname, " ", u.lastname) AS name
+      FROM staffs sf
+      JOIN users u ON sf.user_id = u.id
+      JOIN roles r ON u.roll_id = r.id
+      WHERE u.status = '1' 
+      AND INSTR(LOWER(r.role_name), ?) > 0
+    `;
+
+    const [rows] = await db.query(sql, [roleKeyword.toLowerCase()]);
+
+    return res.status(200).json({
+      message: "All drivers fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching driver details:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+
+
+

@@ -34,17 +34,23 @@ export interface Income {
 }
 
 interface IncomeFormData {
+  name: string;
+  mobile: string;
+  email: string;
   incomeName: string;
   source: string;
   date: string | null;
   amount: number | null;
   invoiceNo: number | null;
-  paymentMethod: string| "";
+  paymentMethod: string | "";
   description: string;
   status: string;
 }
 
 interface IncomeFormErrors {
+  name?: string;
+  mobile?: string;
+  email?: string;
   incomeName?: string;
   source?: string;
   date?: string;
@@ -56,6 +62,9 @@ interface IncomeFormErrors {
 
 
 const initialData: IncomeFormData = {
+  name: "",
+  mobile: "",
+  email: "",
   incomeName: "",
   source: "",
   date: null,
@@ -76,8 +85,8 @@ const AccountsIncome = () => {
   const [formData, setFormData] = useState<IncomeFormData>(initialData);
   const [errors, setErrors] = useState<IncomeFormErrors>({});
   const [editId, setEditId] = useState<number | null>(null);
-   const [genLoading  , setGenLoading] = useState<boolean>(false)
-    const [genId , setGenId] = useState<number|null>(null)
+  const [genLoading, setGenLoading] = useState<boolean>(false)
+  const [genId, setGenId] = useState<number | null>(null)
 
 
   const fetchAllIncome = async () => {
@@ -101,6 +110,26 @@ const AccountsIncome = () => {
 
   const validate = (): boolean => {
     const newErrors: IncomeFormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required!";
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Name must be at least 3 characters!";
+    }
+
+    const mobileRegex = /^(?:\+91|91|0)?[6-9]\d{9}$/;
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = "Mobile number is required!";
+    } else if (!mobileRegex.test(formData.mobile)) {
+      newErrors.mobile = "Enter a valid 10-digit mobile number!";
+    }
+
+
+    const emailRegex =
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      newErrors.email = "Enter a valid email address!";
+    }
     if (!formData.incomeName.trim()) newErrors.incomeName = "Income Name is required";
     else if (formData.incomeName.length < 5) newErrors.incomeName = "Income name must be at least 5 chracherts !"
 
@@ -154,6 +183,9 @@ const AccountsIncome = () => {
         const res = data.data;
         console.log(res)
         setFormData({
+          name: res.name,
+          mobile: res.mobile,
+          email: res.email,
           incomeName: res.incomeName,
           source: res.source,
           date: dayjs(res.date).format("DD MMM YYYY"),
@@ -239,7 +271,7 @@ const AccountsIncome = () => {
 
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `expense-invoice-${id}.pdf`);
+      link.setAttribute("download", `income-invoice-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -248,7 +280,7 @@ const AccountsIncome = () => {
       // console.log("Invoice downloaded successfully!");
     } catch (error) {
       console.error("Error generating invoice:", error);
-    }finally{
+    } finally {
       setGenLoading(false)
     }
   };
@@ -313,8 +345,8 @@ const AccountsIncome = () => {
         <Link
           to="#"
           className="link-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#view_invoice"
+        // data-bs-toggle="modal"
+        // data-bs-target="#view_invoice"
         >
           INV-{text}
         </Link>
@@ -331,7 +363,7 @@ const AccountsIncome = () => {
       dataIndex: "inv",
       render: (_: any, record: any) => (
         <>
-          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId===record.id&&genLoading?'Generating...':'Gen-Invoice'}</button>
+          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId === record.id && genLoading ? 'Generating...' : 'Gen-Invoice'}</button>
         </>
       ),
     },
@@ -554,7 +586,44 @@ const AccountsIncome = () => {
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+                    <div className="row">
 
+                      <div className="mb-3 col col-sm-6">
+                        <label className="form-label">Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                          value={formData.name}
+                          onChange={handleChange}
+                        />
+                        {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                      </div>
+
+                      <div className="mb-3 col col-sm-6">
+                        <label className="form-label">Mobile Number</label>
+                        <input
+                          type="phone"
+                          name="mobile"
+                          className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
+                          value={formData.mobile}
+                          onChange={handleChange}
+                        />
+                        {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
+                      </div>
+
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                        value={formData.email}
+                        onChange={handleChange}
+                      />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    </div>
                     <div className="mb-3">
                       <label className="form-label">Income Name</label>
                       <input
@@ -712,7 +781,44 @@ const AccountsIncome = () => {
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+                    <div className="row">
 
+                      <div className="mb-3 col col-sm-6">
+                        <label className="form-label">Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                          value={formData.name}
+                          onChange={handleChange}
+                        />
+                        {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                      </div>
+
+                      <div className="mb-3 col col-sm-6">
+                        <label className="form-label">Mobile Number</label>
+                        <input
+                          type="phone"
+                          name="mobile"
+                          className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
+                          value={formData.mobile}
+                          onChange={handleChange}
+                        />
+                        {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
+                      </div>
+
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                        value={formData.email}
+                        onChange={handleChange}
+                      />
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                    </div>
                     <div className="mb-3">
                       <label className="form-label">Income Name</label>
                       <input

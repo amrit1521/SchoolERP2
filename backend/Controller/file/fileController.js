@@ -39,8 +39,6 @@ exports.uploadFile= async (req, res) => {
 // DELETE FILE
 exports.deleteFile = async (req, res) => {
   const id = req.params.id;
-  console.log('dfdshfbs' , id)
-
   try {
    
     const [rows] = await db.query(`SELECT filename, folder FROM files WHERE id = ?`, [id]);

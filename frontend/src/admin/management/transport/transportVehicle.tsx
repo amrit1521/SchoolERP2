@@ -4,7 +4,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
   // driverFilter2,
-  driverName,
+
   // GPSDevice,
   status,
   // vehicleModel,
@@ -14,11 +14,11 @@ import type { TableData } from "../../../core/data/interface";
 import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 import TransportModal from "./transportModal";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 // import { transportVehicles } from "../../../core/data/json/transport_vehicle";
 import { Link } from "react-router-dom";
-import { deleteVehicleById, getAllVehicle } from "../../../service/api";
+import { allDriversForOption, deleteVehicleById, getAllVehicle, Imageurl } from "../../../service/api";
 import { toast } from "react-toastify";
+import { Spinner } from "../../../spinner";
 
 interface TransportVehicleProps {
   id: number;
@@ -29,10 +29,12 @@ interface TransportVehicleProps {
   chassisNo: string;
   seatCapacity: number;
   gpsTrackingId: string;
-  driver: number;
+  driverId: number;
+  driver: string;
   driverLicense: string;
   driverContactNo: string;
   driverAddress: string;
+  img_src: string;
   status: number;
 }
 
@@ -43,6 +45,8 @@ const TransportVehicle = () => {
   const [vehicleDetails, setVehicleDetails] = useState<TransportVehicleProps[]>(
     []
   );
+  const [drivers, setDrivers] = useState<{ value: number, label: string }[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
   const [filterVehicleDetails, setFilterVehicleDetails] = useState<
     TransportVehicleProps[]
   >([]);
@@ -56,6 +60,8 @@ const TransportVehicle = () => {
   >([]);
 
   const fetchVehicleDetails = async () => {
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 500))
     try {
       const { data } = await getAllVehicle();
       if (data.success) {
@@ -69,10 +75,11 @@ const TransportVehicle = () => {
             chassisNo: item.chassis_no,
             seatCapacity: item.seat_capacity,
             gpsTrackingId: item.gps_tracking_id,
-            driver: item.driver_id,
+            driver: `${item.firstname}/${item.lastname}`,
+            driverId: item.driverId,
+            img: item.img_src,
             driverLicense: item.driver_license,
             driverContactNo: item.driver_contact_no,
-            driverAddress: item.driver_address,
             status: item.status,
           }))
         );
@@ -86,10 +93,11 @@ const TransportVehicle = () => {
             chassisNo: item.chassis_no,
             seatCapacity: item.seat_capacity,
             gpsTrackingId: item.gps_tracking_id,
-            driver: item.driver_id,
+            driver: `${item.firstname} ${item.lastname}`,
+            driverId: item.driverId,
+            img: item.img_src,
             driverLicense: item.driver_license,
             driverContactNo: item.driver_contact_no,
-            driverAddress: item.driver_address,
             status: item.status,
           }))
         );
@@ -118,11 +126,31 @@ const TransportVehicle = () => {
       toast.error(
         err.response?.data?.message || "Failed to fetch vehicle details"
       );
+    } finally {
+      setLoading(false)
+    }
+  };
+
+  const fetchAllDriversForOption = async () => {
+    try {
+      const { data } = await allDriversForOption();
+
+      if (data.success) {
+        setDrivers(
+          data.data.map((d: any) => ({
+            value: d.id,
+            label: d.name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
   useEffect(() => {
     fetchVehicleDetails();
+    fetchAllDriversForOption()
   }, []);
 
   const handleDelete = async (id: number) => {
@@ -266,8 +294,8 @@ const TransportVehicle = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -275,7 +303,7 @@ const TransportVehicle = () => {
           <div className="ms-2">
             <p className="text-dark mb-0">
               <Link to="#">
-                {driverName.find((item) => item.value == text)?.label}
+                {text}
               </Link>
             </p>
             <span className="fs-12">{record.driverContactNo}</span>
@@ -459,7 +487,7 @@ const TransportVehicle = () => {
                               <label className="form-label">Name</label>
                               <CommonSelect
                                 className="select"
-                                options={driverName}
+                                options={drivers}
                                 value={filters.driver}
                                 onChange={(option) =>
                                   handleFilterChange(
@@ -573,11 +601,13 @@ const TransportVehicle = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              <Table
-                dataSource={filterVehicleDetails}
-                columns={columns}
-                Selection={true}
-              />
+              {
+                loading ? <Spinner /> : (<Table
+                  dataSource={filterVehicleDetails}
+                  columns={columns}
+                  Selection={true}
+                />)
+              }
               {/* /Student List */}
             </div>
           </div>
@@ -585,6 +615,7 @@ const TransportVehicle = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
+
       <TransportModal
         onAdded={fetchVehicleDetails}
         onUpdated={fetchVehicleDetails}
