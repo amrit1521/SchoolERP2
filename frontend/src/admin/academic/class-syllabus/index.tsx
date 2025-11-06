@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 // import { classSyllabus } from "../../../core/data/json/class-syllabus";
 import {
@@ -12,13 +12,14 @@ import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { getAllSectionForAClass } from "../../../service/api";
+import { getAllSubject } from "../../../service/api";
 import { addSubjectGroup, allSubjectGroup, deleteGroup, editGroup, speGroup } from "../../../service/subjectApi";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
+import MultiSelect from "../../../core/common/multiSelect";
 
 
 
@@ -71,14 +72,14 @@ const ClassSyllabus = () => {
 
   interface SyllabusForm {
     className: number | null;
-    section: number | null;
-    subjectGroup: string;
+    subId: (string | number)[];
+     syllabusFile:File|null
     status: string;
   }
 
   interface FormErrors {
     className?: string;
-    section?: string;
+    subject?: string;
     subjectGroup?: string;
   }
 
@@ -87,23 +88,42 @@ const ClassSyllabus = () => {
     label: string;
   }
 
+  interface Subject {
+    id: number;
+    name: string;
+  }
+
 
   // ---------------------- Add Syllabus Form ----------------------
   const [formData, setFormData] = useState<SyllabusForm>({
     className: null,
-    section: null,
-    subjectGroup: "",
+    subId: [],
+    syllabusFile:null,
     status: "1",
   });
+
   const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
-
-
   // OPTIONS
-
   const [classOptions, setClassOptions] = useState<Option[]>([])
-  const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
 
+
+  const fetchData = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>,
+    setLoadingState: boolean = true
+  ) => {
+    try {
+      if (setLoadingState) setLoading(true);
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
 
   const fetchClass = async () => {
     try {
@@ -123,33 +143,21 @@ const ClassSyllabus = () => {
 
     }
   };
-  const fetchSection = async () => {
-    try {
-      if (formData.className) {
-        const { data } = await getAllSectionForAClass(Number(formData.className));
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
-        } else {
-          setSectionOptions([]);
-        }
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error("Error to fetch section !");
-    }
-  }
-
 
   useEffect(() => {
     fetchClass()
+    fetchSubjects()
   }, [])
 
-  useEffect(() => {
-    if (formData.className) {
-      fetchSection()
-    }
-  }, [formData.className])
+  const subjectOptions = useMemo(
+    () =>
+      subjects.map((s) => ({
+        value: s.id,
+        label: s.name
+      })),
 
+    [subjects]
+  )
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +166,10 @@ const ClassSyllabus = () => {
       ...prev,
       [name]: type === "checkbox" ? (checked ? "1" : "0") : value,
     }));
+  };
+
+  const handleIssueBookMulti = (field: keyof SyllabusForm, value: (string | number)[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   // ✅ Handle Input/Select Changes
@@ -173,13 +185,6 @@ const ClassSyllabus = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.className) newErrors.className = "Class is required";
-    if (!formData.section) newErrors.section = "Section is required";
-    if (!formData.subjectGroup.trim()) {
-      newErrors.subjectGroup = "Subject Group is required";
-    } else if (formData.subjectGroup.length < 5) {
-      newErrors.subjectGroup = "Invalid Subject Group"
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -194,8 +199,8 @@ const ClassSyllabus = () => {
       if (data.success) {
         setFormData({
           className: data.data.className,
-          section: data.data.section,
-          subjectGroup: data.data.subjectGroup,
+          subId: data.data.subjectGroup,
+          syllabusFile:data.data.file,
           status: data.data.status,
         })
         setEditId(id)
@@ -210,8 +215,8 @@ const ClassSyllabus = () => {
     e.preventDefault()
     setFormData({
       className: null,
-      section: null,
-      subjectGroup: "",
+      subId: [],
+      syllabusFile:null,
       status: "1"
     });
     setEditId(null)
@@ -245,8 +250,8 @@ const ClassSyllabus = () => {
       }
       setFormData({
         className: null,
-        section: null,
-        subjectGroup: "",
+        subId: [],
+        syllabusFile:null,
         status: "1"
       })
       fetchGroups()
@@ -281,9 +286,6 @@ const ClassSyllabus = () => {
     e.preventDefault()
     setDeleteId(null)
   }
-
-
-
 
   const columns = [
     // {
@@ -562,7 +564,7 @@ const ClassSyllabus = () => {
         {/* /Page Wrapper */}
       </>
       <div>
-        {/* Add Syllabus */}
+
         {/* Add Syllabus */}
         <div className="modal fade" id="add_syllabus">
           <div className="modal-dialog modal-dialog-centered">
@@ -601,7 +603,7 @@ const ClassSyllabus = () => {
                       </div>
 
                       {/* Section */}
-                      <div className="mb-3">
+                      {/* <div className="mb-3">
                         <label className="form-label">Section</label>
                         <CommonSelect
                           className={`select text-capitalize ${errors.section ? "is-invalid" : ""
@@ -615,27 +617,37 @@ const ClassSyllabus = () => {
                         {errors.section && (
                           <div className="text-danger">{errors.section}</div>
                         )}
-                      </div>
+                      </div> */}
 
                       {/* Subject Group */}
                       <div className="mb-3">
-                        <label className="form-label">Subject Group</label>
-                        <input
-                          name="subjectGroup"
-                          type="text"
-                          className={`form-control  ${errors.subjectGroup ? "is-invalid" : ""
-                            }`}
-                          value={formData.subjectGroup}
-                          onChange={handleChange}
+                        <label className="form-label">Subject</label>
+                        <MultiSelect
+                          value={subjectOptions.filter(b => formData.subId.includes(b.value))}
+                          className="select"
+                          options={subjectOptions}
+                          placeholder="Select Subject"
+                          onChange={(values) =>
+                            handleIssueBookMulti("subId", values)
+                          }
                         />
-                        {errors.subjectGroup && (
-                          <div className="text-danger">{errors.subjectGroup}</div>
-                        )}
                       </div>
                     </div>
 
+                    <div className="mb-3">
+                      <label className="form-label">Upload Syllbus</label>
+                      <input
+                        
+                        type="file"
+                        accept="application/pdf"
+                        className="form-control"
+                      />
+                    </div>
+
+
+
                     {/* Status */}
-                    <div className="d-flex align-items-center justify-content-between">
+                    {/* <div className="d-flex align-items-center justify-content-between">
                       <div className="status-title">
                         <h5>Status</h5>
                         <p>Change the Status by toggle</p>
@@ -649,7 +661,7 @@ const ClassSyllabus = () => {
                           onChange={handleChange}
                         />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 
@@ -675,7 +687,6 @@ const ClassSyllabus = () => {
         </div>
         {/* /Add Syllabus */}
 
-        {/* /Add Syllabus */}
         {/* Edit Syllabus */}
         <div className="modal fade" id="edit_syllabus">
           <div className="modal-dialog modal-dialog-centered">
@@ -714,7 +725,7 @@ const ClassSyllabus = () => {
                       </div>
 
                       {/* Section */}
-                      <div className="mb-3">
+                      {/* <div className="mb-3">
                         <label className="form-label">Section</label>
                         <CommonSelect
                           className={`select text-capitalize ${errors.section ? "is-invalid" : ""
@@ -728,22 +739,20 @@ const ClassSyllabus = () => {
                         {errors.section && (
                           <div className="text-danger">{errors.section}</div>
                         )}
-                      </div>
+                      </div> */}
 
                       {/* Subject Group */}
                       <div className="mb-3">
-                        <label className="form-label">Subject Group</label>
-                        <input
-                          name="subjectGroup"
-                          type="text"
-                          className={`form-control  ${errors.subjectGroup ? "is-invalid" : ""
-                            }`}
-                          value={formData.subjectGroup}
-                          onChange={handleChange}
+                        <label className="form-label">Book Name</label>
+                        <MultiSelect
+                          value={subjectOptions.filter(b => formData.subId.includes(b.value))}
+                          className="select"
+                          options={subjectOptions}
+                          placeholder="Select Books"
+                          onChange={(values) =>
+                            handleIssueBookMulti("subId", values)
+                          }
                         />
-                        {errors.subjectGroup && (
-                          <div className="text-danger">{errors.subjectGroup}</div>
-                        )}
                       </div>
                     </div>
 
@@ -787,6 +796,8 @@ const ClassSyllabus = () => {
           </div>
         </div>
         {/* /Edit Syllabus	*/}
+
+
         {/* Delete Modal */}
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
