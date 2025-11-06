@@ -1,4 +1,5 @@
 import { all_routes } from "../../../router/all_routes";
+import { student_routes } from "../../../admin/router/student_routes";
 const routes = all_routes;
 
 export const SidebarData = [
@@ -1585,60 +1586,116 @@ export const StudentSidebarData = [
   },
 
   {
-    label: "Peoples",
+    label: "Menu",
     submenuOpen: true,
     showSubRoute: false,
-    submenuHdr: "Peoples",
+    submenuHdr: "Menus",
 
     submenuItems: [
       {
-        label: "Students",
-        icon: "ti ti-school",
-        submenu: true,
-        showSubRoute: false,
-
-        submenuItems: [
-          {
-            label: "All Students",
-            link: routes.studentGrid,
-            subLink1: routes.addStudent,
-            subLink2: routes.editStudent,
-          },
-          { label: "Students List", link: routes.studentList },
-        ],
-      },
-    ],
-  },
-
-  {
-    label: "MANAGEMENT",
-    submenuOpen: true,
-    submenuHdr: "Management",
-    submenu: false,
-    showSubRoute: false,
-    submenuItems: [
-      {
-        label: "Library",
-        icon: "ti ti-notebook",
-        submenu: true,
-        showSubRoute: false,
-
-        submenuItems: [
-          { label: "Issue Book", link: routes.libraryIssueBook },
-          { label: "Return", link: routes.libraryReturn },
-        ],
-      },
-      {
-        label: "Sports",
-        link: routes.sportsList,
-        icon: "ti ti-run",
+        label: "Home Work",
+        link: student_routes.homeWork,
+        icon: "ti ti-license",
         showSubRoute: false,
         submenu: false,
       },
       {
-        label: "Players",
-        link: routes.playerList,
-        icon: "ti ti-play-football",
+        label: "Exam Results",
+        link: routes.examResult,
+        icon: "ti ti-hexagonal-prism-plus",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Time Table",
+        link: routes.classTimetable,
+        icon: "ti ti-table",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fees Payment",
+        link: routes.collectFees,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "My Attendance",
+        link: routes.studentAttendance,
+        icon: "ti ti-calendar-share",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Leaves",
+        link: routes.studentAttendance,
+        icon: "ti ti-calendar-stats",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fee Reminder",
+        link: routes.studentAttendance,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Subjects",
+        link: routes.classSubject,
+        icon: "ti ti-book",
+        showSubRoute: false,
+        submenu: false,
+      },
+    ],
+  },
+
+  // {
+  //   label: "MANAGEMENT",
+  //   submenuOpen: true,
+  //   submenuHdr: "Management",
+  //   submenu: false,
+  //   showSubRoute: false,
+  //   submenuItems: [
+  //     {
+  //       label: "Library",
+  //       icon: "ti ti-notebook",
+  //       submenu: true,
+  //       showSubRoute: false,
+
+  //       submenuItems: [
+  //         { label: "Issue Book", link: routes.libraryIssueBook },
+  //         { label: "Return", link: routes.libraryReturn },
+  //       ],
+  //     },
+  //     {
+  //       label: "Sports",
+  //       link: routes.sportsList,
+  //       icon: "ti ti-run",
+  //       showSubRoute: false,
+  //       submenu: false,
+  //     },
+  //     {
+  //       label: "Players",
+  //       link: routes.playerList,
+  //       icon: "ti ti-play-football",
+  //       showSubRoute: false,
+  //       submenu: false,
+  //     },
+  //   ],
+  // },
+  {
+    label: "About Me",
+    submenuOpen: true,
+    submenuHdr: "About",
+    submenu: false,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "View Profile",
+        link: routes.studentDetail,
+        icon: "ti ti-user",
         showSubRoute: false,
         submenu: false,
       },

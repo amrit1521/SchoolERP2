@@ -180,3 +180,52 @@ exports.deleteHomework = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error", success: false });
   }
 };
+
+
+// export const assingments = async (req, res) => {
+//   try {
+ 
+// const [userRows] = await db.query(
+//   `SELECT
+//       users.id,
+//       s.class_id,
+//       s.section_id
+//    FROM users
+//    LEFT JOIN students as s ON s.stu_id = users.id
+//    WHERE users.id = ?`,
+//   [req.user.id]
+// );
+ 
+//     if (!userRows || userRows.length === 0) {
+//       return res.status(404).json({ message: "Student not found" });
+//     }
+ 
+//     const student = userRows[0];
+ 
+//     const studentClass = student.class_id;  
+//     const section = student.section_id;
+ 
+ 
+//     const [home_work] = await db.query(
+//       `SELECT hw.id,c.class_name,s.section_name,hw.subject,hw.teacherId,hw.homeworkDate,hw.submissionDate,hw.attachements,hw.description,cs.name as subject,u.firstname,u.lastname FROM home_work as hw
+//         LEFT JOIN classes AS c ON c.id = hw.class_id
+//        LEFT JOIN sections AS s ON s.id = hw.section_id
+//        LEFT JOIN class_subject AS cs On cs.id = hw.subject
+//           LEFT JOIN users AS u ON u.id = hw.teacherId
+//        WHERE hw.class_id = ? AND hw.section_id = ?`,
+//       [studentClass, section]
+//     );
+// // console.log(home_work);
+//     return res.json({
+//       success: true,
+//       data: home_work,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching timetable:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch timetable",
+//       error: error.message,
+//     });
+//   }
+// };
