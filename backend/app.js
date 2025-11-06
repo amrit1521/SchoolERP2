@@ -29,6 +29,9 @@ app.use('/api/stu/uploads/document', express.static(path.join(__dirname, 'upload
 
 
 // routes
+app.use('/api/studentdashboard',require('./routes/studentDashboard/studentDashboard.routes'));
+app.use('/api/teacherdashboard',require('./routes/teacherDashboard/teacherDasboard.routes'));
+app.use('/api/admindashboard',require('./routes/adminRoutes/admin.routes'));
 app.use('/api/notification', require('./routes/notification/notification.router'));
 app.use('/api/user', require('./routes/users/users.routes'));
 app.use('/api/stu', require('./routes/student/studentRoutes'));

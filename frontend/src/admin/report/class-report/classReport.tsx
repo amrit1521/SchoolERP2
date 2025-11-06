@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 
 import { Link } from "react-router-dom";
@@ -6,23 +6,209 @@ import type { TableData } from "../../../core/data/interface";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import TooltipOption from "../../../core/common/tooltipOption";
 import CommonSelect from "../../../core/common/commonSelect";
-import { classSection, classSylabus, studentsnumber } from "../../../core/common/selectoption/selectoption";
+// import {
+//   classSection,
+//   classSylabus,
+//   studentsnumber,
+// } from "../../../core/common/selectoption/selectoption";
 import { all_routes } from "../../router/all_routes";
-import { classstudentreport } from "../../../core/data/json/class_studentreport";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { classreport } from "../../../core/data/json/class_report";
+// import { classstudentreport } from "../../../core/data/json/class_studentreport";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import { classreport } from "../../../core/data/json/class_report";
+import { toast } from "react-toastify";
+import { allStudents, getAllSection } from "../../../service/api";
+import { Spinner } from "../../../spinner";
+
+interface rowsProps {
+  id: number;
+  section_id: number;
+  class_id: number;
+  class: string;
+  section: string;
+  noOfSeats: number;
+  noOfStudents?: number;
+}
+
+interface Student {
+  admissionNo: string;
+  rollNo: number;
+  name: string;
+  class: string;
+  section: string;
+  gender: string;
+  parent: string;
+  dob: string;
+  status: boolean;
+}
+
+interface filterProps {
+  classId: number | null;
+  sectionId: number | null;
+}
+
 const ClassReport = () => {
-  const data = classreport;
-  const data2 = classstudentreport;
   const routes = all_routes;
+  const [allClasses, setAllClasses] = useState<rowsProps[]>([]);
+  const [filteredClasses, setFilteredClasses] = useState<rowsProps[]>([]);
+  const [selectedClass, setSelectedClass] = useState<rowsProps | null>(null);
+  const [allStudentData, setAllStudentData] = useState<any[]>([]);
+  const [selectedClassStudent, setSelectedClassStudent] = useState<Student[]>(
+    []
+  );
+  const [classOption, setClassOption] = useState<any[]>([]);
+  const [sectionOption, setSectionOption] = useState<any[]>([]);
+  const [filter, setFilter] = useState<filterProps>({
+    classId: null,
+    sectionId: null,
+  });
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchClass = async () => {
+    try {
+      const { data } = await getAllSection();
+      if (data.success) {
+        setAllClasses(
+          data.data.map((cl: any) => ({
+            id: cl.id,
+            section_id: cl.id,
+            class_id: cl.class_id,
+            class: cl.class_name,
+            section: cl.section.toUpperCase(),
+            noOfSeats: cl.noOfStudents,
+          }))
+        );
+        setFilteredClasses(
+          data.data.map((cl: any) => ({
+            id: cl.id,
+            section_id: cl.id,
+            class_id: cl.class_id,
+            class: cl.class_name,
+            section: cl.section.toUpperCase(),
+            noOfSeats: cl.noOfStudents,
+          }))
+        );
+        setClassOption(
+          [...new Set(data.data.map((cl: any) => cl.class_id))].map(
+            (class_id) => {
+              const classData = data.data.find(
+                (cl: any) => cl.class_id === class_id
+              );
+              return {
+                value: class_id,
+                label: classData?.class_name || "",
+              };
+            }
+          )
+        );
+      } else {
+        toast.error(data.message || "fetching classes failed.");
+      }
+    } catch (error: any) {
+      console.log(error.response);
+      toast.error(error.response?.data?.message || "Failed to load classes");
+    }
+  };
+
+  const fetchStudentDetails = async () => {
+    try {
+      setLoading(true);
+      const { data } = await allStudents();
+      if (data.success) {
+        setAllStudentData(data.students);
+      } else {
+        toast.error(data.message || "fetching student details failed.");
+      }
+      setLoading(false);
+    } catch (error: any) {
+      console.log(error.response);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch student Details"
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (selectedClass) {
+      setSelectedClassStudent(
+        allStudentData
+          .filter(
+            (student: any) =>
+              selectedClass.id == student.section_id &&
+              selectedClass.class_id == student.class_id
+          )
+          .map((stud: any) => ({
+            admissionNo: stud.admissionnum,
+            rollNo: stud.rollnum,
+            name: stud.firstname + stud.lastname,
+            class: stud.class,
+            section: stud.section,
+            gender: stud.gender,
+            parent: stud.name,
+            dob: new Date(stud.dob).toLocaleDateString(),
+            status: stud.status,
+          }))
+      );
+    }
+  }, [selectedClass]);
+
+  useEffect(() => {
+    fetchClass();
+    fetchStudentDetails();
+  }, []);
+
+  useEffect(() => {
+    if (!allStudentData?.length || !allClasses?.length) return;
+
+    const updatedClasses = allClasses.map((cl: any) => {
+      const noOfStudents = allStudentData.reduce(
+        (prev: number, std: any) =>
+          cl.class_id === std.class_id && cl.section_id === std.section_id
+            ? prev + 1
+            : prev,
+        0
+      );
+      return { ...cl, noOfStudents };
+    });
+    const isSame =
+      JSON.stringify(updatedClasses) === JSON.stringify(allClasses);
+    if (!isSame) {
+      setAllClasses(updatedClasses);
+      setFilteredClasses(updatedClasses);
+    }
+  }, [allStudentData]);
+
+  useEffect(() => {
+    if (filter.classId) {
+      setSectionOption(
+        allClasses
+          .filter((cl: any) => cl.class_id == filter.classId)
+          .map((e: any) => ({ value: e.id, label: e.section }))
+      );
+    }
+  }, [filter.classId]);
+
+  useEffect(() => {
+    const modal = document.getElementById("view_class_report");
+    const handleModalClose = () => {
+      setSelectedClassStudent([]);
+      setSelectedClass(null);
+    };
+
+    modal?.addEventListener("hidden.bs.modal", handleModalClose);
+
+    return () => {
+      modal?.removeEventListener("hidden.bs.modal", handleModalClose);
+    };
+  }, []);
+
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      render: ( record: any) => (
+      render: (text: number) => (
         <>
           <Link to="#" className="link-primary">
-            {record.id}
+            CL0{text}
           </Link>
         </>
       ),
@@ -41,30 +227,39 @@ const ClassReport = () => {
         a.section.length - b.section.length,
     },
     {
-      title: "No Of Students",
+      title: "No Of Seats",
+      dataIndex: "noOfSeats",
+    },
+    {
+      title: "Available Students",
       dataIndex: "noOfStudents",
-      sorter: (a: TableData, b: TableData) =>
-        a.noOfStudents.length - b.noOfStudents.length,
     },
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
-        <Link to="#" className="btn btn-light view details" data-bs-toggle="modal"
-				data-bs-target="#view_class_report">View Details</Link>
+          <Link
+            to="#"
+            className="btn btn-light view details"
+            data-bs-toggle="modal"
+            data-bs-target="#view_class_report"
+            onClick={() => {
+              setSelectedClass(record);
+            }}
+          >
+            View Details
+          </Link>
         </>
       ),
-      sorter: (a: TableData, b: TableData) =>
-        a.action.length - b.action.length,
+      sorter: (a: TableData, b: TableData) => a.action.length - b.action.length,
     },
-   
   ];
   const columns2 = [
     {
       title: "Admission No",
       dataIndex: "admissionNo",
-      render: ( record: any) => (
+      render: (_: any, record: any) => (
         <>
           <Link to="#" className="link-primary">
             {record.admissionNo}
@@ -83,16 +278,16 @@ const ClassReport = () => {
     {
       title: "Name",
       dataIndex: "name",
-      render: ( record: any) => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to="#" className="avatar avatar-md">
+            {/* <Link to="#" className="avatar avatar-md">
               <ImageWithBasePath
                 src={record.img}
                 className="img-fluid rounded-circle"
                 alt="img"
               />
-            </Link>
+            </Link> */}
             <div className="ms-2">
               <p className="text-dark mb-0">
                 <Link to="#">{record.name}</Link>
@@ -122,16 +317,16 @@ const ClassReport = () => {
     {
       title: "Parent",
       dataIndex: "parent",
-      render: ( record: any) => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to="#" className="avatar avatar-md">
+            {/* <Link to="#" className="avatar avatar-md">
               <ImageWithBasePath
                 src={record.parentimg}
                 className="img-fluid rounded-circle"
                 alt="img"
               />
-            </Link>
+            </Link> */}
             <div className="ms-2">
               <p className="text-dark mb-0">
                 <Link to="#">{record.parent}</Link>
@@ -152,15 +347,15 @@ const ClassReport = () => {
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Active" ? (
+          {text === "1" ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Active
             </span>
           ) : (
             <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Inactive
             </span>
           )}
         </>
@@ -170,10 +365,27 @@ const ClassReport = () => {
   ];
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
+    if (!filter.classId || !filter.sectionId) {
+      toast.error("please select filter.");
+    }
+    setFilteredClasses(
+      allClasses.filter(
+        (cl: any) => filter.classId == cl.class_id && cl.id == filter.sectionId
+      )
+    );
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+  const handleResetFilter = () => {
+    setFilter({ classId: null, sectionId: null });
+    setFilteredClasses(allClasses);
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
+
   return (
     <div>
       <>
@@ -199,7 +411,7 @@ const ClassReport = () => {
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-              <TooltipOption />
+                <TooltipOption />
               </div>
             </div>
             {/* /Page Header */}
@@ -209,7 +421,7 @@ const ClassReport = () => {
                 <h4 className="mb-3">Class Report List</h4>
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                    <PredefinedDateRanges />
                   </div>
                   <div className="dropdown mb-3 me-2">
                     <Link
@@ -221,8 +433,11 @@ const ClassReport = () => {
                       <i className="ti ti-filter me-2" />
                       Filter
                     </Link>
-                    <div className="dropdown-menu drop-width"  ref={dropdownMenuRef}>
-                      <form >
+                    <div
+                      className="dropdown-menu drop-width"
+                      ref={dropdownMenuRef}
+                    >
+                      <form>
                         <div className="d-flex align-items-center border-bottom p-3">
                           <h4>Filter</h4>
                         </div>
@@ -233,7 +448,14 @@ const ClassReport = () => {
                                 <label className="form-label">Class</label>
                                 <CommonSelect
                                   className="select"
-                                  options={classSylabus}
+                                  options={classOption}
+                                  value={filter.classId}
+                                  onChange={(opt: any) =>
+                                    setFilter((prev: any) => ({
+                                      ...prev,
+                                      classId: opt?.value,
+                                    }))
+                                  }
                                 />
                               </div>
                             </div>
@@ -242,25 +464,25 @@ const ClassReport = () => {
                                 <label className="form-label">Section</label>
                                 <CommonSelect
                                   className="select"
-                                  options={classSection}
-                                />
-                              </div>
-                            </div>
-                            <div className="col-md-12">
-                              <div className="mb-0">
-                                <label className="form-label">
-                                  No Of Students
-                                </label>
-                                <CommonSelect
-                                  className="select"
-                                  options={studentsnumber}
+                                  options={sectionOption}
+                                  value={filter.sectionId}
+                                  onChange={(opt: any) =>
+                                    setFilter((prev: any) => ({
+                                      ...prev,
+                                      sectionId: opt?.value,
+                                    }))
+                                  }
                                 />
                               </div>
                             </div>
                           </div>
                         </div>
                         <div className="p-3 d-flex align-items-center justify-content-end">
-                          <Link to="#" className="btn btn-light me-3">
+                          <Link
+                            to="#"
+                            className="btn btn-light me-3"
+                            onClick={handleResetFilter}
+                          >
                             Reset
                           </Link>
                           <Link
@@ -285,34 +507,22 @@ const ClassReport = () => {
                     </Link>
                     <ul className="dropdown-menu p-3">
                       <li>
-                        <Link
-                          to="#"
-                          className="dropdown-item rounded-1 active"
-                        >
+                        <Link to="#" className="dropdown-item rounded-1 active">
                           Ascending
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="#"
-                          className="dropdown-item rounded-1"
-                        >
+                        <Link to="#" className="dropdown-item rounded-1">
                           Descending
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="#"
-                          className="dropdown-item rounded-1"
-                        >
+                        <Link to="#" className="dropdown-item rounded-1">
                           Recently Viewed
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          to="#"
-                          className="dropdown-item rounded-1"
-                        >
+                        <Link to="#" className="dropdown-item rounded-1">
                           Recently Added
                         </Link>
                       </li>
@@ -322,7 +532,11 @@ const ClassReport = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Student List */}
-                <Table columns={columns} dataSource={data} Selection={true} />
+                <Table
+                  columns={columns}
+                  dataSource={filteredClasses}
+                  Selection={true}
+                />
                 {/* /Student List */}
               </div>
             </div>
@@ -337,9 +551,15 @@ const ClassReport = () => {
               <div className="modal-wrapper">
                 <div className="modal-body">
                   {/* Student List */}
-                 
-                  <Table columns={columns2} dataSource={data2} Selection={true} />
-                  
+                  {loading ? (
+                    <Spinner />
+                  ) : (
+                    <Table
+                      columns={columns2}
+                      dataSource={selectedClassStudent}
+                      Selection={true}
+                    />
+                  )}
                   {/* /Student List */}
                 </div>
               </div>
