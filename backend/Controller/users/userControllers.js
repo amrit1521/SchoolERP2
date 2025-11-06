@@ -33,6 +33,41 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+export const getSpecUsersById = async (req, res) => {
+  const {id} = req.params;
+  try {
+    const sql = `SELECT u.id as user_id, u.firstname,
+             u.lastname,UPPER(c.class_name) as class,
+             UPPER( se.section_name) as section,
+             u.email, u.roll_id, r.role_name, u.status, u.remark, s.id AS student_id, s.stu_id, u.created_at as dateOfJoined
+            FROM users u
+            LEFT JOIN roles r ON u.roll_id = r.id
+            LEFT JOIN students s ON u.id = s.stu_id
+            LEFT JOIN classes  c ON c.id =  s.class_id
+            LEFT JOIN sections se ON se.id = s.section_id
+            where u.id = ?
+            `;
+    const [rows] = await db.execute(
+      sql,[id]
+    );
+    if (rows.length < 0) {
+      return res.status(200).json({
+        message: "No Users found.",
+        success: false,
+        result: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "Users fetched successfully",
+      success: true,
+      result: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const deleteUserById = async (req, res) => {
   const { id } = req.params;
   try {

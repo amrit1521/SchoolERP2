@@ -298,9 +298,14 @@ exports.speTeacher = async (req, res) => {
         b.branch_name,
         h.hostel,
         h.room_num,
+        hs.name as hostel_name,
+        hsr.room_num as hostel_room_number,
         tp.route,
         tp.vehicle_num,
         tp.pickup_point,
+        tr.routeName as route_name,
+        tpp.pickPointName as pickup_pointName,
+        vi.vehicle_no as vehical_number,
         pi.epf_no,
         pi.basic_salary,
         pi.contract_type,
@@ -315,7 +320,12 @@ exports.speTeacher = async (req, res) => {
       LEFT JOIN users u ON t.user_id = u.id
       LEFT JOIN bank_info b ON t.user_id =b.user_id
       LEFT JOIN hostel_info h ON t.user_id = h.user_id
-      LEFT JOIN transport_info tp ON t.user_id =tp.user_id  
+      LEFT JOIN hostel hs ON hs.id = h.hostel
+      LEFT JOIN hostel_room hsr ON hsr.id = h.room_num
+      LEFT JOIN transport_info tp ON t.user_id =tp.user_id
+      LEFT JOIN transport_routes tr ON tr.id = tp.route
+      LEFT JOIN transport_pickupPoints tpp ON tpp.id = tp.pickup_point
+      LEFT JOIN  vehicle_info vi ON vi.id = tp.vehicle_num  
       LEFT JOIN payroll_info pi ON t.user_id = pi.user_id
        LEFT JOIN classes cf ON t.fromclass = cf.id
       LEFT JOIN classes ct ON t.toclass = ct.id
@@ -689,6 +699,8 @@ exports.getTeacherByToken = async (req, res) => {
         u.status,
         u.mobile,
         u.email,
+        cc.id as class_id,
+        s.id as section_id,
         cf.class_name AS fromclass,
         ct.class_name AS toclass,
         cc.class_name AS class,

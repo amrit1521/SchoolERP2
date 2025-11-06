@@ -213,6 +213,7 @@ exports.allStudents = async (req, res) => {
                 s.religion,
                 s.category,
                 s.caste,
+                p.name,
                 s.motherton,
                 s.lanknown,
                 s.stu_img
@@ -221,6 +222,7 @@ exports.allStudents = async (req, res) => {
                 ON u.id = s.stu_id
           RIGHT JOIN classes  c ON c.id =  s.class_id
           RIGHT JOIN sections se ON se.id = s.section_id
+          LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
           JOIN roles r on r.id=u.roll_id
           
                 WHERE u.roll_id=3
@@ -667,9 +669,14 @@ exports.specificDetailsStu = async (req, res) => {
         s.transfercert,
         h.hostel,
         h.room_num,
+        hs.name as hostel_name,
+        hsr.room_num as hostel_room_number,
         t.route,
         t.vehicle_num,
         t.pickup_point,
+        tr.routeName as route_name,
+        tp.pickPointName as pickup_pointName,
+        vi.vehicle_no as vehical_number,
         o.bank_name,
         o.branch,
         o.ifsc_num,
@@ -679,7 +686,12 @@ exports.specificDetailsStu = async (req, res) => {
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
+      LEFT JOIN hostel hs ON hs.id = h.hostel
+      LEFT JOIN hostel_room hsr ON hsr.id = h.room_num
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
+      LEFT JOIN transport_routes tr ON tr.id = t.route
+      LEFT JOIN transport_pickupPoints tp ON tp.id = t.pickup_point
+      LEFT JOIN  vehicle_info vi ON vi.id = t.vehicle_num
       LEFT JOIN other_info o ON s.stu_id=o.user_id
       LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
       LEFT JOIN classes c ON s.class_id = c.id

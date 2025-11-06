@@ -43,6 +43,18 @@ router.get(
   "/getexamresultforclass/:classId",
   examController.getExamResultAllStudentsOfAClass
 );
+router.get(
+  "/gettopperofclass",
+  examController.getClassSectionToppers
+);
+router.get(
+  "/gettopthreerankerofclass/:class_id/:section_id",
+  examController.getTopThreeRankers
+);
+router.get(
+  "/getperformancecountperclass",
+  examController.getPerformanceCategoryCountPerClass
+);
 router.post("/getspeexamresult", examController.getSpeExamResult);
 router.get("/spemark/:id", examController.speMarkForEdit);
 router.put("/editmark/:id", examController.editMark);

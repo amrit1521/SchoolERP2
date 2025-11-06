@@ -1,86 +1,184 @@
-
 import { Link } from "react-router-dom";
 import CommonSelect from "../../../core/common/commonSelect";
-import {
-  classes,
-  sections,
-  studentName,
-} from "../../../core/common/selectoption/selectoption";
+// import {
+//   classes,
+//   sections,
+//   studentName,
+// } from "../../../core/common/selectoption/selectoption";
 import TooltipOption from "../../../core/common/tooltipOption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import Table from "../../../core/common/dataTable/index";
 // import { fees_report_data } from "../../../core/data/json/fees_report_data";
 import type { TableData } from "../../../core/data/interface";
 import { all_routes } from "../../router/all_routes";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { feesReportData } from "../../../service/reports";
 import { Spinner } from "../../../spinner";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
+import { allRealClasses } from "../../../service/classApi";
+import { toast } from "react-toastify";
+import { getAllSectionForAClass } from "../../../service/api";
 
 export interface FeeReport {
   id: number;
-  collectionDate: string; 
-  mode: string;          
+  collectionDate: string;
+  mode: string;
   paymentRefno: string;
-  status: "0" | "1";     
-  discount: string;     
-  fine: string;         
-  dueDate: string;    
-  AmountPay: string;  
+  status: "0" | "1";
+  discount: string;
+  fine: string;
+  dueDate: string;
+  AmountPay: string;
   feesGroup: string;
   feesType: string;
   class: string;
   section: string;
 }
 
-
 const FeesReport = () => {
   // const data = fees_report_data;
-  const routes = all_routes; 
-
-
-
-  const [feesReport , setFeesReport] = useState<FeeReport[]>([])
-  const [loading ,setLoading] = useState<boolean>(false)
-
-
-  const fetchFeesReportData = async()=>{
-       setLoading(true)
-       await new Promise((res)=>setTimeout(res,500))
+  const routes = all_routes;
+  const [feesReport, setFeesReport] = useState<any[]>([]);
+  const [filteredFeesReport, setFilteredFeesReport] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [allClass, setAllClass] = useState<any[]>([]);
+  const [allSections, setAllSections] = useState<any[]>([]);
+  const [filter, setFilter] = useState<{
+    class: number | null;
+    section: number | null;
+  }>({ class: null, section: null });
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  const fetchClasses = async () => {
     try {
-       const {data} = await feesReportData()
-       if(data.success){
-        setFeesReport(data.feesdata)
-       }
+      setLoading(true);
+      const { data } = await allRealClasses();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        setAllClass(
+          data.data.map((e: any) => ({ value: e.id, label: e.class_name }))
+        );
+      } else {
+        setAllClass([]);
+      }
+      setLoading(false);
     } catch (error) {
-      console.log(error)
-    }finally{
-      setLoading(false)
+      console.log(error);
+      toast.error("Error to fetch classes !");
     }
-  }
+  };
 
- useEffect(()=>{
-      fetchFeesReportData()
+  const fetchSections = async (id: number) => {
+    try {
+      if (id) {
+        const { data } = await getAllSectionForAClass(id);
+        const options: any[] = [];
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          options.push(
+            ...data.data.map((e: any) => ({
+              value: e.id,
+              label: e.section_name,
+            }))
+          );
+          setAllSections(options);
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error to fetch sections !");
+    }
+  };
 
- } ,[])
+  const fetchFeesReportData = async () => {
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500));
+    try {
+      const { data } = await feesReportData();
+      if (data.success) {
+        setFilteredFeesReport(
+          data.feesdata.map((fee: any) => ({
+            key: fee.id,
+            feesGroup: `${fee.class}-${fee.section}`,
+            feesDescription: fee.feesGroup,
+            feesCode: fee.feesType,
+            dueDate: dayjs(fee.dueDate).format("DD MMM YYYY"),
+            amount: fee.AmountPay,
+            status: fee.status,
+            refId: fee.paymentRefno,
+            mode: fee.mode,
+            datePaid: dayjs(fee.collectionDate).format("DD MMM YYYY"),
+            discount: fee.discount,
+            fine: fee.fine,
+          }))
+        );
+        setFeesReport(data.feesdata);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
- const tableData = feesReport.map((fee:any)=>({
-  key:fee.id,
-  feesGroup:`${fee.class}-${fee.section}`,
-  feesDescription:fee.feesGroup,
-  feesCode:fee.feesType,
-  dueDate:dayjs(fee.dueDate).format('DD MMM YYYY'),
-  amount:fee.AmountPay,
-  status:fee.status,
-  refId:fee.paymentRefno,
-  mode:fee.mode,
-  datePaid:dayjs(fee.collectionDate).format('DD MMM YYYY'),
-  discount:fee.discount,
-  fine:fee.fine
+  useEffect(() => {
+    if (filter.class) {
+      fetchSections(filter.class);
+    }
+  }, [filter.class]);
 
-  
+  useEffect(() => {
+    fetchClasses();
+    fetchFeesReportData();
+  }, []);
+  const handleApplyFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!filter.class || !filter.section) {
+      toast.error("please select both field.");
+      return;
+    }
+    const filteredResult: any[] = feesReport
+      .filter(
+        (item: any) =>
+          item.class_id == filter.class && item.section_id == filter.section
+      )
+      .map((fee: any) => ({
+        key: fee.id,
+        feesGroup: `${fee.class}-${fee.section}`,
+        feesDescription: fee.feesGroup,
+        feesCode: fee.feesType,
+        dueDate: dayjs(fee.dueDate).format("DD MMM YYYY"),
+        amount: fee.AmountPay,
+        status: fee.status,
+        refId: fee.paymentRefno,
+        mode: fee.mode,
+        datePaid: dayjs(fee.collectionDate).format("DD MMM YYYY"),
+        discount: fee.discount,
+        fine: fee.fine,
+      }));
+    setFilteredFeesReport(filteredResult);
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
 
- }))
+  const handleResetFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilteredFeesReport(
+      feesReport.map((fee: any) => ({
+        key: fee.id,
+        feesGroup: `${fee.class}-${fee.section}`,
+        feesDescription: fee.feesGroup,
+        feesCode: fee.feesType,
+        dueDate: dayjs(fee.dueDate).format("DD MMM YYYY"),
+        amount: fee.AmountPay,
+        status: fee.status,
+        refId: fee.paymentRefno,
+        mode: fee.mode,
+        datePaid: dayjs(fee.collectionDate).format("DD MMM YYYY"),
+        discount: fee.discount,
+        fine: fee.fine,
+      }))
+    );
+    dropdownMenuRef.current?.classList.remove("show");
+  };
 
   const columns = [
     {
@@ -218,7 +316,10 @@ const FeesReport = () => {
                     <i className="ti ti-filter me-2" />
                     Filter
                   </Link>
-                  <div className="dropdown-menu drop-width">
+                  <div
+                    className="dropdown-menu drop-width"
+                    ref={dropdownMenuRef}
+                  >
                     <form>
                       <div className="d-flex align-items-center border-bottom p-3">
                         <h4>Filter</h4>
@@ -230,8 +331,14 @@ const FeesReport = () => {
                               <label className="form-label">Class</label>
                               <CommonSelect
                                 className="select"
-                                options={classes}
-                                defaultValue={classes[0]}
+                                options={allClass}
+                                value={filter?.class}
+                                onChange={(opt: any) =>
+                                  setFilter((prev: any) => ({
+                                    ...prev,
+                                    class: opt.value,
+                                  }))
+                                }
                               />
                             </div>
                           </div>
@@ -240,12 +347,18 @@ const FeesReport = () => {
                               <label className="form-label">Section</label>
                               <CommonSelect
                                 className="select"
-                                options={sections}
-                                defaultValue={sections[0]}
+                                options={allSections}
+                                value={filter?.section}
+                                onChange={(opt: any) =>
+                                  setFilter((prev: any) => ({
+                                    ...prev,
+                                    section: opt.value,
+                                  }))
+                                }
                               />
                             </div>
                           </div>
-                          <div className="col-md-12">
+                          {/* <div className="col-md-12">
                             <div className="mb-0">
                               <label className="form-label">Students</label>
                               <CommonSelect
@@ -254,14 +367,22 @@ const FeesReport = () => {
                                 defaultValue={studentName[0]}
                               />
                             </div>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       <div className="p-3 d-flex align-items-center justify-content-end">
-                        <Link to="#" className="btn btn-light me-3">
+                        <Link
+                          to="#"
+                          className="btn btn-light me-3"
+                          onClick={handleResetFilter}
+                        >
                           Reset
                         </Link>
-                        <button type="submit" className="btn btn-primary">
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          onClick={handleApplyFilter}
+                        >
                           Apply
                         </button>
                       </div>
@@ -304,9 +425,15 @@ const FeesReport = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-             {
-              loading?<Spinner/>:( <Table dataSource={tableData} columns={columns} Selection={true} />)
-             }
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={filteredFeesReport}
+                  columns={columns}
+                  Selection={true}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

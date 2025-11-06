@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL: string = import.meta.env.VITE_SERVERURL || "http://localhost:3004";
+const BASE_URL: string =
+  import.meta.env.VITE_SERVERURL || "http://localhost:3004";
 export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image/`;
 export const Documenturl = `${API_URL}/stu/uploads/document/`;
@@ -18,10 +19,41 @@ export const api2 = axios.create({
   withCredentials: true,
 });
 
+//dashboard apis-----------------
+export const getAllUserCountForRole = () =>
+  api.get("/admindashboard/getrolecountforrole");
+export const getTotalSubjectCounts = () =>
+  api.get("/admindashboard/gettotalsubjectcounts");
+export const getTodayStudentAttendanceCounts = (date: any) =>
+  api.get(`/admindashboard/gettoday-student-attendancecount?date=${date}`);
+export const getTodayTeacherAttendanceCounts = (date: any) =>
+  api.get(`/admindashboard/gettoday-teacher-attendancecount?date=${date}`);
+export const getTodayStaffAttendanceCounts = (date: any) =>
+  api.get(`/admindashboard/gettoday-staff-attendancecount?date=${date}`);
+export const getAllLeaveRequest = () =>
+  api.get("/admindashboard/getleaverequest");
+export const ActionOnLeaveRequest = (data: any, id: number) =>
+  api.patch(`/admindashboard/actionleaverequest/${id}`, data);
+
+// teacher dashboard apis:
+export const getSpecTeacherAttendance = (id: number) =>
+  api.get(`/teacherdashboard/getspecteacher-attendance/${id}`);
+export const getTopRankerResult = (classId: number, sectionId: number) =>
+  api.get(`/exam/gettopthreerankerofclass/${classId}/${sectionId}`);
+
+//student dashboard apis:
+export const getSpecStudentAttendance = (rollNum: number) =>
+  api.get(`/studentdashboard/studentspecAttendance/${rollNum}`);
+export const getStudentHomework = (classId: number, sectionId: number) =>
+  api.get(`/studentdashboard/getstudentHomework/${classId}/${sectionId}`);
+export const getStudentFeeReminder = (rollNum: number) =>
+  api.get(`/studentdashboard/getstudentfeereminder/${rollNum}`);
+
 //user apis-------------------
 export const allUsers = () => api.get("/user/all-users");
 export const deleteUsersById = (id: number) =>
   api.delete(`/user/delete-users/${id}`);
+export const getUsersById = (id: number) => api.get(`/user/getuserbyid/${id}`);
 export const getAllRoles = () => api.get("/user/all-roles");
 export const updateRoles = (data: object, id: number | null) =>
   api.patch(`/user/update-roles/${id}`, data);
@@ -43,17 +75,24 @@ export const CreateNotice = (data: any) =>
 export const UploadNoticeFile = (data: object) =>
   api2.post("/notification/upload", data);
 export const getAllNotice = () => api.get("/notification/all-notice");
-export const deleteNotice = (data: any) => api.post("/notification/delete-notice", data);
-export const updateNotice = (data: any) => api.patch("/notification/update-notice", data);
+export const deleteNotice = (data: any) =>
+  api.post("/notification/delete-notice", data);
+export const updateNotice = (data: any) =>
+  api.patch("/notification/update-notice", data);
 
+export const getUpcommingEvents = () =>
+  api.get("/notification/upcomming-events");
+export const getSpecUpcommingEvents = (id: number) =>
+  api.get(`/notification/spec-upcomming-events/${id}`);
 export const CreateEvent = (data: any) =>
   api.post("/notification/create-event", data);
 export const UploadEventFile = (data: object) =>
   api2.post("/notification/event/upload", data);
 export const getAllEvent = () => api.get("/notification/all-event");
-export const updateEvent = (data: any) => api.patch("/notification/update-event", data);
-export const deleteEvent = (data: any) => api.post("/notification/delete-event", data);
-
+export const updateEvent = (data: any) =>
+  api.patch("/notification/update-event", data);
+export const deleteEvent = (data: any) =>
+  api.post("/notification/delete-event", data);
 
 // student apis-------------------
 export const addStundent = (data: Object) => api.post("/stu/add", data);
@@ -260,6 +299,9 @@ export const getSpeExamResult = (data: object) =>
   api.post("/exam/getspeexamresult", data);
 export const getStudentExamResultEditList = (data: object) =>
   api.post("/exam/getstudentexamresultlist", data);
+export const getTopperResult = () => api.get(`/exam/gettopperofclass`);
+export const getPerforamanceCountPerClass = () =>
+  api.get(`/exam/getperformancecountperclass`);
 
 // academic reasons==================================================
 export const addAcademicReason = (data: object) =>
@@ -359,6 +401,8 @@ export const addPickUpPoints = (data: object) =>
 export const getAllPickupPoints = () => api.get("/transport/pickup-points");
 export const getTransportPickUpPointsById = (id: number | null) =>
   api.get(`/transport/get-pickup-points/${id}`);
+export const getTransportPickUpPointsForRouteId = (id: number | null) =>
+  api.get(`/transport/get-pickuppoint-forroute/${id}`);
 export const updateTransportPickupPoints = (data: any, id: number) =>
   api.patch(`/transport/update-pickup-points/${id}`, data);
 export const deletePickupPointById = (id: number | null) =>
@@ -376,6 +420,8 @@ export const assignVehicleToRoute = (data: object) =>
   api.post("/transport/assign-vehicle", data);
 export const getAllAssignedVehicles = () =>
   api.get("/transport/all-assigned-vehicles");
+export const getAssignedVehicleForARoute = (id: number) =>
+  api.get(`/transport/get-assigned-vehicles-forroute/${id}`);
 export const updateAssignedVehicle = (data: object, id: number) =>
   api.patch(`/transport/update-assigned-vehicle/${id}`, data);
 export const deleteAssignedVehicleById = (id: number) =>

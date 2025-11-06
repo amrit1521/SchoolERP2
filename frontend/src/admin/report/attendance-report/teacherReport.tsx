@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
@@ -12,8 +12,11 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 
 import type { TableData } from "../../../core/data/interface";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { teacherAttendancereportData } from "../../../core/data/json/teacher_attendance_data";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import { teacherAttendancereportData } from "../../../core/data/json/teacher_attendance_data";
+import { teacherAttendanceReport } from "../../../service/reports";
+import { Imageurl } from "../../../service/api";
+import { Spinner } from "../../../spinner";
 
 const TeacherReport = () => {
   const routes = all_routes;
@@ -24,7 +27,30 @@ const TeacherReport = () => {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
-  const data = teacherAttendancereportData;
+  // const data = teacherAttendancereportData;
+  const [teachAttendanceData, setTeachAttendanceData] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchReport = async () => {
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 400));
+    try {
+      const { data } = await teacherAttendanceReport();
+      if (data.success) {
+        console.log("data: ", data);
+        setTeachAttendanceData(data.data);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReport();
+  }, []);
+
   const renderTitle = (title1: any, title2: any) => {
     return (
       <>
@@ -42,8 +68,8 @@ const TeacherReport = () => {
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
-            <ImageWithBasePath
-              src={record.img}
+            <img
+              src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
               alt="img"
             />
@@ -763,8 +789,15 @@ const TeacherReport = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-
-              <Table dataSource={data} columns={columns} Selection={false} />
+              {loading ? (
+                <Spinner />
+              ) : (
+                <Table
+                  dataSource={teachAttendanceData}
+                  columns={columns}
+                  Selection={false}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>

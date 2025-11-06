@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Select } from "antd";
 import { toast } from "react-toastify";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
+import { all_routes } from "../../../router/all_routes";
 import {
   getAllExamNameForAStud,
   getExamResult,
@@ -568,6 +568,7 @@ const Template3Preview = ({
 };
 
 const StudentResult: React.FC = () => {
+  const routes = all_routes;
   const { rollnum } = useParams<{ rollnum: string }>();
   const [student, setStudent] = useState<any>({});
   const [results, setResults] = useState<any[]>([]);
@@ -671,58 +672,117 @@ const StudentResult: React.FC = () => {
           <div className="row">
             <StudentSidebar student={student} loading={loading} />
             <div className="col-xxl-9 col-xl-8">
-              <div className="card">
-                <div className="card-header d-flex justify-content-between align-items-center">
-                  <h4>Exams & Results</h4>
-                  <Select
-                    options={examOptions}
-                    mode="multiple"
-                    className="Select"
-                    placeholder="Choose Exams"
-                    value={selectedExams}
-                    onChange={(value) => setSelectedExams(value)}
-                    style={{ width: 250 }}
-                    allowClear
-                  />
-                </div>
-                <div className="card-body">
-                  {loading ? (
-                    <div className="text-center">Loading...</div>
-                  ) : filteredResults.length === 0 ? (
-                    <div className="text-center text-muted">
-                      {selectedExams.length > 0
-                        ? "No results found for selected exams"
-                        : "No exam results available"}
-                    </div>
-                  ) : (
-                    filteredResults.map((studentItem: any, index: number) => {
-                      const examKey = `${studentItem.rollnum}-${
-                        studentItem.exam_name_id || index
-                      }`;
-                      return (
-                        <div
-                          key={examKey}
-                          className="accordion-item mb-3 border rounded p-3 d-flex justify-content-between align-items-center"
-                        >
-                          <div>
-                            <strong>{"Download Exam Result"}</strong>
-                            <div className="text-muted small">
-                              Roll Number: {studentItem.rollnum}
-                            </div>
-                          </div>
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => {
-                              setModalStudentItem(studentItem);
-                              setIsModalVisible(true);
-                            }}
+              <div className="row">
+                <div className="col-md-12"></div>
+                <ul className="nav nav-tabs nav-tabs-bottom mb-4">
+                  <li>
+                    <Link
+                      to={`${routes.studentDetail}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-school me-2" />
+                      Student Details
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${routes.studentTimeTable}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-table-options me-2" />
+                      Time Table
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${routes.studentLeaves}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-calendar-due me-2" />
+                      Leave &amp; Attendance
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${routes.studentFees}/${rollnum}`}
+                      className="nav-link active"
+                    >
+                      <i className="ti ti-report-money me-2" />
+                      Fees
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${routes.studentResult}/${rollnum}`}
+                      className="nav-link active"
+                    >
+                      <i className="ti ti-bookmark-edit me-2" />
+                      Exam &amp; Results
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${routes.studentLibrary}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-books me-2" />
+                      Library
+                    </Link>
+                  </li>
+                </ul>
+                <div className="card">
+                  <div className="card-header d-flex justify-content-between align-items-center">
+                    <h4>Exams & Results</h4>
+                    <Select
+                      options={examOptions}
+                      mode="multiple"
+                      className="Select"
+                      placeholder="Choose Exams"
+                      value={selectedExams}
+                      onChange={(value) => setSelectedExams(value)}
+                      style={{ width: 250 }}
+                      allowClear
+                    />
+                  </div>
+                  <div className="card-body">
+                    {loading ? (
+                      <div className="text-center">Loading...</div>
+                    ) : filteredResults.length === 0 ? (
+                      <div className="text-center text-muted">
+                        {selectedExams.length > 0
+                          ? "No results found for selected exams"
+                          : "No exam results available"}
+                      </div>
+                    ) : (
+                      filteredResults.map((studentItem: any, index: number) => {
+                        const examKey = `${studentItem.rollnum}-${
+                          studentItem.exam_name_id || index
+                        }`;
+                        return (
+                          <div
+                            key={examKey}
+                            className="accordion-item mb-3 border rounded p-3 d-flex justify-content-between align-items-center"
                           >
-                            Choose Template
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
+                            <div>
+                              <strong>{"Download Exam Result"}</strong>
+                              <div className="text-muted small">
+                                Roll Number: {studentItem.rollnum}
+                              </div>
+                            </div>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => {
+                                setModalStudentItem(studentItem);
+                                setIsModalVisible(true);
+                              }}
+                            >
+                              Choose Template
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
