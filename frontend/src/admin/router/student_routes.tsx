@@ -12,6 +12,12 @@ export const student_routes = {
   //   notes: "/notes",
   //   comingSoon: "/coming-soon",
   homeWork: "/student/home-work",
+  feeReminder: "/student/fees-reminder",
+  feePayments: "/student/fees-payment",
+  leaves: "/student/leaves",
+  attendance: "/student/attendance",
+  mySubject: "/student/subjects",
+  studentprofileDetail: "/student/student-details",
   //   // auth routes routes
   //   login: "/login",
   //   login2: "/login-2",

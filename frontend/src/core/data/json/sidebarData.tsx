@@ -1615,76 +1615,41 @@ export const StudentSidebarData = [
       },
       {
         label: "Fees Payment",
-        link: routes.collectFees,
+        link: student_routes.feePayments,
         icon: "ti ti-report-money",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "My Attendance",
-        link: routes.studentAttendance,
+        link: student_routes.attendance,
         icon: "ti ti-calendar-share",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Leaves",
-        link: routes.studentAttendance,
+        link: student_routes.leaves,
         icon: "ti ti-calendar-stats",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Fee Reminder",
-        link: routes.studentAttendance,
+        link: student_routes.feeReminder,
         icon: "ti ti-report-money",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Subjects",
-        link: routes.classSubject,
+        link: student_routes.mySubject,
         icon: "ti ti-book",
         showSubRoute: false,
         submenu: false,
       },
     ],
   },
-
-  // {
-  //   label: "MANAGEMENT",
-  //   submenuOpen: true,
-  //   submenuHdr: "Management",
-  //   submenu: false,
-  //   showSubRoute: false,
-  //   submenuItems: [
-  //     {
-  //       label: "Library",
-  //       icon: "ti ti-notebook",
-  //       submenu: true,
-  //       showSubRoute: false,
-
-  //       submenuItems: [
-  //         { label: "Issue Book", link: routes.libraryIssueBook },
-  //         { label: "Return", link: routes.libraryReturn },
-  //       ],
-  //     },
-  //     {
-  //       label: "Sports",
-  //       link: routes.sportsList,
-  //       icon: "ti ti-run",
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //     {
-  //       label: "Players",
-  //       link: routes.playerList,
-  //       icon: "ti ti-play-football",
-  //       showSubRoute: false,
-  //       submenu: false,
-  //     },
-  //   ],
-  // },
   {
     label: "About Me",
     submenuOpen: true,
@@ -1694,7 +1659,7 @@ export const StudentSidebarData = [
     submenuItems: [
       {
         label: "View Profile",
-        link: routes.studentDetail,
+        link: student_routes.studentDetail,
         icon: "ti ti-user",
         showSubRoute: false,
         submenu: false,

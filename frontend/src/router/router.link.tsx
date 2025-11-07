@@ -298,6 +298,36 @@ export const publicRoutes = [
   },
 
   {
+    path: student_routes.attendance,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.feePayments,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.mySubject,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.feeReminder,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.studentprofileDetail,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.leaves,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
     path: student_routes.homeWork,
     element: <HomeWork />,
     route: Route,
