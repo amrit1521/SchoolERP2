@@ -17,6 +17,7 @@ import {
   allTeacherForOption,
   deleteHomework,
   editHomework,
+  getAllRolePermissions,
   getAllSection,
   getAllSectionForAClass,
   getAllSubject,
@@ -65,7 +66,6 @@ export interface classes {
 
 const HomeWork = () => {
   const routes = all_routes;
-
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -88,6 +88,7 @@ const HomeWork = () => {
   const [errors, setErrors] = useState<
     Partial<Record<keyof HomeworkFormData, string>>
   >({});
+  const [permission, setPermission] = useState<any>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
@@ -96,6 +97,8 @@ const HomeWork = () => {
   const [allClass, setAllClass] = useState<classes[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const token = localStorage.getItem("token");
+  const userId = token ? JSON.parse(token)?.id : null;
+  const roleId = token ? JSON.parse(token)?.role : null;
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -110,11 +113,32 @@ const HomeWork = () => {
     }
   };
 
+  const fetchPermission = async (roleId: number) => {
+    if (roleId) {
+      const { data } = await getAllRolePermissions(roleId);
+      if (data.success) {
+        console.log("all permission", data?.result);
+        console.log(
+          "specific permission: ",
+          data.result.filter((perm: any) => perm?.module_name === "HomeWork")
+        );
+        const currentPermission = data.result
+          .filter((perm: any) => perm?.module_name === "HomeWork")
+          .map((perm: any) => ({
+            can_create: perm?.can_create,
+            can_delete: perm?.can_delete,
+            can_edit: perm?.can_edit,
+            can_view: perm?.can_view,
+          }));
+        setPermission(currentPermission[0]);
+      }
+    }
+  };
+
   const fetchHomeWorks = async () => {
     setLoading(true);
-    if (token) {
+    if (userId) {
       try {
-        const userId = JSON.parse(token)?.id;
         const { data } = await getAllStudentHomeWork(userId);
 
         if (data.success) {
@@ -152,13 +176,20 @@ const HomeWork = () => {
   const fetchClasses = () => fetchData(allRealClasses, setAllClass);
 
   useEffect(() => {
-    fetchTeachers();
-    fetchSections();
-    fetchSubjects();
-    fetchHomeWorks();
-    fetchClasses();
+    fetchPermission(roleId);
   }, []);
 
+  useEffect(() => {
+    if (permission) {
+      fetchTeachers();
+      fetchSections();
+      fetchSubjects();
+      fetchHomeWorks();
+      fetchClasses();
+    }
+  }, [permission]);
+
+  console.log("permission : ", permission);
   useEffect(() => {
     if (formData.className) {
       fetchSection();
@@ -444,40 +475,50 @@ const HomeWork = () => {
       dataIndex: "action",
       render: (text: any) => (
         <>
-          <div className="dropdown">
-            <Link
-              to="#"
-              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="ti ti-dots-vertical fs-14" />
-            </Link>
-            <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => fetchHwById(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_home_work"
-                >
-                  <i className="ti ti-edit-circle me-2" />
-                  Edit
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </button>
-              </li>
-            </ul>
-          </div>
+          {permission && (
+            <div className="dropdown">
+              <Link
+                to="#"
+                className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i className="ti ti-dots-vertical fs-14" />
+              </Link>
+              <ul className="dropdown-menu dropdown-menu-right p-3">
+                {permission?.can_edit ? (
+                  <li>
+                    <button
+                      className="dropdown-item rounded-1"
+                      onClick={() => fetchHwById(text)}
+                      data-bs-toggle="modal"
+                      data-bs-target="#edit_home_work"
+                    >
+                      <i className="ti ti-edit-circle me-2" />
+                      Edit
+                    </button>
+                  </li>
+                ) : (
+                  ""
+                )}
+                {permission?.can_delete ? (
+                  <li>
+                    <button
+                      className="dropdown-item rounded-1"
+                      onClick={() => setDeleteId(text)}
+                      data-bs-toggle="modal"
+                      data-bs-target="#delete-modal"
+                    >
+                      <i className="ti ti-trash-x me-2" />
+                      Delete
+                    </button>
+                  </li>
+                ) : (
+                  ""
+                )}
+              </ul>
+            </div>
+          )}
         </>
       ),
     },
@@ -496,30 +537,33 @@ const HomeWork = () => {
                 <nav>
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
-                      <Link to={routes.adminDashboard}>Dashboard</Link>
-                    </li>
-                    <li className="breadcrumb-item">
-                      <Link to="#">Academic </Link>
+                      <Link to={routes.studentDashboard}>
+                        Student Dashboard
+                      </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
-                      Class Work
+                      Home Work
                     </li>
                   </ol>
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
-                <div className="mb-2">
-                  <Link
-                    to="#"
-                    className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_home_work"
-                  >
-                    <i className="ti ti-square-rounded-plus-filled me-2" />
-                    Add Home Work
-                  </Link>
-                </div>
+                {permission?.can_create ? (
+                  <div className="mb-2">
+                    <Link
+                      to="#"
+                      className="btn btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#add_home_work"
+                    >
+                      <i className="ti ti-square-rounded-plus-filled me-2" />
+                      Add Home Work
+                    </Link>
+                  </div>
+                ) : (
+                  ""
+                )}
               </div>
             </div>
             {/* /Page Header */}
@@ -670,17 +714,21 @@ const HomeWork = () => {
         <div className="modal fade" id="add_home_work">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Home Work</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+              {permission?.can_create ? (
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Home Work</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+              ) : (
+                ""
+              )}
 
               <form onSubmit={handleSubmit}>
                 <div className="modal-body">

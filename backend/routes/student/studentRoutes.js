@@ -32,6 +32,7 @@ router.get('/stuleavereport', studentController.studentLeaveReport)
 router.get('/timetable/:rollnum', studentController.getTimeTable)
 // leave
 router.get('/leavedata/:rollnum', studentController.getStuLeaveData)
+router.get('/studentleavedata/:userId', studentController.getStudentLeaveData)
 
 // for option
 router.get('/stuforoption'  ,studentController.studentForOption)
@@ -40,5 +41,9 @@ router.get('/stuforoption2'  ,studentController.studentForOption2)
 // file upload and delete
 router.post('/upload', upload.single('stufile'), fileController.uploadFile);
 router.delete('/deletefile/:id', fileController.deleteFile)
+
+
+
+router.get('/specstudentdetails/:userId', studentController.getSpecStudentDetails)
 
 module.exports = router

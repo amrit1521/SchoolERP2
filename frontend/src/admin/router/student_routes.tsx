@@ -18,6 +18,8 @@ export const student_routes = {
   attendance: "/student/attendance",
   mySubject: "/student/subjects",
   studentprofileDetail: "/student/student-details",
+  examResult: "/student/exam-result",
+  studentTimeTable: "/student/time-table",
   //   // auth routes routes
   //   login: "/login",
   //   login2: "/login-2",

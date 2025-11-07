@@ -1531,56 +1531,10 @@ export const StudentSidebarData = [
     submenuItems: [
       {
         label: "Student Dashboard",
+        link: routes.studentDashboard,
         icon: "ti ti-layout-dashboard",
-        submenu: true,
         showSubRoute: false,
-
-        submenuItems: [
-          { label: "Student Dashboard", link: routes.studentDashboard },
-        ],
-      },
-      {
-        label: "Application",
-        icon: "ti ti-layout-list",
-        submenu: true,
-        showSubRoute: false,
-        submenuItems: [
-          {
-            label: "Chat",
-            link: routes.chat,
-            showSubRoute: false,
-          },
-          {
-            label: "Call",
-            link: routes.audioCall,
-            showSubRoute: false,
-          },
-          {
-            label: "Calendar",
-            link: routes.calendar,
-            showSubRoute: false,
-          },
-          {
-            label: "Email",
-            link: routes.email,
-            showSubRoute: false,
-          },
-          {
-            label: "To Do",
-            link: routes.todo,
-            showSubRoute: false,
-          },
-          {
-            label: "Notes",
-            link: routes.notes,
-            showSubRoute: false,
-          },
-          {
-            label: "File Manager",
-            link: routes.fileManager,
-            showSubRoute: false,
-          },
-        ],
+        submenu: false,
       },
     ],
   },
@@ -1601,14 +1555,14 @@ export const StudentSidebarData = [
       },
       {
         label: "Exam Results",
-        link: routes.examResult,
+        link: student_routes.examResult,
         icon: "ti ti-hexagonal-prism-plus",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Time Table",
-        link: routes.classTimetable,
+        link: student_routes.studentTimeTable,
         icon: "ti ti-table",
         showSubRoute: false,
         submenu: false,
@@ -1659,7 +1613,7 @@ export const StudentSidebarData = [
     submenuItems: [
       {
         label: "View Profile",
-        link: student_routes.studentDetail,
+        link: student_routes.studentprofileDetail,
         icon: "ti ti-user",
         showSubRoute: false,
         submenu: false,
@@ -1679,6 +1633,49 @@ export const StudentSidebarData = [
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
+      },
+    ],
+  },
+  {
+    label: "Application",
+    icon: "ti ti-layout-list",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "Chat",
+        link: routes.chat,
+        showSubRoute: false,
+      },
+      {
+        label: "Call",
+        link: routes.audioCall,
+        showSubRoute: false,
+      },
+      {
+        label: "Calendar",
+        link: routes.calendar,
+        showSubRoute: false,
+      },
+      {
+        label: "Email",
+        link: routes.email,
+        showSubRoute: false,
+      },
+      {
+        label: "To Do",
+        link: routes.todo,
+        showSubRoute: false,
+      },
+      {
+        label: "Notes",
+        link: routes.notes,
+        showSubRoute: false,
+      },
+      {
+        label: "File Manager",
+        link: routes.fileManager,
+        showSubRoute: false,
       },
     ],
   },

@@ -26,6 +26,7 @@ import {
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import CommonSelect from "../../../core/common/commonSelect";
+import { student_routes } from "../../router/student_routes";
 
 const StudentDasboard = () => {
   const routes = all_routes;
@@ -315,7 +316,6 @@ const StudentDasboard = () => {
     try {
       const { data } = await getStuByToken(userId);
       if (data.success) {
-        console.log("student data: ", data?.student);
         setStudent(data.student);
       }
     } catch (error) {
@@ -842,7 +842,7 @@ const StudentDasboard = () => {
                   <div className="row flex-fill">
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentFees}/${student.rollnum}`}
+                        to={`${student_routes.feePayments}`}
                         className="card border-0 border-bottom border-primary border-2 flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -857,7 +857,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentResult}/${student.rollnum}`}
+                        to={`${student_routes.examResult}`}
                         className="card border-0 border-bottom border-success flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -872,7 +872,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentTimeTable}/${student.rollnum}`}
+                        to={`${student_routes.studentTimeTable}`}
                         className="card border-0 border-bottom border-warning flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -887,7 +887,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentLeaves}/${student.rollnum}`}
+                        to={`${student_routes.attendance}`}
                         className="card border-0 border-bottom border-dark border-2 flex-fill animate-card"
                       >
                         <div className="card-body">
