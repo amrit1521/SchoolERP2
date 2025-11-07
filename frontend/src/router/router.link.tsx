@@ -251,6 +251,14 @@ import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
 import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
 import { student_routes } from "../admin/router/student_routes.tsx";
 import HomeWork from "../student/homeWork.tsx";
+import MyAttendance from "../student/myAttendance.tsx";
+import StudentClassTimetable from "../student/studentTimeTable.tsx";
+import StudentProfileDetails from "../student/studentProfileDetails.tsx";
+import FeesPayments from "../student/feePayments.tsx";
+import MyLeaves from "../student/myLeave.tsx";
+import FeesReminder from "../student/feeReminder.tsx";
+import StudentClassSubject from "../student/studentClassSubject.tsx";
+import StudentExamResult from "../student/studentExamResult.tsx";
 const routes = all_routes;
 
 export const publicRoutes = [
@@ -299,32 +307,42 @@ export const publicRoutes = [
 
   {
     path: student_routes.attendance,
-    element: <HomeWork />,
+    element: <MyAttendance />,
     route: Route,
   },
   {
     path: student_routes.feePayments,
-    element: <HomeWork />,
+    element: <FeesPayments />,
+    route: Route,
+  },
+  {
+    path: student_routes.examResult,
+    element: <StudentExamResult />,
     route: Route,
   },
   {
     path: student_routes.mySubject,
-    element: <HomeWork />,
+    element: <StudentClassSubject />,
     route: Route,
   },
   {
     path: student_routes.feeReminder,
-    element: <HomeWork />,
+    element: <FeesReminder />,
+    route: Route,
+  },
+  {
+    path: student_routes.studentTimeTable,
+    element: <StudentClassTimetable />,
     route: Route,
   },
   {
     path: student_routes.studentprofileDetail,
-    element: <HomeWork />,
+    element: <StudentProfileDetails />,
     route: Route,
   },
   {
     path: student_routes.leaves,
-    element: <HomeWork />,
+    element: <MyLeaves />,
     route: Route,
   },
   {

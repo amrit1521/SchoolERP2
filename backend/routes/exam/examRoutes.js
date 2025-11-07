@@ -30,10 +30,15 @@ router.put("/editgrade/:id", examController.updateGrade);
 router.post("/addresult", examController.addExamResult);
 router.post("/addresult2", examController.addExamResult2);
 router.get("/getresult/:rollnum", examController.getExamResultSpeStudents);
+router.get("/getresultbyuser_id/:userId", examController.getExamResultSpeStudentsbyUserId);
 router.get("/getstudentsexamresult", examController.getExamResultAllStudents);
 router.get(
   "/examNameforastudent/:rollNum",
   examController.examNameForStudentResults
+);
+router.get(
+  "/examNameforastudentbyuser_id/:userId",
+  examController.examNameForStudentResultsbyUserId
 );
 router.post(
   "/getstudentexamresultlist",

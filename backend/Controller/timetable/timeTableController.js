@@ -79,6 +79,51 @@ exports.getTimeTable = async (req, res) => {
   }
 };
 
+exports.getTimeTableSpecClass = async (req, res) => {
+  try {
+    const userId = req.params?.userId;
+
+    if(!userId){
+      return res.status(404).json({
+      success: false,
+      message:"user not found."
+    });
+    }
+
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          s.class_id,
+          s.section_id,
+          s.rollnum
+      FROM users
+      LEFT JOIN students as s ON s.stu_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const student = userRows[0];
+    const studentClass = student.class_id;
+    const section = student.section_id;
+    
+    const [timetableRows] = await db.query(`SELECT * FROM timetable WHERE class=? and section=? ORDER BY day, timefrom`,[studentClass,section]);
+
+    return res.status(200).json({
+      success: true,
+      timetable: timetableRows,
+    });
+  } catch (error) {
+    console.error("Error fetching timetable:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
 exports.filterTimeTable = async (req, res) => {
   const data = req.body;
 

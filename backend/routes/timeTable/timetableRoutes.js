@@ -7,4 +7,7 @@ router.post('/addtimetable' , timeTableController.addTimeTable)
 router.get('/gettimetable' , timeTableController.getTimeTable)
 router.post('/filtertable' ,timeTableController.filterTimeTable)
 
+//student routes
+router.get('/gettimetablespeclass/:userId' , timeTableController.getTimeTableSpecClass);
+
 module.exports = router;
