@@ -26,6 +26,7 @@ import {
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../handlePopUpmodal";
 import { allRealClasses } from "../service/classApi";
+import { getAllStudentHomeWork } from "../service/studentapi";
 
 export interface Homework {
   id: number;
@@ -94,7 +95,7 @@ const HomeWork = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [allClass, setAllClass] = useState<classes[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
+  const token = localStorage.getItem("token");
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -111,17 +112,19 @@ const HomeWork = () => {
 
   const fetchHomeWorks = async () => {
     setLoading(true);
-    await new Promise((res) => setTimeout(res, 500));
-    try {
-      const { data } = await allHomeWork();
+    if (token) {
+      try {
+        const userId = JSON.parse(token)?.id;
+        const { data } = await getAllStudentHomeWork(userId);
 
-      if (data.success) {
-        setHomeworks(data.data);
+        if (data.success) {
+          setHomeworks(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching homework:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching homework:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
