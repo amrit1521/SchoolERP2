@@ -1,32 +1,37 @@
 import React, { useEffect, useRef, useState } from "react";
 // import { classSubject } from "../../../core/data/json/class-subject";
-import Table from "../core/common/dataTable/index";
+import Table from "../../../core/common/dataTable/index";
 import {
   count,
   language,
   typetheory,
-} from "../core/common/selectoption/selectoption";
-import PredefinedDateRanges from "../core/common/datePicker";
-import CommonSelect from "../core/common/commonSelect";
-import type { TableData } from "../core/data/interface";
+} from "../../../core/common/selectoption/selectoption";
+import PredefinedDateRanges from "../../../core/common/datePicker";
+import CommonSelect from "../../../core/common/commonSelect";
+import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
-import TooltipOption from "../core/common/tooltipOption";
-import { all_routes } from "../router/all_routes";
+import TooltipOption from "../../../core/common/tooltipOption";
 import {
   addSubject,
   deleteSubject,
   editSubject,
   getAllRolePermissions,
   getAllSubject,
-} from "../service/api";
+  speSubject,
+} from "../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../handlePopUpmodal";
+import { handleModalPopUp } from "../../../handlePopUpmodal";
+import { all_routes } from "../../../router/all_routes";
+import { teacher_routes } from "../../../admin/router/teacher_routes";
 
-const StudentClassSubject = () => {
+const TClassSubject = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
+  // const userId = token ? JSON.parse(token)?.id : null;
+  const [permission, setPermission] = useState<any>(null);
+
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
@@ -41,7 +46,6 @@ const StudentClassSubject = () => {
     status: string;
   }
 
-  const [permission, setPermission] = useState<any>(null);
   const [allSubject, setSAllSubject] = useState<AllSubject[]>([]);
   const [loading, setloading] = useState<boolean>(false);
 
@@ -80,13 +84,10 @@ const StudentClassSubject = () => {
 
   useEffect(() => {
     fetchPermission(roleId);
+    fetchAllSubject();
   }, []);
-  useEffect(() => {
-    if (permission) {
-      fetchAllSubject();
-    }
-  }, [permission]);
 
+  // Table data को transform करना
   const tabledata = allSubject.map((item) => ({
     key: item.id,
     id: item.id,
@@ -129,22 +130,22 @@ const StudentClassSubject = () => {
   };
 
   // edit ---------------
-  // const fetchSubjectById = async (id: number) => {
-  //   try {
-  //     const { data } = await speSubject(id);
-  //     if (data.success) {
-  //       setformdata({
-  //         name: data.data.name,
-  //         code: data.data.code,
-  //         type: data.data.type,
-  //         status: data.data.status,
-  //       });
-  //       setEditId(id);
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
+  const fetchSubjectById = async (id: number) => {
+    try {
+      const { data } = await speSubject(id);
+      if (data.success) {
+        setformdata({
+          name: data.data.name,
+          code: data.data.code,
+          type: data.data.type,
+          status: data.data.status,
+        });
+        setEditId(id);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,6 +259,56 @@ const StudentClassSubject = () => {
     },
   ];
 
+  if (permission?.can_edit || permission?.can_delete) {
+    columns.push({
+      title: "Action",
+      dataIndex: "id",
+      sorter: (a: any, b: any) => a.id - b.id,
+      render: (text: number) => (
+        <div className="d-flex align-items-center">
+          <div className="dropdown">
+            <Link
+              to="#"
+              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i className="ti ti-dots-vertical fs-14" />
+            </Link>
+            <ul className="dropdown-menu dropdown-menu-right p-3">
+              {permission?.can_edit ? (
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => fetchSubjectById(text)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#edit_subject"
+                  >
+                    <i className="ti ti-edit-circle me-2" />
+                    Edit
+                  </button>
+                </li>
+              ) : null}
+              {permission?.can_delete ? (
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => setDeleteId(text)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete-modal"
+                  >
+                    <i className="ti ti-trash-x me-2" />
+                    Delete
+                  </button>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
+      ),
+    });
+  }
+
   return (
     <div>
       {/* Page Wrapper */}
@@ -270,7 +321,12 @@ const StudentClassSubject = () => {
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={routes.studentDashboard}>Student Dashboard</Link>
+                    <Link to={teacher_routes.teacherDashboard}>
+                      Teacher Dashboard
+                    </Link>
+                  </li>
+                  <li className="breadcrumb-item">
+                    <Link to="#">Academic </Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Subjects
@@ -292,9 +348,7 @@ const StudentClassSubject = () => {
                     Add Subject
                   </Link>
                 </div>
-              ) : (
-                ""
-              )}
+              ) : null}
             </div>
           </div>
           {/* /Page Header */}
@@ -655,4 +709,4 @@ const StudentClassSubject = () => {
   );
 };
 
-export default StudentClassSubject;
+export default TClassSubject;

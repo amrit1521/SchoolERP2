@@ -7,6 +7,8 @@ const db = mysql.createPool({
   database: "u955243699_whizlancer",
   waitForConnections: true,
   connectionLimit: 10,
+  connectTimeout: 3000,  
+  acquireTimeout: 3000,  
 });
 
 export default db;
