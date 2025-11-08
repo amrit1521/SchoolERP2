@@ -437,8 +437,18 @@ const TeacherForm = () => {
 
     if (!data.first_name.trim()) errors.first_name = "First name is required";
     if (!data.last_name.trim()) errors.last_name = "Last name is required";
-    if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont))
-      errors.primarycont = "Valid 10-digit contact number is required";
+    const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
+    const sanitizePhone = (phone: string) => phone.replace(/[\s\-]/g, "").trim();
+    if (!data.primarycont || data.primarycont.trim() === "") {
+      errors.primarycont = "Contact number is required!";
+    } else {
+      const cleanedPhone = sanitizePhone(data.primarycont);
+      if (!phoneRegex.test(cleanedPhone)) {
+        errors.primarycont = "Invalid student contact number!";
+      } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+        errors.primarycont = "Contact number length is invalid!";
+      }
+    }
     if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
       errors.email = "Valid email is required";
 
@@ -1141,9 +1151,9 @@ const TeacherForm = () => {
                                 value={
                                   teacherData.date_of_join
                                     ? dayjs(
-                                        teacherData.date_of_join,
-                                        "DD MMM YYYY"
-                                      )
+                                      teacherData.date_of_join,
+                                      "DD MMM YYYY"
+                                    )
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -1601,9 +1611,9 @@ const TeacherForm = () => {
                                 value={
                                   teacherData.date_of_leave
                                     ? dayjs(
-                                        teacherData.date_of_leave,
-                                        "DD MMM YYYY"
-                                      )
+                                      teacherData.date_of_leave,
+                                      "DD MMM YYYY"
+                                    )
                                     : null
                                 }
                                 placeholder="Select Date"

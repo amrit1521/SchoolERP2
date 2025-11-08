@@ -662,21 +662,21 @@ const ParentGrid = () => {
                           </div>
                         </div>
                       </div>
-
-                      <div className="card-footer d-flex align-items-center justify-content-between">
+                         {
+                          parent.children.map((s:any)=>(<div className="card-footer d-flex align-items-center justify-content-between">
                         <div className="d-flex align-items-center">
                           <div className="d-flex align-items-center">
                             <Link
-                              to={`${routes.studentDetail}/${parent.rollnum}`}
+                              to={`${routes.studentDetail}/${s.rollnum}`}
                               className="avatar avatar-md flex-shrink-0 p-0 me-2"
                             >
                               <img
-                                src={`${Imageurl}${parent.stu_img}`}
+                                src={`${Imageurl}${s.stu_img}`}
                                 alt="img"
                                 className="img-fluid rounded-circle"
                               />
                             </Link   >
-                            <p className="text-dark">{`${parent.firstname} ${parent.lastname}`}</p>
+                            <p className="text-dark">{`${s.firstname} ${s.lastname}`}</p>
                           </div>
                         </div>
                         <Link
@@ -687,6 +687,9 @@ const ParentGrid = () => {
                           View Details
                         </Link>
                       </div>
+))
+                         }
+                      
                     </div>
                   </div>
                 ))

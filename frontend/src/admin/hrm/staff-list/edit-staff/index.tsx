@@ -58,7 +58,7 @@ export interface StaffData {
   note: string;
   address: string;
   perm_address: string;
-  driveLic:string;
+  driveLic: string;
 
   // payroll
   epf_no: string;
@@ -132,7 +132,7 @@ const EditStaff = () => {
     note: "",
     address: "",
     perm_address: "",
-    driveLic:"",
+    driveLic: "",
 
     // Payroll
     epf_no: "",
@@ -338,7 +338,7 @@ const EditStaff = () => {
           note: staff.note || "",
           address: staff.address || "",
           perm_address: staff.perm_address || "",
-          driveLic:staff.driveLic||"",
+          driveLic: staff.driveLic || "",
 
           epf_no: staff.epf_no || "",
           basic_salary: staff.basic_salary || "",
@@ -514,8 +514,18 @@ const EditStaff = () => {
     // 🔹 Basic personal info
     if (!data.firstname.trim()) errors.firstname = "First name is required";
     if (!data.lastname.trim()) errors.lastname = "Last name is required";
-    if (!data.primarycont.trim() || !/^\d{10}$/.test(data.primarycont))
-      errors.primarycont = "Valid 10-digit contact number is required";
+    const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
+    const sanitizePhone = (phone: string) => phone.replace(/[\s\-]/g, "").trim();
+    if (!data.primarycont || data.primarycont.trim() === "") {
+      errors.primarycont = "Contact number is required!";
+    } else {
+      const cleanedPhone = sanitizePhone(data.primarycont);
+      if (!phoneRegex.test(cleanedPhone)) {
+        errors.primarycont = "Invalid student contact number!";
+      } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+        errors.primarycont = "Contact number length is invalid!";
+      }
+    }
     if (!data.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
       errors.email = "Valid email is required";
 
@@ -658,7 +668,7 @@ const EditStaff = () => {
           note: "",
           address: "",
           perm_address: "",
-          driveLic:"",
+          driveLic: "",
 
           epf_no: "",
           basic_salary: "",
@@ -741,7 +751,7 @@ const EditStaff = () => {
       note: "",
       address: "",
       perm_address: "",
-      driveLic:"",
+      driveLic: "",
       // Payroll
       epf_no: "",
       basic_salary: "",
@@ -1368,9 +1378,9 @@ const EditStaff = () => {
                                   value={
                                     staffData.date_of_join
                                       ? dayjs(
-                                          staffData.date_of_join,
-                                          "DD MMM YYYY"
-                                        )
+                                        staffData.date_of_join,
+                                        "DD MMM YYYY"
+                                      )
                                       : null
                                   }
                                   placeholder="Select Date"
@@ -1661,9 +1671,9 @@ const EditStaff = () => {
                                 value={
                                   staffData.date_of_leave
                                     ? dayjs(
-                                        staffData.date_of_leave,
-                                        "DD MMM YYYY"
-                                      )
+                                      staffData.date_of_leave,
+                                      "DD MMM YYYY"
+                                    )
                                     : null
                                 }
                                 placeholder="Select Date"

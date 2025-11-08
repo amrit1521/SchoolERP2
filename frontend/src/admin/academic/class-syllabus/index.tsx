@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Table from "../../../core/common/dataTable/index";
 // import { classSyllabus } from "../../../core/data/json/class-syllabus";
 import {
@@ -8,50 +8,82 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
-import type { TableData } from "../../../core/data/interface";
+// import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { getAllSubject } from "../../../service/api";
-import { addSubjectGroup, allSubjectGroup, deleteGroup, editGroup, speGroup } from "../../../service/subjectApi";
+import { Documenturl, getAllSubject } from "../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
-import { allRealClasses } from "../../../service/classApi";
+import { addClassSyllabus, addSubjectInAClass, allClassSyllabus, allRealClasses, deleteClassSyllabus, deleteSubjectFromClassSyllabus, updateSyllabusPdfFile } from "../../../service/classApi";
 import MultiSelect from "../../../core/common/multiSelect";
+import { TiDelete } from "react-icons/ti";
 
 
 
-export interface SubjectGroup {
-  id?: number;
-  className: string;
-  section: string;
-  subjectGroup: string;
-  status: "0" | "1";
-  created_at?: string;
+interface Subject {
+  id: number,
+  subject_id: number;
+  name: string;
 }
+
+interface Syllabus {
+  class_id: number;
+  class_name: string;
+  file_src: string;
+  subjects: Subject[];
+  created_at: string;
+}
+
+interface SyllabusForm {
+  className: number | null;
+  subId: (string | number)[];
+  syllabusFile: File | null
+}
+
+interface AddSubjectForm {
+  classId: number | null;
+  subId: (string | number)[];
+}
+interface Option {
+  value: number;
+  label: string;
+}
+interface Subject {
+  id: number;
+  name: string;
+}
+
 
 
 const ClassSyllabus = () => {
   const routes = all_routes;
   // const data = classSyllabus;
 
-
-
-
-  const [subGroups, setSubGroups] = useState<SubjectGroup[]>([])
+  const [syllabus, setSyllabus] = useState<Syllabus[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [formData, setFormData] = useState<SyllabusForm>({
+    className: null,
+    subId: [],
+    syllabusFile: null,
+  });
+  const [errors, setErrors] = useState<any>({});
+  const [classOptions, setClassOptions] = useState<Option[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [deleteSubId, setDeleteSubId] = useState<number | null>(null)
 
 
-  const fetchGroups = async () => {
+
+
+  const fetchSyllbus = async () => {
     setLoading(true)
-    await new Promise((res) => setTimeout(res, 500))
+    await new Promise((res) => setTimeout(res, 400))
     try {
-
-      const { data } = await allSubjectGroup()
+      const { data } = await allClassSyllabus()
       if (data.success) {
-        setSubGroups(data.data)
+        setSyllabus(data.data)
       }
 
     } catch (error) {
@@ -60,55 +92,6 @@ const ClassSyllabus = () => {
       setLoading(false)
     }
   }
-
-
-  useEffect(() => {
-    fetchGroups()
-
-  }, [])
-
-  // add syllabus ------------------------------------------------------------------------
-
-
-  interface SyllabusForm {
-    className: number | null;
-    subId: (string | number)[];
-     syllabusFile:File|null
-    status: string;
-  }
-
-  interface FormErrors {
-    className?: string;
-    subject?: string;
-    subjectGroup?: string;
-  }
-
-  interface Option {
-    value: number;
-    label: string;
-  }
-
-  interface Subject {
-    id: number;
-    name: string;
-  }
-
-
-  // ---------------------- Add Syllabus Form ----------------------
-  const [formData, setFormData] = useState<SyllabusForm>({
-    className: null,
-    subId: [],
-    syllabusFile:null,
-    status: "1",
-  });
-
-  const [editId, setEditId] = useState<number | null>(null)
-  const [errors, setErrors] = useState<FormErrors>({});
-  // OPTIONS
-  const [classOptions, setClassOptions] = useState<Option[]>([])
-  const [subjects, setSubjects] = useState<Subject[]>([])
-
-
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -122,9 +105,6 @@ const ClassSyllabus = () => {
       console.error(error);
     }
   };
-
-  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
-
   const fetchClass = async () => {
     try {
       const { data } = await allRealClasses();
@@ -143,8 +123,10 @@ const ClassSyllabus = () => {
 
     }
   };
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
 
   useEffect(() => {
+    fetchSyllbus()
     fetchClass()
     fetchSubjects()
   }, [])
@@ -159,126 +141,125 @@ const ClassSyllabus = () => {
     [subjects]
   )
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setFormData((prev) => ({ ...prev, syllabusFile: file }))
+    }
+    setErrors({ ...errors, syllabusFile: "" });
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, type, checked, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? (checked ? "1" : "0") : value,
-    }));
-  };
 
-  const handleIssueBookMulti = (field: keyof SyllabusForm, value: (string | number)[]) => {
+  const handleAddSubjectMulti = (field: keyof SyllabusForm, value: (string | number)[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors({ ...errors, [field]: "" });
   };
 
-  // ✅ Handle Input/Select Changes
+
   const handleSelectChange = (
     field: keyof SyllabusForm,
     value: string | number
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors({ ...errors, [field]: "" });
   };
 
-  // ✅ Validation Function
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+  const validateForm = () => {
+    const newErrors: any = {};
 
-    if (!formData.className) newErrors.className = "Class is required";
+    if (!formData.className) {
+      newErrors.className = "Please select a class.";
+    }
+
+    if (!formData.subId || formData.subId.length === 0) {
+      newErrors.subId = "Please select at least one subject.";
+    }
+
+    if (!formData.syllabusFile) {
+      newErrors.syllabusFile = "Please upload a syllabus PDF file.";
+    } else if (formData.syllabusFile.type !== "application/pdf") {
+      newErrors.syllabusFile = "Only PDF files are allowed.";
+    } else if (formData.syllabusFile.size > 4 * 1024 * 1024) {
+      newErrors.syllabusFile = "File size should not exceed 4MB.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-
-  // edit--------------------------------------------------
-  const fetchaGroupById = async (id: number) => {
-
-    // console.log(id)
-    try {
-      const { data } = await speGroup(id)
-      if (data.success) {
-        setFormData({
-          className: data.data.className,
-          subId: data.data.subjectGroup,
-          syllabusFile:data.data.file,
-          status: data.data.status,
-        })
-        setEditId(id)
-      }
-
-    } catch (error) {
-      console.log(error)
-    }
-  }
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setFormData({
       className: null,
       subId: [],
-      syllabusFile:null,
-      status: "1"
+      syllabusFile: null,
+
     });
-    setEditId(null)
+
     setErrors({});
-    (null)
+
   }
 
-  // ✅ Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
+    if (!formData.syllabusFile) return
+
+    const formDataToSend = new FormData();
+    formDataToSend.append("classId", String(formData.className));
+    formDataToSend.append("subjectIds", JSON.stringify(formData.subId));
+    formDataToSend.append("syllabusFile", formData.syllabusFile);
+
+
+    // for (const pair of formDataToSend.entries()) {
+    //   console.log(pair[0], ":", pair[1]);
+    // }
+
     try {
 
-      if (editId) {
+      const { data } = await addClassSyllabus(formDataToSend)
+      if (data.success) {
 
-        const { data } = await editGroup(formData, editId)
-        if (data.success) {
-          toast.success(data.message)
-          handleModalPopUp('edit_syllabus')
-          setEditId(null)
-        }
 
-      } else {
-        const { data } = await addSubjectGroup(formData)
-        if (data.success) {
+        toast.success(data.message)
+        fetchSyllbus()
+        handleModalPopUp('add_syllabus')
 
-          handleModalPopUp('add_syllabus')
-          toast.success(data.message)
-
-        }
       }
+
       setFormData({
         className: null,
         subId: [],
-        syllabusFile:null,
-        status: "1"
-      })
-      fetchGroups()
+        syllabusFile: null,
 
-    } catch (error) {
+      })
+
+
+    } catch (error: any) {
       console.log(error)
+      toast.error(error.response.data.message)
     }
   };
 
-  // delete section----------------------------------------------------
+  // delete-------
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     // console.log(id)
     try {
-
-      const { data } = await deleteGroup(id)
+      const { data } = await deleteClassSyllabus(id)
       if (data.success) {
         toast.success(data.message)
-        fetchGroups();
+
         setDeleteId(null)
+        fetchSyllbus()
         handleModalPopUp('delete-modal')
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error.response.data.message)
     }
   }
 
@@ -287,62 +268,233 @@ const ClassSyllabus = () => {
     setDeleteId(null)
   }
 
+
+  const handleDeleteSubj = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    // console.log(id)
+    try {
+
+      const { data } = await deleteSubjectFromClassSyllabus(id)
+      if (data.success) {
+        toast.success(data.message)
+
+        setDeleteId(null)
+        fetchSyllbus()
+        handleModalPopUp('delete-sub-modal')
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelDeleteSubj = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteSubId(null)
+  }
+
+  // update pdf file
+  const [classId, setClassId] = useState<number | null>(null)
+  const [updatePdfFile, setUpdatePdfFile] = useState<File | null>(null)
+
+  const handlePdfUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setUpdatePdfFile(file)
+    }
+    setErrors({ ...errors, syllabusFile: "" });
+  }
+
+  const handleUpdatePdfFile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!updatePdfFile) {
+      toast.error("Please upload a syllabus PDF file.");
+      return
+    } else if (updatePdfFile.type !== "application/pdf") {
+      toast.error("Only PDF files are allowed.");
+      return
+    } else if (updatePdfFile.size > 4 * 1024 * 1024) {
+      toast.error("File size should not exceed 4MB.");
+      return
+    }
+
+    const updatePdfFormData = new FormData()
+    updatePdfFormData.append('classId', String(classId))
+    updatePdfFormData.append('updatesyllabuspdffile', updatePdfFile)
+    try {
+
+      const { data } = await updateSyllabusPdfFile(updatePdfFormData)
+      if (data.success) {
+        toast.success(data.message)
+        fetchSyllbus()
+        setClassId(null)
+        setUpdatePdfFile(null)
+        setErrors({})
+      }
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelUpdatePdfFile = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setClassId(null)
+    setUpdatePdfFile(null)
+  }
+
+  // add subjects
+  const [addSubject, setAddSubject] = useState<AddSubjectForm>({
+    classId: null,
+    subId: []
+  })
+  const [loading2, setLoading2] = useState<boolean>(false)
+  const handleUpdateSubject = (field: keyof AddSubjectForm, value: (string | number)[]) => {
+    setAddSubject((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddSubjectInAClass = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!addSubject.subId || addSubject.subId.length === 0) {
+      toast.error("Please select at least one subject.");
+      return
+    }
+    setLoading2(true)
+
+    const addSubjectForm = new FormData()
+    addSubjectForm.append('classId', String(addSubject.classId))
+    addSubjectForm.append('subIds', JSON.stringify(addSubject.subId))
+    try {
+
+      const { data } = await addSubjectInAClass(addSubjectForm)
+      if (data.success) {
+        toast.success(data.message)
+        setAddSubject({
+          classId: null,
+          subId: []
+        });
+        fetchSyllbus()
+        handleModalPopUp('add_subject')
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    } finally {
+      setLoading2(false)
+    }
+  }
+
+  const cancelAddSubject = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setAddSubject({
+      classId: null,
+      subId: []
+    });
+
+    setErrors({});
+  }
+
+  // table data
+  const tableData = syllabus.map((s: any) => ({
+    key: s.class_id,
+    class_id: s.class_id,
+    file_src: s.file_src,
+    className: s.class_name,
+    subjects: s.subjects,
+    created_at: s.created_at,
+  }))
+
   const columns = [
-    // {
-    //  title:'Title',
-    //  dataindex:'id',
-    //  sorter:(a:any , b:any)=>a.id-b.id,
-    // },
     {
       title: "Class",
       dataIndex: "className",
-      sorter: (a: SubjectGroup, b: SubjectGroup) => a.className.length - b.className.length,
+      sorter: (a: any, b: any) => a.className.length - b.className.length,
     },
-
     {
-      title: "Section",
-      dataIndex: "section",
-      render: (text: string) => (
-        <span className="text-capitalize">{text}</span>
+      title: "Subjects",
+      dataIndex: "subjects",
+      render: (subjects: { subject_id: number; name: string; id: number }[]) => (
+        <div
+          className="d-flex flex-wrap align-items-center"
+          style={{ gap: "6px", rowGap: "6px" }}
+        >
+          {subjects && subjects.length > 0 ? (
+            subjects.map((sub) => (
+              <div
+                key={sub.id}
+                className="d-flex align-items-center subject-badge"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: "#f0f2f5",
+                  borderRadius: "14px",
+                  padding: "3px 8px",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "#333",
+                  position: "relative",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {sub.name}
+                <TiDelete
+                  title="Remove Subject"
+                  className="text-danger ms-1 delete-icon"
+                  style={{
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    marginLeft: "4px",
+                    transition: "0.2s",
+                  }}
+                  data-bs-toggle="modal"
+                  data-bs-target="#delete-sub-modal"
+                  onClick={() => setDeleteSubId(sub.id)}
+                />
+              </div>
+            ))
+          ) : (
+            <span className="text-muted fst-italic" style={{ fontSize: "12px" }}>
+              No subjects
+            </span>
+          )}
+        </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.section.length - b.section.length,
-    },
-    {
-      title: "Subject Group",
-      dataIndex: "subjectGroup",
-      sorter: (a: TableData, b: TableData) => a.subjectGroup.length - b.subjectGroup.length,
-    },
+      sorter: (a: Syllabus, b: Syllabus) => a.subjects.length - b.subjects.length,
+    }
+    ,
+
     {
       title: "CreatedDate",
       dataIndex: "created_at",
       render: (text: string) => (
         <span>{dayjs(text).format('DD MMM YYYY')}</span>
       ),
-      sorter: (a: TableData, b: TableData) => a.created_at.length - b.created_at.length,
+      sorter: (a: Syllabus, b: Syllabus) => a.created_at.length - b.created_at.length,
     },
     {
-      title: "Status",
-      dataIndex: "status",
+      title: "Syllabus PDF",
+      dataIndex: "file_src",
       render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="badge badge-soft-success d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              Active
-            </span>
-          ) : (
-            <span className="badge badge-soft-danger d-inline-flex align-items-center">
-              <i className="ti ti-circle-filled fs-5 me-1"></i>
-              Inactive
-            </span>
-          )}
-        </>
+        <span className="fw-semibold">Download<a
+
+          href={`${Documenturl}/${text}`}
+          download={text}
+          target="_blank"
+          className="btn btn-dark btn-icon btn-sm  mx-1"
+        >
+          <i className="ti ti-download" />
+        </a></span>
       ),
+      sorter: (a: Syllabus, b: Syllabus) => a.file_src.length - b.file_src.length,
     },
     {
       title: "Action",
-      dataIndex: "id",
-      render: (id: number) => (
+      dataIndex: "class_id",
+      render: (classId: number) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -358,18 +510,30 @@ const ClassSyllabus = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => fetchaGroupById(id)}
+                    onClick={() => setAddSubject((prev: any) => ({ ...prev, classId: classId }))}
                     data-bs-toggle="modal"
-                    data-bs-target="#edit_syllabus"
+                    data-bs-target="#add_subject"
+                  >
+                    <i className="ti ti-plus me-2" />
+                    Add Subject
+                  </button>
+                </li>
+
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => setClassId(classId)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#update-pdf"
                   >
                     <i className="ti ti-edit-circle me-2" />
-                    Edit
+                    Update Pdf
                   </button>
                 </li>
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
+                    onClick={() => setDeleteId(classId)}
                     data-bs-toggle="modal"
                     data-bs-target="#delete-modal"
                   >
@@ -384,12 +548,17 @@ const ClassSyllabus = () => {
       ),
     },
   ];
+
+
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
     }
   };
+
+
   return (
     <div>
       <>
@@ -424,7 +593,7 @@ const ClassSyllabus = () => {
                     data-bs-target="#add_syllabus"
                   >
                     <i className="ti ti-square-rounded-plus-filled me-2" />
-                    Add Subject Group
+                    Add Syllabus
                   </Link>
                 </div>
               </div>
@@ -552,7 +721,7 @@ const ClassSyllabus = () => {
               <div className="card-body p-0 py-3">
                 {/* Guardians List */}
                 {
-                  loading ? <div className="text-center text-primary my-5"><Spinner /></div> : (<Table columns={columns} dataSource={subGroups} Selection={true} />)
+                  loading ? <div className="text-center text-primary my-5"><Spinner /></div> : (<Table columns={columns} dataSource={tableData} Selection={false} />)
                 }
 
                 {/* /Guardians List */}
@@ -570,9 +739,10 @@ const ClassSyllabus = () => {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Add Subject Group</h4>
+                <h4 className="modal-title">Add Class Syllabus</h4>
                 <button
                   type="button"
+                  onClick={(e) => cancelEdit(e)}
                   className="btn-close custom-btn-close"
                   data-bs-dismiss="modal"
                   aria-label="Close"
@@ -602,83 +772,55 @@ const ClassSyllabus = () => {
                         )}
                       </div>
 
-                      {/* Section */}
-                      {/* <div className="mb-3">
-                        <label className="form-label">Section</label>
-                        <CommonSelect
-                          className={`select text-capitalize ${errors.section ? "is-invalid" : ""
-                            }`}
-                          options={sectionOptions}
-                          value={formData.section}
-                          onChange={(opt: any) =>
-                            handleSelectChange("section", opt?.value || "")
-                          }
-                        />
-                        {errors.section && (
-                          <div className="text-danger">{errors.section}</div>
-                        )}
-                      </div> */}
-
-                      {/* Subject Group */}
+                      {/* Subject */}
                       <div className="mb-3">
                         <label className="form-label">Subject</label>
                         <MultiSelect
-                          value={subjectOptions.filter(b => formData.subId.includes(b.value))}
-                          className="select"
+                          value={subjectOptions.filter((b: any) =>
+                            formData.subId.includes(b.value)
+                          )}
+                          className={`select ${errors.subId ? "is-invalid" : ""
+                            }`}
                           options={subjectOptions}
-                          placeholder="Select Subject"
+                          placeholder="Select Subject(s)"
                           onChange={(values) =>
-                            handleIssueBookMulti("subId", values)
+                            handleAddSubjectMulti("subId", values)
                           }
                         />
+                        {errors.subId && (
+                          <div className="text-danger">{errors.subId}</div>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="mb-3">
-                      <label className="form-label">Upload Syllbus</label>
-                      <input
-                        
-                        type="file"
-                        accept="application/pdf"
-                        className="form-control"
-                      />
-                    </div>
-
-
-
-                    {/* Status */}
-                    {/* <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
-                      </div>
-                      <div className="form-check form-switch">
+                      {/* Upload File */}
+                      <div className="mb-3">
+                        <label className="form-label">Upload Syllabus (PDF)</label>
                         <input
-                          name="status"
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={formData.status === "1"}
-                          onChange={handleChange}
+                          type="file"
+                          accept="application/pdf"
+                          className={`form-control ${errors.syllabusFile ? "is-invalid" : ""
+                            }`}
+                          onChange={(e) => handleFileChange(e)}
                         />
+                        {errors.syllabusFile && (
+                          <div className="text-danger">{errors.syllabusFile}</div>
+                        )}
                       </div>
-                    </div> */}
+                    </div>
                   </div>
                 </div>
 
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
+                    onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
-                  </Link>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-
-                  >
-                    Add Subject Group
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Add
                   </button>
                 </div>
               </form>
@@ -688,11 +830,11 @@ const ClassSyllabus = () => {
         {/* /Add Syllabus */}
 
         {/* Edit Syllabus */}
-        <div className="modal fade" id="edit_syllabus">
+        <div className="modal fade" id="add_subject">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h4 className="modal-title">Edit Subject Group</h4>
+                <h4 className="modal-title">Add Subject</h4>
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
@@ -702,93 +844,50 @@ const ClassSyllabus = () => {
                   <i className="ti ti-x" />
                 </button>
               </div>
-
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleAddSubjectInAClass}>
                 <div className="modal-body">
                   <div className="row">
                     <div className="col-md-12">
                       {/* Class */}
                       <div className="mb-3">
                         <label className="form-label">Class</label>
-                        <CommonSelect
-                          className={`select ${errors.className ? "is-invalid" : ""
-                            }`}
-                          options={classOptions}
-                          value={formData.className}
-                          onChange={(opt: any) =>
-                            handleSelectChange("className", opt?.value || "")
-                          }
-                        />
-                        {errors.className && (
-                          <div className="text-danger">{errors.className}</div>
-                        )}
+                        <input type="text" value={classOptions.filter((c: any) => c.value === addSubject.classId)[0]?.label} className="form-control" disabled />
+
                       </div>
 
-                      {/* Section */}
-                      {/* <div className="mb-3">
-                        <label className="form-label">Section</label>
-                        <CommonSelect
-                          className={`select text-capitalize ${errors.section ? "is-invalid" : ""
-                            }`}
-                          options={sectionOptions}
-                          value={formData.section}
-                          onChange={(opt: any) =>
-                            handleSelectChange("section", opt?.value || "")
-                          }
-                        />
-                        {errors.section && (
-                          <div className="text-danger">{errors.section}</div>
-                        )}
-                      </div> */}
-
-                      {/* Subject Group */}
+                      {/* Subject */}
                       <div className="mb-3">
-                        <label className="form-label">Book Name</label>
+                        <label className="form-label">Subject</label>
                         <MultiSelect
-                          value={subjectOptions.filter(b => formData.subId.includes(b.value))}
-                          className="select"
+                          value={subjectOptions.filter((b: any) =>
+                            addSubject.subId.includes(b.value)
+                          )}
+                          className={`select`}
                           options={subjectOptions}
-                          placeholder="Select Books"
+                          placeholder="Select Subject(s)"
                           onChange={(values) =>
-                            handleIssueBookMulti("subId", values)
+                            handleUpdateSubject("subId", values)
                           }
                         />
-                      </div>
-                    </div>
 
-                    {/* Status */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
                       </div>
-                      <div className="form-check form-switch">
-                        <input
-                          name="status"
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={formData.status === "1"}
-                          onChange={handleChange}
-                        />
-                      </div>
+
                     </div>
                   </div>
                 </div>
 
                 <div className="modal-footer">
                   <button
-                    onClick={(e) => cancelEdit(e)}
+
+                    type="button"
+                    onClick={(e) => cancelAddSubject(e)}
                     className="btn btn-light me-2"
                     data-bs-dismiss="modal"
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-
-                  >
-                    Save Changes
+                  <button type="submit" disabled={loading2} className="btn btn-primary">
+                    {!loading2 ? "Add Subject" : "Adding..."}
                   </button>
                 </div>
               </form>
@@ -796,6 +895,59 @@ const ClassSyllabus = () => {
           </div>
         </div>
         {/* /Edit Syllabus	*/}
+
+        {/* Update PDF */}
+        <div className="modal fade" id="update-pdf">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Update PDF</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form onSubmit={handleUpdatePdfFile}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      {/* Upload File */}
+                      <div className="mb-3">
+                        <label className="form-label">Upload Syllabus (PDF)</label>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className={`form-control }`}
+                          onChange={(e) => handlePdfUpdate(e)}
+                        />
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    onClick={(e) => cancelUpdatePdfFile(e)}
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Update Pdf
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {/* Update PDF	*/}
 
 
         {/* Delete Modal */}
@@ -833,6 +985,41 @@ const ClassSyllabus = () => {
           </div>
         </div>
         {/* /Delete Modal */}
+
+        {/* Delete subject Modal */}
+        <div className="modal fade" id="delete-sub-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete this subject, this cant be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteSubId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDeleteSubj(e)}
+                        className="btn btn-light me-3"
+                        data-bs-dismiss="modal"
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDeleteSubj(deleteSubId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
