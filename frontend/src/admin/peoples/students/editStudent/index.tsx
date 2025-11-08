@@ -656,16 +656,18 @@ const EditStudent = () => {
       newErrors.mot_email = "Invalid mother email";
     }
 
-    // Phone format (10 digits)
-    const phoneRegex = /^\d{10}$/;
-    if (data.primarycont && !phoneRegex.test(data.primarycont)) {
-      newErrors.primarycont = "Invalid student contact number";
-    }
-    if (data.fat_phone && !phoneRegex.test(data.fat_phone)) {
-      newErrors.fat_phone = "Invalid father phone number";
-    }
-    if (data.mot_phone && !phoneRegex.test(data.mot_phone)) {
-      newErrors.mot_phone = "Invalid mother phone number";
+
+   const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
+    const sanitizePhone = (phone:string) => phone.replace(/[\s\-]/g, "").trim();
+    if (!data.primarycont || data.primarycont.trim() === "") {
+      newErrors.primarycont = "Contact number is required!";
+    } else {
+      const cleanedPhone = sanitizePhone(data.primarycont);
+      if (!phoneRegex.test(cleanedPhone)) {
+        newErrors.primarycont = "Invalid student contact number!";
+      } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+        newErrors.primarycont = "Contact number length is invalid!";
+      }
     }
 
     // Image required checks

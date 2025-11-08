@@ -1,16 +1,16 @@
 import db from "../config/db.js";
 
 export const profile = async (req, res) => {
-const [rows] = await db.query(
-  `SELECT u.firstname,u.lastname,u.mobile,u.email,u.status, u.remark,r.role_name,u.id
+  const [rows] = await db.query(
+    `SELECT u.firstname,u.lastname,u.mobile,u.email,u.status, u.remark,r.role_name,u.id
    FROM users as u
    LEFT JOIN roles as r ON r.id = u.roll_id
    WHERE u.id = ?`,
-  [req.user.id]
-);
+    [req.user.id]
+  );
 
-const [students] = await db.query(
-  `SELECT p.occuption,p.relation,p.relation_det,p.img_src,p.parent_id,c.class_name as class,se.section_name as section,s.*,us.firstname,us.lastname,se.room_no
+  const [students] = await db.query(
+    `SELECT p.occuption,p.relation,p.relation_det,p.img_src,p.parent_id,c.class_name as class,se.section_name as section,s.*,us.firstname,us.lastname,se.room_no
    FROM users as u
    LEFT JOIN parents_info as p ON p.parent_id = u.id
    LEFT JOIN students as s ON s.stu_id = p.user_id
@@ -18,25 +18,25 @@ const [students] = await db.query(
    LEFT JOIN classes AS c ON c.id = s.class_id
    LEFT JOIN sections AS se ON se.id = s.section_id
    WHERE u.id = ?`,
-  [req.user.id]
-);
+    [req.user.id]
+  );
 
-//    LEFT JOIN students as s ON s.stu_id = p.user_id
-//    LEFT JOIN users as u ON u.id = s.stu_id
-//    LEFT JOIN classes AS c ON c.id = s.class_id
-//    LEFT JOIN sections AS se ON se.id = s.section_id
+  //    LEFT JOIN students as s ON s.stu_id = p.user_id
+  //    LEFT JOIN users as u ON u.id = s.stu_id
+  //    LEFT JOIN classes AS c ON c.id = s.class_id
+  //    LEFT JOIN sections AS se ON se.id = s.section_id
 
-console.log(students);
-console.log('rows');
-// console.log(rows);
- res.json({
-      success: true,
-      profile: rows[0],
-      students: students,
-    });
+  console.log(students);
+  console.log('rows');
+  // console.log(rows);
+  res.json({
+    success: true,
+    profile: rows[0],
+    students: students,
+  });
 };
 
- export const attendance = async (req, res) => {
+export const attendance = async (req, res) => {
   try {
     // 1️⃣ Get Parent Info
     const [userRows] = await db.query(
@@ -53,7 +53,7 @@ console.log('rows');
 
     const parentUser = userRows[0];
 
- 
+
     const [parentLinks] = await db.query(
       `SELECT user_id FROM parents_info WHERE parent_id = ?`,
       [parentUser.id]
@@ -70,7 +70,7 @@ console.log('rows');
 
     const studentsData = [];
 
-  
+
     for (const link of parentLinks) {
       const [studentRows] = await db.query(
         `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile,c.class_name as class,se.section_name as section
@@ -87,7 +87,7 @@ console.log('rows');
 
       const rollnum = student.rollnum;
 
-   
+
       const [attendanceRows] = await db.query(
         `SELECT 
             attendance AS status,
@@ -103,7 +103,7 @@ console.log('rows');
         [rollnum]
       );
 
- 
+
       const [monthly] = await db.query(
         `SELECT 
             DATE_FORMAT(attendance_date_info, '%b') AS month,
@@ -117,7 +117,7 @@ console.log('rows');
         [rollnum]
       );
 
-  
+
       const [currentMonth] = await db.query(
         `SELECT 
             DATE_FORMAT(attendance_date_info, '%b') AS month,
@@ -137,7 +137,7 @@ console.log('rows');
         [rollnum]
       );
 
-    
+
       student.attendance = attendanceRows;
       student.monthlySummary = monthly;
       student.currentMonth = currentMonth[0] || null;
@@ -145,7 +145,7 @@ console.log('rows');
       studentsData.push(student);
     }
 
-  
+
     res.json({
       success: true,
       parent: parentUser,
@@ -159,57 +159,57 @@ console.log('rows');
 
 
 
-export const timetable = async (req, res) => { 
+export const timetable = async (req, res) => {
   try {
 
 
-const [userRows] = await db.query(
-  `SELECT u.firstname, u.lastname, u.mobile, u.email, u.status, u.remark, r.role_name, u.id
+    const [userRows] = await db.query(
+      `SELECT u.firstname, u.lastname, u.mobile, u.email, u.status, u.remark, r.role_name, u.id
    FROM users AS u
    JOIN roles AS r ON r.id = u.roll_id
    WHERE u.id = ?`,
-  [req.user.id]
-);
+      [req.user.id]
+    );
 
-const parentUser = userRows[0];
+    const parentUser = userRows[0];
 
-const [parentLinks] = await db.query(
-  `SELECT user_id FROM parents_info WHERE parent_id = ?`,
-  [parentUser.id]
-);
+    const [parentLinks] = await db.query(
+      `SELECT user_id FROM parents_info WHERE parent_id = ?`,
+      [parentUser.id]
+    );
 
 
-const studentsData = [];
+    const studentsData = [];
 
-for (const link of parentLinks) {
+    for (const link of parentLinks) {
 
-  const [studentRows] = await db.query(
-    `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile
+      const [studentRows] = await db.query(
+        `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile
      FROM students AS s
      JOIN users AS u ON u.id = s.stu_id
      WHERE s.stu_id  = ?`,
-    [link.user_id]
-  );
- 
-  const student = studentRows[0];
-  if (!student) continue;
+        [link.user_id]
+      );
+
+      const student = studentRows[0];
+      if (!student) continue;
 
 
-  const [timetableRows] = await db.query(
-    `SELECT t.subject,t.teacher,t.timefrom,t.timeto,classes.class_name as class,s.section_name as section FROM timetable as t LEFT JOIN classes ON classes.id = t.class LEFT JOIN sections as s ON s.id=t.section WHERE t.class = ? AND t.section = ?`,
-    [student.class_id, student.section_id]
-  );
+      const [timetableRows] = await db.query(
+        `SELECT t.subject,t.teacher,t.timefrom,t.timeto,classes.class_name as class,s.section_name as section FROM timetable as t LEFT JOIN classes ON classes.id = t.class LEFT JOIN sections as s ON s.id=t.section WHERE t.class = ? AND t.section = ?`,
+        [student.class_id, student.section_id]
+      );
 
-  student.timetable = timetableRows;
+      student.timetable = timetableRows;
 
 
-  studentsData.push(student);
-}
+      studentsData.push(student);
+    }
 
-res.json({
-  parent: parentUser,
-  children: studentsData
-});
+    res.json({
+      parent: parentUser,
+      children: studentsData
+    });
 
   } catch (error) {
     console.error("Error fetching timetable:", error);
@@ -221,44 +221,44 @@ res.json({
   }
 };
 
-export const assingments = async (req, res) => { 
+export const assingments = async (req, res) => {
   try {
 
 
-const [userRows] = await db.query(
-  `SELECT u.firstname, u.lastname, u.mobile, u.email, u.status, u.remark, r.role_name, u.id
+    const [userRows] = await db.query(
+      `SELECT u.firstname, u.lastname, u.mobile, u.email, u.status, u.remark, r.role_name, u.id
    FROM users AS u
    JOIN roles AS r ON r.id = u.roll_id
    WHERE u.id = ?`,
-  [req.user.id]
-);
+      [req.user.id]
+    );
 
-const parentUser = userRows[0];
+    const parentUser = userRows[0];
 
-const [parentLinks] = await db.query(
-  `SELECT user_id FROM parents_info WHERE parent_id = ?`,
-  [parentUser.id]
-);
+    const [parentLinks] = await db.query(
+      `SELECT user_id FROM parents_info WHERE parent_id = ?`,
+      [parentUser.id]
+    );
 
 
-const studentsData = [];
+    const studentsData = [];
 
-for (const link of parentLinks) {
+    for (const link of parentLinks) {
 
-  const [studentRows] = await db.query(
-    `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile
+      const [studentRows] = await db.query(
+        `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile
      FROM students AS s
      JOIN users AS u ON u.id = s.stu_id
      WHERE s.stu_id  = ?`,
-    [link.user_id]
-  );
- 
-  const student = studentRows[0];
-  if (!student) continue;  
+        [link.user_id]
+      );
 
- 
- const [home_work] = await db.query(
-  `SELECT 
+      const student = studentRows[0];
+      if (!student) continue;
+
+
+      const [home_work] = await db.query(
+        `SELECT 
       u.firstname,
       u.lastname,
       hw.id,
@@ -278,21 +278,21 @@ for (const link of parentLinks) {
     LEFT JOIN class_subject AS cs ON cs.id = hw.subject
     LEFT JOIN users AS u ON u.id = hw.teacherId
     WHERE hw.status=1 AND hw.class_id = ? AND hw.section_id = ?`,
-  [student.class_id, student.section_id]
-);
+        [student.class_id, student.section_id]
+      );
 
 
- 
-  student.home_work = home_work;
+
+      student.home_work = home_work;
 
 
-  studentsData.push(student);
-}
+      studentsData.push(student);
+    }
 
-res.json({
-  parent: parentUser,
-  children: studentsData
-});
+    res.json({
+      parent: parentUser,
+      children: studentsData
+    });
 
   } catch (error) {
     console.error("Error fetching timetable:", error);
@@ -316,7 +316,7 @@ export const FreesPayment = async (req, res) => {
 
 
 
- export const dashboard = async (req, res) => {
+export const dashboard = async (req, res) => {
   try {
     // 1️⃣ Get Parent Info
     const [userRows] = await db.query(
@@ -333,7 +333,7 @@ export const FreesPayment = async (req, res) => {
 
     const parentUser = userRows[0];
 
- 
+
     const [parentLinks] = await db.query(
       `SELECT user_id FROM parents_info WHERE parent_id = ?`,
       [parentUser.id]
@@ -350,7 +350,7 @@ export const FreesPayment = async (req, res) => {
 
     const studentsData = [];
 
-  
+
     for (const link of parentLinks) {
       const [studentRows] = await db.query(
         `SELECT s.stu_id, s.class_id, s.section_id, s.rollnum, u.firstname, u.lastname, u.email, u.mobile,c.class_name as class,se.section_name as section
@@ -367,7 +367,7 @@ export const FreesPayment = async (req, res) => {
 
       const rollnum = student.rollnum;
 
-   
+
       const [attendanceRows] = await db.query(
         `SELECT 
             attendance AS status,
@@ -383,7 +383,7 @@ export const FreesPayment = async (req, res) => {
         [rollnum]
       );
 
- 
+
       const [monthly] = await db.query(
         `SELECT 
             DATE_FORMAT(attendance_date_info, '%b') AS month,
@@ -397,7 +397,7 @@ export const FreesPayment = async (req, res) => {
         [rollnum]
       );
 
-  
+
       const [currentMonth] = await db.query(
         `SELECT 
             DATE_FORMAT(attendance_date_info, '%b') AS month,
@@ -417,26 +417,26 @@ export const FreesPayment = async (req, res) => {
         [rollnum]
       );
 
-      
- const [homework] = await db.query(
-  `SELECT 
+
+      const [homework] = await db.query(
+        `SELECT 
       COUNT(*) as total_homework
     FROM home_work AS hw
     WHERE hw.status=1 AND hw.class_id = ? AND hw.section_id = ?`,
-  [student.class_id, student.section_id]
-);
+        [student.class_id, student.section_id]
+      );
 
 
-    
+
       student.attendance = attendanceRows;
-       student.homework = homework;
+      student.homework = homework;
       student.monthlySummary = monthly;
       student.currentMonth = currentMonth[0] || null;
 
       studentsData.push(student);
     }
 
-  
+
     res.json({
       success: true,
       parent: parentUser,
@@ -450,4 +450,3 @@ export const FreesPayment = async (req, res) => {
 
 
 
- 

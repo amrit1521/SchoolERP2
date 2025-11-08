@@ -3,7 +3,13 @@ const db = require('../../config/db')
 const bcrypt = require('bcryptjs');
 const transporter = require('../../utils/sendEmail')
 const dayjs = require('dayjs');
-const { promise } = require('zod');
+const { sendWhatsApp, sendRegisterMessage } = require('../../utils/sendOtpViaMobile');
+async function getUserId(rollnum) {
+
+  const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
+  return stu[0].stu_id
+
+}
 
 
 function generateRandomPassword(length = 12) {
@@ -13,27 +19,40 @@ function generateRandomPassword(length = 12) {
   ).join("");
 }
 
-function safeJSON(value) {
-  if (Array.isArray(value)) return JSON.stringify(value);
-  return value || null;
+function generateParentId() {
+  return Math.floor(100000 + Math.random() * 900000);
 }
 
-async function getUserId(rollnum) {
+// ✅ Converts 'null', 'undefined', or '' strings to real null
+function cleanNullStrings(obj) {
+  const clean = {};
+  for (let key in obj) {
+    const val = obj[key];
+    clean[key] =
+      val === "null" || val === "undefined" || val === "" ? null : val;
+  }
+  return clean;
+}
 
-  const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
-  return stu[0].stu_id
-
+// ✅ Safe JSON converter
+function safeJSON(value) {
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (value === "" || value === undefined || value === "null" || value === null)
+    return null;
+  return value;
 }
 
 exports.addStudent = async (req, res) => {
-  const data = req.body;
   let connection;
-
   try {
+    // 🧼 Clean incoming FormData
+    const data = cleanNullStrings(req.body);
+    console.log("Cleaned Data:", data);
+
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-
+    // ✅ 1. Check duplicate email
     const [existingUser] = await connection.query(
       "SELECT id FROM users WHERE email = ? LIMIT 1",
       [data.email]
@@ -43,7 +62,7 @@ exports.addStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-
+    // ✅ 2. Create user
     const genPassword = generateRandomPassword();
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
@@ -54,24 +73,34 @@ exports.addStudent = async (req, res) => {
     );
     const userId = userRes.insertId;
 
+    // ✅ 3. Handle parent_id correctly
+    let parentId;
+    if (data.parent_id && data.parent_id !== "null") {
+      parentId = parseInt(data.parent_id);
+    } else {
+      parentId = generateParentId();
+    }
 
+    // ✅ 4. Insert into students
     await connection.query(
       `INSERT INTO students (
-        stu_id, academicyear, admissionnum, admissiondate, rollnum, class_id, section_id,
-        gender, dob, bloodgp, house, religion, category, caste, motherton, lanknown,
-        stu_img, curr_address, perm_address, prev_school, prev_school_address,
+        stu_id, parent_id, academicyear, admissionnum, admissiondate, rollnum,
+        class_id, section_id, gender, dob, bloodgp, house, religion, category, caste,
+        motherton, lanknown, stu_img, curr_address, perm_address, prev_school, prev_school_address,
         medicalcert, transfercert, stu_condition, allergies, medications
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+
       [
         userId,
+        parentId,
         data.academicyear,
         data.admissionnum,
-        dayjs(data.admissiondate).format('YYYY-MM-DD'),
+        dayjs(data.admissiondate).isValid() ? dayjs(data.admissiondate).format("YYYY-MM-DD") : null,
         data.rollnum,
         data.class,
         data.section,
         data.gender,
-        dayjs(data.dob).format('YYYY-MM-DD'),
+        dayjs(data.dob).isValid() ? dayjs(data.dob).format("YYYY-MM-DD") : null,
         data.bloodgp,
         data.house,
         data.religion,
@@ -84,105 +113,154 @@ exports.addStudent = async (req, res) => {
         data.perm_address,
         data.prev_school,
         data.prev_school_address,
-        data.medicalcert || null,
-        data.transfercert || null,
+        data.medicalcert,
+        data.transfercert,
         data.condition,
         safeJSON(data.allergies),
         safeJSON(data.medications),
       ]
     );
 
+    // ✅ 5. Update uploaded file status
+    const imageFiles = [
+      data.stuimg,
+      data.fatimg,
+      data.motimg,
+      data.guaimg,
+      data.medicalcert,
+      data.transfercert,
+    ].filter(Boolean);
 
-    const imageFiles = [data.stuimg, data.fatimg, data.motimg, data.guaimg, data.medicalcert, data.transfercert];
-    await Promise.all(
-      imageFiles.filter(Boolean).map(file =>
-        connection.query("UPDATE files SET status=1 WHERE filename=?", [file])
-      )
-    );
+    for (const file of imageFiles) {
+      await connection.query("UPDATE files SET status=1 WHERE filename=?", [file]);
+    }
 
-    //  const [userResForParent] = await connection.query(
-    //   `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
-    //    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    //   [data.firstname, data.lastname, data.primarycont, data.email, hashPassword, 3, data.status]
-    // );
-    // const parentId = userResForParent.insertId;
-
-
+    // ✅ 6. Insert parents info (with user_id + parent_id)
     const parentsData = [
-      { relation: "Father", name: data.fat_name, email: data.fat_email, phone_num: data.fat_phone, occuption: data.fat_occu, img_src: data.fatimg },
-      { relation: "Mother", name: data.mot_name, email: data.mot_email, phone_num: data.mot_phone, occuption: data.mot_occu, img_src: data.motimg },
-      { relation: "Guardian", name: data.gua_name, email: data.gua_email, phone_num: data.gua_phone, occuption: data.gua_occu, relation_det: data.gua_relation || "", address: data.gua_address || "", img_src: data.guaimg, guardian_Is: data.guardianIs || "" }
+      {
+        relation: "Father",
+        name: data.fat_name,
+        email: data.fat_email,
+        phone_num: data.fat_phone,
+        occuption: data.fat_occu,
+        img_src: data.fatimg,
+      },
+      {
+        relation: "Mother",
+        name: data.mot_name,
+        email: data.mot_email,
+        phone_num: data.mot_phone,
+        occuption: data.mot_occu,
+        img_src: data.motimg,
+      },
+      {
+        relation: "Guardian",
+        name: data.gua_name,
+        email: data.gua_email,
+        phone_num: data.gua_phone,
+        occuption: data.gua_occu,
+        relation_det: data.gua_relation,
+        address: data.gua_address,
+        img_src: data.guaimg,
+        guardian_Is: data.guardianIs,
+      },
     ];
 
-    await Promise.all(
-      parentsData.filter(p => p.name).map(parent =>
-        connection.query(
-          `INSERT INTO parents_info (
-            user_id, name, email, phone_num, occuption, relation, relation_det, address, img_src, guardian_Is
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            userId,
-            parent.name,
-            parent.email || null,
-            parent.phone_num || null,
-            parent.occuption || null,
-            parent.relation,
-            parent.relation_det || "",
-            parent.address || "",
-            parent.img_src || null,
-            parent.guardian_Is || "",
-          ]
-        )
-      )
-    );
+    for (const p of parentsData.filter((p) => p.name)) {
+      await connection.query(
+        `INSERT INTO parents_info (
+          parent_id, user_id, name, email, phone_num, occuption,
+          relation, relation_det, address, img_src, guardian_Is
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          parentId,
+          userId,
+          p.name,
+          p.email,
+          p.phone_num,
+          p.occuption,
+          p.relation,
+          p.relation_det,
+          p.address,
+          p.img_src,
+          p.guardian_Is,
+        ]
+      );
+    }
 
-
-    await Promise.all([
-      (data.hostel || data.room_num) &&
-      connection.query(
+    // ✅ 7. Hostel Info
+    if (data.hostel || data.room_num) {
+      await connection.query(
         `INSERT INTO hostel_info (user_id, hostel, room_num) VALUES (?, ?, ?)`,
-        [userId, data.hostel || null, data.room_num || null]
-      ),
-      (data.route || data.vehicle_num || data.picup_point) &&
-      connection.query(
-        `INSERT INTO transport_info (user_id, route, vehicle_num, pickup_point) VALUES (?, ?, ?, ?)`,
-        [userId, data.route || null, data.vehicle_num || null, data.picup_point || null]
-      ),
-      (data.bank_name || data.ifsc_num || data.other_det) &&
-      connection.query(
-        `INSERT INTO other_info (user_id, bank_name, branch, ifsc_num, other_det) VALUES (?, ?, ?, ?, ?)`,
-        [userId, data.bank_name || null, data.branch || null, data.ifsc_num || null, data.other_det || null]
-      )
-    ]);
+        [userId, data.hostel, data.room_num]
+      );
+    }
 
+    // ✅ 8. Transport Info
+    if (data.route || data.vehicle_num || data.picup_point) {
+      await connection.query(
+        `INSERT INTO transport_info (user_id, route, vehicle_num, pickup_point)
+         VALUES (?, ?, ?, ?)`,
+        [userId, data.route, data.vehicle_num, data.picup_point]
+      );
+    }
 
+    // ✅ 9. Bank Info
+    if (data.bank_name || data.ifsc_num || data.other_det) {
+      await connection.query(
+        `INSERT INTO other_info (user_id, bank_name, branch, ifsc_num, other_det)
+         VALUES (?, ?, ?, ?, ?)`,
+        [userId, data.bank_name, data.branch, data.ifsc_num, data.other_det]
+      );
+    }
+
+    // ✅ 10. Commit
     await connection.commit();
 
+    // ✅ 11. Send Email + SMS (same as before)
+    transporter
+      .sendMail({
+        from: process.env.SMTP_USER,
+        to: data.email,
+        subject: "Your student account has been created",
+        text: `Hello ${data.firstname},\n\nYour student account has been created.\nEmail: ${data.email}\nPassword: ${genPassword}`,
+      })
+      .catch((err) => console.error("Email error:", err));
 
-    transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: data.email,
-      subject: "Your student account has been created",
-      text: `Hello ${data.firstname},\n\nYour student account has been created.\nEmail: ${data.email}\nPassword: ${genPassword}`
-    }).catch(err => console.error("Email error:", err));
+    const messageText = `
+🏫 *ABC School – Welcome to Our Learning Family*
+
+Dear *${data.firstname}*,
+
+Your student account has been created successfully.
+📧 Email: ${data.email}
+🔑 Password: ${genPassword}
+
+Please log in and change your password immediately.
+
+Warm regards,
+🎓 ABC School Admissions & IT Support Team`;
+
+    sendRegisterMessage(`+91${data.primarycont}`, messageText);
+    sendWhatsApp(`+91${data.primarycont}`, messageText);
 
     return res.status(201).json({
       success: true,
       message: "Student added successfully",
-      generatedPassword: genPassword
+      generatedPassword: genPassword,
+      parent_id: parentId,
     });
-
   } catch (error) {
-    if (connection) {
-      try { await connection.rollback(); }
-      catch (rollbackErr) { console.error("Rollback failed:", rollbackErr); }
-    }
+    if (connection) await connection.rollback();
     console.error("Add student error:", error);
     return res.status(500).json({ success: false, message: "Internal server error!" });
   } finally {
     if (connection) connection.release();
   }
 };
+
+
+
 
 exports.allStudents = async (req, res) => {
   try {
@@ -300,7 +378,6 @@ exports.filterStudents = async (req, res) => {
 
 
 exports.filterStudentsForOption = async (req, res) => {
-
   const data = req.body;
   try {
     const sql = `
@@ -448,6 +525,9 @@ exports.updateStudent = async (req, res) => {
   }
 
   const id = await getUserId(rollnum)
+
+  const [studentsParentId] =await db.query('SELECT parent_id FROM students WHERE stu_id=?' , [id])
+  const parentId = studentsParentId[0].parent_id
 
 
 
@@ -883,7 +963,7 @@ exports.studentLeaveReport = async (req, res) => {
     `;
 
     const [rows] = await db.query(sql);
-    
+
     // Transform rows into student-wise structure
     const studentMap = {};
 
@@ -1103,7 +1183,7 @@ exports.filterStudentsForParmotion = async (req, res) => {
       });
     }
 
-    
+
     const studentMap = {};
     rows.forEach((row) => {
       if (!studentMap[row.student_id]) {
@@ -1130,7 +1210,7 @@ exports.filterStudentsForParmotion = async (req, res) => {
       }
     });
 
-    
+
     const finalResult = Object.values(studentMap).map((stu) => {
       const totalObtained = stu.semester1.obtained + stu.semester2.obtained;
       const totalMax = stu.semester1.max + stu.semester2.max;
@@ -1245,6 +1325,28 @@ exports.promoteStudents = async (req, res) => {
     if (connection) connection.release();
   }
 };
+
+
+exports.getSiblings = async (req, res) => {
+  try {
+    const parentUserId = req.user.id; // from JWT (logged-in parent)
+
+    const [siblings] = await db.query(
+      `SELECT s.*, u.firstname, u.lastname, u.email
+       FROM parents_info p
+       JOIN users u ON p.user_id = u.id
+       JOIN students s ON s.stu_id = u.id
+       WHERE p.parent_user_id = ?`,
+      [parentUserId]
+    );
+
+    res.json({ success: true, siblings });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error fetching siblings" });
+  }
+};
+
 
 
 

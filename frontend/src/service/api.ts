@@ -323,6 +323,7 @@ export const parentForEdit = (id: number) =>
   api.get(`/parent/parentforedit/${id}`);
 export const editParent = (data: object, id: number) =>
   api.put(`/parent/editparent/${id}`, data);
+export const fatherOption = ()=>api.get('/parent/fatheroption')
 
 // guardian routes
 export const allGuardians = () => api.get("/parent/allguardians");

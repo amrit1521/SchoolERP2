@@ -2,7 +2,7 @@ const db = require("../../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const transporter = require('../../utils/sendEmail');
-const sendSms = require("../../utils/sendOtpViaMobile");
+const {sendSms} = require("../../utils/sendOtpViaMobile");
 require('dotenv').config()
 
 

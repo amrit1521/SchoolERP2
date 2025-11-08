@@ -8,6 +8,8 @@ router.get('/speparent/:parentId' , parentController.speParentData)
 router.delete('/deleteparent/:id/:userId' , parentController.deleteParent)
 router.get('/parentforedit/:id' , parentController.speParentDataForEdit)
 router.put('/editparent/:id' , parentController.updateParent)
+router.get('/getsibling/:id' , parentController.getSiblings)
+router.get('/fatheroption' , parentController.allFatherForOption)
 
 // guardian riutes
 router.get('/allguardians' , parentController.allGuardian)

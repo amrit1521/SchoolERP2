@@ -1,9 +1,6 @@
 const db = require("../../config/db");
 
 
-
-
-
 // Add Class
 exports.addClass = async (req, res) => {
   const { className, status } = req.body;
@@ -30,9 +27,6 @@ exports.addClass = async (req, res) => {
       .json({ message: "Error while adding class!", success: false });
   }
 };
-
-
-
 exports.getClasses = async (req, res) => {
   try {
     const sql = `SELECT id, class_name AS className, status FROM classes ORDER BY id ASC`;
@@ -46,8 +40,6 @@ exports.getClasses = async (req, res) => {
       .json({ message: "Error while fetching classes!", success: false });
   }
 };
-
-
 
 exports.getClassById = async (req, res) => {
   const { id } = req.params;
@@ -70,8 +62,6 @@ exports.getClassById = async (req, res) => {
       .json({ message: "Error while fetching class!", success: false });
   }
 };
-
-
 
 exports.updateClass = async (req, res) => {
   const { id } = req.params;
@@ -100,7 +90,6 @@ exports.updateClass = async (req, res) => {
   }
 };
 
-
 exports.deleteClass = async (req, res) => {
   const { id } = req.params;
 
@@ -125,12 +114,7 @@ exports.deleteClass = async (req, res) => {
   }
 };
 
-
-
-
-
 // class room-------------------------------------------------
-
 
 exports.addClassRoom = async (req, res) => {
   try {
@@ -258,8 +242,6 @@ exports.deleteClassRoom = async (req, res) => {
   }
 };
 
-
-
 // class routine ---------------------------------------------------------------------------------------------------------
 
 async function hasOverlap(classRoom, day, startTime, endTime, excludeId = null) {
@@ -310,8 +292,6 @@ exports.addClassRoutine = async (req, res) => {
   }
 };
 
-
-
 exports.getAllClassRoutines = async (req, res) => {
   try {
 
@@ -346,7 +326,6 @@ exports.getAllClassRoutines = async (req, res) => {
   }
 };
 
-
 exports.getClassRoutineById = async (req, res) => {
   const { id } = req.params
 
@@ -372,7 +351,6 @@ exports.getClassRoutineById = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 
 exports.updateClassRoutine = async (req, res) => {
   try {
@@ -409,7 +387,6 @@ exports.updateClassRoutine = async (req, res) => {
   }
 };
 
-
 exports.deleteClassRoutine = async (req, res) => {
   try {
     const [result] = await db.query("DELETE FROM class_routine WHERE id=?", [req.params.id]);
@@ -422,10 +399,7 @@ exports.deleteClassRoutine = async (req, res) => {
   }
 };
 
-
-
-// class schedule----------------------------
-
+//class schedule----------------------------
 function toMinutes(timeStr) {
   const [time, meridian] = timeStr.split(" ");
   let [hours, minutes] = time.split(":").map(Number);
@@ -433,8 +407,6 @@ function toMinutes(timeStr) {
   if (meridian === "AM" && hours === 12) hours = 0;
   return hours * 60 + minutes;
 }
-
-
 exports.addSchedule = async (req, res) => {
   const { className, startTime, endTime, status } = req.body;
 
@@ -476,7 +448,6 @@ exports.addSchedule = async (req, res) => {
   }
 };
 
-// READ ALL
 exports.getSchedules = async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM class_schedule ORDER BY created_at DESC");
@@ -487,7 +458,6 @@ exports.getSchedules = async (req, res) => {
   }
 };
 
-// READ ONE
 exports.getScheduleById = async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM class_schedule WHERE id=?", [req.params.id]);
@@ -501,7 +471,6 @@ exports.getScheduleById = async (req, res) => {
   }
 };
 
-// UPDATE
 exports.updateSchedule = async (req, res) => {
   const { id } = req.params;
   const { className, startTime, endTime, status } = req.body;
@@ -547,7 +516,6 @@ exports.updateSchedule = async (req, res) => {
   }
 };
 
-// DELETE
 exports.deleteSchedule = async (req, res) => {
   const { id } = req.params;
   try {
@@ -562,6 +530,509 @@ exports.deleteSchedule = async (req, res) => {
   }
 };
 
+
+// class syllabus
+exports.addClassSyllabus = async (req, res) => {
+  try {
+    const { classId, subjectIds } = req.body;
+    const file = req.file;
+
+
+    if (!classId || !subjectIds || !file) {
+      return res.status(400).json({
+        success: false,
+        message: "Class, subjects, or syllabus file missing!",
+      });
+    }
+
+
+    const allowedTypes = ["application/pdf"];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only PDF files are allowed for syllabus upload!",
+      });
+    }
+
+
+    let parsedSubjectIds;
+    try {
+      parsedSubjectIds = JSON.parse(subjectIds);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subjects format! Must be a valid JSON array.",
+      });
+    }
+
+    if (!Array.isArray(parsedSubjectIds) || parsedSubjectIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one subject must be selected!",
+      });
+    }
+
+
+    const [classExists] = await db.query(
+      `SELECT id FROM classes WHERE id = ?`,
+      [classId]
+    );
+    if (classExists.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid class ID! Class does not exist.",
+      });
+    }
+
+    const [duplicateCheck] = await db.query(
+      `SELECT id FROM class_syllabus WHERE class_id = ?`,
+      [classId]
+    );
+    if (duplicateCheck.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Syllabus already assigned for this class!",
+      });
+    }
+
+    const [validSubjects] = await db.query(
+      `SELECT id FROM class_subject WHERE id IN (?)`,
+      [parsedSubjectIds]
+    );
+    if (validSubjects.length !== parsedSubjectIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more subjects are invalid!",
+      });
+    }
+
+
+    const filePath = file.filename;
+    const values = parsedSubjectIds.map((subjectId) => [
+      classId,
+      subjectId,
+      filePath,
+    ]);
+
+    await db.query(
+      `INSERT INTO class_syllabus (class_id, subject_id, file_src) VALUES ?`,
+      [values]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Syllabus uploaded successfully for ${parsedSubjectIds.length} subjects!`,
+    });
+  } catch (error) {
+    console.error("Error in addClassSyllabus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
+
+exports.getAllSyllabus = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        cs.id,
+        cs.class_id, 
+        c.class_name,
+        cs.subject_id, 
+        s.name AS subject_name,
+        cs.file_src,
+          cs.created_at
+      FROM class_syllabus cs
+      LEFT JOIN classes c ON cs.class_id = c.id
+      LEFT JOIN class_subject s ON cs.subject_id = s.id
+      ORDER BY cs.class_id DESC
+    `);
+
+    // ✅ Group data by class
+    const groupedData = {};
+
+    rows.forEach(row => {
+      if (!groupedData[row.class_id]) {
+        groupedData[row.class_id] = {
+          class_id: row.class_id,
+          class_name: row.class_name,
+          file_src: row.file_src,
+          created_at: row.created_at,
+          subjects: []
+        };
+      }
+
+      // Add subjects under that class
+      groupedData[row.class_id].subjects.push({
+        id: row.id,
+        subject_id: row.subject_id,
+        name: row.subject_name
+      });
+    });
+
+    const result = Object.values(groupedData);
+
+    return res.status(200).json({
+      success: true,
+      message: "Syllabus list fetched successfully!",
+      data: result,
+    });
+
+  } catch (error) {
+    console.error("Error in getAllSyllabus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
+
+exports.updateClassSyllabus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { classId, subjectId } = req.body;
+    const file = req.file;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Missing syllabus ID!" });
+    }
+
+    const [existing] = await db.query(`SELECT * FROM class_syllabus WHERE id = ?`, [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: "Syllabus not found!" });
+    }
+
+
+    const [duplicateCheck] = await db.query(
+      `SELECT id FROM class_syllabus WHERE class_id = ? AND id != ?`,
+      [classId, id]
+    );
+    if (duplicateCheck.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This class already has a syllabus assigned!",
+      });
+    }
+
+
+    const filePath = file ? file.filename : existing[0].file_src;
+
+    await db.query(
+      `UPDATE class_syllabus 
+       SET class_id = ?, subject_id = ?, file_src = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [classId, subjectId, filePath, id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Syllabus updated successfully!",
+    });
+  } catch (error) {
+    console.error("Error in updateClassSyllabus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
+exports.updatePdfFile = async (req, res) => {
+  try {
+    const { classId } = req.body;
+    const file = req.file;
+
+
+    if (!classId || !file) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID or syllabus file is missing!",
+      });
+    }
+
+
+    const allowedTypes = ["application/pdf"];
+    if (!allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only PDF files are allowed!",
+      });
+    }
+
+
+    const [classExists] = await db.query(
+      `SELECT id FROM classes WHERE id = ?`,
+      [classId]
+    );
+    if (classExists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid class ID — class not found!",
+      });
+    }
+
+    const filePath = file.filename;
+
+    await db.query(
+      `UPDATE class_syllabus SET file_src = ?, updated_at = NOW() WHERE class_id = ?`,
+      [filePath, classId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Syllabus PDF updated successfully!",
+      newFile: filePath,
+    });
+  } catch (error) {
+    console.error("Error in updatePdfFile:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+      error: error.message,
+    });
+  }
+};
+
+exports.speDataForAClass = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    // 🧩 Validate input
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Class ID not provided!",
+      });
+    }
+
+    // 🧩 Check if class exists
+    const [classCheck] = await db.query(
+      `SELECT id FROM classes WHERE id = ?`,
+      [classId]
+    );
+
+    if (classCheck.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found!",
+      });
+    }
+
+    // 🧩 Fetch subject IDs for the class
+    const [subjects] = await db.query(
+      `SELECT subject_id FROM class_syllabus WHERE class_id = ?`,
+      [classId]
+    );
+
+    // 🧩 Extract subject IDs into an array
+    const subjectIds = subjects.map((s) => s.subject_id);
+
+    // ✅ Final response
+    return res.status(200).json({
+      success: true,
+      message: "Fetched syllabus data successfully for this class!",
+      data: {
+        class_id: Number(classId),
+        subjects: subjectIds,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error in speDataForAClass:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+      error: error.message,
+    });
+  }
+};
+
+exports.addSubjectInAClass = async (req, res) => {
+  try {
+
+    const { classId, subIds } = req.body;
+
+
+    if (!classId || !subIds) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both class ID and subject IDs!",
+      });
+    }
+
+
+    const [classExists] = await db.query(
+      `SELECT id FROM classes WHERE id = ?`,
+      [classId]
+    );
+    if (classExists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found!",
+      });
+    }
+
+
+    let parsedSubjectIds;
+    try {
+      parsedSubjectIds = JSON.parse(subIds);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid subjects format! Must be a valid JSON array.",
+      });
+    }
+
+    if (!Array.isArray(parsedSubjectIds) || parsedSubjectIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one subject must be selected!",
+      });
+    }
+
+
+    const [validSubjects] = await db.query(
+      `SELECT id FROM class_subject WHERE id IN (?)`,
+      [parsedSubjectIds]
+    );
+    if (validSubjects.length !== parsedSubjectIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more subject IDs are invalid!",
+      });
+    }
+
+
+    const [existingSyllabus] = await db.query(
+      `SELECT file_src FROM class_syllabus WHERE class_id = ? LIMIT 1`,
+      [classId]
+    );
+    if (existingSyllabus.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Syllabus not found for this class! Please upload syllabus first.",
+      });
+    }
+
+    const filePath = existingSyllabus[0].file_src;
+
+
+    const [existingSubjects] = await db.query(
+      `SELECT subject_id FROM class_syllabus WHERE class_id = ?`,
+      [classId]
+    );
+    const alreadyAdded = existingSubjects.map((row) => row.subject_id);
+
+
+    const newSubjects = parsedSubjectIds.filter(
+      (id) => !alreadyAdded.includes(id)
+    );
+
+    if (newSubjects.length === 0) {
+      return res.status(409).json({
+        success: false,
+        message: "All selected subjects already exist for this class!",
+      });
+    }
+
+
+    const values = newSubjects.map((subjectId) => [
+      classId,
+      subjectId,
+      filePath,
+    ]);
+
+    await db.query(
+      `INSERT INTO class_syllabus (class_id, subject_id, file_src) VALUES ?`,
+      [values]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: `Added ${newSubjects.length} new subject(s) successfully to class ID ${classId}.`,
+      addedSubjects: newSubjects,
+    });
+  } catch (error) {
+    console.error("Error in addSubjectInAClass:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.deleteClassSyllabus = async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    if (!classId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing class ID!",
+      });
+    }
+
+    const [existing] = await db.query(
+      `SELECT * FROM class_syllabus WHERE class_id = ?`,
+      [classId]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No syllabus found for this class!",
+      });
+    }
+
+    await db.query(`DELETE FROM class_syllabus WHERE class_id = ?`, [classId]);
+
+    return res.status(200).json({
+      success: true,
+      message: `All syllabus records deleted successfully for this class !`,
+    });
+  } catch (error) {
+    console.error("Error in deleteClassSyllabusByClass:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
+
+exports.deleteSubjectFromSyllabus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Missing syllabus ID!" });
+    }
+
+    const [existing] = await db.query(`SELECT id FROM class_syllabus WHERE id = ?`, [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: "Subject not found for this class!" });
+    }
+
+    await db.query(`DELETE FROM class_syllabus WHERE id = ?`, [id]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Subject deleted successfully from this class !",
+    });
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+}
 
 
 // class for option master
@@ -578,4 +1049,3 @@ exports.getAllClassForOption = async (req, res) => {
 }
 
 
- 

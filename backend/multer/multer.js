@@ -4,6 +4,7 @@ const path = require("path");
 // Storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+      
         if (file.mimetype === "application/pdf") {
             cb(null, "uploads/document");
         } else if (
