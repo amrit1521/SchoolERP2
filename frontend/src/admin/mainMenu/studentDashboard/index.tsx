@@ -1378,7 +1378,7 @@ const StudentDasboard = () => {
                 <div className="card-header d-flex align-items-center justify-content-between">
                   <h4 className="card-titile">Fees Reminder</h4>
                   <Link
-                    to={routes.feesAssign}
+                    to={student_routes.feeReminder}
                     className="link-primary fw-medium"
                   >
                     View All
