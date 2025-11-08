@@ -280,6 +280,15 @@ import TExamAttendance from "../teacher/academic/examinations/exam-attendance/in
 import TExamResult from "../teacher/academic/examinations/exam-results/index.tsx";
 import TExamSchedule from "../teacher/academic/examinations/exam-schedule/index.tsx";
 import TGrade from "../teacher/academic/examinations/grade/index.tsx";
+import TFeesAssign from "../teacher/management/feescollection/feesAssign.tsx";
+import TIssueBook from "../teacher/management/library/issuesBook.tsx";
+import TReturnBook from "../teacher/management/library/returnBook.tsx";
+import TSportsList from "../teacher/management/sports/sportsList.tsx";
+import TPlayersList from "../teacher/management/sports/playersList.tsx";
+import TStudentAttendance from "../teacher/attendance/student-attendance.tsx";
+import THoliday from "../teacher/holidays/index.tsx";
+import TStudentLeaves from "../teacher/peoples/students/student-details/studentLeaves.tsx";
+import TStudentLibrary from "../teacher/peoples/students/student-details/studentLibrary.tsx";
 
 const routes = all_routes;
 
@@ -383,6 +392,16 @@ export const publicRoutes = [
     route: Route,
   },
   {
+    path: `${teacher_routes.studentLeaves}/:rollnum`,
+    element: <TStudentLeaves />,
+    route: Route,
+  },
+  {
+    path: `${teacher_routes.studentLibrary}/:rollnum`,
+    element: <TStudentLibrary />,
+    route: Route,
+  },
+  {
     path: teacher_routes.studentList,
     element: <TStudentList />,
     route: Route,
@@ -477,6 +496,41 @@ export const publicRoutes = [
   //   element: <TAcademicReason />,
   //   route: Route,
   // },
+  {
+    path: teacher_routes.feesAssign,
+    element: <TFeesAssign />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.libraryIssueBook,
+    element: <TIssueBook />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.libraryReturn,
+    element: <TReturnBook />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.sportsList,
+    element: <TSportsList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.playerList,
+    element: <TPlayersList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.studentAttendance,
+    element: <TStudentAttendance />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.holidays,
+    element: <THoliday />,
+    route: Route,
+  },
   {
     path: routes.connectedApps,
     element: <ConnectedApps />,

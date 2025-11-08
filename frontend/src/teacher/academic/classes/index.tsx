@@ -156,19 +156,19 @@ const TClasses: React.FC = () => {
     }
 
     if (!sectionData.noOfStudents) {
-      (newErrors.noOfStudents = "NO of students are required !"),
-        (isValid = false);
+      newErrors.noOfStudents = "NO of students are required !";
+      isValid = false;
     } else if (Number(sectionData.noOfStudents) <= 0) {
-      (newErrors.noOfStudents = "NO of students should be greater than 0 !"),
-        (isValid = false);
+      newErrors.noOfStudents = "NO of students should be greater than 0 !";
+      isValid = false;
     }
 
     if (!sectionData.noOfSubjects) {
-      (newErrors.noOfSubjects = "NO of subjects are required !"),
-        (isValid = false);
+      newErrors.noOfSubjects = "NO of subjects are required !";
+      isValid = false;
     } else if (Number(sectionData.noOfSubjects) <= 0) {
-      (newErrors.noOfSubjects = "NO of subjects should be greater than 0 !"),
-        (isValid = false);
+      newErrors.noOfSubjects = "NO of subjects should be greater than 0 !";
+      isValid = false;
     }
 
     if (!sectionData.section.trim()) {

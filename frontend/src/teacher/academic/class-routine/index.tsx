@@ -30,7 +30,7 @@ import {
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
 
 interface ClassRoutine {
@@ -107,7 +107,7 @@ const initialErrorData = {
 };
 
 const TClassRoutine = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
 
   // const data = classRoutine;
   // const getModalContainer = () => {

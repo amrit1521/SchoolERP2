@@ -25,7 +25,7 @@ import {
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
 
 export interface Homework {
@@ -64,7 +64,7 @@ export interface classes {
 }
 
 const TClassHomeWork = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
 
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
@@ -359,9 +359,23 @@ const TClassHomeWork = () => {
         fetchHomeWorks();
         handleModalPopUp("delete-modal");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
-      toast.error(error.response.data.message);
+      let message = "Something went wrong";
+      if (typeof error === "object" && error !== null) {
+        const err = error as {
+          response?: { data?: { message?: string } };
+          message?: string;
+        };
+        if (err.response?.data?.message) {
+          message = err.response.data.message;
+        } else if (err.message) {
+          message = err.message;
+        }
+      } else if (typeof error === "string") {
+        message = error;
+      }
+      toast.error(message);
     }
   };
 
@@ -387,7 +401,7 @@ const TClassHomeWork = () => {
     {
       title: "Class",
       dataIndex: "class",
-      sorter: (a: any, b: any) => a.class.length - b.class.length,
+      sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
     },
     {
       title: "Section",
@@ -417,7 +431,7 @@ const TClassHomeWork = () => {
     {
       title: "CreatedBy",
       dataIndex: "createdBy",
-      render: (text: string, record: any) => (
+      render: (text: string, record: { img: string }) => (
         <div className="d-flex align-items-center">
           <Link to="#" className="avatar avatar-md">
             <img
@@ -440,7 +454,7 @@ const TClassHomeWork = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: (text: any) => (
+      render: (text: number) => (
         <>
           <div className="dropdown">
             <Link

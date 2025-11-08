@@ -8,43 +8,6 @@ export const teacher_routes = {
   notes: "/notes",
   comingSoon: "/coming-soon",
 
-  //   // pages routes
-  //   error404: "/error-404",
-  //   error500: "/error-500",
-  //   underMaintenance: "/under-maintenance",
-
-  //   // settings routes
-  //   customFields: "/app-settings/custom-fields",
-  //   invoiceSettings: "/app-settings/invoice-settings",
-
-  //   bankAccount: "/financial-settings/bank-ccount",
-  //   paymentGateways: "/financial-settings/payment-gateways",
-  //   taxRates: "/financial-settings/tax-rates",
-
-  //   schoolSettings : "/academic-settings/school-settings",
-  //   religion : "/academic-settings/religion",
-
-  //   connectedApps: "/general-settings/connected-apps",
-  //   notificationssettings: "/general-settings/notifications-settings",
-  //   profilesettings: "/general-settings/profile-settings",
-  //   securitysettings: "/general-settings/security-settings",
-
-  //   banIpAddress: "/other-settings/ban-ip-address",
-  //   storage: "/other-settings/storage",
-
-  //   emailSettings: "/system-settings/email-settings",
-  //   emailTemplates: "/system-settings/email-templates",
-  //   gdprCookies: "/system-settings/gdpr-cookies",
-  //   smsSettings: "/system-settings/sms-settings",
-  //   optSettings: "/system-settings/otp-settings",
-
-  //   socialAuthentication : "/website-settings/social-authentication",
-  //   companySettings: "/website-settings/company-settings",
-  //   language: "/website-settings/language",
-  //   localization: "/website-settings/localization",
-  //   preference: "/website-settings/preference",
-  //   prefixes: "/website-settings/prefixes",
-
   // application routes
   todo: "/application/todo",
   email: "/application/email",
@@ -60,10 +23,10 @@ export const teacher_routes = {
   //   studentOnboarding: "/student/student-onboarding",
   studentDetail: "/teacher/students/student-details",
   //   studentTimeTable: "/student/student-time-table",
-  //   studentLeaves: "/student/student-leaves",
+  studentLeaves: "/teacher/student/student-leaves",
   //   studentFees: "/student/student-fees",
   //   studentResult: "/student/student-result",
-  //   studentLibrary: "/student/student-library",
+  studentLibrary: "/teacher/student/student-library",
   studentList: "/teacher/students/student-list",
   //   addStudent: "/student/add-student",
   //   editStudent: "/student/edit-student",
@@ -85,14 +48,14 @@ export const teacher_routes = {
   //   feesGroup: "/management/fees-group",
   //   feesType: "/management/fees-type",
   //   feesMaster: "/management/fees-master",
-  //   feesAssign: "/management/fees-assign",
+  feesAssign: "/teacher/management/fees-assign",
   //   collectFees: "/management/collect-fees",
   //   libraryMembers: "/management/library-members",
-  //   libraryIssueBook: "/management/library-issue-book",
+  libraryIssueBook: "/teacher/management/library-issue-book",
   //   libraryBooks: "/management/library-books",
-  //   libraryReturn: "/management/library-return",
-  //   playerList: "/management/players",
-  //   sportsList: "/management/sports",
+  libraryReturn: "/teacher/management/library-return",
+  playerList: "/teacher/management/players",
+  sportsList: "/teacher/management/sports",
   //   hostelList: "/management/hostel-list",
   //   hostelType: "/management/hostel-type",
   //   hostelRoom: "/management/hostel-rooms",
@@ -124,7 +87,7 @@ export const teacher_routes = {
   //   staff: "/hrm/staff",
   //   departments: "/hrm/departments",
   //   payroll: "/hrm/payroll",
-  //   holidays: "/hrm/holidays",
+  holidays: "/teacher/hrm/holidays",
   //   designation: "/hrm/designation",
   //   listLeaves: "/hrm/list-leaves",
   //   staffDetails: "/hrm/staff-details",
@@ -132,48 +95,10 @@ export const teacher_routes = {
   //   staffLeave: "/hrm/staff-leave",
 
   //   approveRequest: "/hrm/approve-request",
-  //   studentAttendance: "/hrm/student-attendance",
+  studentAttendance: "/teacher/hrm/student-attendance",
   //   teacherAttendance: "/hrm/teacher-attendance",
   //   staffAttendance: "/hrm/staff-attendance",
   //   addStaff: "/hrm/add-staff",
   //   editStaff: "/hrm/edit-staff",
   //   staffsAttendance: "/hrm/staffs-attendance",
-
-  //   layoutDefault: "/layout-default",
-  //   layoutMini: "/layout-mini",
-  //   layoutRtl: "/layout-rtl",
-  //   layoutBox: "/layout-box",
-  //   layoutDark: "/layout-dark",
-
-  // finance & accounts routes
-  //   accountsIncome: "/accounts/accounts-income",
-  //   accountsInvoices: "/accounts/accounts-invoices",
-  //   accountsTransactions: "/accounts/accounts-transactions",
-  //   expense: "/accounts/expense",
-  //   expenseCategory: "/accounts/expense-category",
-  //   invoice: "/accounts/invoice",
-  //   addInvoice: "/accounts/add-invoice",
-  //   editInvoice: "/accounts/edit-invoice",
-
-  // announcements routes
-  //   events: "/announcements/events",
-  //   noticeBoard: "/announcements/notice-board",
-
-  //   //Report
-  //   attendanceReport: "/report/attendance-report",
-  //   classReport: "/report/class-report",
-  //   studentReport: "/report/student-report",
-  //   gradeReport: "/report/grade-report",
-  //   leaveReport: "/report/leave-report",
-  //   feesReport: "/report/fees-report",
-  //   teacherReport: "/report/teacher-report",
-  //   staffReport: "/report/staff-report",
-  //   studentAttendanceType: "/report/student-attendance-type",
-  //   dailyAttendance: "/report/daily-attendance",
-  //   studentDayWise: "/report/student-day-wise",
-  //   teacherDayWise: "/report/teacher-day-wise",
-  //   staffDayWise: "/report/staff-day-wise",
-  //   //page module
-  //   profile: "/pages/profile",
-  //   activity: "/pages/activities",
 };

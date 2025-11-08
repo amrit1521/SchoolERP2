@@ -27,7 +27,7 @@ import dayjs from "dayjs";
 import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
 
 export interface SubjectGroup {
@@ -40,7 +40,7 @@ export interface SubjectGroup {
 }
 
 const TClassSyllabus = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
   // const data = classSyllabus;
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
@@ -227,7 +227,6 @@ const TClassSyllabus = () => {
     });
     setEditId(null);
     setErrors({});
-    null;
   };
 
   // ✅ Submit Handler
@@ -288,7 +287,7 @@ const TClassSyllabus = () => {
     setDeleteId(null);
   };
 
-  const columns = [
+  const columns: any[] = [
     // {
     //  title:'Title',
     //  dataindex:'id',
