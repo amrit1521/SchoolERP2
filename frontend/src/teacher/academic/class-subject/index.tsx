@@ -21,11 +21,11 @@ import {
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
 
 const TClassSubject = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;

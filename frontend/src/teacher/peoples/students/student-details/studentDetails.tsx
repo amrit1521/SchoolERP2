@@ -118,6 +118,24 @@ const TStudentDetails = () => {
                         Student Details
                       </Link>
                     </li>
+                    <li>
+                      <Link
+                        to={`${teacher_routes.studentLeaves}/${rollnum}`}
+                        className="nav-link"
+                      >
+                        <i className="ti ti-calendar-due me-2" />
+                        Leave &amp; Attendance
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to={`${teacher_routes.studentLibrary}/${rollnum}`}
+                        className="nav-link"
+                      >
+                        <i className="ti ti-books me-2" />
+                        Library
+                      </Link>
+                    </li>
                   </ul>
                   {/* /List */}
                   {/* Parents Information */}

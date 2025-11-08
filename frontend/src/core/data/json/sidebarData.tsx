@@ -1435,7 +1435,9 @@ export const TeacherSidebarData = [
         submenu: true,
         showSubRoute: false,
 
-        submenuItems: [{ label: "Fees Assign", link: routes.feesAssign }],
+        submenuItems: [
+          { label: "Fees Assign", link: teacher_routes.feesAssign },
+        ],
       },
       {
         label: "Library",
@@ -1444,20 +1446,20 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Issue Book", link: routes.libraryIssueBook },
-          { label: "Return", link: routes.libraryReturn },
+          { label: "Issue Book", link: teacher_routes.libraryIssueBook },
+          { label: "Return", link: teacher_routes.libraryReturn },
         ],
       },
       {
         label: "Sports",
-        link: routes.sportsList,
+        link: teacher_routes.sportsList,
         icon: "ti ti-run",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Players",
-        link: routes.playerList,
+        link: teacher_routes.playerList,
         icon: "ti ti-play-football",
         showSubRoute: false,
         submenu: false,
@@ -1478,13 +1480,16 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Student Attendance", link: routes.studentAttendance },
+          {
+            label: "Student Attendance",
+            link: teacher_routes.studentAttendance,
+          },
         ],
       },
 
       {
         label: "Holidays",
-        link: routes.holidays,
+        link: teacher_routes.holidays,
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
