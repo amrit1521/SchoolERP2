@@ -1,8 +1,7 @@
-const db = require('../../config/db');
-const fs = require('fs');
-const path = require('path');
+const db = require("../../config/db");
+const fs = require("fs");
+const path = require("path");
 const dayjs = require("dayjs");
-
 
 exports.addLibraryMember = async (req, res) => {
   try {
@@ -11,16 +10,19 @@ exports.addLibraryMember = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         message: "Library Member Image is required!",
-        success: false
+        success: false,
       });
     }
 
-    const [existMember] = await db.query(`SELECT * FROM librarymember WHERE email=?`, [data.email])
+    const [existMember] = await db.query(
+      `SELECT * FROM librarymember WHERE email=?`,
+      [data.email]
+    );
 
     if (existMember.length > 0) {
       return res.status(400).json({
         message: "User Already Exists!",
-        success: false
+        success: false,
       });
     }
 
@@ -38,27 +40,25 @@ exports.addLibraryMember = async (req, res) => {
       data.email,
       dayjs(data.date_of_join, "DD MMM YYYY").format("YYYY-MM-DD"),
 
-      data.phone_no
+      data.phone_no,
     ]);
 
     return res.status(201).json({
       message: "Library member added successfully!",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: 'Internal server error!',
-      success: false
+      message: "Internal server error!",
+      success: false,
     });
   }
 };
 
 exports.allLibraryMember = async (req, res) => {
   try {
-
-    const roleKeyword = "librar"; 
+    const roleKeyword = "librar";
 
     const sql = `
       SELECT 
@@ -94,7 +94,6 @@ exports.allLibraryMember = async (req, res) => {
   }
 };
 
-
 exports.deleteLibraryMember = async (req, res) => {
   try {
     const { id } = req.params;
@@ -102,53 +101,53 @@ exports.deleteLibraryMember = async (req, res) => {
     if (!id) {
       return res.status(400).json({
         message: "Member ID is required!",
-        success: false
+        success: false,
       });
     }
 
-    const [rows] = await db.query(`SELECT img_src FROM librarymember WHERE id = ?`, [id]);
+    const [rows] = await db.query(
+      `SELECT img_src FROM librarymember WHERE id = ?`,
+      [id]
+    );
 
     if (rows.length === 0) {
       return res.status(404).json({
         message: "Member not found!",
-        success: false
+        success: false,
       });
     }
 
     const imageFile = rows[0].img_src;
-
-
-
 
     if (imageFile) {
       const filePath = path.join(__dirname, "../uploads", imageFile);
       fs.unlink(filePath, (err) => {
         if (err) {
           console.error("Error deleting file:", err);
-
         }
       });
     }
 
-    const [result] = await db.query(`DELETE FROM librarymember WHERE id = ?`, [id]);
+    const [result] = await db.query(`DELETE FROM librarymember WHERE id = ?`, [
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
         message: "Member not found in DB!",
-        success: false
+        success: false,
       });
     }
 
     return res.status(200).json({
       message: "Library Member deleted successfully!",
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       message: "Internal server error!",
-      success: false
+      success: false,
     });
   }
 };
@@ -170,7 +169,6 @@ exports.addBook = async (req, res) => {
       postDate,
       bookImg,
     } = req.body;
-
 
     if (
       !bookName ||
@@ -367,38 +365,51 @@ exports.deleteBook = async (req, res) => {
   }
 };
 
-
-
-
 // issued book ---------------------------------------------
 exports.stuDataForIssueBook = async (req, res) => {
-
   try {
-
     const sql1 = `SELECT 
                  st.rollnum,
                  u.firstname,
                  u.lastname
                  FROM students st
                  JOIN users u ON st.stu_id=u.id              
-    `
-    const [rows] = await db.query(sql1)
-    return res.status(200).json({ message: 'Student data for isssue book fetched successfully ! ', success: true, data: rows })
+    `;
+    const [rows] = await db.query(sql1);
+    return res
+      .status(200)
+      .json({
+        message: "Student data for isssue book fetched successfully ! ",
+        success: true,
+        data: rows,
+      });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: 'Internal server error !', success: false })
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
   }
-}
+};
 
 exports.bookDataForIssueBook = async (req, res) => {
   try {
-    const [rows] = await db.query(`SELECT id , bookName FROM library_book_info`)
-    return res.status(200).json({ message: 'Book data for isssue book fetched successfully ! ', success: true, data: rows })
+    const [rows] = await db.query(
+      `SELECT id , bookName FROM library_book_info`
+    );
+    return res
+      .status(200)
+      .json({
+        message: "Book data for isssue book fetched successfully ! ",
+        success: true,
+        data: rows,
+      });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: 'Internal server error !', success: false })
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
   }
-}
+};
 
 exports.getAllStuIssueBook = async (req, res) => {
   try {
@@ -436,19 +447,82 @@ exports.getAllStuIssueBook = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error!", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
+
+exports.getAllIssueBookForSpecClass = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          t.class,
+          t.section,
+          t.teacher_id
+      FROM users
+      LEFT JOIN teachers as t ON t.user_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const teacher = userRows[0];
+    const studentClass = teacher.class;
+    const section = teacher.section;
+    const sql = `
+      SELECT 
+        st.stu_id,
+        st.admissionnum,
+        u.firstname,
+        u.lastname,
+        st.stu_img, 
+        st.rollnum,
+         c.class_name AS class,
+        s.section_name AS section,
+        COUNT(ib.id) AS issuedBook,
+        SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
+        
+        MAX(ib.takenOn) AS lastIssuedDate,   -- latest issue date
+        MAX(ib.last_date) AS lastReturnDate, -- latest expected return
+        GROUP_CONCAT(ib.remark SEPARATOR '; ') AS remarks -- combine remarks
+      FROM libraryIssueBooks ib
+      LEFT JOIN students st ON ib.rollnum = st.rollnum
+      LEFT JOIN users u ON st.stu_id = u.id
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id
+      where c.id =? and s.id=?
+      GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class_id, st.section_id
+      ORDER BY st.rollnum ASC
+    `;
+
+    const [rows] = await db.query(sql, [studentClass, section]);
+
+    return res.status(200).json({
+      message: "All issued book records fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
 
 exports.getSpeStuIssueBookData = async (req, res) => {
-
-  const { rollnum } = req.params
+  const { rollnum } = req.params;
   if (!rollnum) {
-    return res.status(403).json({ message: 'please provide valid creditinal  !', success: true })
+    return res
+      .status(403)
+      .json({ message: "please provide valid creditinal  !", success: true });
   }
 
   try {
-
     const sql = `SELECT 
 
               ib.id,
@@ -462,27 +536,42 @@ exports.getSpeStuIssueBookData = async (req, res) => {
               LEFT JOIN library_book_info b ON ib.bookid=b.id
               WHERE ib.rollnum=?
 
-    `
+    `;
 
-    const [rows] = await db.query(sql, [rollnum])
-    return res.status(200).json({ message: 'All book fetched by student rollnumber !', success: true, data: rows })
-
+    const [rows] = await db.query(sql, [rollnum]);
+    return res
+      .status(200)
+      .json({
+        message: "All book fetched by student rollnumber !",
+        success: true,
+        data: rows,
+      });
   } catch (error) {
     console.error("Error issuing book:", error);
-    return res.status(500).json({ message: "Internal server error!", success: false })
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
-}
+};
 
 exports.issueBook = async (req, res) => {
   try {
-    const { studentRollNo, bookId, issueDate, lastDate, issuRemark, status } = req.body;
+    const { studentRollNo, bookId, issueDate, lastDate, issuRemark, status } =
+      req.body;
 
     if (!studentRollNo || !bookId || !issueDate || !lastDate) {
-      return res.status(400).json({ message: "All fields are required", success: false });
+      return res
+        .status(400)
+        .json({ message: "All fields are required", success: false });
     }
 
     if (!Array.isArray(bookId) || bookId.length === 0) {
-      return res.status(400).json({ message: "At least one book must be selected", success: false });
+      return res
+        .status(400)
+        .json({
+          message: "At least one book must be selected",
+          success: false,
+        });
     }
 
     const insertedIds = [];
@@ -515,8 +604,8 @@ exports.issueBook = async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?)
       `;
 
-      const FormatIssueDate = dayjs(issueDate).format('YYYY-MM-DD')
-      const FormatLastDate = dayjs(lastDate).format('YYYY-MM-DD')
+      const FormatIssueDate = dayjs(issueDate).format("YYYY-MM-DD");
+      const FormatLastDate = dayjs(lastDate).format("YYYY-MM-DD");
 
       const [result] = await db.query(sql, [
         studentRollNo,
@@ -535,21 +624,23 @@ exports.issueBook = async (req, res) => {
       success: true,
       issuedIds: insertedIds,
     });
-
   } catch (error) {
     console.error("Error issuing book:", error);
-    return res.status(500).json({ message: "Internal server error!", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
 
 exports.bookTakenByStuAndNotReturn = async (req, res) => {
   const { rollnum } = req.params;
   if (!rollnum) {
-    return res.status(403).json({ message: 'Please provide rollNumber', success: false });
+    return res
+      .status(403)
+      .json({ message: "Please provide rollNumber", success: false });
   }
 
   try {
-
     const sql = `
       SELECT 
           b.id AS bookId,
@@ -561,7 +652,6 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
       GROUP BY b.id, b.bookName
       ORDER BY lastIssuedDate DESC
     `;
-
 
     const sql2 = `
       SELECT 
@@ -581,15 +671,16 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
     const [result] = await db.query(sql2, [rollnum]);
 
     return res.status(200).json({
-      message: 'Not returned books fetched successfully by Rollnum',
+      message: "Not returned books fetched successfully by Rollnum",
       success: true,
       data: rows,
-      summary: result[0] || null
+      summary: result[0] || null,
     });
-
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
 
@@ -627,7 +718,6 @@ exports.returnBook = async (req, res) => {
       success: true,
       data: result,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -636,10 +726,3 @@ exports.returnBook = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-

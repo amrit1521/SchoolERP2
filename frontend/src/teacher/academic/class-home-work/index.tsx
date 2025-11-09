@@ -16,6 +16,7 @@ import {
   allTeacherForOption,
   deleteHomework,
   editHomework,
+  getAllRolePermissions,
   getAllSection,
   getAllSectionForAClass,
   getAllSubject,
@@ -27,6 +28,7 @@ import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
 // import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { getAllTTeacherHomeWork } from "../../../service/teacherDashboardApi";
 
 export interface Homework {
   id: number;
@@ -62,6 +64,12 @@ export interface classes {
   id: number;
   class_name: string;
 }
+interface Permission {
+  can_create?: boolean;
+  can_delete?: boolean;
+  can_edit?: boolean;
+  can_view?: boolean;
+}
 
 const TClassHomeWork = () => {
   // const routes = all_routes;
@@ -96,6 +104,36 @@ const TClassHomeWork = () => {
   const [allClass, setAllClass] = useState<classes[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  const token = localStorage.getItem("token");
+  const roleId = token ? JSON.parse(token)?.role : null;
+  const userId = token ? JSON.parse(token)?.id : null;
+  const [permission, setPermission] = useState<Permission | null>(null);
+
+  const fetchPermission = async (roleId: number) => {
+    if (roleId) {
+      const { data } = await getAllRolePermissions(roleId);
+      if (data.success) {
+        type RolePerm = {
+          module_name?: string;
+          can_create?: boolean;
+          can_delete?: boolean;
+          can_edit?: boolean;
+          can_view?: boolean;
+        };
+        const items: RolePerm[] = Array.isArray(data.result) ? data.result : [];
+        const currentPermission = items
+          .filter((perm: RolePerm) => perm?.module_name === "HomeWork")
+          .map((perm: RolePerm) => ({
+            can_create: perm?.can_create,
+            can_delete: perm?.can_delete,
+            can_edit: perm?.can_edit,
+            can_view: perm?.can_view,
+          }));
+        setPermission(currentPermission[0]);
+      }
+    }
+  };
+
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
     setter: React.Dispatch<React.SetStateAction<T>>,
@@ -110,11 +148,11 @@ const TClassHomeWork = () => {
     }
   };
 
-  const fetchHomeWorks = async () => {
+  const fetchHomeWorks = async (userId: number) => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 500));
     try {
-      const { data } = await allHomeWork();
+      const { data } = await getAllTTeacherHomeWork(userId);
 
       if (data.success) {
         setHomeworks(data.data);
@@ -150,10 +188,11 @@ const TClassHomeWork = () => {
   const fetchClasses = () => fetchData(allRealClasses, setAllClass);
 
   useEffect(() => {
+    fetchPermission(roleId);
     fetchTeachers();
     fetchSections();
     fetchSubjects();
-    fetchHomeWorks();
+    fetchHomeWorks(userId);
     fetchClasses();
   }, []);
 
@@ -326,7 +365,7 @@ const TClassHomeWork = () => {
           handleModalPopUp("add_home_work");
         }
       }
-      fetchHomeWorks();
+      fetchHomeWorks(userId);
       setFormData({
         className: null,
         section: null,
@@ -356,7 +395,7 @@ const TClassHomeWork = () => {
       const { data } = await deleteHomework(id);
       if (data.success) {
         toast.success(data.message);
-        fetchHomeWorks();
+        fetchHomeWorks(userId);
         handleModalPopUp("delete-modal");
       }
     } catch (error: unknown) {
@@ -384,7 +423,7 @@ const TClassHomeWork = () => {
     setDeleteId(null);
   };
 
-  const columns = [
+  const columns: any[] = [
     {
       title: "ID",
       dataIndex: "id",
@@ -450,8 +489,9 @@ const TClassHomeWork = () => {
       sorter: (a: TableData, b: TableData) =>
         a.createdBy.length - b.createdBy.length,
     },
-
-    {
+  ];
+  if (permission?.can_edit || permission?.can_delete) {
+    columns.push({
       title: "Action",
       dataIndex: "action",
       render: (text: number) => (
@@ -466,35 +506,38 @@ const TClassHomeWork = () => {
               <i className="ti ti-dots-vertical fs-14" />
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => fetchHwById(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_home_work"
-                >
-                  <i className="ti ti-edit-circle me-2" />
-                  Edit
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </button>
-              </li>
+              {permission?.can_edit ? (
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => fetchHwById(text)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#edit_home_work"
+                  >
+                    <i className="ti ti-edit-circle me-2" />
+                    Edit
+                  </button>
+                </li>
+              ) : null}
+              {permission?.can_delete ? (
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => setDeleteId(text)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete-modal"
+                  >
+                    <i className="ti ti-trash-x me-2" />
+                    Delete
+                  </button>
+                </li>
+              ) : null}
             </ul>
           </div>
         </>
       ),
-    },
-  ];
-
+    });
+  }
   return (
     <div>
       <>
@@ -504,7 +547,7 @@ const TClassHomeWork = () => {
             {/* Page Header */}
             <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
               <div className="my-auto mb-2">
-                <h3 className="page-title mb-1">Class Work</h3>
+                <h3 className="page-title mb-1">Class Home Work</h3>
                 <nav>
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -523,17 +566,19 @@ const TClassHomeWork = () => {
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
-                <div className="mb-2">
-                  <Link
-                    to="#"
-                    className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_home_work"
-                  >
-                    <i className="ti ti-square-rounded-plus-filled me-2" />
-                    Add Home Work
-                  </Link>
-                </div>
+                {permission?.can_create ? (
+                  <div className="mb-2">
+                    <Link
+                      to="#"
+                      className="btn btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#add_home_work"
+                    >
+                      <i className="ti ti-square-rounded-plus-filled me-2" />
+                      Add Home Work
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </div>
             {/* /Page Header */}

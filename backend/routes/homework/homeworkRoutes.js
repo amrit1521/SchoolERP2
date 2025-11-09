@@ -12,4 +12,8 @@ router.get(
   "/getAllStudent-homework/:userId",
   homeworkController.getAllStudentHomeWork
 );
+router.get(
+  "/getAllteacher-homework/:userId",
+  homeworkController.getAllTeacherHomeWork
+);
 module.exports = router;

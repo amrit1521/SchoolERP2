@@ -1,13 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
-  // classduration,
-
-  // classSylabus,
   language,
-  // period,
-  // routinename,
-  // subjectGroup,
   teacher,
   Time,
   Timeto,
@@ -20,7 +14,6 @@ import {
   filterTimeTable,
   getAllRolePermissions,
   getAllSectionForAClass,
-  getTimeTable,
 } from "../../../service/api";
 // allTeacherForOption
 import { toast } from "react-toastify";
@@ -30,6 +23,7 @@ import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
 import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { getTimeTableForSpecTeacher } from "../../../service/teacherDashboardApi";
 
 const TClassTimetable = () => {
   const routes = all_routes;
@@ -155,7 +149,7 @@ const TClassTimetable = () => {
       // console.log(res)
       if (res.data.success) {
         toast.success(res.data.message);
-        fetchTimeTable();
+        fetchTimeTable(userId);
         handleModalPopUp(`add_time_table`);
       }
     } catch (error) {
@@ -174,10 +168,17 @@ const TClassTimetable = () => {
     timefrom: string;
     timeto: string;
   }
+  interface Permission {
+    can_create?: boolean;
+    can_delete?: boolean;
+    can_edit?: boolean;
+    can_view?: boolean;
+  }
+
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
-  // const userId = token ? JSON.parse(token)?.id : null;
-  const [permission, setPermission] = useState<any>(null);
+  const userId = token ? JSON.parse(token)?.id : null;
+  const [permission, setPermission] = useState<Permission | null>(null);
   const [timeTable, setTimeTable] = useState<TimeTableData[]>([]);
   const [timeTablefilter, setTimeTablefilter] = useState<TimeTableData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -199,11 +200,11 @@ const TClassTimetable = () => {
     }
   };
 
-  const fetchTimeTable = async () => {
+  const fetchTimeTable = async (userId: number) => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 600));
     try {
-      const { data } = await getTimeTable();
+      const { data } = await getTimeTableForSpecTeacher(userId);
       // console.log(data)
       if (data.success) {
         setTimeTable(data.timetable);
@@ -238,7 +239,7 @@ const TClassTimetable = () => {
 
   useEffect(() => {
     fetchPermission(roleId);
-    fetchTimeTable();
+    fetchTimeTable(userId);
   }, []);
 
   // ------------------------------------------------filter

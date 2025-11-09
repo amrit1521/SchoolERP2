@@ -13,13 +13,10 @@ import Table from "../../../core/common/dataTable/index";
 import TooltipOption from "../../../core/common/tooltipOption";
 import LibraryModal from "./libraryModal";
 import { toast } from "react-toastify";
-import {
-  getAllRolePermissions,
-  getAllStuIssueBook,
-  Imageurl,
-} from "../../../service/api";
+import { getAllRolePermissions, Imageurl } from "../../../service/api";
 import dayjs from "dayjs";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { getAllIssueBookForSpecClass } from "../../../service/teacherDashboardApi";
 
 const TIssueBook = () => {
   // const routes = all_routes;
@@ -55,6 +52,7 @@ const TIssueBook = () => {
 
   const tokens = localStorage.getItem("token");
   const roleId = tokens ? JSON.parse(tokens)?.role : null;
+  const userId = tokens ? JSON.parse(tokens)?.id : null;
   type Permission = {
     can_create?: boolean;
     can_delete?: boolean;
@@ -80,11 +78,11 @@ const TIssueBook = () => {
     }
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (userId: number) => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 500));
     try {
-      const { data } = await getAllStuIssueBook();
+      const { data } = await getAllIssueBookForSpecClass(userId);
       if (data.success) {
         setStudentsIssueData(data.data);
       }
@@ -98,7 +96,7 @@ const TIssueBook = () => {
 
   useEffect(() => {
     fetchPermission(roleId);
-    fetchAllData();
+    fetchAllData(userId);
   }, []);
 
   const tableData = studentsIssueData.map((item) => ({
@@ -118,7 +116,7 @@ const TIssueBook = () => {
   }));
 
   const onAdd = () => {
-    fetchAllData();
+    fetchAllData(userId);
   };
 
   const columns = [

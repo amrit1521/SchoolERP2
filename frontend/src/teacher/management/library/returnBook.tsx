@@ -15,7 +15,6 @@ import LibraryModal from "./libraryModal";
 import { toast } from "react-toastify";
 import {
   getAllRolePermissions,
-  getAllStuIssueBook,
   Imageurl,
   returnBook,
   speStuNotReturnBookData,
@@ -25,6 +24,7 @@ import MultiSelect from "../../../core/common/multiSelect";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import dayjs from "dayjs";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { getAllIssueBookForSpecClass } from "../../../service/teacherDashboardApi";
 
 const TReturnBook = () => {
   // const routes = all_routes;
@@ -60,6 +60,7 @@ const TReturnBook = () => {
 
   const tokens = localStorage.getItem("token");
   const roleId = tokens ? JSON.parse(tokens)?.role : null;
+  const userId = tokens ? JSON.parse(tokens)?.id : null;
   type Permission = {
     can_create?: boolean;
     can_delete?: boolean;
@@ -85,11 +86,11 @@ const TReturnBook = () => {
     }
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (userId: number) => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 500));
     try {
-      const { data } = await getAllStuIssueBook();
+      const { data } = await getAllIssueBookForSpecClass(userId);
       if (data.success) {
         setStudentsIssueData(data.data);
       }
@@ -103,7 +104,7 @@ const TReturnBook = () => {
 
   useEffect(() => {
     fetchPermission(roleId);
-    fetchAllData();
+    fetchAllData(userId);
   }, []);
 
   const tableData = studentsIssueData.map((item) => ({
@@ -285,7 +286,7 @@ const TReturnBook = () => {
       const { data } = await returnBook(returnBookForm);
       if (data.success) {
         toast.success(data.message);
-        fetchAllData();
+        fetchAllData(userId);
         handleModalPopUp("return_book");
 
         // reset
