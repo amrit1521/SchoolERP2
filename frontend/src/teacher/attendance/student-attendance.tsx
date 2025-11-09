@@ -7,7 +7,7 @@ import {
 } from "../../core/common/selectoption/selectoption";
 import Table from "../../core/common/dataTable/index";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+// import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import {
   allStudents,
@@ -18,9 +18,10 @@ import {
 } from "../../service/api";
 import { toast } from "react-toastify";
 import { teacher_routes } from "../../admin/router/teacher_routes";
+import { getAllStudentForClass } from "../../service/teacherDashboardApi";
 
 const TStudentAttendance = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
 
   interface AttendanceData {
     id: number;
@@ -31,10 +32,16 @@ const TStudentAttendance = () => {
     attendance: string;
     notes: string;
   }
+  interface Permission {
+    can_create?: boolean;
+    can_delete?: boolean;
+    can_edit?: boolean;
+    can_view?: boolean;
+  }
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
-  // const userId = token ? JSON.parse(token)?.id : null;
-  const [permission, setPermission] = useState<any>(null);
+  const userId = token ? JSON.parse(token)?.id : null;
+  const [permission, setPermission] = useState<Permission>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -68,23 +75,23 @@ const TStudentAttendance = () => {
       notes: "",
     }));
 
+  const fetchStudent = async (userId: number) => {
+    try {
+      setLoading(true);
+      const { data } = await getAllStudentForClass(userId);
+      if (data.success) {
+        setStudents(data.students);
+        setAllStudentsList(data.students);
+      }
+    } catch (error: any) {
+      console.log(error.response);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Fetch students on mount
   useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        setLoading(true);
-        const { data } = await allStudents();
-        if (data.success) {
-          setStudents(data.students);
-          setAllStudentsList(data.students);
-        }
-      } catch (error: any) {
-        console.log(error.response);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudent();
+    fetchStudent(userId);
     fetchPermission(roleId);
   }, []);
 
