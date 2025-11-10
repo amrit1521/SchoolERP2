@@ -653,23 +653,34 @@ exports.allAssignDetails = async (req, res) => {
       SELECT 
           fg.feesGroup AS feesGroup,
           ft.name AS feesType,
-          
-           st.class_id,
-        st.section_id,
-        UPPER(c.class_name) AS class,
-        UPPER(se.section_name) AS section,
+          st.class_id,
+          st.section_id,
+          UPPER(c.class_name) AS class,
+          UPPER(se.section_name) AS section,
           st.gender,
           st.category,
-          fm.totalAmount AS amount
+          SUM(fm.totalAmount) AS amount
       FROM fees_assign fa
       JOIN students st ON fa.student_rollnum = st.rollnum
       JOIN fees_master fm ON fm.id = fa.fees_masterId
       JOIN fees_group fg ON fg.id = fm.feesGroup
       JOIN fees_type ft ON ft.id = fm.feesType
-       LEFT JOIN classes c ON st.class_id = c.id
-        LEFT JOIN sections se ON st.section_id = se.id
-      GROUP BY fg.feesGroup, ft.name, c.class_name, se.section_name
-      ORDER BY fg.feesGroup, ft.name, c.class_name, se.section_name
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections se ON st.section_id = se.id
+      GROUP BY 
+          fg.feesGroup,
+          ft.name,
+          st.class_id,
+          st.section_id,
+          c.class_name,
+          se.section_name,
+          st.gender,
+          st.category
+      ORDER BY 
+          fg.feesGroup,
+          ft.name,
+          c.class_name,
+          se.section_name
     `;
 
     const [rows] = await db.query(sql);
@@ -1014,6 +1025,81 @@ exports.getSpecStudentFeeReminder = async (req, res) => {
   }
 };
 
+exports.allAssignDetailsForSpecClass = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          t.class,
+          t.section,
+          t.teacher_id
+      FROM users
+      LEFT JOIN teachers as t ON t.user_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const teacher = userRows[0];
+    const studentClass = teacher.class;
+    const section = teacher.section;
+    const sql = `
+      SELECT 
+          fg.feesGroup AS feesGroup,
+          ft.name AS feesType,
+          st.class_id,
+          st.section_id,
+          CONCAT(u.firstname,u.lastname) as studentName,
+          UPPER(c.class_name) AS class,
+          UPPER(se.section_name) AS section,
+          st.gender,
+          st.category,
+          SUM(fm.totalAmount) AS amount
+      FROM fees_assign fa
+      JOIN students st ON fa.student_rollnum = st.rollnum
+      JOIN fees_master fm ON fm.id = fa.fees_masterId
+      JOIN fees_group fg ON fg.id = fm.feesGroup
+      JOIN fees_type ft ON ft.id = fm.feesType
+      LEFT JOIN users u ON st.stu_id = u.id
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections se ON st.section_id = se.id
+      WHERE st.class_id = ?      
+      AND st.section_id = ?    
+      GROUP BY 
+          fg.feesGroup,
+          ft.name,
+          st.class_id,
+          st.section_id,
+          c.class_name,
+          u.firstname,
+          u.lastname,
+          se.section_name,
+          st.gender,
+          st.category
+      ORDER BY 
+          fg.feesGroup,
+          ft.name,
+          c.class_name,
+          se.section_name
+    `;
+
+    const [rows] = await db.query(sql,[studentClass,section]);
+
+    return res.status(200).json({
+      message: "All assigned details",
+      success: true,
+      assignDetails: rows
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false
+    });
+  }
+};
 
 
 
