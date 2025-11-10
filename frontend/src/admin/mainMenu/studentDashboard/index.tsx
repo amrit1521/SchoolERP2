@@ -378,7 +378,7 @@ const StudentDasboard = () => {
         setStudentHomeWork(data.data);
       } else {
         console.warn("Failed to fetch homework data");
-        setLeaveData([]);
+        setStudentHomeWork([]);
       }
     } catch (error) {
       console.error("Error fetching homework data:", error);

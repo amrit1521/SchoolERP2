@@ -21,6 +21,7 @@ import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import { all_routes } from "../../../school_module/router/all_routes";
+import { parent_routes } from "../../../admin/router/parent_routes";
 const routes = all_routes;
 
 const Sidebar = () => {
@@ -29,7 +30,6 @@ const Sidebar = () => {
 
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
-
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
       console.log(token.role);
@@ -44,7 +44,7 @@ const Sidebar = () => {
         navigate(`${routes.studentDashboard}`);
       } else if (token.role == "6") {
         setCustomSide([...ParentSidebarData]);
-        navigate(`${routes.parentDashboard}`);
+        navigate(`${parent_routes.parentDashboard}`);
       } else {
         navigate(`${routes.login}`);
       }
