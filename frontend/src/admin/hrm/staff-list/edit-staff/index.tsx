@@ -510,7 +510,6 @@ const EditStaff = () => {
 
     const dlRegex = /^[A-Z]{2}\d{2}\s?\d{4}\s?\d{7}$/;
 
-
     // 🔹 Basic personal info
     if (!data.firstname.trim()) errors.firstname = "First name is required";
     if (!data.lastname.trim()) errors.lastname = "Last name is required";
@@ -555,7 +554,8 @@ const EditStaff = () => {
       if (!data.driveLic.trim()) {
         errors.driveLic = "Driving License is required for drivers.";
       } else if (!dlRegex.test(data.driveLic.trim().toUpperCase())) {
-        errors.driveLic = "Invalid Driving License format (e.g., UP32 20150012345)";
+        errors.driveLic =
+          "Invalid Driving License format (e.g., UP32 20150012345)";
       }
     }
 
@@ -811,7 +811,7 @@ const EditStaff = () => {
 
   const [departOptions, setDepartOption] = useState<OptionType[]>([]);
   const [desgiOptions, setDesgiOption] = useState<OptionType[]>([]);
-  const [roleOptions, setRoleOptions] = useState<OptionType[]>([])
+  const [roleOptions, setRoleOptions] = useState<OptionType[]>([]);
 
   const fetchDepartMentAndDesginationOption = async () => {
     try {
@@ -844,12 +844,10 @@ const EditStaff = () => {
     }
   };
 
-
   const fetchRoles = async () => {
     try {
       const { data } = await getAllRoles();
       if (data.success) {
-
         setRoleOptions(
           data.result.map((item: any) => ({
             value: item.id,
@@ -866,7 +864,7 @@ const EditStaff = () => {
     fetchRoutes();
     fetchDepartMentAndDesginationOption();
     fetchHostels();
-    fetchRoles()
+    fetchRoles();
   }, []);
 
   return (
@@ -1106,7 +1104,10 @@ const EditStaff = () => {
 
                           <div className="col-xxl col-xl-3 col-md-6">
                             <div className="mb-3">
-                              <label className="form-label">Driving License <span className="text-danger">*</span></label>
+                              <label className="form-label">
+                                Driving License{" "}
+                                <span className="text-danger">*</span>
+                              </label>
                               <input
                                 type="text"
                                 name="driveLic"
@@ -1114,7 +1115,14 @@ const EditStaff = () => {
                                 value={staffData.driveLic}
                                 onChange={handleInputChange}
                               />
-                              {errors.driveLic && <div className="text-danger" style={{ fontSize: '11px' }}>{errors.driveLic}</div>}
+                              {errors.driveLic && (
+                                <div
+                                  className="text-danger"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {errors.driveLic}
+                                </div>
+                              )}
                             </div>
                           </div>
 

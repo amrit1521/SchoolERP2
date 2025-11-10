@@ -2043,3 +2043,192 @@ exports.getTopThreeRankers = async (req, res) => {
     });
   }
 };
+
+
+exports.getExamResultSpeStudentsbyUserId = async (req, res) => {
+  const userId = req.params?.userId;
+  
+  if(!userId){
+    return res.status(404).json({
+    success: false,
+    message:"user not found."
+  });
+  }
+
+  const [userRows] = await db.query(
+    `SELECT
+        users.id,
+        s.class_id,
+        s.section_id,
+        s.rollnum
+    FROM users
+    LEFT JOIN students as s ON s.stu_id = users.id
+    WHERE users.id = ?`,
+    [userId]
+  );
+  if (!userRows || userRows.length === 0) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+  const student = userRows[0];
+  const rollnum = student.rollnum;
+
+  try {
+    const sql = `
+      SELECT 
+        er.max_mark,
+        er.min_mark,
+        er.mark_obtained,
+        er.grade,
+        er.result,
+        en.examName,
+        cs.name AS subject_name,
+        cs.code,
+        s.rollnum,
+        s.section_id,
+        s.class_id,
+        s.stu_img,
+        s.perm_address,
+        s.dob,
+        s.academicyear,
+        cl.class_name,
+        se.section_name,
+        s.admissionnum,
+        p.name,
+        p.phone_num,
+        u.firstname,
+        u.lastname
+      FROM exam_result er
+      LEFT JOIN examName en ON er.exam_name_id = en.id
+      LEFT JOIN class_subject cs ON er.subject_id = cs.id
+      LEFT JOIN students s ON er.roll_num = s.rollnum
+      JOIN classes cl ON cl.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      LEFT JOIN parents_info p ON p.user_id = s.stu_id AND relation="Father"
+      LEFT JOIN users u ON s.stu_id = u.id
+      WHERE er.roll_num = ?
+      ORDER BY en.examName, cs.name
+    `;
+
+    const [rows] = await db.query(sql, [rollnum]);
+
+    if (!rows.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No results found!" });
+    }
+
+    // Group data by student
+    const studentsMap = {};
+
+    rows.forEach((row) => {
+      const studentKey = row.rollnum;
+
+      if (!studentsMap[studentKey]) {
+        studentsMap[studentKey] = {
+          rollnum: row.rollnum,
+          firstname: row.firstname,
+          lastname: row.lastname,
+          class: row.class_name,
+          section: row.section_name,
+          fat_name: row.name,
+          phone_num: row.phone_num,
+          student_image: row.stu_img,
+          stud_admNo: row.admissionnum,
+          stud_dob: row.dob,
+          stud_address: row.perm_address,
+          stud_academicYear: row.academicyear,
+          exams: {},
+        };
+      }
+
+      const student = studentsMap[studentKey];
+
+      if (!student.exams[row.examName]) {
+        student.exams[row.examName] = {
+          exam_name: row.examName,
+          subjects: [],
+        };
+      }
+
+      student.exams[row.examName].subjects.push({
+        subject_name: `${row.subject_name}(${row.code})`,
+        max_mark: row.max_mark,
+        min_mark: row.min_mark,
+        mark_obtained: row.mark_obtained,
+        grade: row.grade,
+        result: row.result,
+      });
+    });
+
+    // Convert exams object to array for each student
+    const students = Object.values(studentsMap).map((student) => ({
+      ...student,
+      exams: Object.values(student.exams),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      message: "Results fetched successfully!",
+      data: students,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
+
+exports.examNameForStudentResultsbyUserId = async (req, res) => {
+  const userId = req.params?.userId;
+  
+  if(!userId){
+    return res.status(404).json({
+    success: false,
+    message:"user not found."
+  });
+  }
+
+  const [userRows] = await db.query(
+    `SELECT
+        users.id,
+        s.class_id,
+        s.section_id,
+        s.rollnum
+    FROM users
+    LEFT JOIN students as s ON s.stu_id = users.id
+    WHERE users.id = ?`,
+    [userId]
+  );
+  if (!userRows || userRows.length === 0) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+  const student = userRows[0];
+  const rollnum = student.rollnum;
+
+  try {
+    const sql = `
+    SELECT er.exam_name_id, er.roll_num, en.examName
+    FROM exam_result er
+    JOIN examName en ON er.exam_name_id = en.id
+    WHERE er.roll_num = ?
+    GROUP BY er.exam_name_id, er.roll_num;
+    `;
+    const [rows] = await db.query(sql, [rollnum]);
+    if (!rows.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No results found!" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Exam Name fetched successfully!",
+      data: rows,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};

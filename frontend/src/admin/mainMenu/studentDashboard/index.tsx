@@ -19,12 +19,14 @@ import {
   getSpecStudentAttendance,
   getSpecUpcommingEvents,
   getStuByToken,
+  getStudentClassTeachersList,
   getStudentFeeReminder,
   getStudentHomework,
   Imageurl,
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import CommonSelect from "../../../core/common/commonSelect";
+import { student_routes } from "../../router/student_routes";
 
 const StudentDasboard = () => {
   const routes = all_routes;
@@ -74,29 +76,23 @@ const StudentDasboard = () => {
       position: "bottom",
     },
   });
-  const [performance_chart] = useState<any>({
+  const [performanceChart, setPerformanceChart] = useState<any>({
     chart: {
       type: "area",
       height: 355,
     },
     series: [
       {
-        name: "Avg. Exam Score",
-        data: [75, 68, 65, 68, 75], // Sample data
+        name: "Exam Percentage",
+        data: [],
       },
-      {
-        name: "Avg. Attendance",
-        data: [85, 78, 75, 78, 85], // Sample data
-      },
+      // {
+      //   name: "Avg. Attendance",
+      //   data: [85, 78, 75, 78, 85],
+      // },
     ],
     xaxis: {
-      categories: [
-        "Quarter 1",
-        "Quarter 2",
-        "Half yearly",
-        "Model",
-        "Final Exam",
-      ],
+      categories: [],
     },
     tooltip: {
       y: {
@@ -107,7 +103,8 @@ const StudentDasboard = () => {
       shared: true,
       intersect: false,
       custom: function ({ series, dataPointIndex, w }: any) {
-        return `<div class="apexcharts-tooltip">${w.globals.labels[dataPointIndex]}<br>Exam Score: <span style="color: #1E90FF;">${series[0][dataPointIndex]}%</span><br>Attendance: <span style="color: #00BFFF;">${series[1][dataPointIndex]}%</span></div>`;
+        // Attendance: <span style="color: #00BFFF;">${series[1][dataPointIndex]}%</span>
+        return `<div class="apexcharts-tooltip">${w.globals.labels[dataPointIndex]}<br>Exam Score: <span style="color: #1E90FF;">${series[0][dataPointIndex]}%</span><br></div>`;
       },
     },
     dataLabels: {
@@ -294,6 +291,7 @@ const StudentDasboard = () => {
   const [examResult, setExamResult] = useState<any>(null);
   const [filteredExamResult, setFilteredExamResult] = useState<any>(null);
   const [feeReminder, setFeeReminder] = useState<any[]>([]);
+  const [studentClassTeachers, setStudentClassTeachers] = useState<any[]>([]);
   const fetchStudentAttendance = async (rollNo: number) => {
     try {
       const { data } = await getSpecStudentAttendance(rollNo);
@@ -318,7 +316,6 @@ const StudentDasboard = () => {
     try {
       const { data } = await getStuByToken(userId);
       if (data.success) {
-        console.log("student data: ", data?.student);
         setStudent(data.student);
       }
     } catch (error) {
@@ -395,6 +392,35 @@ const StudentDasboard = () => {
 
       if (data?.success) {
         const studentData = data.data[0];
+        const performanceResult = studentData?.exams.map((exam: any) => {
+          return {
+            exam_name: exam?.exam_name,
+            percentage:
+              (exam.subjects.reduce(
+                (prev: number, sub: any) => prev + sub.mark_obtained,
+                0
+              ) /
+                exam.subjects.reduce(
+                  (prev: number, sub: any) => prev + sub.max_mark,
+                  0
+                )) *
+              100,
+          };
+        });
+        setPerformanceChart((prevChart: any) => ({
+          ...prevChart,
+          series: [
+            {
+              name: "Exam Percentage",
+              data: [...performanceResult.map((item: any) => item.percentage)],
+            },
+          ],
+          xaxis: {
+            categories:
+              performanceResult?.map((item: any) => item.exam_name) || [],
+          },
+        }));
+
         setExamResult(studentData);
         const selectedLabel =
           selectedExamType?.label ||
@@ -454,7 +480,6 @@ const StudentDasboard = () => {
     try {
       const { data } = await getStudentFeeReminder(rollNum);
       if (data?.success) {
-        console.log("fee reminder: ", data.data);
         setFeeReminder(data.data);
       } else {
         console.warn("Failed to fetch fee reminder data");
@@ -462,6 +487,23 @@ const StudentDasboard = () => {
       }
     } catch (error) {
       console.error("Error fetching fee reminder data:", error);
+    }
+  };
+
+  const fetchStudentClassTeacherList = async (
+    classId: number,
+    sectionId: number
+  ) => {
+    try {
+      const { data } = await getStudentClassTeachersList(classId, sectionId);
+      if (data?.success) {
+        setStudentClassTeachers(data.data);
+      } else {
+        console.warn("Failed to fetch class teacher data");
+        setStudentClassTeachers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching class teacher data:", error);
     }
   };
 
@@ -503,14 +545,20 @@ const StudentDasboard = () => {
 
   useEffect(() => {
     if (student) {
-      fetchStudentAttendance(student?.rollnum);
-      fetchLeave(student?.rollnum);
-      fetchHomeWork(student?.class_id, student?.section_id);
-      fetchExamOptions(student?.class_id, student?.section_id);
-      fetchFeeReminder(student?.rollnum);
+      (async () => {
+        await fetchStudentAttendance(student?.rollnum);
+        await fetchLeave(student?.rollnum);
+        await fetchHomeWork(student?.class_id, student?.section_id);
+        await fetchExamOptions(student?.class_id, student?.section_id);
+        await fetchFeeReminder(student?.rollnum);
+        await fetchStudentClassTeacherList(
+          student?.class_id,
+          student?.section_id
+        );
+      })();
     }
   }, [student]);
-  console.log("selectedExam: ", filteredExamResult);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -794,7 +842,7 @@ const StudentDasboard = () => {
                   <div className="row flex-fill">
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentFees}/${student.rollnum}`}
+                        to={`${student_routes.feePayments}`}
                         className="card border-0 border-bottom border-primary border-2 flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -809,7 +857,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentResult}/${student.rollnum}`}
+                        to={`${student_routes.examResult}`}
                         className="card border-0 border-bottom border-success flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -824,7 +872,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentTimeTable}/${student.rollnum}`}
+                        to={`${student_routes.studentTimeTable}`}
                         className="card border-0 border-bottom border-warning flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -839,7 +887,7 @@ const StudentDasboard = () => {
                     </div>
                     <div className="col-sm-6 col-xl-3 d-flex">
                       <Link
-                        to={`${routes.studentLeaves}/${student.rollnum}`}
+                        to={`${student_routes.attendance}`}
                         className="card border-0 border-bottom border-dark border-2 flex-fill animate-card"
                       >
                         <div className="card-body">
@@ -882,9 +930,12 @@ const StudentDasboard = () => {
                     style={{ maxHeight: "200px", overflowY: "auto" }}
                   >
                     {upCommingEvents
-                      ? upCommingEvents.map((event: any) => {
+                      ? upCommingEvents.map((event: any, index: number) => {
                           return (
-                            <div className="p-3 pb-0 mb-3 border rounded">
+                            <div
+                              className="p-3 pb-0 mb-3 border rounded"
+                              key={index}
+                            >
                               <div className="d-flex align-items-center justify-content-between">
                                 <h5 className="mb-3">{event?.title}</h5>
                                 <span className="badge badge-soft-danger d-inline-flex align-items-center mb-3">
@@ -997,8 +1048,8 @@ const StudentDasboard = () => {
                   <div id="performance_chart" />
                   <ReactApexChart
                     id="performance_chart"
-                    options={performance_chart}
-                    series={performance_chart.series}
+                    options={performanceChart}
+                    series={performanceChart.series}
                     type="area"
                     height={355}
                   />
@@ -1116,10 +1167,7 @@ const StudentDasboard = () => {
                   <div className="owl-nav slide-nav text-end nav-control" />
                 </div>
                 <div className="card-body">
-                  <Slider
-                    {...profile}
-                    className="teachers-profile-slider owl-carousel"
-                  >
+                  <Slider {...profile} className="teachers-profile-slider">
                     <div className="card bg-light-100 mb-0">
                       <div className="card-body">
                         <div className="d-flex align-items-center mb-3">
@@ -1127,247 +1175,76 @@ const StudentDasboard = () => {
                             to={routes.teacherDetails}
                             className="avatar avatar-lg rounded me-2"
                           >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-06.jpg"
-                              alt="Teacher"
-                            />
+                            <img src="" alt="Teacher" />
                           </Link>
+
                           <div className="overflow-hidden">
                             <h6 className="mb-1 text-truncate">
-                              <Link to={routes.teacherDetails}>Aaron</Link>
-                            </h6>
-                            <p>Chemistry</p>
-                          </div>
-                        </div>
-                        <div className="row gx-2">
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-mail me-2" />
-                              Email
-                            </Link>
-                          </div>
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-message-chatbot me-2" />
-                              Chat
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card bg-light-100 mb-0">
-                      <div className="card-body">
-                        <div className="d-flex align-items-center mb-3">
-                          <Link
-                            to={routes.teacherDetails}
-                            className="avatar avatar-lg rounded me-2"
-                          >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-03.jpg"
-                              alt="Teacher"
-                            />
-                          </Link>
-                          <div>
-                            <h6 className="mb-1 text-truncate">
-                              <Link to={routes.teacherDetails}>Hellana</Link>
-                            </h6>
-                            <p>English</p>
-                          </div>
-                        </div>
-                        <div className="row gx-2">
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-mail me-2" />
-                              Email
-                            </Link>
-                          </div>
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-message-chatbot me-2" />
-                              Chat
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card bg-light-100 mb-0">
-                      <div className="card-body">
-                        <div className="d-flex align-items-center mb-3">
-                          <Link
-                            to={routes.teacherDetails}
-                            className="avatar avatar-lg rounded me-2"
-                          >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-05.jpg"
-                              alt="Teacher"
-                            />
-                          </Link>
-                          <div>
-                            <h6 className="mb-1 text-truncate">
-                              <Link to={routes.teacherDetails}>Morgan</Link>
-                            </h6>
-                            <p>Physics</p>
-                          </div>
-                        </div>
-                        <div className="row gx-2">
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-mail me-2" />
-                              Email
-                            </Link>
-                          </div>
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-message-chatbot me-2" />
-                              Chat
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card bg-light-100 mb-0">
-                      <div className="card-body">
-                        <div className="d-flex align-items-center mb-3">
-                          <Link
-                            to={routes.teacherDetails}
-                            className="avatar avatar-lg rounded me-2"
-                          >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-02.jpg"
-                              alt="Teacher"
-                            />
-                          </Link>
-                          <div>
-                            <h6 className="mb-1 text-truncate">
                               <Link to={routes.teacherDetails}>
-                                Daniel Josua
+                                Rohit Singh
                               </Link>
-                            </h6>
-                            <p>Spanish</p>
-                          </div>
-                        </div>
-                        <div className="row gx-2">
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-mail me-2" />
-                              Email
-                            </Link>
-                          </div>
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-message-chatbot me-2" />
-                              Chat
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card bg-light-100 mb-0">
-                      <div className="card-body">
-                        <div className="d-flex align-items-center mb-3">
-                          <Link
-                            to={routes.teacherDetails}
-                            className="avatar avatar-lg rounded me-2"
-                          >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-01.jpg"
-                              alt="Teacher"
-                            />
-                          </Link>
-                          <div>
-                            <h6 className="mb-1 text-truncate">
-                              <Link to={routes.teacherDetails}>Teresa</Link>
                             </h6>
                             <p>Maths</p>
                           </div>
                         </div>
+
                         <div className="row gx-2">
                           <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
+                            <button className="btn btn-outline-light bg-white w-100 fw-semibold fs-12">
                               <i className="ti ti-mail me-2" />
                               Email
-                            </Link>
+                            </button>
                           </div>
                           <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
+                            <button className="btn btn-outline-light bg-white w-100 fw-semibold fs-12">
                               <i className="ti ti-message-chatbot me-2" />
                               Chat
-                            </Link>
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="card bg-light-100 mb-0">
-                      <div className="card-body">
-                        <div className="d-flex align-items-center mb-3">
-                          <Link
-                            to={routes.teacherDetails}
-                            className="avatar avatar-lg rounded me-2"
-                          >
-                            <ImageWithBasePath
-                              src="assets/img/teachers/teacher-09.jpg"
-                              alt="Teacher"
-                            />
-                          </Link>
-                          <div>
-                            <h6 className="mb-1 text-truncate">
-                              <Link to={routes.teacherDetails}>Jacquelin</Link>
-                            </h6>
-                            <p>Biology</p>
-                          </div>
-                        </div>
-                        <div className="row gx-2">
-                          <div className="col-6">
+                    {studentClassTeachers?.map((clsTeacher: any, i: number) => (
+                      <div className="card bg-light-100 mb-0" key={i}>
+                        <div className="card-body">
+                          <div className="d-flex align-items-center mb-3">
                             <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
+                              to={routes.teacherDetails}
+                              className="avatar avatar-lg rounded me-2"
                             >
-                              <i className="ti ti-mail me-2" />
-                              Email
+                              <img
+                                src={`${Imageurl}/${clsTeacher?.img_src}`}
+                                alt="Teacher"
+                              />
                             </Link>
+
+                            <div className="overflow-hidden">
+                              <h6 className="mb-1 text-truncate">
+                                <Link to={routes.teacherDetails}>
+                                  {clsTeacher?.firstname} {clsTeacher?.lastname}
+                                </Link>
+                              </h6>
+                              <p>{clsTeacher?.subject}</p>
+                            </div>
                           </div>
-                          <div className="col-6">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light bg-white d-flex align-items-center justify-content-center fw-semibold fs-12"
-                            >
-                              <i className="ti ti-message-chatbot me-2" />
-                              Chat
-                            </Link>
+
+                          <div className="row gx-2">
+                            <div className="col-6">
+                              <button className="btn btn-outline-light bg-white w-100 fw-semibold fs-12">
+                                <i className="ti ti-mail me-2" />
+                                Email
+                              </button>
+                            </div>
+                            <div className="col-6">
+                              <button className="btn btn-outline-light bg-white w-100 fw-semibold fs-12">
+                                <i className="ti ti-message-chatbot me-2" />
+                                Chat
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </Slider>
                 </div>
               </div>
@@ -1470,13 +1347,18 @@ const StudentDasboard = () => {
                 <div className="card-body pb-0">
                   <div className="d-flex align-items-center flex-wrap">
                     {filteredExamResult
-                      ? filteredExamResult?.subjects?.map((sub: any) => {
-                          return (
-                            <span className="badge badge-soft-primary badge-md me-1 mb-3">
-                              {sub?.subject_name} : {sub?.mark_obtained}{" "}
-                            </span>
-                          );
-                        })
+                      ? filteredExamResult?.subjects?.map(
+                          (sub: any, i: number) => {
+                            return (
+                              <span
+                                className="badge badge-soft-primary badge-md me-1 mb-3"
+                                key={i}
+                              >
+                                {sub?.subject_name} : {sub?.mark_obtained}{" "}
+                              </span>
+                            );
+                          }
+                        )
                       : ""}
                   </div>
                   <ReactApexChart
@@ -1496,7 +1378,7 @@ const StudentDasboard = () => {
                 <div className="card-header d-flex align-items-center justify-content-between">
                   <h4 className="card-titile">Fees Reminder</h4>
                   <Link
-                    to={routes.feesAssign}
+                    to={student_routes.feeReminder}
                     className="link-primary fw-medium"
                   >
                     View All
@@ -1554,9 +1436,12 @@ const StudentDasboard = () => {
                 <div className="card-body">
                   <div className="notice-widget">
                     {allNotice
-                      ? allNotice.map((notice: any) => {
+                      ? allNotice.map((notice: any, i: number) => {
                           return (
-                            <div className="d-sm-flex align-items-center justify-content-between mb-4">
+                            <div
+                              className="d-sm-flex align-items-center justify-content-between mb-4"
+                              key={i}
+                            >
                               <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
                                 {/* <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
                                     <i className="ti ti-books fs-16" />
