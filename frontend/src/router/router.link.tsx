@@ -249,6 +249,47 @@ import StudentGrid from "../admin/peoples/students/student-grid/index.tsx";
 import Storage from "../admin/settings/otherSettings/storage.tsx";
 import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
 import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
+import { student_routes } from "../admin/router/student_routes.tsx";
+import HomeWork from "../student/homeWork.tsx";
+import MyAttendance from "../student/myAttendance.tsx";
+import StudentClassTimetable from "../student/studentTimeTable.tsx";
+import StudentProfileDetails from "../student/studentProfileDetails.tsx";
+import FeesPayments from "../student/feePayments.tsx";
+import MyLeaves from "../student/myLeave.tsx";
+import FeesReminder from "../student/feeReminder.tsx";
+import StudentClassSubject from "../student/studentClassSubject.tsx";
+import StudentExamResult from "../student/studentExamResult.tsx";
+import { teacher_routes } from "../admin/router/teacher_routes.tsx";
+import TStudentGrid from "../teacher/peoples/students/student-grid/index.tsx";
+import TStudentList from "../teacher/peoples/students/student-list/index.tsx";
+import TStudentPromotion from "../teacher/peoples/students/student-promotion/index.tsx";
+import TParentGrid from "../teacher/peoples/parent/parent-grid/index.tsx";
+import TParentList from "../teacher/peoples/parent/parent-list/index.tsx";
+import TGuardianGrid from "../teacher/peoples/guardian/guardian-grid/index.tsx";
+import TGuardianList from "../teacher/peoples/guardian/guardian-list/index.tsx";
+import TStudentDetails from "../teacher/peoples/students/student-details/studentDetails.tsx";
+import TClasses from "../teacher/academic/classes/index.tsx";
+import TScheduleClasses from "../teacher/academic/schedule-classes/index.tsx";
+import TClassRoutine from "../teacher/academic/class-routine/index.tsx";
+import TClassSubject from "../teacher/academic/class-subject/index.tsx";
+import TClassSyllabus from "../teacher/academic/class-syllabus/index.tsx";
+import TClassTimetable from "../teacher/academic/class-timetable/index.tsx";
+import TClassHomeWork from "../teacher/academic/class-home-work/index.tsx";
+import TExam from "../teacher/academic/examinations/exam/index.tsx";
+import TExamAttendance from "../teacher/academic/examinations/exam-attendance/index.tsx";
+import TExamResult from "../teacher/academic/examinations/exam-results/index.tsx";
+import TExamSchedule from "../teacher/academic/examinations/exam-schedule/index.tsx";
+import TGrade from "../teacher/academic/examinations/grade/index.tsx";
+import TFeesAssign from "../teacher/management/feescollection/feesAssign.tsx";
+import TIssueBook from "../teacher/management/library/issuesBook.tsx";
+import TReturnBook from "../teacher/management/library/returnBook.tsx";
+import TSportsList from "../teacher/management/sports/sportsList.tsx";
+import TPlayersList from "../teacher/management/sports/playersList.tsx";
+import TStudentAttendance from "../teacher/attendance/student-attendance.tsx";
+import THoliday from "../teacher/holidays/index.tsx";
+import TStudentLeaves from "../teacher/peoples/students/student-details/studentLeaves.tsx";
+import TStudentLibrary from "../teacher/peoples/students/student-details/studentLibrary.tsx";
+
 const routes = all_routes;
 
 export const publicRoutes = [
@@ -295,6 +336,201 @@ export const publicRoutes = [
     route: Route,
   },
 
+  {
+    path: student_routes.attendance,
+    element: <MyAttendance />,
+    route: Route,
+  },
+  {
+    path: student_routes.feePayments,
+    element: <FeesPayments />,
+    route: Route,
+  },
+  {
+    path: student_routes.examResult,
+    element: <StudentExamResult />,
+    route: Route,
+  },
+  {
+    path: student_routes.mySubject,
+    element: <StudentClassSubject />,
+    route: Route,
+  },
+  {
+    path: student_routes.feeReminder,
+    element: <FeesReminder />,
+    route: Route,
+  },
+  {
+    path: student_routes.studentTimeTable,
+    element: <StudentClassTimetable />,
+    route: Route,
+  },
+  {
+    path: student_routes.studentprofileDetail,
+    element: <StudentProfileDetails />,
+    route: Route,
+  },
+  {
+    path: student_routes.leaves,
+    element: <MyLeaves />,
+    route: Route,
+  },
+  {
+    path: student_routes.homeWork,
+    element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.studentGrid,
+    element: <TStudentGrid />,
+    route: Route,
+  },
+  {
+    path: `${teacher_routes.studentDetail}/:rollnum`,
+    element: <TStudentDetails />,
+    route: Route,
+  },
+  {
+    path: `${teacher_routes.studentLeaves}/:rollnum`,
+    element: <TStudentLeaves />,
+    route: Route,
+  },
+  {
+    path: `${teacher_routes.studentLibrary}/:rollnum`,
+    element: <TStudentLibrary />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.studentList,
+    element: <TStudentList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.studentPromotion,
+    element: <TStudentPromotion />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.parentGrid,
+    element: <TParentGrid />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.parentList,
+    element: <TParentList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.guardiansGrid,
+    element: <TGuardianGrid />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.guardiansList,
+    element: <TGuardianList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classes,
+    element: <TClasses />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.sheduleClasses,
+    element: <TScheduleClasses />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classRoutine,
+    element: <TClassRoutine />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classSubject,
+    element: <TClassSubject />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classSyllabus,
+    element: <TClassSyllabus />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classTimetable,
+    element: <TClassTimetable />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.classHomeWork,
+    element: <TClassHomeWork />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.exam,
+    element: <TExam />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.examAttendance,
+    element: <TExamAttendance />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.examResult,
+    element: <TExamResult />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.examSchedule,
+    element: <TExamSchedule />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.grade,
+    element: <TGrade />,
+    route: Route,
+  },
+  // {
+  //   path: teacher_routes.AcademicReason,
+  //   element: <TAcademicReason />,
+  //   route: Route,
+  // },
+  {
+    path: teacher_routes.feesAssign,
+    element: <TFeesAssign />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.libraryIssueBook,
+    element: <TIssueBook />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.libraryReturn,
+    element: <TReturnBook />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.sportsList,
+    element: <TSportsList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.playerList,
+    element: <TPlayersList />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.studentAttendance,
+    element: <TStudentAttendance />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.holidays,
+    element: <THoliday />,
+    route: Route,
+  },
   {
     path: routes.connectedApps,
     element: <ConnectedApps />,
@@ -716,7 +952,6 @@ export const publicRoutes = [
     route: Route,
   },
 
-
   {
     path: routes.placeholder,
     element: <Placeholder />,
@@ -828,13 +1063,11 @@ export const publicRoutes = [
     path: routes.classRoom,
     element: <ClassRoom />,
     route: Route,
-
   },
   {
     path: routes.classRoutine,
     element: <ClassRoutine />,
     route: Route,
-
   },
   {
     path: routes.sheduleClasses,
@@ -851,7 +1084,6 @@ export const publicRoutes = [
     path: routes.examSchedule,
     element: <ExamSchedule />,
     route: Route,
-
   },
   {
     path: routes.grade,
@@ -975,7 +1207,7 @@ export const publicRoutes = [
     route: Route,
   },
   {
-    path:`${routes.staffDetails}/:staffid`,
+    path: `${routes.staffDetails}/:staffid`,
     element: <StaffDetails />,
     route: Route,
   },
@@ -1135,7 +1367,6 @@ export const publicRoutes = [
     element: <TeacherAttendance />,
     route: Route,
   },
-
 
   {
     path: routes.staffAttendance,
@@ -1590,10 +1821,10 @@ export const authRoutes = [
   //     path: routes.lockScreen,
   //     element: <LockScreen />,
   //   },
-    {
-      path: routes.resetPasswordSuccess,
-      element: <ResetPasswordSuccess />,
-    },
+  {
+    path: routes.resetPasswordSuccess,
+    element: <ResetPasswordSuccess />,
+  },
   //   {
   //     path: routes.resetPasswordSuccess2,
   //     element: <ResetPasswordSuccess2 />,
