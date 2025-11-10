@@ -1,6 +1,7 @@
 import { all_routes } from "../../../router/all_routes";
 import { student_routes } from "../../../admin/router/student_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { parent_routes } from "../../../admin/router/parent_routes";
 const routes = all_routes;
 
 export const SidebarData = [
@@ -1667,55 +1668,9 @@ export const ParentSidebarData = [
       {
         label: "Parent Dashboard",
         icon: "ti ti-layout-dashboard",
-        submenu: true,
+        link: parent_routes.parentDashboard,
+        submenu: false,
         showSubRoute: false,
-
-        submenuItems: [
-          { label: "Parent Dashboard", link: routes.parentDashboard },
-        ],
-      },
-      {
-        label: "Application",
-        icon: "ti ti-layout-list",
-        submenu: true,
-        showSubRoute: false,
-        submenuItems: [
-          {
-            label: "Chat",
-            link: routes.chat,
-            showSubRoute: false,
-          },
-          {
-            label: "Call",
-            link: routes.audioCall,
-            showSubRoute: false,
-          },
-          {
-            label: "Calendar",
-            link: routes.calendar,
-            showSubRoute: false,
-          },
-          {
-            label: "Email",
-            link: routes.email,
-            showSubRoute: false,
-          },
-          {
-            label: "To Do",
-            link: routes.todo,
-            showSubRoute: false,
-          },
-          {
-            label: "Notes",
-            link: routes.notes,
-            showSubRoute: false,
-          },
-          {
-            label: "File Manager",
-            link: routes.fileManager,
-            showSubRoute: false,
-          },
-        ],
       },
     ],
   },
@@ -1728,19 +1683,19 @@ export const ParentSidebarData = [
 
     submenuItems: [
       {
-        label: "Students",
+        label: "Children",
         icon: "ti ti-school",
         submenu: true,
         showSubRoute: false,
 
         submenuItems: [
           {
-            label: "All Students",
-            link: routes.studentGrid,
+            label: "All Child",
+            link: parent_routes.childGrid,
             subLink1: routes.addStudent,
             subLink2: routes.editStudent,
           },
-          { label: "Students List", link: routes.studentList },
+          { label: "Child List", link: parent_routes.childList },
         ],
       },
     ],
@@ -1759,6 +1714,49 @@ export const ParentSidebarData = [
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
+      },
+    ],
+  },
+  {
+    label: "Application",
+    icon: "ti ti-layout-list",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "Chat",
+        link: routes.chat,
+        showSubRoute: false,
+      },
+      {
+        label: "Call",
+        link: routes.audioCall,
+        showSubRoute: false,
+      },
+      {
+        label: "Calendar",
+        link: routes.calendar,
+        showSubRoute: false,
+      },
+      {
+        label: "Email",
+        link: routes.email,
+        showSubRoute: false,
+      },
+      {
+        label: "To Do",
+        link: routes.todo,
+        showSubRoute: false,
+      },
+      {
+        label: "Notes",
+        link: routes.notes,
+        showSubRoute: false,
+      },
+      {
+        label: "File Manager",
+        link: routes.fileManager,
+        showSubRoute: false,
       },
     ],
   },

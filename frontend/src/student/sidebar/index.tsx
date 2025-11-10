@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { SidebarData, TeacherSidebarData, StudentSidebarData ,ParentSidebarData } from "../../core/data/json/sidebarData";
+import {
+  SidebarData,
+  TeacherSidebarData,
+  StudentSidebarData,
+  ParentSidebarData,
+} from "../../core/data/json/sidebarData";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import "../../../style/icon/tabler-icons/webfont/tabler-icons.css";
 import { setExpandMenu } from "../../core/data/redux/sidebarSlice";
@@ -18,9 +23,8 @@ import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import { all_routes } from "../../router/all_routes";
 const routes = all_routes;
 
-
 const Sidebar = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [customSide, setCustomSide] = useState<any[]>([]);
 
   useEffect(() => {
@@ -31,24 +35,21 @@ const Sidebar = () => {
 
       if (token.role == "1") {
         setCustomSide([...SidebarData]);
-         navigate(`${routes.adminDashboard}`)
+        navigate(`${routes.adminDashboard}`);
       } else if (token.role == "2") {
         setCustomSide([...TeacherSidebarData]);
-         navigate(`${routes.teacherDashboard}`)
+        navigate(`${routes.teacherDashboard}`);
       } else if (token.role == "3") {
         setCustomSide([...StudentSidebarData]);
-         navigate(`${routes.studentDashboard}`)
-      } else if (token.role == '4') {
+        navigate(`${routes.studentDashboard}`);
+      } else if (token.role == "6") {
         setCustomSide([...ParentSidebarData]);
-         navigate(`${routes.parentDashboard}`)
-      }
-      else {
-        navigate(`${routes.login}`)
+        navigate(`${routes.parentDashboard}`);
+      } else {
+        navigate(`${routes.login}`);
       }
     }
   }, []);
-
-
 
   const Location = useLocation();
 
@@ -112,8 +113,6 @@ const Sidebar = () => {
       "/layout-default",
     ];
 
-
-
     const isCurrentLayoutPage = layoutPages.some((path) =>
       location.pathname.includes(path)
     );
@@ -131,9 +130,9 @@ const Sidebar = () => {
     // Select all 'submenu' elements
     const submenus = document.querySelectorAll(".submenu");
 
-    const mainWrapper = document.querySelector('.main-wrapper');
+    const mainWrapper = document.querySelector(".main-wrapper");
     if (mainWrapper) {
-      mainWrapper.classList.remove('slide-nav');
+      mainWrapper.classList.remove("slide-nav");
     }
     // Loop through each 'submenu'
     submenus.forEach((submenu) => {
@@ -188,149 +187,158 @@ const Sidebar = () => {
               </ul>
 
               <ul>
-                {customSide && customSide?.map((mainLabel: any, index: any) => (
-                  <li key={index}>
-                    <h6 className="submenu-hdr">
-                      <span>{mainLabel?.label}</span>
-                    </h6>
-                    <ul>
-                      {mainLabel?.submenuItems?.map((title: any) => {
-                        // Flatten all nested links for active state matching
-                        const flatLinks: string[] = [
-                          title?.link,
-                          title?.subLink1,
-                          title?.subLink2,
-                          title?.subLink3,
-                          title?.subLink4,
-                          title?.subLink5,
-                          title?.subLink6,
-                          title?.subLink7,
-                          ...(title?.submenuItems?.flatMap((link: any) => {
-                            return [
-                              link?.link,
-                              ...(link?.submenuItems?.map(
-                                (item: any) => item?.link
-                              ) || []),
-                            ];
-                          }) || []),
-                        ].filter(Boolean); // remove undefined/null
+                {customSide &&
+                  customSide?.map((mainLabel: any, index: any) => (
+                    <li key={index}>
+                      <h6 className="submenu-hdr">
+                        <span>{mainLabel?.label}</span>
+                      </h6>
+                      <ul>
+                        {mainLabel?.submenuItems?.map((title: any) => {
+                          // Flatten all nested links for active state matching
+                          const flatLinks: string[] = [
+                            title?.link,
+                            title?.subLink1,
+                            title?.subLink2,
+                            title?.subLink3,
+                            title?.subLink4,
+                            title?.subLink5,
+                            title?.subLink6,
+                            title?.subLink7,
+                            ...(title?.submenuItems?.flatMap((link: any) => {
+                              return [
+                                link?.link,
+                                ...(link?.submenuItems?.map(
+                                  (item: any) => item?.link
+                                ) || []),
+                              ];
+                            }) || []),
+                          ].filter(Boolean); // remove undefined/null
 
-                        const isActive = flatLinks.includes(Location.pathname);
+                          const isActive = flatLinks.includes(
+                            Location.pathname
+                          );
 
-                        return (
-                          <li className="submenu" key={title.label}>
-                            <Link
-                              to={title?.submenu ? "#" : title?.link}
-                              onClick={() =>
-                                handleClick(
-                                  title?.label,
-                                  title?.themeSetting,
-                                  getLayoutClass(title?.label)
-                                )
-                              }
-                              className={`${subOpen === title?.label ? "subdrop" : ""
+                          return (
+                            <li className="submenu" key={title.label}>
+                              <Link
+                                to={title?.submenu ? "#" : title?.link}
+                                onClick={() =>
+                                  handleClick(
+                                    title?.label,
+                                    title?.themeSetting,
+                                    getLayoutClass(title?.label)
+                                  )
+                                }
+                                className={`${
+                                  subOpen === title?.label ? "subdrop" : ""
                                 } ${isActive ? "active" : ""}`}
-                            >
-                              <i className={title.icon}></i>
-                              <span>{title?.label}</span>
-                              {title?.version && (
-                                <span className="badge badge-primary badge-xs text-white fs-10 ms-auto">
-                                  {title?.version}
-                                </span>
-                              )}
-                              <span
-                                className={title?.submenu ? "menu-arrow" : ""}
-                              />
-                            </Link>
+                              >
+                                <i className={title.icon}></i>
+                                <span>{title?.label}</span>
+                                {title?.version && (
+                                  <span className="badge badge-primary badge-xs text-white fs-10 ms-auto">
+                                    {title?.version}
+                                  </span>
+                                )}
+                                <span
+                                  className={title?.submenu ? "menu-arrow" : ""}
+                                />
+                              </Link>
 
-                            {/* Submenu Level 1 */}
-                            {title?.submenu !== false &&
-                              subOpen === title?.label && (
-                                <ul style={{ display: "block" }}>
-                                  {title?.submenuItems?.map((item: any) => {
-                                    const subLinks: string[] = [
-                                      item?.link,
-                                      item?.subLink1,
-                                      item?.subLink2,
-                                      item?.subLink3,
-                                      item?.subLink4,
-                                      item?.subLink5,
-                                      item?.subLink6,
-                                      ...(item?.submenuItems?.map(
-                                        (sub: any) => sub?.link
-                                      ) || []),
-                                    ].filter(Boolean);
+                              {/* Submenu Level 1 */}
+                              {title?.submenu !== false &&
+                                subOpen === title?.label && (
+                                  <ul style={{ display: "block" }}>
+                                    {title?.submenuItems?.map((item: any) => {
+                                      const subLinks: string[] = [
+                                        item?.link,
+                                        item?.subLink1,
+                                        item?.subLink2,
+                                        item?.subLink3,
+                                        item?.subLink4,
+                                        item?.subLink5,
+                                        item?.subLink6,
+                                        ...(item?.submenuItems?.map(
+                                          (sub: any) => sub?.link
+                                        ) || []),
+                                      ].filter(Boolean);
 
-                                    const isSubActive = subLinks.includes(
-                                      Location.pathname
-                                    );
+                                      const isSubActive = subLinks.includes(
+                                        Location.pathname
+                                      );
 
-                                    return (
-                                      <li
-                                        key={item.label}
-                                        className={
-                                          item?.submenuItems
-                                            ? "submenu submenu-two"
-                                            : ""
-                                        }
-                                      >
-                                        <Link
-                                          to={item?.link}
-                                          className={`${isSubActive ? "active" : ""
-                                            } ${subsidebar === item?.label
-                                              ? "subdrop"
+                                      return (
+                                        <li
+                                          key={item.label}
+                                          className={
+                                            item?.submenuItems
+                                              ? "submenu submenu-two"
                                               : ""
-                                            }`}
-                                          onClick={() =>
-                                            toggleSubsidebar(item?.label)
                                           }
                                         >
-                                          {item?.label}
-                                          <span
-                                            className={
-                                              item?.submenu ? "menu-arrow" : ""
+                                          <Link
+                                            to={item?.link}
+                                            className={`${
+                                              isSubActive ? "active" : ""
+                                            } ${
+                                              subsidebar === item?.label
+                                                ? "subdrop"
+                                                : ""
+                                            }`}
+                                            onClick={() =>
+                                              toggleSubsidebar(item?.label)
                                             }
-                                          />
-                                        </Link>
+                                          >
+                                            {item?.label}
+                                            <span
+                                              className={
+                                                item?.submenu
+                                                  ? "menu-arrow"
+                                                  : ""
+                                              }
+                                            />
+                                          </Link>
 
-                                        {/* Submenu Level 2 */}
-                                        {item?.submenuItems &&
-                                          subsidebar === item?.label && (
-                                            <ul style={{ display: "block" }}>
-                                              {item?.submenuItems?.map(
-                                                (subItem: any) => {
-                                                  const isDeepActive =
-                                                    subItem?.link ===
-                                                    Location.pathname;
+                                          {/* Submenu Level 2 */}
+                                          {item?.submenuItems &&
+                                            subsidebar === item?.label && (
+                                              <ul style={{ display: "block" }}>
+                                                {item?.submenuItems?.map(
+                                                  (subItem: any) => {
+                                                    const isDeepActive =
+                                                      subItem?.link ===
+                                                      Location.pathname;
 
-                                                  return (
-                                                    <li key={subItem.label}>
-                                                      <Link
-                                                        to={subItem?.link}
-                                                        className={`submenu-two ${isDeepActive
-                                                          ? "active"
-                                                          : ""
+                                                    return (
+                                                      <li key={subItem.label}>
+                                                        <Link
+                                                          to={subItem?.link}
+                                                          className={`submenu-two ${
+                                                            isDeepActive
+                                                              ? "active"
+                                                              : ""
                                                           }`}
-                                                      >
-                                                        {subItem?.label}
-                                                      </Link>
-                                                    </li>
-                                                  );
-                                                }
-                                              )}
-                                            </ul>
-                                          )}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </li>
-                ))}
+                                                        >
+                                                          {subItem?.label}
+                                                        </Link>
+                                                      </li>
+                                                    );
+                                                  }
+                                                )}
+                                              </ul>
+                                            )}
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </li>
+                  ))}
               </ul>
             </div>
           </div>

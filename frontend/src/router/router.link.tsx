@@ -289,6 +289,11 @@ import TStudentAttendance from "../teacher/attendance/student-attendance.tsx";
 import THoliday from "../teacher/holidays/index.tsx";
 import TStudentLeaves from "../teacher/peoples/students/student-details/studentLeaves.tsx";
 import TStudentLibrary from "../teacher/peoples/students/student-details/studentLibrary.tsx";
+import PParentDashboard from "../parent/parentDashboard/index.tsx";
+import { parent_routes } from "../admin/router/parent_routes.tsx";
+import ChildGrid from "../parent/students/student-grid/index.tsx";
+import ChildList from "../parent/students/student-list/index.tsx";
+import CStudentDetails from "../parent/students/student-details/studentDetails.tsx";
 
 const routes = all_routes;
 
@@ -529,6 +534,27 @@ export const publicRoutes = [
   {
     path: teacher_routes.holidays,
     element: <THoliday />,
+    route: Route,
+  },
+  //parent dashboard routes:
+  {
+    path: parent_routes.parentDashboard,
+    element: <PParentDashboard />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childGrid,
+    element: <ChildGrid />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childList,
+    element: <ChildList />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childDetails}/:rollnum`,
+    element: <CStudentDetails />,
     route: Route,
   },
   {
