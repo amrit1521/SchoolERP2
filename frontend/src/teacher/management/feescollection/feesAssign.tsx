@@ -13,12 +13,10 @@ import Table from "../../../core/common/dataTable/index";
 import AssignModal from "./assignModal";
 // import { assignFeesData } from "../../../core/data/json/assignFeesData";
 import TooltipOption from "../../../core/common/tooltipOption";
-import {
-  getAllFeeAssignDetails,
-  getAllRolePermissions,
-} from "../../../service/api";
+import { getAllRolePermissions } from "../../../service/api";
 import { toast } from "react-toastify";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { getAllFeesAssignDetailsForSpecClass } from "../../../service/teacherDashboardApi";
 // import FeesGroup from "./feesGroup";
 //feesAssignToStudents
 const TFeesAssign = () => {
@@ -41,6 +39,7 @@ const TFeesAssign = () => {
     gender: string;
     category: string;
     amount: string;
+    studentName: string;
   }
 
   const [feesAssignDetails, setFeesAssignDetails] = useState<AssignDetails[]>([
@@ -52,12 +51,14 @@ const TFeesAssign = () => {
       gender: "",
       category: "",
       amount: "",
+      studentName: "",
     },
   ]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const tokens = localStorage.getItem("token");
   const roleId = tokens ? JSON.parse(tokens)?.role : null;
+  const userId = tokens ? JSON.parse(tokens)?.id : null;
   type Permission = {
     can_create?: boolean;
     can_delete?: boolean;
@@ -83,10 +84,10 @@ const TFeesAssign = () => {
     }
   };
 
-  const fetchAllFeeAssignDet = async () => {
+  const fetchAllFeeAssignDet = async (userId: number) => {
     setLoading(true);
     try {
-      const { data } = await getAllFeeAssignDetails();
+      const { data } = await getAllFeesAssignDetailsForSpecClass(userId);
 
       setFeesAssignDetails(data.assignDetails);
     } catch (error: any) {
@@ -99,7 +100,7 @@ const TFeesAssign = () => {
 
   useEffect(() => {
     fetchPermission(roleId);
-    fetchAllFeeAssignDet();
+    fetchAllFeeAssignDet(userId);
   }, []);
 
   const tableData = feesAssignDetails.map((item, index) => ({
@@ -112,6 +113,7 @@ const TFeesAssign = () => {
     amount: item.amount,
     gender: item.gender,
     category: item.category,
+    studentName: item.studentName,
   }));
 
   const columns: any[] = [
@@ -121,12 +123,17 @@ const TFeesAssign = () => {
       sorter: (a: TableData, b: TableData) => a.sNo.length - b.sNo.length,
     },
     {
+      title: "Name",
+      dataIndex: "studentName",
+      sorter: (a: TableData, b: TableData) =>
+        a.studentName.length - b.studentName.length,
+    },
+    {
       title: "Fees Group",
       dataIndex: "feesGroup",
       sorter: (a: TableData, b: TableData) =>
         a.feesGroup.length - b.feesGroup.length,
     },
-
     {
       title: "Fees Type",
       dataIndex: "feesType",
@@ -219,7 +226,7 @@ const TFeesAssign = () => {
           {/* Page Header */}
           <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
             <div className="my-auto mb-2">
-              <h3 className="page-title mb-1">Fees Collection</h3>
+              <h3 className="page-title mb-1">Fees Assign</h3>
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
@@ -228,7 +235,7 @@ const TFeesAssign = () => {
                     </Link>
                   </li>
                   <li className="breadcrumb-item">
-                    <Link to="#">Fees Collection</Link>
+                    <Link to="#">Fees Assigned</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Assign Fees
@@ -256,7 +263,7 @@ const TFeesAssign = () => {
           {/* Students List */}
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
-              <h4 className="mb-3">Fees Collection</h4>
+              <h4 className="mb-3">Fees Assign</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
                   <PredefinedDateRanges />

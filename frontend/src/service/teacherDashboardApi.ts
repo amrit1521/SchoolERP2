@@ -8,3 +8,5 @@ export const getAllTTeacherHomeWork = (userId: number) =>
   api.get(`/homework/getAllteacher-homework/${userId}`);
 export const getAllIssueBookForSpecClass = (userId: number) =>
   api.get(`/library/getallissuebookforspecclass/${userId}`);
+export const getAllFeesAssignDetailsForSpecClass = (userId: number) =>
+  api.get(`/fees/allassigndetailsforspecclass/${userId}`);
