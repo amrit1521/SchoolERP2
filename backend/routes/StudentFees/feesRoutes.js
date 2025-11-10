@@ -41,6 +41,7 @@ router.get('/feesreport' , feesController.feesReport)
 
 router.get('/getfeesdetail-specstudent/:userId' , feesController.getFeesDeatilsOfSpecStudent)
 router.get('/getspecstudentfeereminder/:userId',feesController.getSpecStudentFeeReminder);
+router.get('/allassigndetailsforspecclass/:userId' , feesController.allAssignDetailsForSpecClass)
 
 
 module.exports =router;
