@@ -29,6 +29,7 @@ import TagInput from "../../../../core/common/Taginput";
 import {
   addStundent,
   deleteFile,
+  fatherOption,
   getAllSectionForAClass,
   getAllTransportRoutes,
   getAssignedVehicleForARoute,
@@ -91,6 +92,7 @@ export interface StudentData {
   condition: string;
   allergies: string[];
   medications: string[];
+  parent_id: number | null;
 }
 
 const fieldLabels: Record<keyof StudentData, string> = {
@@ -145,6 +147,7 @@ const fieldLabels: Record<keyof StudentData, string> = {
   condition: "Medical Condition",
   allergies: "Allergies",
   medications: "Medications",
+  parent_id: "Parent Id"
 };
 
 const AddStudent = () => {
@@ -225,6 +228,7 @@ const AddStudent = () => {
     condition: "good",
     allergies: [],
     medications: [],
+    parent_id: null
   });
 
   const [stuImg, setStuImg] = useState<File | null>(null);
@@ -254,6 +258,10 @@ const AddStudent = () => {
   const [vehicalOption, setVehicalOption] = useState<any[]>([]);
   const [allhostels, setAllHostels] = useState<any[]>([]);
   const [allRoomsOptions, setAllRoomsOptions] = useState<any[]>([]);
+  const [fathers, setFathers] = useState<{ value: number, label: string }[]>([])
+  const [itHasSibling, setItHasSibling] = useState(false);
+
+
   const fetchRoutes = async () => {
     try {
       const { data } = await getAllTransportRoutes();
@@ -506,6 +514,8 @@ const AddStudent = () => {
     Partial<Record<keyof StudentData, string>>
   >({});
 
+
+
   const validateStudentForm = (data: StudentData) => {
     const newErrors: Partial<Record<keyof StudentData, string>> = {};
 
@@ -527,14 +537,9 @@ const AddStudent = () => {
       "email",
       "caste",
       "motherton",
-      "fat_name",
-      "fat_email",
-      "fat_phone",
-      "mot_name",
-      "mot_email",
-      "mot_phone",
       "curr_address",
       "perm_address",
+
     ];
 
     requiredFields.forEach((field) => {
@@ -544,52 +549,92 @@ const AddStudent = () => {
     });
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (data.email && !emailRegex.test(data.email)) {
-      newErrors.email = "Invalid student email";
-    }
-    if (data.fat_email && !emailRegex.test(data.fat_email)) {
-      newErrors.fat_email = "Invalid father email";
-    }
-    if (data.mot_email && !emailRegex.test(data.mot_email)) {
-      newErrors.mot_email = "Invalid mother email";
+    const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
+    const sanitizePhone = (phone: string) => phone.replace(/[\s\-]/g, "").trim();
+
+    if (itHasSibling) {
+      if (!data.parent_id || Number(data.parent_id) === 0) {
+        newErrors.parent_id = "Parent ID is required!";
+      }
+
+    } else {
+
+      if (!data.fat_name?.trim()) {
+        newErrors.fat_name = "Father Name is Required!";
+      } else if (data.fat_name.length < 3) {
+        newErrors.fat_name = "Father Name must be at least 3 characters long!";
+      }
+
+      if (!data.fat_email || !emailRegex.test(data.fat_email)) {
+        newErrors.fat_email = "Invalid father email!";
+      }
+
+      if (!data.fat_phone?.trim()) {
+        newErrors.fat_phone = "Father contact number is required!";
+      } else {
+        const cleanedPhone = sanitizePhone(data.fat_phone);
+        if (!phoneRegex.test(cleanedPhone)) {
+          newErrors.fat_phone = "Invalid father contact number!";
+        } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+          newErrors.fat_phone = "Father contact number length is invalid!";
+        }
+      }
+
+      // === Mother Validation ===
+      if (!data.mot_name?.trim()) {
+        newErrors.mot_name = "Mother Name is Required!";
+      } else if (data.mot_name.length < 3) {
+        newErrors.mot_name = "Mother Name must be at least 3 characters long!";
+      }
+
+      if (!data.mot_email || !emailRegex.test(data.mot_email)) {
+        newErrors.mot_email = "Invalid mother email!";
+      }
+
+      if (!data.mot_phone?.trim()) {
+        newErrors.mot_phone = "Mother contact number is required!";
+      } else {
+        const cleanedPhone = sanitizePhone(data.mot_phone);
+        if (!phoneRegex.test(cleanedPhone)) {
+          newErrors.mot_phone = "Invalid mother contact number!";
+        } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+          newErrors.mot_phone = "Mother contact number length is invalid!";
+        }
+      }
     }
 
-    const phoneRegex = /^\d{10}$/;
-
-    if (!data.primarycont) {
-      newErrors.primarycont = "Contact number is required !";
-    } else if (!phoneRegex.test(data.primarycont)) {
-      newErrors.primarycont = "Invalid student contact number !";
-    }
-    // if (data.primarycont && !phoneRegex.test(data.primarycont)) {
-    //   newErrors.primarycont = "Invalid student contact number";
-    // }
-    if (data.fat_phone && !phoneRegex.test(data.fat_phone)) {
-      newErrors.fat_phone = "Invalid father phone number";
-    }
-    if (data.mot_phone && !phoneRegex.test(data.mot_phone)) {
-      newErrors.mot_phone = "Invalid mother phone number";
+    // === Student Email Validation ===
+    if (!emailRegex.test(data.email)) {
+      newErrors.email = "Invalid student email!";
     }
 
+    // === Primary Contact Validation ===
+    if (!data.primarycont?.trim()) {
+      newErrors.primarycont = "Primary contact number is required!";
+    } else {
+      const cleanedPhone = sanitizePhone(data.primarycont);
+      if (!phoneRegex.test(cleanedPhone)) {
+        newErrors.primarycont = "Invalid student contact number!";
+      } else if (cleanedPhone.length < 10 || cleanedPhone.length > 13) {
+        newErrors.primarycont = "Contact number length is invalid!";
+      }
+    }
+
+    // === Image Validations ===
     if (!stuimgpath) {
-      toast.error("Student image is required");
+      toast.error("Student image is required!");
     }
-    if (!fatimgpath) {
-      toast.error("Father image is required");
-    }
-    if (!motimgpath) {
-      toast.error("Mother image is required");
+
+    if (!itHasSibling) {
+      if (!fatimgpath) toast.error("Father image is required!");
+      if (!motimgpath) toast.error("Mother image is required!");
     }
 
     setErrors(newErrors);
 
-    // Object.entries(newErrors).forEach(([_, errorMsg]) => {
-    //   toast.error(`${errorMsg}`);
-
-    // });
-
     return Object.keys(newErrors).length === 0;
   };
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -607,12 +652,19 @@ const AddStudent = () => {
         }
       });
 
-      if (stuImg && fatImg && motImg) {
-        formData.append("stuimg", stuimgpath);
-        formData.append("fatimg", fatimgpath);
+      if(!itHasSibling){
+        if(fatImg&&motImg){
+          formData.append("fatimg", fatimgpath);
         formData.append("motimg", motimgpath);
+        }else{
+          toast.error('Father or Image is required !')
+        }
+      }
+
+      if (stuImg) {
+        formData.append("stuimg", stuimgpath);
       } else {
-        toast.error("Required all Images !");
+        toast.error("Required Student Image !");
         return;
       }
 
@@ -689,6 +741,7 @@ const AddStudent = () => {
           condition: "good",
           allergies: [],
           medications: [],
+          parent_id: null
         });
         setStuImg(null);
         setFatImg(null);
@@ -770,6 +823,7 @@ const AddStudent = () => {
       condition: "good",
       allergies: [],
       medications: [],
+      parent_id: null
     });
     setStuImg(null);
     setFatImg(null);
@@ -834,10 +888,26 @@ const AddStudent = () => {
     }
   };
 
+  const fetchFather = async () => {
+    try {
+      const { data } = await fatherOption();
+      if (data.success) {
+        const formatted = data.data.map((f: any) => ({
+          value: f.parent_id,
+          label: f.name,
+        }));
+        setFathers([{ value: null, label: "Select" }, ...formatted]);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     fetchRoutes();
     fetchClass();
     fetchHostels();
+    fetchFather()
   }, []);
 
   useEffect(() => {
@@ -998,9 +1068,9 @@ const AddStudent = () => {
                               value={
                                 studentData.admissiondate
                                   ? dayjs(
-                                      studentData.admissiondate,
-                                      "DD MMM YYYY"
-                                    )
+                                    studentData.admissiondate,
+                                    "DD MMM YYYY"
+                                  )
                                   : null
                               }
                               placeholder="Select Date"
@@ -1159,9 +1229,8 @@ const AddStudent = () => {
                           <label className="form-label">Section</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select text-capitalize ${
-                              errors.section ? "is-invalid" : ""
-                            }`}
+                            className={`select text-capitalize ${errors.section ? "is-invalid" : ""
+                              }`}
                             options={sectionOptions}
                             value={studentData.section}
                             onChange={(option) =>
@@ -1188,9 +1257,8 @@ const AddStudent = () => {
                           <label className="form-label">Gender</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.section ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.section ? "is-invalid" : ""
+                              }`}
                             options={gender}
                             value={studentData.gender}
                             onChange={(option) =>
@@ -1294,9 +1362,8 @@ const AddStudent = () => {
                           <label className="form-label">Religion</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.religion ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.religion ? "is-invalid" : ""
+                              }`}
                             options={religion}
                             value={studentData.religion}
                             onChange={(option) =>
@@ -1323,9 +1390,8 @@ const AddStudent = () => {
                           <label className="form-label">Category</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.category ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.category ? "is-invalid" : ""
+                              }`}
                             options={cast}
                             value={studentData.category}
                             onChange={(option) =>
@@ -1423,9 +1489,8 @@ const AddStudent = () => {
                           <label className="form-label">Mother Tongue</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.motherton ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.motherton ? "is-invalid" : ""
+                              }`}
                             options={mothertongue}
                             value={studentData.motherton}
                             onChange={(option) =>
@@ -1464,7 +1529,7 @@ const AddStudent = () => {
                 {/* /Personal Information */}
                 {/* Parents & Guardian Information */}
                 <div className="card">
-                  <div className="card-header bg-light">
+                  {/* <div className="card-header bg-light">
                     <div className="d-flex align-items-center">
                       <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
                         <i className="ti ti-user-shield fs-16" />
@@ -1473,507 +1538,557 @@ const AddStudent = () => {
                         Parents &amp; Guardian Information
                       </h4>
                     </div>
+                  </div> */}
+
+                  <div className="card-header bg-light d-flex align-items-center justify-content-between">
+                    <div className="d-flex align-items-center">
+                      <span className="bg-white avatar avatar-sm me-2 text-gray-7 flex-shrink-0">
+                        <i className="ti ti-user-shield fs-16 fs-16" />
+                      </span>
+                      <h4 className="text-dark">  Parents &amp; Guardian Information</h4>
+                    </div>
+                    <div className="form-check form-switch">
+                      <label htmlFor="siblingSwitch" className="form-check-label">
+                        Sibling
+                      </label>
+                      <input
+                        id="siblingSwitch"
+                        className="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        checked={itHasSibling}
+                        onChange={(e) => setItHasSibling(e.target.checked)} // direct update
+                      />
+                    </div>
                   </div>
-                  <div className="card-body pb-0">
-                    <div className="border-bottom mb-3">
-                      <h5 className="mb-3">Father’s Info</h5>
-                      <div className="row">
-                        <div className="col-md-12">
-                          <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {!fatImg ? (
-                              <>
-                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                  <i className="ti ti-photo-plus fs-16" />
-                                </div>
-                              </>
-                            ) : (
-                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
-                                <img
-                                  className=""
-                                  src={URL.createObjectURL(fatImg)}
-                                  alt=""
-                                />
-                              </p>
-                            )}
-                            <div className="profile-upload">
-                              <div className="profile-uploader d-flex align-items-center">
-                                <div className="drag-upload-btn mb-3">
-                                  Upload
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      handleFileChange(
-                                        e,
-                                        setFatImg,
-                                        "fatimgpath"
-                                      )
-                                    }
-                                    className="form-control image-sign"
-                                  />
-                                </div>
-                                <span className="text-danger"> *</span>
-                                {fatimgid && (
-                                  <div
-                                    onClick={() => deleteImage(fatimgid)}
-                                    className="btn btn-outline-danger mb-3"
-                                  >
-                                    Remove
-                                  </div>
-                                )}
-                              </div>
-                              <p className="fs-12">
-                                Upload image size 4MB, Format JPG, PNG,
-                              </p>
+
+                  {
+                    itHasSibling ? (<div className="">
+                      <div className="col-xxl col-xl-3 col-md-6 p-4">
+                        <h3 className="text-end">Sibling Students</h3>
+                        <div className="mb-3">
+                          <label className="form-label">Select Father</label>
+                          <span className="text-danger"> *</span>
+                          <CommonSelect
+                            className={`select`}
+                            options={fathers}
+                            value={studentData.parent_id}
+                            onChange={(option) =>
+                              handleSelectChange(
+                                "parent_id",
+                                option ? option.value : ""
+                              )
+                            }
+                          />
+                          {errors.parent_id && (
+                            <div
+                              style={{ fontSize: "11px" }}
+                              className="text-danger"
+                            >
+                              {errors.parent_id}
                             </div>
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Father Name</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="fat_name"
-                              type="text"
-                              className={`form-control `}
-                              value={
-                                isEdit
-                                  ? "Jerald Vicinius"
-                                  : studentData.fat_name
-                              }
-                              onChange={handleInputChange}
-                            />
-                            {errors.fat_name && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.fat_name}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Email</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="fat_email"
-                              onChange={handleInputChange}
-                              type="text"
-                              className={`form-control `}
-                              value={
-                                isEdit
-                                  ? "jera@example.com"
-                                  : studentData.fat_email
-                              }
-                            />
-                            {errors.fat_email && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.fat_email}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Phone Number</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="fat_phone"
-                              onChange={handleInputChange}
-                              type="text"
-                              className={`form-control `}
-                              value={
-                                isEdit
-                                  ? "+1 45545 46464"
-                                  : studentData.fat_phone
-                              }
-                            />
-                            {errors.fat_phone && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.fat_phone}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Father Occupation
-                            </label>
-                            <input
-                              name="fat_occu"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={isEdit ? "Mechanic" : studentData.fat_occu}
-                            />
-                          </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="border-bottom mb-3">
-                      <h5 className="mb-3">Mother’s Info</h5>
-                      <div className="row">
-                        <div className="col-md-12">
-                          <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {!motImg ? (
-                              <>
-                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                  <i className="ti ti-photo-plus fs-16" />
-                                </div>
-                              </>
-                            ) : (
-                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
-                                <img
-                                  className=""
-                                  src={URL.createObjectURL(motImg)}
-                                  alt=""
-                                />
-                              </p>
-                            )}
-                            <div className="profile-upload">
-                              <div className="profile-uploader d-flex align-items-center">
-                                <div className="drag-upload-btn mb-3">
-                                  Upload
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      handleFileChange(
-                                        e,
-                                        setMotImg,
-                                        "motimgpath"
-                                      )
-                                    }
-                                    className="form-control image-sign"
-                                  />
-                                </div>
-                                <span className="text-danger"> *</span>
-                                {motimgid && (
-                                  <div
-                                    onClick={() => deleteImage(motimgid)}
-                                    className="btn btn-outline-danger mb-3"
-                                  >
-                                    Remove
+
+                    </div>) : (<div className="card-body pb-0">
+                      <div className="border-bottom mb-3">
+                        <h5 className="mb-3">Father’s Info</h5>
+                        <div className="row">
+                          <div className="col-md-12">
+                            <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                              {!fatImg ? (
+                                <>
+                                  <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                    <i className="ti ti-photo-plus fs-16" />
                                   </div>
-                                )}
+                                </>
+                              ) : (
+                                <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                  <img
+                                    className=""
+                                    src={URL.createObjectURL(fatImg)}
+                                    alt=""
+                                  />
+                                </p>
+                              )}
+                              <div className="profile-upload">
+                                <div className="profile-uploader d-flex align-items-center">
+                                  <div className="drag-upload-btn mb-3">
+                                    Upload
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          setFatImg,
+                                          "fatimgpath"
+                                        )
+                                      }
+                                      className="form-control image-sign"
+                                    />
+                                  </div>
+                                  <span className="text-danger"> *</span>
+                                  {fatimgid && (
+                                    <div
+                                      onClick={() => deleteImage(fatimgid)}
+                                      className="btn btn-outline-danger mb-3"
+                                    >
+                                      Remove
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="fs-12">
+                                  Upload image size 4MB, Format JPG, PNG,
+                                </p>
                               </div>
-                              <p className="fs-12">
-                                Upload image size 4MB, Format JPG, PNG,
-                              </p>
                             </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Mother Name</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="mot_name"
-                              onChange={handleInputChange}
-                              type="text"
-                              className={`form-control `}
-                              value={
-                                isEdit ? "Roberta Webber" : studentData.mot_name
-                              }
-                            />
-                            {errors.mot_name && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.mot_name}
-                              </div>
-                            )}
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Father Name</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="fat_name"
+                                type="text"
+                                className={`form-control `}
+                                value={
+                                  isEdit
+                                    ? "Jerald Vicinius"
+                                    : studentData.fat_name
+                                }
+                                onChange={handleInputChange}
+                              />
+                              {errors.fat_name && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.fat_name}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Email</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="mot_email"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "robe@example.com"
-                                  : studentData.mot_email
-                              }
-                            />
-                            {errors.mot_email && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.mot_email}
-                              </div>
-                            )}
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Email</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="fat_email"
+                                onChange={handleInputChange}
+                                type="text"
+                                className={`form-control `}
+                                value={
+                                  isEdit
+                                    ? "jera@example.com"
+                                    : studentData.fat_email
+                                }
+                              />
+                              {errors.fat_email && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.fat_email}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Phone Number</label>
-                            <span className="text-danger"> *</span>
-                            <input
-                              name="mot_phone"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "+1 46499 24357"
-                                  : studentData.mot_phone
-                              }
-                            />
-                            {errors.mot_phone && (
-                              <div
-                                style={{ fontSize: "11px" }}
-                                className="text-danger"
-                              >
-                                {errors.mot_phone}
-                              </div>
-                            )}
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Phone Number</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="fat_phone"
+                                onChange={handleInputChange}
+                                type="text"
+                                className={`form-control `}
+                                value={studentData.fat_phone}
+                              />
+                              {errors.fat_phone && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.fat_phone}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Mother Occupation
-                            </label>
-                            <input
-                              name="mot_occu"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit ? "Homemaker" : studentData.mot_occu
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h5 className="mb-3">Guardian Details</h5>
-                      <div className="row">
-                        <div className="col-md-12">
-                          <div className="mb-2">
-                            <div className="d-flex align-items-center flex-wrap">
-                              <label className="form-label text-dark fw-normal me-2">
-                                If Guardian Is
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Father Occupation
                               </label>
-
-                              <div className="form-check me-3 mb-2">
-                                <input
-                                  className="form-check-input"
-                                  type="radio"
-                                  name="guardianIs"
-                                  id="parents"
-                                  value="parents"
-                                  checked={studentData.guardianIs === "parents"}
-                                  onChange={handleInputChange}
-                                />
-                                <label
-                                  className="form-check-label"
-                                  htmlFor="parents"
-                                >
-                                  Parents
-                                </label>
-                              </div>
-
-                              <div className="form-check me-3 mb-2">
-                                <input
-                                  className="form-check-input"
-                                  type="radio"
-                                  name="guardianIs"
-                                  id="guardian"
-                                  value="guardian"
-                                  checked={
-                                    studentData.guardianIs === "guardian"
-                                  }
-                                  onChange={handleInputChange}
-                                />
-                                <label
-                                  className="form-check-label"
-                                  htmlFor="guardian"
-                                >
-                                  Guardian
-                                </label>
-                              </div>
-
-                              <div className="form-check mb-2">
-                                <input
-                                  className="form-check-input"
-                                  type="radio"
-                                  name="guardianIs"
-                                  id="other"
-                                  value="other"
-                                  checked={studentData.guardianIs === "other"}
-                                  onChange={handleInputChange}
-                                />
-                                <label
-                                  className="form-check-label"
-                                  htmlFor="other"
-                                >
-                                  Others
-                                </label>
-                              </div>
+                              <input
+                                name="fat_occu"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={studentData.fat_occu}
+                              />
                             </div>
                           </div>
-
-                          <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                            {!guaImg ? (
-                              <>
-                                <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                                  <i className="ti ti-photo-plus fs-16" />
-                                </div>
-                              </>
-                            ) : (
-                              <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
-                                <img
-                                  className=""
-                                  src={URL.createObjectURL(guaImg)}
-                                  alt=""
-                                />
-                              </p>
-                            )}
-                            <div className="profile-upload">
-                              <div className="profile-uploader d-flex align-items-center">
-                                <div className="drag-upload-btn mb-3">
-                                  Upload
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      handleFileChange(
-                                        e,
-                                        setGuaImg,
-                                        "guaimgpath"
-                                      )
-                                    }
-                                    className="form-control image-sign"
-                                  />
-                                </div>
-                                {guaimgid && (
-                                  <div
-                                    onClick={() => deleteImage(guaimgid)}
-                                    className="btn btn-outline-danger mb-3"
-                                  >
-                                    Remove
+                        </div>
+                      </div>
+                      <div className="border-bottom mb-3">
+                        <h5 className="mb-3">Mother’s Info</h5>
+                        <div className="row">
+                          <div className="col-md-12">
+                            <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                              {!motImg ? (
+                                <>
+                                  <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                    <i className="ti ti-photo-plus fs-16" />
                                   </div>
-                                )}
+                                </>
+                              ) : (
+                                <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                  <img
+                                    className=""
+                                    src={URL.createObjectURL(motImg)}
+                                    alt=""
+                                  />
+                                </p>
+                              )}
+                              <div className="profile-upload">
+                                <div className="profile-uploader d-flex align-items-center">
+                                  <div className="drag-upload-btn mb-3">
+                                    Upload
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          setMotImg,
+                                          "motimgpath"
+                                        )
+                                      }
+                                      className="form-control image-sign"
+                                    />
+                                  </div>
+                                  <span className="text-danger"> *</span>
+                                  {motimgid && (
+                                    <div
+                                      onClick={() => deleteImage(motimgid)}
+                                      className="btn btn-outline-danger mb-3"
+                                    >
+                                      Remove
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="fs-12">
+                                  Upload image size 4MB, Format JPG, PNG,
+                                </p>
                               </div>
-                              <p className="fs-12">
-                                Upload image size 4MB, Format JPG, PNG,
-                              </p>
+                            </div>
+                          </div>
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Mother Name</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="mot_name"
+                                onChange={handleInputChange}
+                                type="text"
+                                className={`form-control `}
+                                value={
+                                  isEdit ? "Roberta Webber" : studentData.mot_name
+                                }
+                              />
+                              {errors.mot_name && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.mot_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Email</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="mot_email"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "robe@example.com"
+                                    : studentData.mot_email
+                                }
+                              />
+                              {errors.mot_email && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.mot_email}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Phone Number</label>
+                              <span className="text-danger"> *</span>
+                              <input
+                                name="mot_phone"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "+1 46499 24357"
+                                    : studentData.mot_phone
+                                }
+                              />
+                              {errors.mot_phone && (
+                                <div
+                                  style={{ fontSize: "11px" }}
+                                  className="text-danger"
+                                >
+                                  {errors.mot_phone}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Mother Occupation
+                              </label>
+                              <input
+                                name="mot_occu"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit ? "Homemaker" : studentData.mot_occu
+                                }
+                              />
                             </div>
                           </div>
                         </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Guardian Name</label>
-                            <input
-                              name="gua_name"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "Jerald Vicinius"
-                                  : studentData.gua_name
-                              }
-                            />
+                      </div>
+                      <div>
+                        <h5 className="mb-3">Guardian Details</h5>
+                        <div className="row">
+                          <div className="col-md-12">
+                            <div className="mb-2">
+                              <div className="d-flex align-items-center flex-wrap">
+                                <label className="form-label text-dark fw-normal me-2">
+                                  If Guardian Is
+                                </label>
+
+                                <div className="form-check me-3 mb-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="guardianIs"
+                                    id="parents"
+                                    value="parents"
+                                    checked={studentData.guardianIs === "parents"}
+                                    onChange={handleInputChange}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor="parents"
+                                  >
+                                    Parents
+                                  </label>
+                                </div>
+
+                                <div className="form-check me-3 mb-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="guardianIs"
+                                    id="guardian"
+                                    value="guardian"
+                                    checked={
+                                      studentData.guardianIs === "guardian"
+                                    }
+                                    onChange={handleInputChange}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor="guardian"
+                                  >
+                                    Guardian
+                                  </label>
+                                </div>
+
+                                <div className="form-check mb-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="guardianIs"
+                                    id="other"
+                                    value="other"
+                                    checked={studentData.guardianIs === "other"}
+                                    onChange={handleInputChange}
+                                  />
+                                  <label
+                                    className="form-check-label"
+                                    htmlFor="other"
+                                  >
+                                    Others
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
+                              {!guaImg ? (
+                                <>
+                                  <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
+                                    <i className="ti ti-photo-plus fs-16" />
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0  frames">
+                                  <img
+                                    className=""
+                                    src={URL.createObjectURL(guaImg)}
+                                    alt=""
+                                  />
+                                </p>
+                              )}
+                              <div className="profile-upload">
+                                <div className="profile-uploader d-flex align-items-center">
+                                  <div className="drag-upload-btn mb-3">
+                                    Upload
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) =>
+                                        handleFileChange(
+                                          e,
+                                          setGuaImg,
+                                          "guaimgpath"
+                                        )
+                                      }
+                                      className="form-control image-sign"
+                                    />
+                                  </div>
+                                  {guaimgid && (
+                                    <div
+                                      onClick={() => deleteImage(guaimgid)}
+                                      className="btn btn-outline-danger mb-3"
+                                    >
+                                      Remove
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="fs-12">
+                                  Upload image size 4MB, Format JPG, PNG,
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">
-                              Guardian Relation
-                            </label>
-                            <input
-                              name="gua_relation"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit ? "Uncle" : studentData.gua_relation
-                              }
-                            />
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Guardian Name</label>
+                              <input
+                                name="gua_name"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "Jerald Vicinius"
+                                    : studentData.gua_name
+                                }
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Phone Number</label>
-                            <input
-                              name="gua_phone"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "+1 45545 46464"
-                                  : studentData.gua_phone
-                              }
-                            />
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">
+                                Guardian Relation
+                              </label>
+                              <input
+                                name="gua_relation"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit ? "Uncle" : studentData.gua_relation
+                                }
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Email</label>
-                            <input
-                              name="gua_email"
-                              onChange={handleInputChange}
-                              type="email"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "jera@example.com"
-                                  : studentData.gua_email
-                              }
-                            />
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Phone Number</label>
+                              <input
+                                name="gua_phone"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "+1 45545 46464"
+                                    : studentData.gua_phone
+                                }
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Occupation</label>
-                            <input
-                              name="gua_occu"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={isEdit ? "Mechanic" : studentData.gua_occu}
-                            />
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Email</label>
+                              <input
+                                name="gua_email"
+                                onChange={handleInputChange}
+                                type="email"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "jera@example.com"
+                                    : studentData.gua_email
+                                }
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Address</label>
-                            <input
-                              name="gua_address"
-                              onChange={handleInputChange}
-                              type="text"
-                              className="form-control"
-                              value={
-                                isEdit
-                                  ? "3495 Red Hawk Road, Buffalo Lake, MN 55314"
-                                  : studentData.gua_address
-                              }
-                            />
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Occupation</label>
+                              <input
+                                name="gua_occu"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={isEdit ? "Mechanic" : studentData.gua_occu}
+                              />
+                            </div>
+                          </div>
+                          <div className="col-lg-3 col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label">Address</label>
+                              <input
+                                name="gua_address"
+                                onChange={handleInputChange}
+                                type="text"
+                                className="form-control"
+                                value={
+                                  isEdit
+                                    ? "3495 Red Hawk Road, Buffalo Lake, MN 55314"
+                                    : studentData.gua_address
+                                }
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                    )
+                  }
                 </div>
                 {/* /Parents & Guardian Information */}
                 {/* Sibilings */}

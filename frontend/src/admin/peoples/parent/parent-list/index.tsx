@@ -409,6 +409,7 @@ const ParentList = () => {
       title: "Child",
       dataIndex: "child",
       render: (text: string, record: any) => (
+
         <div className="d-flex align-items-center">
           <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
             <img
@@ -424,6 +425,7 @@ const ParentList = () => {
             <span className="fs-12">{record.class}</span>
           </div>
         </div>
+        
       ),
       sorter: (a: TableData, b: TableData) => a.Child.length - b.Child.length,
     },

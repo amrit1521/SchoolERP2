@@ -1,6 +1,44 @@
 const db = require('../../config/db')
 
 // Parent Controller 
+// exports.allParents = async (req, res) => {
+//     try {
+//         const sql = `
+//       SELECT 
+//         p.id,
+//         p.user_id,
+//         p.name,
+//         p.email,
+//         p.phone_num,
+//         p.img_src,
+//         p.created_at AS Parent_Add,
+//         st.stu_img,
+//         st.stu_id,
+//         st.rollnum,
+//         st.created_at AS Student_Add,
+//         u.firstname,
+//         u.lastname,
+//         UPPER(c.class_name) AS class,
+//         UPPER( s.section_name) AS section
+//       FROM parents_info p
+//       LEFT JOIN students st ON p.user_id = st.stu_id 
+//       LEFT JOIN users u ON st.stu_id = u.id  
+//       LEFT JOIN classes c ON st.class_id = c.id
+//       LEFT JOIN sections s ON st.section_id = s.id
+//       WHERE p.relation = "Father"
+//     `;
+//         const [result] = await db.query(sql);
+//         return res.status(200).json({
+//             message: "All parents fetched successfully!",
+//             success: true,
+//             data: result,
+//         });
+//     } catch (error) {
+//         console.error("allParents Error:", error);
+//         return res.status(500).json({ message: "Internal server error!", success: false });
+//     }
+// };
+
 exports.allParents = async (req, res) => {
     try {
         const sql = `
@@ -12,32 +50,44 @@ exports.allParents = async (req, res) => {
         p.phone_num,
         p.img_src,
         p.created_at AS Parent_Add,
-        st.stu_img,
-        st.stu_id,
-        st.rollnum,
-        st.created_at AS Student_Add,
-        u.firstname,
-        u.lastname,
-        UPPER(c.class_name) AS class,
-        UPPER( s.section_name) AS section
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'stu_img', st.stu_img,
+            'stu_id', st.stu_id,
+            'rollnum', st.rollnum,
+            'Student_Add', st.created_at,
+            'firstname', u.firstname,
+            'lastname', u.lastname,
+            'class', UPPER(c.class_name),
+            'section', UPPER(s.section_name)
+          )
+        ) AS children
       FROM parents_info p
-      LEFT JOIN students st ON p.user_id = st.stu_id
+      LEFT JOIN students st ON st.parent_id = p.parent_id
       LEFT JOIN users u ON st.stu_id = u.id  
       LEFT JOIN classes c ON st.class_id = c.id
       LEFT JOIN sections s ON st.section_id = s.id
-      WHERE p.relation = "Father"
+      WHERE p.relation = 'Father'
+      GROUP BY 
+        p.id, p.user_id, p.name, p.email, p.phone_num, p.img_src, p.created_at
+      ORDER BY p.id ASC
     `;
+
         const [result] = await db.query(sql);
+
         return res.status(200).json({
-            message: "All parents fetched successfully!",
             success: true,
+            message: "All parents with their children fetched successfully!",
             data: result,
         });
     } catch (error) {
-        console.error("allParents Error:", error);
-        return res.status(500).json({ message: "Internal server error!", success: false });
+        console.error("allParentsWithSibling Error:", error);
+        return res
+            .status(500)
+            .json({ message: "Internal server error!", success: false });
     }
 };
+
 
 exports.speParentData = async (req, res) => {
     const { parentId } = req.params;
@@ -177,6 +227,54 @@ exports.deleteParent = async (req, res) => {
     } catch (error) {
         console.error("deleteParent Error:", error);
         return res.status(500).json({ message: "Internal server error!", success: false });
+    }
+};
+
+exports.allFatherForOption = async (req, res) => {
+    try {
+        const sql = `
+      SELECT 
+        p.parent_id,
+        CONCAT(p.name, ' (', LEFT(u.firstname, 5), ')') AS name
+      FROM parents_info p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.relation LIKE 'Father'
+    `;
+
+        const [rows] = await db.query(sql);
+
+        return res.status(200).json({
+            message: "All parents fetched successfully!",
+            success: true,
+            data: rows,
+        });
+    } catch (error) {
+        console.log("allFatherForOption Error:", error);
+        return res.status(500).json({
+            message: "Internal server error!",
+            success: false,
+            error: error.message,
+        });
+    }
+};
+
+exports.getSiblings = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const [siblings] = await db.query(
+            `SELECT s.*, u.firstname, u.lastname, u.email
+       FROM parents_info p
+       JOIN users u ON p.user_id = u.id
+       JOIN students s ON s.stu_id = u.id
+       WHERE p.parent_id = ?`,
+            [id]
+        );
+
+        res.json({ success: true, siblings });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Error fetching siblings" });
     }
 };
 

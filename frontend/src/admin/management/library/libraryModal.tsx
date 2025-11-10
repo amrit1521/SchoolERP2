@@ -32,7 +32,7 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
 
   interface IssueBookForm {
     studentRollNo: string;
-    bookId: (string | number)[]; // ✅ Array of selected book IDs
+    bookId: (string | number)[];
     issueDate: string | null;
     lastDate: string | null;
     status: string;

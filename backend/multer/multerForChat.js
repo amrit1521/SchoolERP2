@@ -3,11 +3,10 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Dynamic destination based on file type
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let folder = "uploads/others"; 
-
+    
     if (file.mimetype.startsWith("image/")) {
       folder = "uploads/image";
     } else if (file.mimetype.startsWith("video/")) {
@@ -36,9 +35,6 @@ const storage = multer.diskStorage({
   }
 });
 
-
-
-// File filter — allow image, video, audio, document
 const fileFilter = (req, file, cb) => {
   // console.log(file.mimetype)
   const allowedTypes = [
@@ -57,11 +53,10 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer setup
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 module.exports = upload;
