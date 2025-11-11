@@ -10,7 +10,6 @@ import { Link } from "react-router-dom";
 // import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import {
-  allStudents,
   filterStudents,
   getAllRolePermissions,
   Imageurl,
@@ -41,7 +40,7 @@ const TStudentAttendance = () => {
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
   const userId = token ? JSON.parse(token)?.id : null;
-  const [permission, setPermission] = useState<Permission>(null);
+  const [permission, setPermission] = useState<Permission|null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
