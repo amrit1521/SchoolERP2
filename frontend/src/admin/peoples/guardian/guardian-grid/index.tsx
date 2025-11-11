@@ -15,45 +15,28 @@ import { toast } from "react-toastify";
 import { allGuardians, deleteGuardian, deleteFile, guardianForEdit, Imageurl, uploadStudentFile, speGuardian, editGuardian } from "../../../../service/api";
 import { Skeleton } from "antd";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import type { SpeGuardianData } from "../guardian-list";
 
-
-
-
-
-export interface GuaData {
-  id: number;
-  user_id: number;
-  img_src: string;
-  name: string;
-  Gua_Add: string;
-  email: string;
-  phone_num: string;
+export interface GuardianChild {
+  class: string;
+  stu_id: number;
+  rollnum: number;
+  section: string;
   stu_img: string;
-  stu_id: string;
-  firstname: string;
   lastname: string;
-  rollnum:number;
+  firstname: string;
+  Student_Add: string;
 }
 
-export interface SpeGuardianData {
+export interface Guardian {
   id: number;
+  user_id: number;
   name: string;
   email: string;
   phone_num: string;
   img_src: string;
-  Guardian_Add: string;
-  stu_img: string;
-  stu_id: number;
-  class: string;
-  section: string;
-  gender: string;
-  rollnum: number;
-  admissiondate: string;
-  admissionnum: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  status: string;
+  Gua_Add: string;
+  children: GuardianChild[];
 }
 
 export interface GuardianDataForEdit {
@@ -81,7 +64,7 @@ const GuardianGrid = () => {
 
 
 
-  const [allGuaData, setAllGuaData] = useState<GuaData[]>([])
+  const [allGuaData, setAllGuaData] = useState<Guardian[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   const fetchGuardians = async () => {
@@ -608,7 +591,7 @@ const GuardianGrid = () => {
                         <div className="bg-light-300 rounded-2 p-3 mb-3">
                           <div className="d-flex align-items-center">
                             <div
-
+                              style={{cursor:'pointer'}}
                               onClick={() => fetchSpecficGuardianData(gua.id)}
                               className="avatar avatar-lg flex-shrink-0"
                             >
@@ -619,7 +602,7 @@ const GuardianGrid = () => {
                               />
                             </div>
                             <div className="ms-2">
-                              <h6 className="text-dark text-truncate mb-0">
+                              <h6 style={{cursor:'pointer'}} className="text-dark text-truncate mb-0">
                                 <div onClick={() => fetchSpecficGuardianData(gua.id)}>
                                   {gua.name}
                                 </div>
@@ -640,31 +623,33 @@ const GuardianGrid = () => {
                         </div>
                       </div>
 
-                      <div className="card-footer d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center">
+                      {
+                        gua.children.map((c: any) => (<div className="card-footer d-flex align-items-center justify-content-between">
                           <div className="d-flex align-items-center">
-                            <Link
-                              to={`${routes.studentDetail}/${gua.rollnum}`}
-                              className="avatar avatar-md flex-shrink-0 p-0 me-2"
-                            >
-                              <img
-                                src={`${Imageurl}/${gua.stu_img}`}
-                                alt="img"
-                                className="img-fluid rounded-circle"
-                              />
-                            </Link>
-                             <Link
-                              to={`${routes.studentDetail}/${gua.rollnum}`} className="text-dark">{`${gua.firstname} ${gua.lastname}`}</Link>
+                            <div className="d-flex align-items-center">
+                              <Link
+                                to={`${routes.studentDetail}/${c.rollnum}`}
+                                className="avatar avatar-md flex-shrink-0 p-0 me-2"
+                              >
+                                <img
+                                  src={`${Imageurl}/${c.stu_img}`}
+                                  alt="img"
+                                  className="img-fluid rounded-circle"
+                                />
+                              </Link>
+                              <Link
+                                to={`${routes.studentDetail}/${c.rollnum}`} className="text-dark">{`${c.firstname} ${c.lastname}`}</Link>
+                            </div>
                           </div>
-                        </div>
-                        <Link
-                          to="#"
-                          className="btn btn-light btn-sm"
-                          onClick={() => fetchSpecficGuardianData(gua.id)}
-                        >
-                          View Details
-                        </Link>
-                      </div>
+                          <Link
+                            to={`${routes.studentDetail}/${c.rollnum}`}
+                            className="btn btn-light btn-sm"
+                          // onClick={() => fetchSpecficGuardianData(gua.id)}
+                          >
+                            View Details
+                          </Link>
+                        </div>))
+                      }
                     </div>
                   </div>
                 ))
@@ -748,68 +733,94 @@ const GuardianGrid = () => {
                   </div>
 
                   <h5 className="mb-3">Children Details</h5>
-                  <div className="border rounded p-4 pb-1 mb-3">
-                    <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                      <span className="link-primary mb-2">
-                        {speGuardianData.admissionnum}
-                      </span>
-                      <span
-                        className={`badge ${speGuardianData.status == "1"
-                          ? "badge-soft-success"
-                          : "badge-soft-danger"
-                          } badge-md mb-2`}
-                      >
-                        <i className="ti ti-circle-filled me-2" />
-                        {speGuardianData.status == "1" ? "Active" : "Inactive"}
-                      </span>
-                    </div>
 
-                    <div className="d-flex align-items-center justify-content-between flex-wrap">
-                      <div className="d-flex align-items-center mb-3">
-                        <Link to={`${routes.studentDetail}/${speGuardianData.stu_id}`} className="avatar">
-                          <img
-                            src={`${Imageurl}/${speGuardianData.stu_img}`}
-                            className="img-fluid rounded-circle"
-                            alt="img"
-                          />
-                        </Link>
-                        <div className="ms-2">
-                          <p className="mb-0">
-                            <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
-                          </p>
-                          <span>
-                            {speGuardianData.class}, {speGuardianData.section}
+                  {speGuardianData?.children?.length > 0 ? (
+                    speGuardianData.children.map((child: any) => (
+                      <div key={child.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                        {/* Header Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                          <span className="link-primary fw-semibold mb-2">
+                            {child.admissionnum || "N/A"}
+                          </span>
+
+                          <span
+                            className={`badge ${child.status === "1"
+                                ? "badge-soft-success"
+                                : "badge-soft-danger"
+                              } badge-md mb-2`}
+                          >
+                            <i className="ti ti-circle-filled me-2" />
+                            {child.status === "1" ? "Active" : "Inactive"}
                           </span>
                         </div>
-                      </div>
 
-                      <ul className="d-flex align-items-center flex-wrap">
-                        <li className="mb-3 me-4">
-                          <p className="mb-1">Roll No</p>
-                          <h6 className="fw-normal">{speGuardianData.rollnum}</h6>
-                        </li>
-                        <li className="mb-3 me-4">
-                          <p className="mb-1">Gender</p>
-                          <h6 className="fw-normal">{speGuardianData.gender}</h6>
-                        </li>
-                        <li className="mb-3">
-                          <p className="mb-1">Date of Joined</p>
-                          <h6 className="fw-normal">
-                            {formatDateHuman(speGuardianData.admissiondate)}
-                          </h6>
-                        </li>
-                      </ul>
+                        {/* Student Info Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <div className="d-flex align-items-center mb-3">
+                            <Link
+                              to={`${routes.studentDetail}/${child.stu_id}`}
+                              className="avatar"
+                            >
+                              <img
+                                src={`${Imageurl}/${child.stu_img}`}
+                                className="img-fluid rounded-circle"
+                                alt={`${child.firstname} ${child.lastname}`}
+                              />
+                            </Link>
+                            <div className="ms-2">
+                              <p className="mb-0 fw-semibold">
+                                <Link
+                                  to={`${routes.studentDetail}/${child.rollnum}`}
+                                  className="text-decoration-none text-dark"
+                                >
+                                  {`${child.firstname} ${child.lastname}`}
+                                </Link>
+                              </p>
+                              <small className="text-muted">
+                                {child.class || "N/A"}, {child.section || "N/A"}
+                              </small>
+                            </div>
+                          </div>
 
-                      <div className="d-flex align-items-center">
-                        <Link
-                          to={`${routes.studentDetail}/${speGuardianData.rollnum}`}
-                          className="btn btn-primary mb-3"
-                        >
-                          View Details
-                        </Link>
+                          {/* Student Details */}
+                          <ul className="d-flex align-items-center flex-wrap mb-0">
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Roll No</p>
+                              <h6 className="fw-normal">{child.rollnum || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Gender</p>
+                              <h6 className="fw-normal text-capitalize">{child.gender || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Date of Joined</p>
+                              <h6 className="fw-normal">
+                                {formatDateHuman(child.admissiondate) || "N/A"}
+                              </h6>
+                            </li>
+                          </ul>
+
+                          {/* Action */}
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to={`${routes.studentDetail}/${child.rollnum}`}
+                              className="btn btn-primary mb-3"
+                            >
+                              View Details
+                            </Link>
+                          </div>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="alert alert-warning mt-3">
+                      No children found for this guardian.
                     </div>
-                  </div>
+                  )}
+
+
+
+
                 </div>
               </Modal>
             </>

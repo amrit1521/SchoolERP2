@@ -2,8 +2,11 @@ const db = require("../../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const transporter = require('../../utils/sendEmail');
-const {sendSms} = require("../../utils/sendOtpViaMobile");
+const { sendSms } = require("../../utils/sendOtpViaMobile");
+const { generateRandomPassword } = require("../../utils/generatePassword");
+const { success } = require("zod");
 require('dotenv').config()
+
 
 
 // ===================== LOGIN =====================
@@ -162,9 +165,9 @@ exports.sendOtpMobile = async (req, res) => {
 
     await db.query("UPDATE users SET reset_otp=?, reset_otp_expiry=? WHERE id=?", [otp, expiry, user[0].id]);
 
-    await sendSms(mobile, otp); 
+    await sendSms(mobile, otp);
 
-    return res.json({ success: true, message: `OTP sent to on phone number ${mobile} successfull`});
+    return res.json({ success: true, message: `OTP sent to on phone number ${mobile} successfull` });
 
   } catch (error) {
     console.log(error)
@@ -173,4 +176,146 @@ exports.sendOtpMobile = async (req, res) => {
 };
 
 
-// exports.allUsers = 
+
+
+exports.createAccount = async (req, res) => {
+  const { firstname, lastname, mobile, role, email } = req.body;
+
+  const conn = await db.getConnection();
+  await conn.beginTransaction();
+
+  try {
+
+    if (!firstname || !mobile || !email || !role) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required!" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\d{10}$/;
+
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email format!" });
+    }
+
+    if (!phoneRegex.test(mobile)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Phone number must be 10 digits!" });
+    }
+
+
+    const [existingUser] = await conn.query(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    if (existingUser.length > 0) {
+      await conn.rollback();
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already exists!" });
+    }
+
+    const genPassword = generateRandomPassword();
+    const hashPassword = await bcrypt.hash(genPassword, 10);
+
+    const [userResult] = await conn.query(
+      `
+      INSERT INTO users 
+      (firstname, lastname, mobile, email, password, roll_id, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [firstname.trim(), lastname.trim(), mobile.trim(), email.trim(), hashPassword, role, "1"]
+    );
+    const userId = userResult.insertId;
+
+    await conn.commit();
+
+    transporter
+      .sendMail({
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: "Your account has been created",
+        text: `Hello ${firstname},\n\nYour account has been created.\nEmail: ${email}\nPassword: ${genPassword}`,
+      })
+      .catch((err) => console.error("Email error:", err));
+
+    return res.status(201).json({
+      success: true,
+      message: `Account created successfully!`,
+      userId,
+    });
+  } catch (error) {
+    await conn.rollback();
+    console.error("❌ Error creating account:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while creating account!",
+      error: error.message,
+    });
+  } finally {
+    conn.release();
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required.",
+    });
+  }
+
+  let connection;
+  try {
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+    const [userRows] = await connection.query("SELECT id FROM users WHERE id = ?", [id]);
+
+    if (userRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Account not found!",
+      });
+    }
+    const [result] = await connection.query("DELETE FROM users WHERE id = ?", [id])
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "Failed to delete account!",
+      });
+    }
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully!",
+    });
+
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error("Delete account error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting account!",
+      error: error.message,
+    });
+  } finally {
+
+    if (connection) connection.release();
+  }
+};
+
+
+
+

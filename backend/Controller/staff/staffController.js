@@ -385,6 +385,7 @@ exports.fetchStaffDataForEditById = async (req, res) => {
       SELECT 
         sf.id AS staff_id,
         sf.role,
+        sf.driveLic,
         sf.department,
         sf.designation,
         sf.gender,

@@ -15,38 +15,33 @@ import { allParents, deleteFile, deleteParent, editParent, Imageurl, parentForEd
 import { toast } from "react-toastify";
 import { Skeleton } from "antd";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import type { ParentData } from "../parent-list";
+import dayjs from 'dayjs'
 
-export interface ParentData {
-  id: number;
-  img_src: string;
-  name: string;
-  Parent_Add: string;
-  email: string;
-  phone_num: string;
-  stu_img: string;
-  firstname: string;
-  lastname: string;
-}
-
-export interface SpeParentData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
-  Parent_Add: string;
+export interface StudentChild {
   stu_img: string;
   stu_id: number;
   class: string;
   section: string;
   gender: string;
-  rollnum: string;
+  rollnum: number;
   admissiondate: string;
   admissionnum: string;
   Student_Add: string;
   firstname: string;
   lastname: string;
   status: string;
+}
+
+export interface SpeParentData {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+  Parent_Add: string;
+  children: StudentChild[];
 }
 
 export interface ParentDataForEdit {
@@ -133,18 +128,18 @@ const ParentGrid = () => {
     }
   }
 
-  function formatDateHuman(dateStr: string): string {
-    // Input format: DD-MM-YYYY
-    const [day, month, year] = dateStr.split("-").map(Number);
+  // function formatDateHuman(dateStr: string): string {
+  //   // Input format: DD-MM-YYYY
+  //   const [day, month, year] = dateStr.split("-").map(Number);
 
-    // Month names array
-    const monthNames = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
+  //   // Month names array
+  //   const monthNames = [
+  //     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  //     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  //   ];
 
-    return `${day} ${monthNames[month - 1]} ${year}`;
-  }
+  //   return `${day} ${monthNames[month - 1]} ${year}`;
+  // }
 
 
   // delete -----------------------------------------
@@ -349,6 +344,7 @@ const ParentGrid = () => {
     setErrors({})
 
   }
+
 
 
   return (
@@ -603,7 +599,7 @@ const ParentGrid = () => {
                               <li>
                                 <button
                                   className="dropdown-item rounded-1"
-                                   onClick={()=>fetchParentDataForEdit(parent.id)}
+                                  onClick={() => fetchParentDataForEdit(parent.id)}
                                   data-bs-toggle="modal"
                                   data-bs-target="#edit_parent"
                                 >
@@ -662,34 +658,34 @@ const ParentGrid = () => {
                           </div>
                         </div>
                       </div>
-                         {
-                          parent.children.map((s:any)=>(<div className="card-footer d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center">
+                      {
+                        parent.children.map((s: any) => (<div className="card-footer d-flex align-items-center justify-content-between">
                           <div className="d-flex align-items-center">
-                            <Link
-                              to={`${routes.studentDetail}/${s.rollnum}`}
-                              className="avatar avatar-md flex-shrink-0 p-0 me-2"
-                            >
-                              <img
-                                src={`${Imageurl}${s.stu_img}`}
-                                alt="img"
-                                className="img-fluid rounded-circle"
-                              />
-                            </Link   >
-                            <p className="text-dark">{`${s.firstname} ${s.lastname}`}</p>
+                            <div className="d-flex align-items-center">
+                              <Link
+                                to={`${routes.studentDetail}/${s.rollnum}`}
+                                className="avatar avatar-md flex-shrink-0 p-0 me-2"
+                              >
+                                <img
+                                  src={`${Imageurl}${s.stu_img}`}
+                                  alt="img"
+                                  className="img-fluid rounded-circle"
+                                />
+                              </Link   >
+                              <p className="text-dark">{`${s.firstname} ${s.lastname}`}</p>
+                            </div>
                           </div>
+                          <Link
+                            to={`${routes.studentDetail}/${s.rollnum}`}
+                            className="btn btn-light btn-sm"
+                            onClick={() => fetchSpecficParentData(parent.id)}
+                          >
+                            View Details
+                          </Link>
                         </div>
-                        <Link
-                          to="#"
-                          className="btn btn-light btn-sm"
-                          onClick={() => fetchSpecficParentData(parent.id)}
-                        >
-                          View Details
-                        </Link>
-                      </div>
-))
-                         }
-                      
+                        ))
+                      }
+
                     </div>
                   </div>
                 ))
@@ -910,7 +906,7 @@ const ParentGrid = () => {
                       />
                     </span>
                     <div className="parent-name">
-                      <h5 className="mb-1">Thomas</h5>
+                      <h5 className="mb-1">{speParentData.name}</h5>
                       <p>Added on {formatDate(speParentData.Parent_Add)}</p>
                     </div>
                   </div>
@@ -930,54 +926,81 @@ const ParentGrid = () => {
               </div>
             </div>
             <h5 className="mb-3">Children Details</h5>
-            <div className="border rounded p-4 pb-1 mb-3">
-              <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                <span className="link-primary mb-2">{speParentData.admissionnum}</span>
-                <span className={`badge ${speParentData.status == "1" ? "badge-soft-success" : "badge-soft-danger"} badge-md mb-2`}>
-                  <i className="ti ti-circle-filled me-2" />
-                  {speParentData.status == "1" ? "Active" : "Inactive"}
-                </span>
-              </div>
-              <div className="d-flex align-items-center justify-content-between flex-wrap">
-                <div className="d-flex align-items-center mb-3">
-                  <Link to={`${routes.studentDetail}/${speParentData.rollnum}`} className="avatar">
-                    <img
-                      src={`${Imageurl}/${speParentData.stu_img}`}
-                      className="img-fluid rounded-circle"
-                      alt="img"
-                    />
-                  </Link>
-                  <div className="ms-2">
-                    <p className="mb-0">
-                      <Link to={`${routes.studentDetail}/${speParentData.rollnum}`}>{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
-                    </p>
-                    <span className="text-uppercase">{speParentData.class} - {speParentData.section}</span>
+
+            {
+              speParentData?.children?.length > 0 ? (
+                speParentData.children.map((s: StudentChild) => (
+                  <div key={s.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                    {/* Header Section */}
+                    <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                      <span className="link-primary fw-semibold mb-2">{s.admissionnum}</span>
+                      <span
+                        className={`badge ${s.status === "1" ? "badge-soft-success" : "badge-soft-danger"
+                          } badge-md mb-2`}
+                      >
+                        <i className="ti ti-circle-filled me-2" />
+                        {s.status === "1" ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+
+                    {/* Student Info Section */}
+                    <div className="d-flex align-items-center justify-content-between flex-wrap">
+                      <div className="d-flex align-items-center mb-3">
+                        <Link to={`${routes.studentDetail}/${s.rollnum}`} className="avatar">
+                          <img
+                            src={`${Imageurl}/${s.stu_img}`}
+                            className="img-fluid rounded-circle border"
+                            alt={`${s.firstname} ${s.lastname}`}
+                          />
+                        </Link>
+                        <div className="ms-3">
+                          <p className="mb-0 fw-medium">
+                            <Link to={`${routes.studentDetail}/${s.rollnum}`} className="text-dark text-decoration-none">
+                              {`${s.firstname} ${s.lastname}`}
+                            </Link>
+                          </p>
+                          <small className="text-muted text-uppercase">
+                            {s.class} - {s.section}
+                          </small>
+                        </div>
+                      </div>
+
+                      {/* Student Details */}
+                      <ul className="d-flex align-items-center flex-wrap mb-0">
+                        <li className="mb-3 me-4">
+                          <p className="mb-1 text-muted">Roll No</p>
+                          <h6 className="fw-normal">{s.rollnum}</h6>
+                        </li>
+                        <li className="mb-3 me-4">
+                          <p className="mb-1 text-muted">Gender</p>
+                          <h6 className="fw-normal">{s.gender}</h6>
+                        </li>
+                        <li className="mb-3">
+                          <p className="mb-1 text-muted">Date of Joined</p>
+                          <h6 className="fw-normal">{dayjs(s.admissiondate).format('DD MMM YYYY')}</h6>
+                        </li>
+                      </ul>
+
+                      {/* Action Button */}
+                      <div className="d-flex align-items-center">
+                        <Link
+                          to={`${routes.studentDetail}/${s.rollnum}`}
+                          className="btn btn-primary btn-sm mb-3"
+                        >
+                          View Details
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <ul className="d-flex align-items-center flex-wrap">
-                  <li className="mb-3 me-4">
-                    <p className="mb-1">Roll No</p>
-                    <h6 className="fw-normal">{speParentData.rollnum}</h6>
-                  </li>
-                  <li className="mb-3 me-4">
-                    <p className="mb-1">Gender</p>
-                    <h6 className="fw-normal">{speParentData.gender}</h6>
-                  </li>
-                  <li className="mb-3">
-                    <p className="mb-1">Date of Joined</p>
-                    <h6 className="fw-normal">{formatDateHuman(speParentData.admissiondate)}</h6>
-                  </li>
-                </ul>
-                <div className="d-flex align-items-center">
-                  <Link
-                    to={`${routes.studentDetail}/${speParentData.rollnum}`}
-                    className="btn btn-primary mb-3"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
+                ))
+              ) : (
+                <p className="text-muted fst-italic">No student records available.</p>
+              )
+            }
+
+
+
+
 
           </div>
         </Modal></>))
