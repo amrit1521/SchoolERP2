@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ParentModal from "../parentModal";
+import { all_routes } from "../../../../router/all_routes";
 import { Link } from "react-router-dom";
 import { Modal } from "react-bootstrap";
 // import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
@@ -15,22 +16,26 @@ import {
 import type { TableData } from "../../../../core/data/interface";
 import Table from "../../../../core/common/dataTable/index";
 import TooltipOption from "../../../../core/common/tooltipOption";
-import {
-  allParents,
-  deleteFile,
-  deleteParent,
-  editParent,
-  getAllRolePermissions,
-  Imageurl,
-  parentForEdit,
-  speParent,
-  uploadStudentFile,
-} from "../../../../service/api";
+import { allParents, deleteFile, deleteParent, editParent, Imageurl, parentForEdit, speParent, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import type { SpeParentData } from "../parent-grid";
+import dayjs from 'dayjs'
 
+
+
+export interface Child {
+  class: string | null;
+  stu_id: number | null;
+  rollnum: number | null;
+  section: string | null;
+  stu_img: string | null;
+  lastname: string | null;
+  firstname: string | null;
+  Student_Add: string | null;
+}
+
+// Interface for each parent entry
 export interface ParentData {
   id: number;
   user_id: number;
@@ -39,35 +44,7 @@ export interface ParentData {
   phone_num: string;
   img_src: string;
   Parent_Add: string;
-  stu_img: string;
-  stu_id: number;
-  section: string;
-  class: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  rollnum: number;
-}
-
-export interface SpeParentData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
-  Parent_Add: string;
-  stu_img: string;
-  stu_id: number;
-  class: string;
-  section: string;
-  gender: string;
-  rollnum: string;
-  admissiondate: string;
-  admissionnum: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  status: string;
+  children: Child[];
 }
 
 export interface ParentDataForEdit {
@@ -77,7 +54,7 @@ export interface ParentDataForEdit {
   img_src: string;
 }
 
-const TParentList = () => {
+const ParentList = () => {
   const [show, setShow] = useState(false);
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
@@ -89,135 +66,126 @@ const TParentList = () => {
   const handleClose = () => {
     setShow(false);
   };
-  const tokens = localStorage.getItem("token");
-  const roleId = tokens ? JSON.parse(tokens)?.role : null;
-  const [permission, setPermission] = useState<any>(null);
-  const [parents, setParents] = useState<ParentData[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchPermission = async (roleId: number) => {
-    if (roleId) {
-      const { data } = await getAllRolePermissions(roleId);
-      if (data.success) {
-        const currentPermission = data.result
-          .filter((perm: any) => perm?.module_name === "Parents")
-          .map((perm: any) => ({
-            can_create: perm?.can_create,
-            can_delete: perm?.can_delete,
-            can_edit: perm?.can_edit,
-            can_view: perm?.can_view,
-          }));
-        setPermission(currentPermission[0]);
-      }
-    }
-  };
+
+
+  const [parents, setParents] = useState<ParentData[]>([]);
+  const [loading, setLoading] = useState<boolean>(false)
 
   const fetchParentsData = async () => {
-    setLoading(true);
-    await new Promise((res) => setTimeout(res, 400));
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 400))
     try {
-      const { data } = await allParents();
+
+      const { data } = await allParents()
       if (data.success) {
-        setParents(data.data);
+        setParents(data.data)
+
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchPermission(roleId);
-    fetchParentsData();
-  }, []);
+    fetchParentsData()
+
+  }, [])
+
+  // console.log(parents[0].children)
+
 
   const tableData = parents.map((parent) => ({
     key: parent.id,
     id: parent.id,
     userId: parent.user_id,
     name: parent.name,
-    child: `${parent.firstname} ${parent.lastname}`,
-    class: `${parent.class},${parent.section}`,
+    child: parent.children,
     phone: parent.phone_num,
     email: parent.email,
-    rollnum: parent.rollnum,
-    stu_img: parent.stu_img,
-    img: parent.img_src,
-  }));
+    img: parent.img_src
+
+  }))
+
 
   function formatDate(isoString: string) {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   }
 
   // speparentdta ======================================================================
 
+
   // useState ka sahi tareeka
-  const [speParentData, setSpeParentData] = useState<SpeParentData | null>(
-    null
-  );
-  const [loading2, setLoading2] = useState<boolean>(false);
+  const [speParentData, setSpeParentData] = useState<SpeParentData | null>(null);
+  const [loading2, setLoading2] = useState<boolean>(false)
+
 
   const fetchSpecficParentData = async (parentId: number) => {
-    setShow(true);
-    setLoading2(true);
+    setShow(true)
+    setLoading2(true)
     // await new Promise((res)=>setTimeout(res,500))
     try {
-      const { data } = await speParent(parentId);
+
+      const { data } = await speParent(parentId)
 
       if (data.success) {
-        setSpeParentData(data.data);
+        setSpeParentData(data.data)
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading2(false);
+      setLoading2(false)
     }
-  };
+  }
 
   // delete -----------------------------------------
-  const [parentId, setParentId] = useState<number | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [parentId, setParentId] = useState<number | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
 
   const setDleteIds = (id: number, userId: number) => {
-    setParentId(id);
-    setUserId(userId);
-  };
+    setParentId(id)
+    setUserId(userId)
+  }
 
-  const handleDelete = async (
-    id: number,
-    userId: number,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-    console.log(id, userId);
+
+  const handleDelete = async (id: number, userId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    console.log(id, userId)
     try {
-      const { data } = await deleteParent(id, userId);
+
+
+      const { data } = await deleteParent(id, userId)
       if (data.success) {
-        toast.success(data.message);
-        setParentId(null);
-        setUserId(null);
-        fetchParentsData();
-        handleModalPopUp("delete-modal");
+        toast.success(data.message)
+        setParentId(null)
+        setUserId(null)
+        fetchParentsData()
+        handleModalPopUp('delete-modal')
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     }
-  };
+  }
+
 
   const handleCancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setParentId(null);
-    setUserId(null);
-  };
+    e.preventDefault()
+    setParentId(null)
+    setUserId(null)
+  }
 
   // edit parent-------------------------------------
   const [formData, setFormData] = useState<ParentDataForEdit>({
@@ -226,36 +194,40 @@ const TParentList = () => {
     email: "",
     img_src: "",
   });
-  const [fatImg, setFatImg] = useState<File | null>(null);
-  const [fatImgId, setFatImgId] = useState<number | null>(null);
-  const [orginalImgPath, setOriginalImgPath] = useState<string>("");
-  const [editId, setEditId] = useState<number | null>(null);
+  const [fatImg, setFatImg] = useState<File | null>(null)
+  const [fatImgId, setFatImgId] = useState<number | null>(null)
+  const [orginalImgPath, setOriginalImgPath] = useState<string>("")
+  const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<{
     name?: string;
     phone_num?: string;
     email?: string;
   }>({});
 
+
   const fetchParentDataForEdit = async (id: number) => {
     try {
-      const { data } = await parentForEdit(id);
+      const { data } = await parentForEdit(id)
       if (data.success) {
         setFormData({
           name: data.data.name,
           phone_num: data.data.phone_num,
           email: data.data.email,
           img_src: data.data.img_src,
-        });
-        setEditId(id);
-        setOriginalImgPath(data.data.img_src);
+        })
+        setEditId(id)
+        setOriginalImgPath(data.data.img_src)
       }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -263,9 +235,12 @@ const TParentList = () => {
     }));
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
 
       if (!["image/jpeg", "image/png"].includes(file.type)) {
         toast.error("Only JPG, PNG files are allowed.");
@@ -277,11 +252,14 @@ const TParentList = () => {
       imgformData.append("stufile", file);
 
       try {
-        const res = await uploadStudentFile(imgformData);
+
+        const res = await uploadStudentFile(imgformData)
         const uploadedPath = res.data.file;
         const id = res.data.insertId;
-        setFormData((prev) => ({ ...prev, img_src: uploadedPath }));
-        setFatImgId(id);
+        setFormData((prev) => ({ ...prev, img_src: uploadedPath }))
+        setFatImgId(id)
+
+
       } catch (error) {
         console.error("Upload failed:", error);
       }
@@ -291,12 +269,12 @@ const TParentList = () => {
     if (!id) return;
 
     try {
-      const deletefile = await deleteFile(id);
+      const deletefile = await deleteFile(id)
 
       if (deletefile.data.success) {
         setFatImgId(null);
         setFatImg(null);
-        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }));
+        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }))
       }
     } catch (error) {
       console.error("Error deleting file:", error);
@@ -305,17 +283,20 @@ const TParentList = () => {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
+
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length < 3) {
       newErrors.name = "Name must be at least 3 characters";
     }
 
+
     if (!formData.phone_num.trim()) {
       newErrors.phone_num = "Phone number is required";
     } else if (!/^\d{10}$/.test(formData.phone_num)) {
       newErrors.phone_num = "Phone number must be 10 digits";
     }
+
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -338,7 +319,7 @@ const TParentList = () => {
         const { data } = await editParent(formData, editId);
         if (data.success) {
           toast.success(data.message);
-          fetchParentsData();
+          fetchParentsData()
           handleModalPopUp("edit_parent");
           setFormData({ name: "", phone_num: "", email: "", img_src: "" });
           setErrors({});
@@ -354,28 +335,30 @@ const TParentList = () => {
     }
   };
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault;
+    e.preventDefault
 
-    handleModalPopUp("edit_parent");
+    handleModalPopUp('edit_parent')
     setFormData({
       name: "",
       phone_num: "",
       email: "",
       img_src: "",
-    });
-    setEditId(null);
-    setOriginalImgPath("");
-    setFatImgId(null);
-    setFatImg(null);
-    setErrors({});
-  };
+    })
+    setEditId(null)
+    setOriginalImgPath('')
+    setFatImgId(null)
+    setFatImg(null)
+    setErrors({})
+
+  }
+
 
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       render: (text: number) => (
-        <div onClick={() => setShow(true)} className="link-primary">
+        <div style={{cursor:'pointer'}} onClick={() => fetchSpecficParentData(text)} className="link-primary">
           PRT{text}
         </div>
       ),
@@ -410,32 +393,54 @@ const TParentList = () => {
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
     {
-      title: "Child",
+      title: "Children",
       dataIndex: "child",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link
-            to={`${teacher_routes.studentDetail}/${record.rollnum}`}
-            className="avatar avatar-md"
-          >
-            <img
-              src={`${Imageurl}/${record.stu_img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-              <Link to={`${teacher_routes.studentDetail}/${record.rollnum}`}>
-                {text}
-              </Link>
-            </p>
-            <span className="fs-12">{record.class}</span>
-          </div>
+      render: (children: any[]) => (
+        <div className="d-flex flex-column gap-2">
+          {Array.isArray(children) && children.length > 0 ? (
+            children.map((c: any, index: number) => (
+              <div key={index} className="d-flex align-items-center">
+                {c.stu_id ? (
+                  <>
+                    <Link
+                      to={`${routes.studentDetail}/${c.rollnum}`}
+                      className="avatar avatar-sm"
+                    >
+                      <img
+                        src={`${Imageurl}/${c.stu_img}`}
+                        className="img-fluid rounded-circle"
+                        alt={c.firstname || "student"}
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Link>
+                    <div className="ms-2">
+                      <p className="text-dark mb-0 fs-14">
+                        <Link to={`${routes.studentDetail}/${c.rollnum}`}>
+                          {c.firstname} {c.lastname}
+                        </Link>
+                      </p>
+                      <span className="fs-12 text-muted">
+                        Class: {c.class || "-"} | Sec: {c.section || "-"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-muted fs-13">No student linked</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <span className="text-muted fs-13">No student data</span>
+          )}
         </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.Child.length - b.Child.length,
+      sorter: (a: any, b: any) => a.children.length - b.children.length,
     },
+
     {
       title: "Phone",
       dataIndex: "phone",
@@ -471,32 +476,28 @@ const TParentList = () => {
                     View Parent
                   </button>
                 </li>
-                {permission?.can_edit ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => fetchParentDataForEdit(id)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#edit_parent"
-                    >
-                      <i className="ti ti-edit-circle me-2" />
-                      Edit
-                    </button>
-                  </li>
-                ) : null}
-                {permission?.can_delete ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => setDleteIds(id, record.userId)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#delete-modal"
-                    >
-                      <i className="ti ti-trash-x me-2" />
-                      Delete
-                    </button>
-                  </li>
-                ) : null}
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => fetchParentDataForEdit(id)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#edit_parent"
+                  >
+                    <i className="ti ti-edit-circle me-2" />
+                    Edit
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => setDleteIds(id, record.userId)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete-modal"
+                  >
+                    <i className="ti ti-trash-x me-2" />
+                    Delete
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -632,13 +633,13 @@ const TParentList = () => {
                 </div>
                 <div className="d-flex align-items-center bg-white border rounded-2 p-1 mb-3 me-2">
                   <Link
-                    to={teacher_routes.parentList}
+                    to={routes.parentList}
                     className="active btn btn-icon btn-sm me-1 primary-hover"
                   >
                     <i className="ti ti-list-tree" />
                   </Link>
                   <Link
-                    to={teacher_routes.parentGrid}
+                    to={routes.parentGrid}
                     className="btn btn-icon btn-sm bg-light primary-hover"
                   >
                     <i className="ti ti-grid-dots" />
@@ -680,22 +681,15 @@ const TParentList = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              {loading ? (
-                <div
-                  className="d-flex justify-content-center align-items-center"
-                  style={{ height: "200px" }}
-                >
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+              {
+                loading ? (
+                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Table
-                  dataSource={tableData}
-                  columns={columns}
-                  Selection={true}
-                />
-              )}
+                ) : (<Table dataSource={tableData} columns={columns} Selection={true} />)
+              }
 
               {/* /Student List */}
             </div>
@@ -708,7 +702,7 @@ const TParentList = () => {
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form>
+            <form >
               <div className="modal-body text-center">
                 <span className="delete-icon">
                   <i className="ti ti-trash-x" />
@@ -718,8 +712,8 @@ const TParentList = () => {
                   You want to delete all the marked items, this cant be undone
                   once you delete.
                 </p>
-                {parentId && userId && (
-                  <div className="d-flex justify-content-center">
+                {
+                  (parentId && userId) && (<div className="d-flex justify-content-center">
                     <button
                       onClick={(e) => handleCancelDelete(e)}
                       className="btn btn-light me-3"
@@ -727,14 +721,11 @@ const TParentList = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      onClick={(e) => handleDelete(parentId, userId, e)}
-                      className="btn btn-danger"
-                    >
+                    <button onClick={(e) => handleDelete(parentId, userId, e)} className="btn btn-danger" >
                       Yes, Delete
                     </button>
-                  </div>
-                )}
+                  </div>)
+                }
               </div>
             </form>
           </div>
@@ -764,31 +755,23 @@ const TParentList = () => {
               <div id="modal-tag" className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="d-flex align-items-center upload-pic flex-wrap row-gap-3 mb-3">
                       <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                        {fatImgId && fatImg ? (
-                          <img
+
+                        {
+                          fatImgId && fatImg ? (<img
                             src={URL.createObjectURL(fatImg)}
                             alt="Parent"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <img
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />) : (<img
                             src={`${Imageurl}/${orginalImgPath}`}
                             alt="Parent"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        )}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />)
+                        }
                       </div>
 
                       <div className="profile-upload">
@@ -819,35 +802,28 @@ const TParentList = () => {
                       <label className="form-label">Name</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.name ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
                         placeholder="Enter Name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                       />
-                      {errors.name && (
-                        <div className="invalid-feedback">{errors.name}</div>
-                      )}
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
+
 
                     <div className="mb-3">
                       <label className="form-label">Phone Number</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.phone_num ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.phone_num ? "is-invalid" : ""}`}
                         placeholder="Enter Phone Number"
                         name="phone_num"
                         value={formData.phone_num}
                         onChange={handleChange}
                       />
                       {errors.phone_num && (
-                        <div className="invalid-feedback">
-                          {errors.phone_num}
-                        </div>
+                        <div className="invalid-feedback">{errors.phone_num}</div>
                       )}
                     </div>
 
@@ -855,27 +831,27 @@ const TParentList = () => {
                       <label className="form-label">Email Address</label>
                       <input
                         type="email"
-                        className={`form-control ${
-                          errors.email ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
                         placeholder="Enter Email Address"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
                       />
-                      {errors.email && (
-                        <div className="invalid-feedback">{errors.email}</div>
-                      )}
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                     </div>
+
+
                   </div>
                 </div>
               </div>
+
 
               <div className="modal-footer">
                 <button
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn btn-light me-2"
+
                 >
                   Cancel
                 </button>
@@ -891,6 +867,7 @@ const TParentList = () => {
 
       <ParentModal />
 
+
       <Modal show={show} onHide={handleClose} centered size="lg">
         <div className="modal-header">
           <h4 className="modal-title">View Details</h4>
@@ -904,117 +881,131 @@ const TParentList = () => {
             <i className="ti ti-x" />
           </button>
         </div>
-        {loading2 ? (
-          <div
-            className="d-flex justify-content-center align-items-center"
-            style={{ height: "200px" }}
-          >
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+        {
+          loading2 ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
             </div>
-          </div>
-        ) : (
-          speParentData && (
-            <div className="modal-body mb-0">
-              <div className="parent-wrap">
-                <div className="row align-items-center">
-                  <div className="col-lg-6">
-                    <div className="d-flex align-items-center mb-3">
-                      <span className="avatar avatar-xl me-2">
-                        <img
-                          src={`${Imageurl}/${speParentData.img_src}`}
-                          alt="img"
-                        />
-                      </span>
-                      <div className="parent-name">
-                        <h5 className="mb-1">Thomas</h5>
-                        <p>Added on {formatDate(speParentData.Parent_Add)}</p>
+          ) :
+            (speParentData && (
+              <div className="modal-body mb-0">
+                <div className="parent-wrap">
+                  <div className="row align-items-center">
+                    <div className="col-lg-6">
+                      <div className="d-flex align-items-center mb-3">
+                        <span className="avatar avatar-xl me-2">
+                          <img
+                            src={`${Imageurl}/${speParentData.img_src}`}
+                            alt="img"
+                          />
+                        </span>
+                        <div className="parent-name">
+                          <h5 className="mb-1">{speParentData.name}</h5>
+                          <p>Added on {formatDate(speParentData.Parent_Add)}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="col-lg-6">
-                    <ul className="d-flex align-items-center">
-                      <li className="mb-3 me-5">
-                        <p className="mb-1">Email</p>
-                        <h6 className="fw-normal">{speParentData.email}</h6>
-                      </li>
-                      <li className="mb-3">
-                        <p className="mb-1">Phone</p>
-                        <h6 className="fw-normal">{speParentData.phone_num}</h6>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <h5 className="mb-3">Children Details</h5>
-              <div className="border rounded p-4 pb-1 mb-3">
-                <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                  <span className="link-primary mb-2">
-                    {speParentData.admissionnum}
-                  </span>
-                  <span
-                    className={`badge ${
-                      speParentData.status == "1"
-                        ? "badge-soft-success"
-                        : "badge-soft-danger"
-                    } badge-md mb-2`}
-                  >
-                    <i className="ti ti-circle-filled me-2" />
-                    {speParentData.status == "1" ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <div className="d-flex align-items-center justify-content-between flex-wrap">
-                  <div className="d-flex align-items-center mb-3">
-                    <Link to={teacher_routes.studentDetail} className="avatar">
-                      <img
-                        src={`${Imageurl}/${speParentData.stu_img}`}
-                        className="img-fluid rounded-circle"
-                        alt="img"
-                      />
-                    </Link>
-                    <div className="ms-2">
-                      <p className="mb-0">
-                        <Link
-                          to={teacher_routes.studentDetail}
-                        >{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
-                      </p>
-                      <span>
-                        {speParentData.class}, {speParentData.section}
-                      </span>
+                    <div className="col-lg-6">
+                      <ul className="d-flex align-items-center">
+                        <li className="mb-3 me-5">
+                          <p className="mb-1">Email</p>
+                          <h6 className="fw-normal">{speParentData.email}</h6>
+                        </li>
+                        <li className="mb-3">
+                          <p className="mb-1">Phone</p>
+                          <h6 className="fw-normal">{speParentData.phone_num}</h6>
+                        </li>
+                      </ul>
                     </div>
                   </div>
-                  <ul className="d-flex align-items-center flex-wrap">
-                    <li className="mb-3 me-4">
-                      <p className="mb-1">Roll No</p>
-                      <h6 className="fw-normal">{speParentData.rollnum}</h6>
-                    </li>
-                    <li className="mb-3 me-4">
-                      <p className="mb-1">Gender</p>
-                      <h6 className="fw-normal">{speParentData.gender}</h6>
-                    </li>
-                    <li className="mb-3">
-                      <p className="mb-1">Date of Joined</p>
-                      <h6 className="fw-normal">
-                        {formatDate(speParentData.admissiondate)}
-                      </h6>
-                    </li>
-                  </ul>
-                  <div className="d-flex align-items-center">
-                    <Link
-                      to={`${teacher_routes.studentDetail}/${speParentData.rollnum}`}
-                      className="btn btn-primary mb-3"
-                    >
-                      View Details
-                    </Link>
-                  </div>
                 </div>
+                <h5 className="mb-3">Children Details</h5>
+
+
+                {
+                  speParentData?.children?.length > 0 ? (
+                    speParentData.children.map((s: any) => (
+                      <div key={s.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                        {/* Header Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                          <span className="link-primary fw-semibold mb-2">{s.admissionnum}</span>
+                          <span
+                            className={`badge ${s.status === "1" ? "badge-soft-success" : "badge-soft-danger"
+                              } badge-md mb-2`}
+                          >
+                            <i className="ti ti-circle-filled me-2" />
+                            {s.status === "1" ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        {/* Student Info Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <div className="d-flex align-items-center mb-3">
+                            <Link to={`${routes.studentDetail}/${s.rollnum}`} className="avatar">
+                              <img
+                                src={`${Imageurl}/${s.stu_img}`}
+                                className="img-fluid rounded-circle border"
+                                alt={`${s.firstname} ${s.lastname}`}
+                              />
+                            </Link>
+                            <div className="ms-3">
+                              <p className="mb-0 fw-medium">
+                                <Link to={`${routes.studentDetail}/${s.rollnum}`} className="text-dark text-decoration-none">
+                                  {`${s.firstname} ${s.lastname}`}
+                                </Link>
+                              </p>
+                              <small className="text-muted text-uppercase">
+                                {s.class} - {s.section}
+                              </small>
+                            </div>
+                          </div>
+
+                          {/* Student Details */}
+                          <ul className="d-flex align-items-center flex-wrap mb-0">
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Roll No</p>
+                              <h6 className="fw-normal">{s.rollnum}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Gender</p>
+                              <h6 className="fw-normal">{s.gender}</h6>
+                            </li>
+                            <li className="mb-3">
+                              <p className="mb-1 text-muted">Date of Joined</p>
+                              <h6 className="fw-normal">{dayjs(s.admissiondate).format('DD MMM YYYY')}</h6>
+                            </li>
+                          </ul>
+
+                          {/* Action Button */}
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to={`${routes.studentDetail}/${s.rollnum}`}
+                              className="btn btn-primary btn-sm mb-3"
+                            >
+                              View Details
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted fst-italic">No student records available.</p>
+                  )
+                }
+
               </div>
-            </div>
-          )
-        )}
+            ))
+        }
+
       </Modal>
+
     </>
+
+
+
   );
 };
 
-export default TParentList;
+export default ParentList;
