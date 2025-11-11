@@ -75,6 +75,7 @@ exports.getStudentHomework = async (req, res) => {
         hw.submissionDate,
         hw.attachements,
         hw.description,
+        hw.title,
         hw.status,
         hw.created_at,
         hw.updated_at,

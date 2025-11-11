@@ -12,7 +12,6 @@ import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import {
   addHomeWork,
-  allHomeWork,
   allTeacherForOption,
   deleteHomework,
   editHomework,
@@ -92,6 +91,7 @@ const TClassHomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
+    title: ""
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof HomeworkFormData, string>>
@@ -320,6 +320,7 @@ const TClassHomeWork = () => {
           status: data.data.status,
           attachments: data.data.attachements,
           description: data.data.description,
+          title: data.data.title,
         });
         setEditId(id);
       }
@@ -341,6 +342,7 @@ const TClassHomeWork = () => {
       status: "1",
       attachments: "",
       description: "",
+      title: ""
     });
     setErrors({});
   };
@@ -376,6 +378,7 @@ const TClassHomeWork = () => {
         status: "1",
         attachments: "",
         description: "",
+        title: ""
       });
       setErrors({});
     } catch (error) {
@@ -389,7 +392,7 @@ const TClassHomeWork = () => {
     id: number,
     e: React.MouseEvent<HTMLButtonElement>
   ) => {
-    // console.log(id)
+  
     e.preventDefault();
     try {
       const { data } = await deleteHomework(id);
@@ -448,6 +451,15 @@ const TClassHomeWork = () => {
       render: (text: string) => <span className="text-capitalize">{text}</span>,
       sorter: (a: TableData, b: TableData) =>
         a.section.length - b.section.length,
+    },
+    {
+      title: "Subject Title",
+      dataIndex: "title",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
+      sorter: (a: TableData, b: TableData) =>
+        a.title.length - b.title.length,
     },
     {
       title: "Subject",
@@ -749,9 +761,7 @@ const TClassHomeWork = () => {
                       <div className="mb-3">
                         <label className="form-label">Class</label>
                         <CommonSelect
-                          className={`select ${
-                            errors.className ? "is-invalid" : ""
-                          }`}
+                          className={`select ${errors.className ? "is-invalid" : ""}`}
                           options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
@@ -759,21 +769,16 @@ const TClassHomeWork = () => {
                           }
                         />
                         {errors.className && (
-                          <div className="invalid-feedback">
-                            {errors.className}
-                          </div>
+                          <div className="invalid-feedback">{errors.className}</div>
                         )}
                       </div>
 
-                      {/* Section + Subject */}
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Section</label>
                             <CommonSelect
-                              className={`select text-capitalize ${
-                                errors.section ? "is-invalid" : ""
-                              }`}
+                              className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
                               options={sectionOptions}
                               value={formData.section}
                               onChange={(opt) =>
@@ -781,55 +786,62 @@ const TClassHomeWork = () => {
                               }
                             />
                             {errors.section && (
-                              <div className="invalid-feedback">
-                                {errors.section}
-                              </div>
+                              <div className="invalid-feedback">{errors.section}</div>
                             )}
                           </div>
                         </div>
+
                         <div className="col-md-6">
+                          {/* Teacher */}
                           <div className="mb-3">
-                            <label className="form-label">Subject</label>
+                            <label className="form-label">Teacher</label>
                             <CommonSelect
-                              className={`select ${
-                                errors.subject ? "is-invalid" : ""
-                              }`}
-                              options={subjectOptions}
-                              value={formData.subject}
+                              className={`select ${errors.teacherId ? "is-invalid" : ""}`}
+                              options={teacherOptions}
+                              value={formData.teacherId}
                               onChange={(opt) =>
-                                handleSelectChange("subject", opt?.value || "")
+                                handleSelectChange("teacherId", opt?.value || "")
                               }
                             />
-                            {errors.subject && (
-                              <div className="invalid-feedback">
-                                {errors.subject}
-                              </div>
+                            {errors.teacherId && (
+                              <div className="invalid-feedback">{errors.teacherId}</div>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Teacher */}
-                      <div className="mb-3">
-                        <label className="form-label">Teacher</label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.teacherId ? "is-invalid" : ""
-                          }`}
-                          options={teacherOptions}
-                          value={formData.teacherId}
-                          onChange={(opt) =>
-                            handleSelectChange("teacherId", opt?.value || "")
-                          }
-                        />
-                        {errors.teacherId && (
-                          <div className="invalid-feedback">
-                            {errors.teacherId}
-                          </div>
-                        )}
                       </div>
+                      <div className="row">
 
-                      {/* Homework Date + Submission Date */}
+
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject</label>
+                          <CommonSelect
+                            className={`select ${errors.subject ? "is-invalid" : ""}`}
+                            options={subjectOptions}
+                            value={formData.subject}
+                            onChange={(opt) =>
+                              handleSelectChange("subject", opt?.value || "")
+                            }
+                          />
+                          {errors.subject && (
+                            <div className="invalid-feedback">{errors.subject}</div>
+                          )}
+                        </div>
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject Title</label>
+                          <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className={`form-control ${errors.title ? "is-invalid" : ""}`}
+                          />
+                          {errors.title && (
+                            <div className="invalid-feedback">{errors.title}</div>
+                          )}
+                        </div>
+
+                      </div>
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
@@ -840,10 +852,7 @@ const TClassHomeWork = () => {
                                 format="DD MMM YYYY"
                                 value={
                                   formData.homeworkDate
-                                    ? dayjs(
-                                        formData.homeworkDate,
-                                        "DD MMM YYYY"
-                                      )
+                                    ? dayjs(formData.homeworkDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -869,19 +878,14 @@ const TClassHomeWork = () => {
                         </div>
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">
-                              Submission Date
-                            </label>
+                            <label className="form-label">Submission Date</label>
                             <div className="input-icon position-relative">
                               <DatePicker
                                 className={`form-control datetimepicker`}
                                 format="DD MMM YYYY"
                                 value={
                                   formData.submissionDate
-                                    ? dayjs(
-                                        formData.submissionDate,
-                                        "DD MMM YYYY"
-                                      )
+                                    ? dayjs(formData.submissionDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -906,8 +910,6 @@ const TClassHomeWork = () => {
                           </div>
                         </div>
                       </div>
-
-                      {/* Attachments */}
                       <div className="mb-3">
                         <label className="form-label">Attachments</label>
                         <input
@@ -915,14 +917,10 @@ const TClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className={`form-control ${
-                            errors.attachments ? "is-invalid" : ""
-                          }`}
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""}`}
                         />
                         {errors.attachments && (
-                          <div className="invalid-feedback">
-                            {errors.attachments}
-                          </div>
+                          <div className="invalid-feedback">{errors.attachments}</div>
                         )}
                       </div>
 
@@ -930,18 +928,15 @@ const TClassHomeWork = () => {
                       <div className="mb-3">
                         <label className="form-label">Description</label>
                         <textarea
-                          className={`form-control ${
-                            errors.description ? "is-invalid" : ""
-                          }`}
+                          className={`form-control ${errors.description ? "is-invalid" : ""
+                            }`}
                           name="description"
                           rows={4}
                           value={formData.description}
                           onChange={handleChange}
                         />
                         {errors.description && (
-                          <div className="invalid-feedback">
-                            {errors.description}
-                          </div>
+                          <div className="invalid-feedback">{errors.description}</div>
                         )}
                       </div>
 
@@ -969,11 +964,7 @@ const TClassHomeWork = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
+                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
                   </Link>
                   <button type="submit" className="btn btn-primary">
@@ -1010,9 +1001,7 @@ const TClassHomeWork = () => {
                       <div className="mb-3">
                         <label className="form-label">Class</label>
                         <CommonSelect
-                          className={`select ${
-                            errors.className ? "is-invalid" : ""
-                          }`}
+                          className={`select ${errors.className ? "is-invalid" : ""}`}
                           options={classOptions}
                           value={formData.className}
                           onChange={(opt) =>
@@ -1020,21 +1009,16 @@ const TClassHomeWork = () => {
                           }
                         />
                         {errors.className && (
-                          <div className="invalid-feedback">
-                            {errors.className}
-                          </div>
+                          <div className="invalid-feedback">{errors.className}</div>
                         )}
                       </div>
 
-                      {/* Section + Subject */}
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
                             <label className="form-label">Section</label>
                             <CommonSelect
-                              className={`select text-capitalize ${
-                                errors.section ? "is-invalid" : ""
-                              }`}
+                              className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
                               options={sectionOptions}
                               value={formData.section}
                               onChange={(opt) =>
@@ -1042,52 +1026,61 @@ const TClassHomeWork = () => {
                               }
                             />
                             {errors.section && (
-                              <div className="invalid-feedback">
-                                {errors.section}
-                              </div>
+                              <div className="invalid-feedback">{errors.section}</div>
                             )}
                           </div>
                         </div>
+
                         <div className="col-md-6">
+                          {/* Teacher */}
                           <div className="mb-3">
-                            <label className="form-label">Subject</label>
+                            <label className="form-label">Teacher</label>
                             <CommonSelect
-                              className={`select ${
-                                errors.subject ? "is-invalid" : ""
-                              }`}
-                              options={subjectOptions}
-                              value={formData.subject}
+                              className={`select ${errors.teacherId ? "is-invalid" : ""}`}
+                              options={teacherOptions}
+                              value={formData.teacherId}
                               onChange={(opt) =>
-                                handleSelectChange("subject", opt?.value || "")
+                                handleSelectChange("teacherId", opt?.value || "")
                               }
                             />
-                            {errors.subject && (
-                              <div className="invalid-feedback">
-                                {errors.subject}
-                              </div>
+                            {errors.teacherId && (
+                              <div className="invalid-feedback">{errors.teacherId}</div>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Teacher */}
-                      <div className="mb-3">
-                        <label className="form-label">Teacher</label>
-                        <CommonSelect
-                          className={`select ${
-                            errors.teacherId ? "is-invalid" : ""
-                          }`}
-                          options={teacherOptions}
-                          value={formData.teacherId}
-                          onChange={(opt) =>
-                            handleSelectChange("teacherId", opt?.value || "")
-                          }
-                        />
-                        {errors.teacherId && (
-                          <div className="invalid-feedback">
-                            {errors.teacherId}
-                          </div>
-                        )}
+                      </div>
+                      <div className="row">
+
+
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject</label>
+                          <CommonSelect
+                            className={`select ${errors.subject ? "is-invalid" : ""}`}
+                            options={subjectOptions}
+                            value={formData.subject}
+                            onChange={(opt) =>
+                              handleSelectChange("subject", opt?.value || "")
+                            }
+                          />
+                          {errors.subject && (
+                            <div className="invalid-feedback">{errors.subject}</div>
+                          )}
+                        </div>
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject Title</label>
+                          <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className={`form-control ${errors.title ? "is-invalid" : ""}`}
+                          />
+                          {errors.title && (
+                            <div className="invalid-feedback">{errors.title}</div>
+                          )}
+                        </div>
+
                       </div>
 
                       {/* Homework Date + Submission Date */}
@@ -1101,10 +1094,7 @@ const TClassHomeWork = () => {
                                 format="DD MMM YYYY"
                                 value={
                                   formData.homeworkDate
-                                    ? dayjs(
-                                        formData.homeworkDate,
-                                        "DD MMM YYYY"
-                                      )
+                                    ? dayjs(formData.homeworkDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -1130,19 +1120,14 @@ const TClassHomeWork = () => {
                         </div>
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label">
-                              Submission Date
-                            </label>
+                            <label className="form-label">Submission Date</label>
                             <div className="input-icon position-relative">
                               <DatePicker
                                 className={`form-control datetimepicker`}
                                 format="DD MMM YYYY"
                                 value={
                                   formData.submissionDate
-                                    ? dayjs(
-                                        formData.submissionDate,
-                                        "DD MMM YYYY"
-                                      )
+                                    ? dayjs(formData.submissionDate, "DD MMM YYYY")
                                     : null
                                 }
                                 placeholder="Select Date"
@@ -1176,14 +1161,11 @@ const TClassHomeWork = () => {
                           name="attachments"
                           value={formData.attachments}
                           onChange={handleChange}
-                          className={`form-control ${
-                            errors.attachments ? "is-invalid" : ""
-                          }`}
+                          className={`form-control ${errors.attachments ? "is-invalid" : ""
+                            }`}
                         />
                         {errors.attachments && (
-                          <div className="invalid-feedback">
-                            {errors.attachments}
-                          </div>
+                          <div className="invalid-feedback">{errors.attachments}</div>
                         )}
                       </div>
 
@@ -1191,18 +1173,15 @@ const TClassHomeWork = () => {
                       <div className="mb-3">
                         <label className="form-label">Description</label>
                         <textarea
-                          className={`form-control ${
-                            errors.description ? "is-invalid" : ""
-                          }`}
+                          className={`form-control ${errors.description ? "is-invalid" : ""
+                            }`}
                           name="description"
                           rows={4}
                           value={formData.description}
                           onChange={handleChange}
                         />
                         {errors.description && (
-                          <div className="invalid-feedback">
-                            {errors.description}
-                          </div>
+                          <div className="invalid-feedback">{errors.description}</div>
                         )}
                       </div>
 
@@ -1230,11 +1209,7 @@ const TClassHomeWork = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
+                  <button onClick={(e) => cancelEdit(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

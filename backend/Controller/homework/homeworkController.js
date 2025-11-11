@@ -237,6 +237,7 @@ exports.getAllStudentHomeWork = async (req, res) => {
         hw.subject AS subject_id,
         t.img_src,
         hw.status,
+        hw.title,
         hw.teacherId,
         hw.homeworkDate,
         hw.submissionDate,
@@ -254,7 +255,7 @@ exports.getAllStudentHomeWork = async (req, res) => {
         WHERE hw.class_id = ? AND hw.section_id = ?`,
       [studentClass, section]
     );
-    console.log(home_work);
+    
     return res.status(200).json({
       message: "Fetched all homework successfully!",
       success: true,
@@ -358,7 +359,7 @@ exports.getAllTeacherHomeWork = async (req, res) => {
 //        WHERE hw.class_id = ? AND hw.section_id = ?`,
 //       [studentClass, section]
 //     );
-// // console.log(home_work);
+
 //     return res.json({
 //       success: true,
 //       data: home_work,

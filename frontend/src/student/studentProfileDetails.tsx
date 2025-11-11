@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link} from "react-router-dom";
 // import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
 import { all_routes } from "../router/all_routes";
 import { Documenturl, Imageurl } from "../service/api";
@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "antd";
 import StudentModals from "../admin/peoples/students/studentModals";
 import StudentSidebar from "../admin/peoples/students/student-details/studentSidebar";
-import StudentBreadcrumb from "../admin/peoples/students/student-details/studentBreadcrumb";
+
 import { getSpecStudentProfileDetails } from "../service/studentapi";
 import { student_routes } from "../admin/router/student_routes";
 
@@ -20,13 +20,12 @@ const StudentProfileDetails = () => {
     img_src?: string;
     guardian_is?: string;
   }
-  const { rollnum } = useParams<{ rollnum: string }>();
+
 
   const [student, setStudent] = useState<any>({});
   const [parents, setParents] = useState<Parent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const token = localStorage.getItem("token");
-  const roleId = token ? JSON.parse(token)?.role : null;
   const userId = token ? JSON.parse(token)?.id : null;
 
   const fetchStudent = async (userId: number) => {

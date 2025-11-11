@@ -10,12 +10,13 @@ import {
   allClass,
   classSection,
 } from "../../../../core/common/selectoption/selectoption";
-import { all_routes } from "../../../router/all_routes";
+
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { allExamData, getSpeExamResult } from "../../../../service/api";
+import { teacher_routes } from "../../../../admin/router/teacher_routes";
 
 export default function ExamMarkUpload() {
-  const routes = all_routes;
+
   const initialStudents = [
     { id: 1, name: "Andrew Nahi", idCard: "ZIS/20-21/096" },
     { id: 2, name: "Athaang Sawant", idCard: "ZIS/20-21/095" },
@@ -237,7 +238,7 @@ export default function ExamMarkUpload() {
                 <nav>
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
-                      <Link to={routes.adminDashboard}>Dashboard</Link>
+                      <Link to={teacher_routes.teacherDashboard}>Dashboard</Link>
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="#">Academic </Link>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Select } from "antd";
 import { toast } from "react-toastify";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { all_routes } from "../router/all_routes";
-import { specificStudentData1 } from "../service/api";
+
 // import { PdfTemplate1, PdfTemplate2, PdfTemplate3 } from "./pdfTemplate";
 import PdfTemplate1, {
   PdfTemplate2,
@@ -572,7 +572,7 @@ const Template3Preview = ({
 
 const StudentExamResult: React.FC = () => {
   const routes = all_routes;
-  const { rollnum } = useParams<{ rollnum: string }>();
+  // const { rollnum } = useParams<{ rollnum: string }>();
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token)?.id : null;
   const [student, setStudent] = useState<any>({});
