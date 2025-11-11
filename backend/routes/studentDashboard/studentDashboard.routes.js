@@ -14,5 +14,9 @@ router.get(
   "/getstudentfeereminder/:rollNum",
   studentDashboardController.getStudentFeeReminder
 );
+router.get(
+  "/student-class-teachers",
+  studentDashboardController.getTeacherListOfStudentClass
+);
 
 module.exports = router;

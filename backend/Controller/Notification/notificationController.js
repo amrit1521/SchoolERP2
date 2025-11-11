@@ -762,7 +762,6 @@ exports.getUpcomingEvents = async (req, res) => {
         n.event_category, 
         n.event_date, 
         n.event_time
-      where n.roll_id = ?
       ORDER BY created_at DESC;
     `;
 

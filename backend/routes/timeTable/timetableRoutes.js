@@ -1,10 +1,20 @@
-const express = require('express')
-const timeTableController = require('../../Controller/timetable/timeTableController')
+const express = require("express");
+const timeTableController = require("../../Controller/timetable/timeTableController");
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/addtimetable' , timeTableController.addTimeTable)
-router.get('/gettimetable' , timeTableController.getTimeTable)
-router.post('/filtertable' ,timeTableController.filterTimeTable)
+router.post("/addtimetable", timeTableController.addTimeTable);
+router.get("/gettimetable", timeTableController.getTimeTable);
+router.post("/filtertable", timeTableController.filterTimeTable);
+
+//student routes
+router.get(
+  "/gettimetablespeclass/:userId",
+  timeTableController.getTimeTableSpecClass
+);
+router.get(
+  "/gettimetablespeteacher/:userId",
+  timeTableController.getTimeTableSpecTeacher
+);
 
 module.exports = router;

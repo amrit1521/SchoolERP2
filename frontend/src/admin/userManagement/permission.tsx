@@ -26,6 +26,7 @@ const Permission = () => {
     }
     try {
       const { data } = await getAllModules();
+      console.log("all Modules: ", data.result);
       const result = await getAllRolePermissions(roleId);
       if (data.success) {
         const modules = data.result;

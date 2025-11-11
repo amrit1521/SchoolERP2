@@ -133,3 +133,31 @@ exports.getStudentFeeReminder = async (req, res) => {
       .json({ message: "Error while fetching fee reminder!", success: false });
   }
 };
+
+
+exports.getTeacherListOfStudentClass = async (req,res) =>{
+  try{
+    const {classId,sectionId} = req.query;
+    const sql = `SELECT t.teacher_id,t.subject,u.firstname,u.lastname,t.img_src
+                  from teachers t
+                  LEFT JOIN users u ON u.id = t.user_id
+                  WHERE class = ? and section = ?
+    ;`
+    const [rows] = await db.execute(sql, [classId,sectionId]);
+    if (rows.length <= 0) {
+      return res.status(200).json({
+        success: false,
+        data: rows,
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  }catch(error){
+    console.error("Error fetching teachers of student class:", error);
+    return res
+      .status(500)
+      .json({ message: "Error while fetching teachers of student class!", success: false });
+  }
+}
