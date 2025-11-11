@@ -13,7 +13,6 @@ import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import {
   addHomeWork,
-  allHomeWork,
   allTeacherForOption,
   deleteHomework,
   editHomework,
@@ -22,7 +21,7 @@ import {
   getAllSectionForAClass,
   getAllSubject,
   Imageurl,
-  speHomework,
+ 
 } from "../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../handlePopUpmodal";
@@ -41,6 +40,7 @@ export interface Homework {
   firstname: string;
   lastname: string;
   img_src?: string;
+  title:string;
 }
 
 export interface Teacher {
@@ -84,6 +84,7 @@ const HomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
+    title:"",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof HomeworkFormData, string>>
@@ -117,11 +118,7 @@ const HomeWork = () => {
     if (roleId) {
       const { data } = await getAllRolePermissions(roleId);
       if (data.success) {
-        console.log("all permission", data?.result);
-        console.log(
-          "specific permission: ",
-          data.result.filter((perm: any) => perm?.module_name === "HomeWork")
-        );
+      
         const currentPermission = data.result
           .filter((perm: any) => perm?.module_name === "HomeWork")
           .map((perm: any) => ({
@@ -140,7 +137,7 @@ const HomeWork = () => {
     if (userId) {
       try {
         const { data } = await getAllStudentHomeWork(userId);
-
+          console.log(data.data)
         if (data.success) {
           setHomeworks(data.data);
         }
@@ -235,6 +232,7 @@ const HomeWork = () => {
     key: hw.id,
     id: hw.id,
     section: hw.section,
+    title:hw.title,
     class: hw.className,
     subject: hw.subject,
     homeworkDate: dayjs(hw.homeworkDate).format("DD MMM YYYY"),
@@ -300,27 +298,7 @@ const HomeWork = () => {
   };
 
   // edit---------------------------
-  const fetchHwById = async (id: number) => {
-    try {
-      const { data } = await speHomework(id);
-      if (data.success) {
-        setFormData({
-          className: data.data.className,
-          section: Number(data.data.section),
-          subject: Number(data.data.subject),
-          homeworkDate: dayjs(data.data.homeWorkDate).format("DD MMM YYYY"),
-          submissionDate: dayjs(data.data.submissionDate).format("DD MMM YYYY"),
-          teacherId: data.data.teacherId,
-          status: data.data.status,
-          attachments: data.data.attachements,
-          description: data.data.description,
-        });
-        setEditId(id);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -335,6 +313,7 @@ const HomeWork = () => {
       status: "1",
       attachments: "",
       description: "",
+      title:""
     });
     setErrors({});
   };
@@ -370,6 +349,7 @@ const HomeWork = () => {
         status: "1",
         attachments: "",
         description: "",
+        title:""
       });
       setErrors({});
     } catch (error) {
@@ -429,6 +409,12 @@ const HomeWork = () => {
       sorter: (a: TableData, b: TableData) =>
         a.section.length - b.section.length,
     },
+     {
+      title: "Subject Title",
+      dataIndex: "title",
+      sorter: (a: TableData, b: TableData) =>
+        a.title.length - b.title.length,
+    },
     {
       title: "Subject",
       dataIndex: "subject",
@@ -470,58 +456,7 @@ const HomeWork = () => {
         a.createdBy.length - b.createdBy.length,
     },
 
-    {
-      title: "Action",
-      dataIndex: "action",
-      render: (text: any) => (
-        <>
-          {permission && (
-            <div className="dropdown">
-              <Link
-                to="#"
-                className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <i className="ti ti-dots-vertical fs-14" />
-              </Link>
-              <ul className="dropdown-menu dropdown-menu-right p-3">
-                {permission?.can_edit ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => fetchHwById(text)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#edit_home_work"
-                    >
-                      <i className="ti ti-edit-circle me-2" />
-                      Edit
-                    </button>
-                  </li>
-                ) : (
-                  ""
-                )}
-                {permission?.can_delete ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => setDeleteId(text)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#delete-modal"
-                    >
-                      <i className="ti ti-trash-x me-2" />
-                      Delete
-                    </button>
-                  </li>
-                ) : (
-                  ""
-                )}
-              </ul>
-            </div>
-          )}
-        </>
-      ),
-    },
+   
   ];
 
   return (
@@ -699,7 +634,7 @@ const HomeWork = () => {
                   <Table
                     columns={columns}
                     dataSource={tableData}
-                    Selection={true}
+                    Selection={false}
                   />
                 )}
 

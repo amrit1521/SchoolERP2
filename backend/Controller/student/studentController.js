@@ -1465,35 +1465,41 @@ exports.getStudentLeaveData = async (req, res) => {
 };
 
 exports.getSpecStudentDetails = async (req, res) => {
-  const userId = req.params?.userId;
+  const { userId } = req.params;
 
   if (!userId) {
     return res.status(404).json({
       success: false,
-      message: "user not found.",
+      message: "User ID is required.",
     });
   }
 
-  const [userRows] = await db.query(
-    `SELECT
-        users.id,
+  try {
+    
+    const [userRows] = await db.query(
+      `
+      SELECT 
+        u.id,
         s.class_id,
+        s.parent_id,
         s.section_id,
         s.rollnum
-    FROM users
-    LEFT JOIN students as s ON s.stu_id = users.id
-    WHERE users.id = ?`,
-    [userId]
-  );
-  if (!userRows || userRows.length === 0) {
-    return res.status(404).json({ message: "Student not found" });
-  }
-  const student = userRows[0];
-  const rollnum = student.rollnum;
-  const id = student.id;
+      FROM users u
+      LEFT JOIN students s ON s.stu_id = u.id
+      WHERE u.id = ?
+      `,
+      [userId]
+    );
 
-  try {
-    const sql = `
+    if (!userRows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found!",
+      });
+    }
+
+    const { rollnum, parent_id } = userRows[0];
+    const studentQuery = `
       SELECT 
         u.id AS user_id,
         u.firstname,
@@ -1501,15 +1507,14 @@ exports.getSpecStudentDetails = async (req, res) => {
         u.status,
         u.mobile,
         u.email,
-       
         s.id AS student_id,
         s.academicyear,
         s.admissionnum,
         s.admissiondate,
         s.rollnum,
-        c.class_name as class,
+        c.class_name AS class,
         s.class_id,
-        se.section_name as section,
+        se.section_name AS section,
         s.section_id,
         s.gender,
         s.dob,
@@ -1531,19 +1536,19 @@ exports.getSpecStudentDetails = async (req, res) => {
         s.transfercert,
         h.hostel,
         h.room_num,
-        hs.name as hostel_name,
-        hsr.room_num as hostel_room_number,
+        hs.name AS hostel_name,
+        hsr.room_num AS hostel_room_number,
         t.route,
         t.vehicle_num,
         t.pickup_point,
-        tr.routeName as route_name,
-        tp.pickPointName as pickup_pointName,
-        vi.vehicle_no as vehical_number,
+        tr.routeName AS route_name,
+        tp.pickPointName AS pickup_pointName,
+        vi.vehicle_no AS vehical_number,
         o.bank_name,
         o.branch,
         o.ifsc_num,
         o.other_det,
-         p.name,
+        p.name,
         p.phone_num
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
@@ -1553,32 +1558,43 @@ exports.getSpecStudentDetails = async (req, res) => {
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN transport_routes tr ON tr.id = t.route
       LEFT JOIN transport_pickupPoints tp ON tp.id = t.pickup_point
-      LEFT JOIN  vehicle_info vi ON vi.id = t.vehicle_num
-      LEFT JOIN other_info o ON s.stu_id=o.user_id
-      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+      LEFT JOIN vehicle_info vi ON vi.id = t.vehicle_num
+      LEFT JOIN other_info o ON s.stu_id = o.user_id
+      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = 'Father'
       LEFT JOIN classes c ON s.class_id = c.id
       LEFT JOIN sections se ON s.section_id = se.id
       WHERE s.rollnum = ?;
     `;
-    const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`;
 
-    const [student] = await db.query(sql, [rollnum]);
-    const [parents] = await db.query(sql2, [id]);
+    // 🔹 Step 3: Fetch parents list
+    const parentsQuery = `
+      SELECT 
+        id, name, email, phone_num, relation, img_src, guardian_is
+      FROM parents_info
+      WHERE parent_id = ?;
+    `;
+
+    const [[student], [parents]] = await Promise.all([
+      db.query(studentQuery, [rollnum]),
+      db.query(parentsQuery, [parent_id]),
+    ]);
 
     return res.status(200).json({
-      message: "Student fetched successfully!",
       success: true,
+      message: "Student fetched successfully!",
       student: student[0] || null,
       parents: parents || [],
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error in getSpecStudentDetails:", error);
     return res.status(500).json({
-      message: "Internal server error!",
       success: false,
+      message: "Internal server error!",
     });
   }
 };
+
 
 // exports.allStudentsOfTeacher = async (req, res) => {
 //   const userId = req.params?.userId;

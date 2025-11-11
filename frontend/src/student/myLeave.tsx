@@ -6,7 +6,6 @@ import type { TableData } from "../core/data/interface";
 // import { leaveData } from "../../../../core/data/json/leaveData";
 // import { Attendance } from "../../../../core/data/json/attendance";
 import { useEffect, useState } from "react";
-import { getLeaveData } from "../service/api";
 import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import TooltipOption from "../core/common/tooltipOption";

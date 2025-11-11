@@ -1,8 +1,6 @@
 import { api } from "./api";
 
-export const getAllStudentHomeWork = (userId: number) =>
-  api.get(`/homework/getAllStudent-homework/${userId}`);
-
+export const getAllStudentHomeWork = (userId: number) =>api.get(`/homework/getAllStudent-homework/${userId}`);
 export const getSpecStudentTimeTable = (userId:number) => api.get(`/table/gettimetablespeclass/${userId}`);
 export const getFeeDetailsOfSpecStudent = (userId:number) => api.get(`/fees/getfeesdetail-specstudent/${userId}`);
 export const getFeeReminderDetailsOfSpecStudent = (userId:number) => api.get(`/fees/getspecstudentfeereminder/${userId}`);

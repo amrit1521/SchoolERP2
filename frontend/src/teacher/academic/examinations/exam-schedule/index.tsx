@@ -439,7 +439,7 @@ const TExamSchedule = () => {
     columns.push({
       title: "Action",
       dataIndex: "id",
-      sorter: (a: TableData, b: TableData) => a.id - b.id,
+      // sorter: (a: TableData, b: TableData) => a.id - b.id,
       render: (_: any, record: any) => (
         <div className="d-flex align-items-center">
           <div className="dropdown">
