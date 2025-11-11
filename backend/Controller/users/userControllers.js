@@ -285,7 +285,21 @@ export const savePermissions = async (req, res) => {
 export const getAllPermissionByRoleId = async (req, res) => {
   const { id } = req.params;
   try {
-    const sql = "Select * from role_module_permissions where role_id=?";
+    const sql = `Select 
+                  rmp.id,
+                  rmp.role_id,
+                  rmp.module_id,
+                  rmp.can_create,
+                  rmp.can_view,
+                  rmp.can_edit,
+                  rmp.can_edit,
+                  rmp.can_delete,
+                  rmp.can_allow_all,
+                  m.name as module_name
+                  from role_module_permissions rmp
+                  LEFT JOIN modules m ON m.id = rmp.module_id
+                  where role_id=?
+              `;
     const [rows] = await db.execute(sql, [id]);
     if (rows.length < 0) {
       return res.status(200).json({

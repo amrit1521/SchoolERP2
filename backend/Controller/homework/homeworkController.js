@@ -1,5 +1,4 @@
-const db = require('../../config/db');
-
+const db = require("../../config/db");
 
 exports.addHomework = async (req, res) => {
   try {
@@ -44,11 +43,13 @@ exports.addHomework = async (req, res) => {
     return res.status(201).json({
       message: `Homework added successfully !`,
       homeworkId: result.insertId,
-      success: true
+      success: true,
     });
   } catch (error) {
     console.error("Error adding homework:", error);
-    return res.status(500).json({ message: "Internal Server Error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
   }
 };
 
@@ -81,19 +82,24 @@ exports.allHomework = async (req, res) => {
       ORDER BY hw.created_at DESC
     `;
     const [rows] = await db.query(sql);
-    return res.status(200).json({ message: 'Fetched all homework successfully!', success: true, data: rows });
+    return res.status(200).json({
+      message: "Fetched all homework successfully!",
+      success: true,
+      data: rows,
+    });
   } catch (error) {
     console.error("Error fetching homework:", error);
-    return res.status(500).json({ message: 'Error while fetching homework!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Error while fetching homework!", success: false });
   }
 };
-
 
 exports.getHomeworkById = async (req, res) => {
   try {
     const { id } = req.params;
-    if(!id){
-      return res.status(404).json({message:"Home work id is required !"})
+    if (!id) {
+      return res.status(404).json({ message: "Home work id is required !" });
     }
 
     const sql = `
@@ -106,16 +112,23 @@ exports.getHomeworkById = async (req, res) => {
     const [rows] = await db.query(sql, [id]);
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Homework not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Homework not found", success: false });
     }
 
-    return res.status(200).json({ message: "Homework fetched successfully", success: true, data: rows[0] });
+    return res.status(200).json({
+      message: "Homework fetched successfully",
+      success: true,
+      data: rows[0],
+    });
   } catch (error) {
     console.error("Error fetching homework by ID:", error);
-    return res.status(500).json({ message: "Internal Server Error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
   }
 };
-
 
 exports.updateHomework = async (req, res) => {
   try {
@@ -157,16 +170,21 @@ exports.updateHomework = async (req, res) => {
     const [result] = await db.query(sql, values);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Homework not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Homework not found", success: false });
     }
 
-    return res.status(200).json({ message: "Homework updated successfully", success: true });
+    return res
+      .status(200)
+      .json({ message: "Homework updated successfully", success: true });
   } catch (error) {
     console.error("Error updating homework:", error);
-    return res.status(500).json({ message: "Internal Server Error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
   }
 };
-
 
 exports.deleteHomework = async (req, res) => {
   try {
@@ -176,12 +194,181 @@ exports.deleteHomework = async (req, res) => {
     const [result] = await db.query(sql, [id]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Homework not found", success: false });
+      return res
+        .status(404)
+        .json({ message: "Homework not found", success: false });
     }
 
-    return res.status(200).json({ message: "Homework deleted successfully", success: true });
+    return res
+      .status(200)
+      .json({ message: "Homework deleted successfully", success: true });
   } catch (error) {
     console.error("Error deleting homework:", error);
-    return res.status(500).json({ message: "Internal Server Error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
   }
 };
+
+exports.getAllStudentHomeWork = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          s.class_id,
+          s.section_id,
+          s.rollnum
+      FROM users
+      LEFT JOIN students as s ON s.stu_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const student = userRows[0];
+    const studentClass = student.class_id;
+    const section = student.section_id;
+
+    const [home_work] = await db.query(
+      `SELECT hw.id,c.class_name AS className,
+        s.section_name AS section,
+        hw.subject AS subject_id,
+        t.img_src,
+        hw.status,
+        hw.teacherId,
+        hw.homeworkDate,
+        hw.submissionDate,
+        hw.attachements,
+        hw.description,
+        t.user_id,
+        cs.name as subject,
+        u.firstname,u.lastname 
+        FROM home_work as hw
+        LEFT JOIN classes AS c ON c.id = hw.class_id
+        LEFT JOIN sections AS s ON s.id = hw.section_id
+        LEFT JOIN class_subject AS cs On cs.id = hw.subject
+        LEFT JOIN users AS u ON u.id = hw.teacherId
+        LEFT JOIN teachers t ON hw.teacherId = t.user_id
+        WHERE hw.class_id = ? AND hw.section_id = ?`,
+      [studentClass, section]
+    );
+    console.log(home_work);
+    return res.status(200).json({
+      message: "Fetched all homework successfully!",
+      success: true,
+      data: home_work,
+    });
+  } catch (error) {
+    console.error("Error fetching student homework:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
+  }
+};
+
+exports.getAllTeacherHomeWork = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          t.class,
+          t.section,
+          t.teacher_id
+      FROM users
+      LEFT JOIN teachers as t ON t.user_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const teacher = userRows[0];
+    const studentClass = teacher.class;
+    const section = teacher.section;
+
+    const [home_work] = await db.query(
+      `SELECT hw.id,c.class_name AS className,
+        s.section_name AS section,
+        hw.subject AS subject_id,
+        t.img_src,
+        hw.status,
+        hw.teacherId,
+        hw.homeworkDate,
+        hw.submissionDate,
+        hw.attachements,
+        hw.description,
+        t.user_id,
+        cs.name as subject,
+        u.firstname,u.lastname 
+        FROM home_work as hw
+        LEFT JOIN classes AS c ON c.id = hw.class_id
+        LEFT JOIN sections AS s ON s.id = hw.section_id
+        LEFT JOIN class_subject AS cs On cs.id = hw.subject
+        LEFT JOIN users AS u ON u.id = hw.teacherId
+        LEFT JOIN teachers t ON hw.teacherId = t.user_id
+        WHERE hw.class_id = ? AND hw.section_id = ?`,
+      [studentClass, section]
+    );
+    console.log(home_work);
+    return res.status(200).json({
+      message: "Fetched all homework successfully!",
+      success: true,
+      data: home_work,
+    });
+  } catch (error) {
+    console.error("Error fetching student homework:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", success: false });
+  }
+};
+
+// export const assingments = async (req, res) => {
+//   try {
+
+// const [userRows] = await db.query(
+//   `SELECT
+//       users.id,
+//       s.class_id,
+//       s.section_id
+//    FROM users
+//    LEFT JOIN students as s ON s.stu_id = users.id
+//    WHERE users.id = ?`,
+//   [req.user.id]
+// );
+
+//     if (!userRows || userRows.length === 0) {
+//       return res.status(404).json({ message: "Student not found" });
+//     }
+
+//     const student = userRows[0];
+
+//     const studentClass = student.class_id;
+//     const section = student.section_id;
+
+//     const [home_work] = await db.query(
+//       `SELECT hw.id,c.class_name,s.section_name,hw.subject,hw.teacherId,hw.homeworkDate,hw.submissionDate,hw.attachements,hw.description,cs.name as subject,u.firstname,u.lastname FROM home_work as hw
+//         LEFT JOIN classes AS c ON c.id = hw.class_id
+//        LEFT JOIN sections AS s ON s.id = hw.section_id
+//        LEFT JOIN class_subject AS cs On cs.id = hw.subject
+//           LEFT JOIN users AS u ON u.id = hw.teacherId
+//        WHERE hw.class_id = ? AND hw.section_id = ?`,
+//       [studentClass, section]
+//     );
+// // console.log(home_work);
+//     return res.json({
+//       success: true,
+//       data: home_work,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching timetable:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch timetable",
+//       error: error.message,
+//     });
+//   }
+// };

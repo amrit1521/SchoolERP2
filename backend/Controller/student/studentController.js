@@ -51,7 +51,9 @@ exports.addStudent = async (req, res) => {
     );
     if (existingUser.length > 0) {
       await connection.rollback();
-      return res.status(400).json({ success: false, message: "Email already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already exists" });
     }
 
 
@@ -61,7 +63,15 @@ exports.addStudent = async (req, res) => {
     const [userRes] = await connection.query(
       `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [data.firstname, data.lastname, data.primarycont, data.email, hashPassword, 3, data.status]
+      [
+        data.firstname,
+        data.lastname,
+        data.primarycont,
+        data.email,
+        hashPassword,
+        3,
+        data.status,
+      ]
     );
     const userId = userRes.insertId;
 
@@ -249,7 +259,9 @@ Warm regards,
   } catch (error) {
     if (connection) await connection.rollback();
     console.error("Add student error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error!" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error!" });
   } finally {
     if (connection) connection.release();
   }
@@ -307,18 +319,17 @@ exports.allStudents = async (req, res) => {
     res.status(200).json({
       message: "Students fetched successfully",
       success: true,
-      students
+      students,
     });
-
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
 
-
 exports.filterStudents = async (req, res) => {
-
   const data = req.body;
   try {
     const sql = `
@@ -363,15 +374,15 @@ exports.filterStudents = async (req, res) => {
     res.status(200).json({
       message: "Students fetched successfully",
       success: true,
-      students
+      students,
     });
-
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
-
 
 exports.filterStudentsForOption = async (req, res) => {
   const data = req.body;
@@ -395,70 +406,79 @@ exports.filterStudentsForOption = async (req, res) => {
     res.status(200).json({
       message: "Students fetched successfully",
       success: true,
-      students
+      students,
     });
-
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
 
 exports.disableStudent = async (req, res) => {
   const { rollnum } = req.params;
-  const id = await getUserId(rollnum)
-
+  const id = await getUserId(rollnum);
 
   try {
-    const [result] = await db.query(
-      "UPDATE users SET status=? WHERE id=?",
-      ["0", id]
-    );
+    const [result] = await db.query("UPDATE users SET status=? WHERE id=?", [
+      "0",
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ success: false, message: "Failed to disable student" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed to disable student" });
     }
 
-    return res.status(200).json({ success: true, message: "Student disabled successfully" });
-
+    return res
+      .status(200)
+      .json({ success: true, message: "Student disabled successfully" });
   } catch (error) {
     console.error("Error disabling student:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 exports.enableStudent = async (req, res) => {
   const { rollnum } = req.params;
-  const id = await getUserId(rollnum)
-
+  const id = await getUserId(rollnum);
 
   try {
-    const [result] = await db.query(
-      "UPDATE users SET status=? WHERE id=?",
-      ["1", id]
-    );
+    const [result] = await db.query("UPDATE users SET status=? WHERE id=?", [
+      "1",
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ success: false, message: "Failed to enable student" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Failed to enable student" });
     }
 
-    return res.status(200).json({ success: true, message: "Student enabled successfully" });
-
+    return res
+      .status(200)
+      .json({ success: true, message: "Student enabled successfully" });
   } catch (error) {
     console.error("Error enabling student:", error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
-
 
 exports.getStudentByRollnumForEdit = async (req, res) => {
   const { rollnum } = req.params;
 
   if (!rollnum) {
-    return res.status(400).json({ success: false, message: "Student Roll Number is required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Student Roll Number is required" });
   }
-  const id = await getUserId(rollnum)
+  const id = await getUserId(rollnum);
   try {
     const sql = `
       SELECT 
@@ -505,20 +525,22 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
         parent_user_id: r.parent_user_id
       })).filter(p => p.id !== null)
     });
-
   } catch (error) {
     console.error("getStudentById error:", error.message);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 };
-
 
 exports.updateStudent = async (req, res) => {
   const { rollnum } = req.params;
   const data = cleanNullStrings(req.body);
   let connection;
   if (!rollnum) {
-    return res.status(400).json({ success: false, message: "Student RollNumber is required" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Student RollNumber is required" });
   }
 
   const id = await getUserId(rollnum)
@@ -527,12 +549,17 @@ exports.updateStudent = async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-
     await connection.query(
       `UPDATE users SET firstname=?, lastname=?, mobile=?, email=?, status=? WHERE id=?`,
-      [data.firstname, data.lastname, data.primarycont, data.email, data.status, id]
+      [
+        data.firstname,
+        data.lastname,
+        data.primarycont,
+        data.email,
+        data.status,
+        id,
+      ]
     );
-
 
     await connection.query(
       `UPDATE students 
@@ -544,12 +571,12 @@ exports.updateStudent = async (req, res) => {
       [
         data.academicyear,
         data.admissionnum,
-        dayjs(data.admissiondate).format('YYYY-MM-DD'),
+        dayjs(data.admissiondate).format("YYYY-MM-DD"),
         data.rollnum,
         data.class,
         data.section,
         data.gender,
-        dayjs(data.dob).format('YYYY-MM-DD'),
+        dayjs(data.dob).format("YYYY-MM-DD"),
         data.bloodgp,
         data.religion,
         data.caste,
@@ -601,7 +628,7 @@ exports.updateStudent = async (req, res) => {
         guardian_Is: data.guardianIs || "",
         parent_user_id: data.gua_user_id
       },
-    ].filter(p => p.name);
+    ].filter((p) => p.name);
 
 
     await Promise.all(parentsData.map(async parent => {
@@ -672,7 +699,12 @@ exports.updateStudent = async (req, res) => {
           `INSERT INTO transport_info (user_id, route, vehicle_num, pickup_point) 
            VALUES (?, ?, ?, ?) 
            ON DUPLICATE KEY UPDATE route=VALUES(route), vehicle_num=VALUES(vehicle_num), pickup_point=VALUES(pickup_point)`,
-          [id, data.route || null, data.vehicle_num || null, data.picup_point || null]
+          [
+            id,
+            data.route || null,
+            data.vehicle_num || null,
+            data.picup_point || null,
+          ]
         )
       );
     }
@@ -683,7 +715,13 @@ exports.updateStudent = async (req, res) => {
           `INSERT INTO other_info (user_id, bank_name, branch, ifsc_num, other_det) 
            VALUES (?, ?, ?, ?, ?) 
            ON DUPLICATE KEY UPDATE bank_name=VALUES(bank_name), branch=VALUES(branch), ifsc_num=VALUES(ifsc_num), other_det=VALUES(other_det)`,
-          [id, data.bank_name || null, data.branch || null, data.ifsc_num || null, data.other_det || null]
+          [
+            id,
+            data.bank_name || null,
+            data.branch || null,
+            data.ifsc_num || null,
+            data.other_det || null,
+          ]
         )
       );
     }
@@ -691,12 +729,15 @@ exports.updateStudent = async (req, res) => {
     await Promise.all(otherInfoQueries);
     await connection.commit();
 
-    return res.status(200).json({ success: true, message: "Student updated successfully" });
-
+    return res
+      .status(200)
+      .json({ success: true, message: "Student updated successfully" });
   } catch (error) {
     if (connection) await connection.rollback();
     console.error("updateStudent error:", error.message);
-    return res.status(500).json({ success: false, message: "Something went wrong" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Something went wrong" });
   } finally {
     if (connection) connection.release();
   }
@@ -704,10 +745,9 @@ exports.updateStudent = async (req, res) => {
 
 exports.specificDetailsStu = async (req, res) => {
   const { rollnum } = req.params;
-  const id = await getUserId(rollnum)
+  const id = await getUserId(rollnum);
 
   try {
-
     const sql = `
       SELECT 
         u.id AS user_id,
@@ -782,49 +822,49 @@ exports.specificDetailsStu = async (req, res) => {
     const [parents] = await db.query(sql2, [student[0].parent_id])
 
     return res.status(200).json({
-      message: 'Student fetched successfully!',
+      message: "Student fetched successfully!",
       success: true,
       student: student[0] || null,
-      parents: parents || []
+      parents: parents || [],
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: 'Internal server error!',
+      message: "Internal server error!",
       success: false,
     });
   }
 };
 
-
 exports.deleteStudent = async (req, res) => {
   const { rollnum } = req.params;
-  const id = await getUserId(rollnum)
+  const id = await getUserId(rollnum);
 
   try {
     const sql = `DELETE FROM users WHERE id = ?`;
     const [result] = await db.query(sql, [id]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Student not found', success: false });
+      return res
+        .status(404)
+        .json({ message: "Student not found", success: false });
     }
 
-    return res.json({ message: 'Student deleted successfully', success: true });
-
+    return res.json({ message: "Student deleted successfully", success: true });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error!', success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
   }
 };
-
 
 // student time table --------------------
 exports.getTimeTable = async (req, res) => {
   const { rollnum } = req.params;
-  const id = await getUserId(rollnum)
+  const id = await getUserId(rollnum);
 
   try {
-
     const [studentRows] = await db.query(
       `SELECT class_id, section_id FROM students WHERE stu_id = ?`,
       [id]
@@ -839,7 +879,6 @@ exports.getTimeTable = async (req, res) => {
 
     const student = studentRows[0];
 
-
     const [timetableRows] = await db.query(
       `SELECT * FROM timetable WHERE class = ? AND section= ? ORDER BY day, timefrom`,
       [student.class_id, student.section_id]
@@ -851,7 +890,6 @@ exports.getTimeTable = async (req, res) => {
         message: "No timetable found for this student",
       });
     }
-
 
     return res.status(200).json({
       success: true,
@@ -877,7 +915,6 @@ exports.getTimeTable = async (req, res) => {
 exports.getStuLeaveData = async (req, res) => {
   const { rollnum } = req.params;
   try {
-
     const sql = `
       SELECT 
         lt.id,
@@ -896,7 +933,6 @@ exports.getStuLeaveData = async (req, res) => {
 
     const [leave_inform] = await db.query(sql, rollnum);
 
-
     const sql2 = `
   SELECT 
     la.id,
@@ -913,29 +949,25 @@ exports.getStuLeaveData = async (req, res) => {
   ORDER BY la.applied_on DESC
 `;
 
-    const [stuAllLeave] = await db.query(sql2, rollnum)
+    const [stuAllLeave] = await db.query(sql2, rollnum);
 
     return res.status(200).json({
-      message: 'Leave information fetched successFully!',
+      message: "Leave information fetched successFully!",
       success: true,
       leave_inform,
-      stuAllLeave
+      stuAllLeave,
     });
-
   } catch (error) {
-
     console.error(error);
     return res.status(500).json({
       message: "Something went wrong!",
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
-}
-
+};
 
 exports.studentLeaveReport = async (req, res) => {
-
   try {
     const sql = `
       SELECT 
@@ -1001,7 +1033,6 @@ exports.studentLeaveReport = async (req, res) => {
 };
 
 exports.studentReport = async (req, res) => {
-
   try {
     const sql = `
            SELECT 
@@ -1033,16 +1064,19 @@ WHERE u.roll_id = 3
 
         `;
 
-    const [rows] = await db.query(sql)
-    return res.status(200).json({ message: "All students for report data", data: rows, success: true })
-
-
+    const [rows] = await db.query(sql);
+    return res.status(200).json({
+      message: "All students for report data",
+      data: rows,
+      success: true,
+    });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: "Internal server error !", success: false })
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
   }
-}
-
+};
 
 // for student dashboard data
 exports.getStuByToken = async (req, res) => {
@@ -1075,15 +1109,14 @@ exports.getStuByToken = async (req, res) => {
     const [student] = await db.query(sql, [userId]);
 
     return res.status(200).json({
-      message: 'Student fetched successfully!',
+      message: "Student fetched successfully!",
       success: true,
       student: student[0],
-
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message: 'Internal server error!',
+      message: "Internal server error!",
       success: false,
     });
   }
@@ -1092,7 +1125,6 @@ exports.getStuByToken = async (req, res) => {
 // student for option
 exports.studentForOption = async (req, res) => {
   try {
-
     const sql = `
       SELECT 
       st.id,
@@ -1106,20 +1138,24 @@ exports.studentForOption = async (req, res) => {
       LEFT JOIN users u ON st.stu_id = u.id AND roll_id=3
       LEFT JOIN classes c ON st.class_id = c.id
       LEFT JOIN sections se ON st.section_id = se.id
-    `
+    `;
 
-    const [rows] = await db.query(sql)
-    return res.status(200).json({ message: "Students for option fetched successfully!", success: true, data: rows })
-
+    const [rows] = await db.query(sql);
+    return res.status(200).json({
+      message: "Students for option fetched successfully!",
+      success: true,
+      data: rows,
+    });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: "Internal server error !", success: false })
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
   }
-}
+};
 
 exports.studentForOption2 = async (req, res) => {
   try {
-
     const sql = `
       SELECT 
       st.id,
@@ -1129,16 +1165,21 @@ exports.studentForOption2 = async (req, res) => {
       u.lastname
       FROM students st
       LEFT JOIN users u ON st.stu_id = u.id AND roll_id=3
-    `
+    `;
 
-    const [rows] = await db.query(sql)
-    return res.status(200).json({ message: "Students for option fetched successfully!", success: true, data: rows })
-
+    const [rows] = await db.query(sql);
+    return res.status(200).json({
+      message: "Students for option fetched successfully!",
+      success: true,
+      data: rows,
+    });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: "Internal server error !", success: false })
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
   }
-}
+};
 
 exports.filterStudentsForParmotion = async (req, res) => {
   const data = req.body;
@@ -1265,7 +1306,6 @@ exports.promoteStudents = async (req, res) => {
       });
     }
 
-
     connection = await db.getConnection();
     await connection.beginTransaction();
 
@@ -1325,7 +1365,6 @@ exports.promoteStudents = async (req, res) => {
   }
 };
 
-
 exports.getSiblings = async (req, res) => {
   try {
     const parentUserId = req.user.id; // from JWT (logged-in parent)
@@ -1346,23 +1385,365 @@ exports.getSiblings = async (req, res) => {
   }
 };
 
+exports.getStudentLeaveData = async (req, res) => {
+  try {
+    const userId = req.params?.userId;
 
+    if (!userId) {
+      return res.status(404).json({
+        success: false,
+        message: "user not found.",
+      });
+    }
+    const [userRows] = await db.query(
+      `SELECT
+          users.id,
+          s.class_id,
+          s.section_id,
+          s.rollnum
+      FROM users
+      LEFT JOIN students as s ON s.stu_id = users.id
+      WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const student = userRows[0];
+    const rollnum = student.rollnum;
 
+    const sql = `
+      SELECT 
+        lt.id,
+        lt.name, 
+        lt.total_allowed,
+        IFNULL(SUM(la.no_of_days), 0) AS used,
+        (lt.total_allowed - IFNULL(SUM(la.no_of_days), 0)) AS avilable
+      FROM leaves_type lt
+      LEFT JOIN leave_application la
+        ON la.leave_type_id = lt.id
+        AND la.id_or_rollnum = ?
+        AND la.status = "1"
+      GROUP BY lt.id
+      ORDER BY lt.id ASC
+    `;
 
+    const [leave_inform] = await db.query(sql, rollnum);
 
+    const sql2 = `
+  SELECT 
+    la.id,
+    la.no_of_days,
+    la.from_date,
+    la.to_date,
+    la.applied_on,
+    la.status,
+    lt.name AS leave_type
+  FROM leave_application la 
+  LEFT JOIN leaves_type lt
+    ON la.leave_type_id = lt.id
+  WHERE la.id_or_rollnum = ?
+  ORDER BY la.applied_on DESC
+`;
 
+    const [stuAllLeave] = await db.query(sql2, rollnum);
 
+    return res.status(200).json({
+      message: "Leave information fetched successFully!",
+      success: true,
+      leave_inform,
+      stuAllLeave,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Something went wrong!",
+      success: false,
+      error: error.message,
+    });
+  }
+};
 
+exports.getSpecStudentDetails = async (req, res) => {
+  const userId = req.params?.userId;
 
+  if (!userId) {
+    return res.status(404).json({
+      success: false,
+      message: "user not found.",
+    });
+  }
 
+  const [userRows] = await db.query(
+    `SELECT
+        users.id,
+        s.class_id,
+        s.section_id,
+        s.rollnum
+    FROM users
+    LEFT JOIN students as s ON s.stu_id = users.id
+    WHERE users.id = ?`,
+    [userId]
+  );
+  if (!userRows || userRows.length === 0) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+  const student = userRows[0];
+  const rollnum = student.rollnum;
+  const id = student.id;
 
+  try {
+    const sql = `
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        u.status,
+        u.mobile,
+        u.email,
+       
+        s.id AS student_id,
+        s.academicyear,
+        s.admissionnum,
+        s.admissiondate,
+        s.rollnum,
+        c.class_name as class,
+        s.class_id,
+        se.section_name as section,
+        s.section_id,
+        s.gender,
+        s.dob,
+        s.bloodgp,
+        s.religion,
+        s.caste,
+        s.house,
+        s.stu_img,
+        s.category,
+        s.motherton,
+        s.lanknown,
+        s.curr_address,
+        s.perm_address,
+        s.allergies,
+        s.medications,
+        s.prev_school,
+        s.prev_school_address,
+        s.medicalcert,
+        s.transfercert,
+        h.hostel,
+        h.room_num,
+        hs.name as hostel_name,
+        hsr.room_num as hostel_room_number,
+        t.route,
+        t.vehicle_num,
+        t.pickup_point,
+        tr.routeName as route_name,
+        tp.pickPointName as pickup_pointName,
+        vi.vehicle_no as vehical_number,
+        o.bank_name,
+        o.branch,
+        o.ifsc_num,
+        o.other_det,
+         p.name,
+        p.phone_num
+      FROM users u
+      LEFT JOIN students s ON u.id = s.stu_id
+      LEFT JOIN hostel_info h ON s.stu_id = h.user_id
+      LEFT JOIN hostel hs ON hs.id = h.hostel
+      LEFT JOIN hostel_room hsr ON hsr.id = h.room_num
+      LEFT JOIN transport_info t ON s.stu_id = t.user_id
+      LEFT JOIN transport_routes tr ON tr.id = t.route
+      LEFT JOIN transport_pickupPoints tp ON tp.id = t.pickup_point
+      LEFT JOIN  vehicle_info vi ON vi.id = t.vehicle_num
+      LEFT JOIN other_info o ON s.stu_id=o.user_id
+      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+      LEFT JOIN classes c ON s.class_id = c.id
+      LEFT JOIN sections se ON s.section_id = se.id
+      WHERE s.rollnum = ?;
+    `;
+    const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`;
 
+    const [student] = await db.query(sql, [rollnum]);
+    const [parents] = await db.query(sql2, [id]);
 
+    return res.status(200).json({
+      message: "Student fetched successfully!",
+      success: true,
+      student: student[0] || null,
+      parents: parents || [],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
 
+// exports.allStudentsOfTeacher = async (req, res) => {
+//   const userId = req.params?.userId;
 
+//   if(!userId){
+//     return res.status(404).json({
+//     success: false,
+//     message:"user not found."
+//   });
+//   }
 
+//   const [userRows] = await db.query(
+//     `SELECT
+//       u.id as user_id,
+//       t.id,
+//       t.class as class_id,
+//       t.section as section_id,
+//       t.teacher_id
+//     FROM users u
+//     LEFT JOIN teachers as t ON t.user_id = u.id
+//     WHERE u.id = ?`,
+//     [userId]
+//   );
+//   if (!userRows || userRows.length === 0) {
+//     return res.status(404).json({ message: "Teacher not found" });
+//   }
+//   const teacher = userRows[0];
+//   const teacherId = teacher.teacher_id;
+//   try {
+//     const sql = `
+//             SELECT
+//                 u.id AS user_id,
+//                 u.firstname,
+//                 u.lastname,
+//                 u.mobile,
+//                 u.email,
+//                 u.roll_id,
+//                 r.role_name,
+//                 u.status,
+//                 s.id AS student_id,
+//                 s.stu_id,
+//                 s.academicyear,
+//                 s.admissionnum,
+//                 s.admissiondate,
+//                 s.rollnum,
+//                 UPPER(c.class_name) as class,
+//                 s.class_id,
+//                UPPER( se.section_name) as section,
+//                 s.section_id,
+//                 s.gender,
+//                 s.dob,
+//                 s.bloodgp,
+//                 s.house,
+//                 s.religion,
+//                 s.category,
+//                 s.caste,
+//                 p.name,
+//                 s.motherton,
+//                 s.lanknown,
+//                 s.stu_img
+//             FROM users u
+//             RIGHT JOIN students s
+//                 ON u.id = s.stu_id
+//           RIGHT JOIN classes  c ON c.id =  s.class_id
+//           RIGHT JOIN sections se ON se.id = s.section_id
+//           LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+//           JOIN roles r on r.id=u.roll_id
+//           WHERE u.roll_id=3
+//         `;
 
+//     const [students] = await db.query(sql);
 
+//     res.status(200).json({
+//       message: "Students fetched successfully",
+//       success: true,
+//       students
+//     });
 
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Internal server error!', success: false });
+//   }
+// };
 
+exports.allStudentsForClass = async (req, res) => {
+  try {
+    const userId = req.params?.userId;
 
+    if (!userId) {
+      return res.status(404).json({
+        success: false,
+        message: "user not found.",
+      });
+    }
+
+    const [userRows] = await db.query(
+      `SELECT
+        users.id,
+        t.class,
+        t.section,
+        t.teacher_id
+    FROM users
+    LEFT JOIN teachers as t ON t.user_id = users.id
+    WHERE users.id = ?`,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const student = userRows[0];
+    const classId = student.class;
+    const section = student.section;
+    console.log("classid; ", student, classId, section);
+    const sql = `
+            SELECT 
+                u.id AS user_id,
+                u.firstname,
+                u.lastname,
+                u.mobile,
+                u.email,
+                u.roll_id,
+                r.role_name,
+                u.status,
+                s.id AS student_id,
+                s.stu_id,
+                s.academicyear,
+                s.admissionnum,
+                s.admissiondate,
+                s.rollnum,
+                UPPER(c.class_name) as class,
+                s.class_id,
+               UPPER( se.section_name) as section,
+                s.section_id,
+                s.gender,
+                s.dob,
+                s.bloodgp,
+                s.house,
+                s.religion,
+                s.category,
+                s.caste,
+                p.name,
+                s.motherton,
+                s.lanknown,
+                s.stu_img
+            FROM users u
+            RIGHT JOIN students s
+                ON u.id = s.stu_id
+          RIGHT JOIN classes  c ON c.id =  s.class_id
+          RIGHT JOIN sections se ON se.id = s.section_id
+          LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+          JOIN roles r on r.id=u.roll_id
+          WHERE c.id=? and se.id=?
+        `;
+
+    const [students] = await db.query(sql, [classId, section]);
+
+    res.status(200).json({
+      message: "Students fetched successfully",
+      success: true,
+      students,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};

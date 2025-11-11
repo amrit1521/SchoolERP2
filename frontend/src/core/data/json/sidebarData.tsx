@@ -1,4 +1,6 @@
 import { all_routes } from "../../../router/all_routes";
+import { student_routes } from "../../../admin/router/student_routes";
+import { teacher_routes } from "../../../admin/router/teacher_routes";
 const routes = all_routes;
 
 export const SidebarData = [
@@ -1224,16 +1226,10 @@ export const TeacherSidebarData = [
     submenuItems: [
       {
         label: "Teacher Dashboard",
+        link: teacher_routes.teacherDashboard,
         icon: "ti ti-layout-dashboard",
-        submenu: true,
         showSubRoute: false,
-
-        submenuItems: [
-          // { label: "Admin Dashboard", link: routes.adminDashboard },
-          { label: "Teacher Dashboard", link: routes.teacherDashboard },
-          // { label: "Student Dashboard", link: routes.studentDashboard },
-          // { label: "Parent Dashboard", link: routes.parentDashboard },
-        ],
+        submenu: false,
       },
       {
         label: "Application",
@@ -1297,11 +1293,11 @@ export const TeacherSidebarData = [
         submenuItems: [
           {
             label: "All Students",
-            link: routes.studentGrid,
+            link: teacher_routes.studentGrid,
             subLink1: routes.addStudent,
             subLink2: routes.editStudent,
           },
-          { label: "Students List", link: routes.studentList },
+          { label: "Students List", link: teacher_routes.studentList },
           // {
           //   label: "Students Details",
           //   link: routes.studentDetail,
@@ -1311,7 +1307,7 @@ export const TeacherSidebarData = [
           //   subLink4: routes.studentLeaves,
           //   subLink5: routes.studentTimeTable,
           // },
-          { label: "Student Promotion", link: routes.studentPromotion },
+          { label: "Student Promotion", link: teacher_routes.studentPromotion },
         ],
       },
       {
@@ -1320,8 +1316,8 @@ export const TeacherSidebarData = [
         showSubRoute: false,
         submenu: true,
         submenuItems: [
-          { label: "All Parents", link: routes.parentGrid },
-          { label: "Parents List", link: routes.parentList },
+          { label: "All Parents", link: teacher_routes.parentGrid },
+          { label: "Parents List", link: teacher_routes.parentList },
         ],
       },
       {
@@ -1330,32 +1326,8 @@ export const TeacherSidebarData = [
         showSubRoute: false,
         submenu: true,
         submenuItems: [
-          { label: "All Guardians", link: routes.guardiansGrid },
-          { label: "Guardians List", link: routes.guardiansList },
-        ],
-      },
-      {
-        label: "Teachers",
-        icon: "ti ti-users",
-        submenu: true,
-        showSubRoute: false,
-
-        submenuItems: [
-          {
-            label: "All Teachers",
-            link: routes.teacherGrid,
-            subLink1: routes.addTeacher,
-            subLink2: routes.editTeacher,
-          },
-          { label: "Teacher List", link: routes.teacherList },
-          // {
-          //   label: "Teacher Details",
-          //   link: routes.teacherDetails,
-          //   subLink1: routes.teacherLibrary,
-          //   subLink2: routes.teacherSalary,
-          //   subLink3: routes.teacherLeaves,
-          // },
-          { label: "Routine", link: routes.teachersRoutine },
+          { label: "All Guardians", link: teacher_routes.guardiansGrid },
+          { label: "Guardians List", link: teacher_routes.guardiansList },
         ],
       },
     ],
@@ -1374,55 +1346,55 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Classes&sections", link: routes.classes },
-          { label: "Schedule", link: routes.sheduleClasses },
+          { label: "Classes&sections", link: teacher_routes.classes },
+          { label: "Schedule", link: teacher_routes.sheduleClasses },
         ],
       },
-      {
-        label: "Class Room",
-        link: routes.classRoom,
-        icon: "ti ti-building",
-        showSubRoute: false,
-        submenu: false,
-      },
+      // {
+      //   label: "Class Room",
+      //   link: routes.classRoom,
+      //   icon: "ti ti-building",
+      //   showSubRoute: false,
+      //   submenu: false,
+      // },
       {
         label: "Class Routine",
-        link: routes.classRoutine,
+        link: teacher_routes.classRoutine,
         icon: "ti ti-bell-school",
         showSubRoute: false,
         submenu: false,
       },
-      {
-        label: "Section",
-        link: routes.classSection,
-        icon: "ti ti-square-rotated-forbid-2",
-        showSubRoute: false,
-        submenu: false,
-      },
+      // {
+      //   label: "Section",
+      //   link: routes.classSection,
+      //   icon: "ti ti-square-rotated-forbid-2",
+      //   showSubRoute: false,
+      //   submenu: false,
+      // },
       {
         label: "Subject",
-        link: routes.classSubject,
+        link: teacher_routes.classSubject,
         icon: "ti ti-book",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Syllabus",
-        link: routes.classSyllabus,
+        link: teacher_routes.classSyllabus,
         icon: "ti ti-book-upload",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Time Table",
-        link: routes.classTimetable,
+        link: teacher_routes.classTimetable,
         icon: "ti ti-table",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Home Work",
-        link: routes.classHomeWork,
+        link: teacher_routes.classHomeWork,
         icon: "ti ti-license",
         showSubRoute: false,
         submenu: false,
@@ -1434,20 +1406,20 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Exam", link: routes.exam },
-          { label: "Exam Schedule", link: routes.examSchedule },
-          { label: "Grade", link: routes.grade },
-          { label: "Exam Attendance", link: routes.examAttendance },
-          { label: "Exam Results", link: routes.examResult },
+          { label: "Exam", link: teacher_routes.exam },
+          { label: "Exam Schedule", link: teacher_routes.examSchedule },
+          { label: "Grade", link: teacher_routes.grade },
+          { label: "Exam Attendance", link: teacher_routes.examAttendance },
+          { label: "Exam Results", link: teacher_routes.examResult },
         ],
       },
-      {
-        label: "Reasons",
-        link: routes.AcademicReason,
-        icon: "ti ti-lifebuoy",
-        showSubRoute: false,
-        submenu: false,
-      },
+      // {
+      //   label: "Reasons",
+      //   link: teacher_routes.AcademicReason,
+      //   icon: "ti ti-lifebuoy",
+      //   showSubRoute: false,
+      //   submenu: false,
+      // },
     ],
   },
   {
@@ -1463,7 +1435,9 @@ export const TeacherSidebarData = [
         submenu: true,
         showSubRoute: false,
 
-        submenuItems: [{ label: "Fees Assign", link: routes.feesAssign }],
+        submenuItems: [
+          { label: "Fees Assign", link: teacher_routes.feesAssign },
+        ],
       },
       {
         label: "Library",
@@ -1472,20 +1446,20 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Issue Book", link: routes.libraryIssueBook },
-          { label: "Return", link: routes.libraryReturn },
+          { label: "Issue Book", link: teacher_routes.libraryIssueBook },
+          { label: "Return", link: teacher_routes.libraryReturn },
         ],
       },
       {
         label: "Sports",
-        link: routes.sportsList,
+        link: teacher_routes.sportsList,
         icon: "ti ti-run",
         showSubRoute: false,
         submenu: false,
       },
       {
         label: "Players",
-        link: routes.playerList,
+        link: teacher_routes.playerList,
         icon: "ti ti-play-football",
         showSubRoute: false,
         submenu: false,
@@ -1506,13 +1480,16 @@ export const TeacherSidebarData = [
         showSubRoute: false,
 
         submenuItems: [
-          { label: "Student Attendance", link: routes.studentAttendance },
+          {
+            label: "Student Attendance",
+            link: teacher_routes.studentAttendance,
+          },
         ],
       },
 
       {
         label: "Holidays",
-        link: routes.holidays,
+        link: teacher_routes.holidays,
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
@@ -1530,115 +1507,90 @@ export const StudentSidebarData = [
     submenuItems: [
       {
         label: "Student Dashboard",
+        link: routes.studentDashboard,
         icon: "ti ti-layout-dashboard",
-        submenu: true,
         showSubRoute: false,
-
-        submenuItems: [
-          { label: "Student Dashboard", link: routes.studentDashboard },
-        ],
-      },
-      {
-        label: "Application",
-        icon: "ti ti-layout-list",
-        submenu: true,
-        showSubRoute: false,
-        submenuItems: [
-          {
-            label: "Chat",
-            link: routes.chat,
-            showSubRoute: false,
-          },
-          {
-            label: "Call",
-            link: routes.audioCall,
-            showSubRoute: false,
-          },
-          {
-            label: "Calendar",
-            link: routes.calendar,
-            showSubRoute: false,
-          },
-          {
-            label: "Email",
-            link: routes.email,
-            showSubRoute: false,
-          },
-          {
-            label: "To Do",
-            link: routes.todo,
-            showSubRoute: false,
-          },
-          {
-            label: "Notes",
-            link: routes.notes,
-            showSubRoute: false,
-          },
-          {
-            label: "File Manager",
-            link: routes.fileManager,
-            showSubRoute: false,
-          },
-        ],
+        submenu: false,
       },
     ],
   },
 
   {
-    label: "Peoples",
+    label: "Menu",
     submenuOpen: true,
     showSubRoute: false,
-    submenuHdr: "Peoples",
+    submenuHdr: "Menus",
 
     submenuItems: [
       {
-        label: "Students",
-        icon: "ti ti-school",
-        submenu: true,
-        showSubRoute: false,
-
-        submenuItems: [
-          {
-            label: "All Students",
-            link: routes.studentGrid,
-            subLink1: routes.addStudent,
-            subLink2: routes.editStudent,
-          },
-          { label: "Students List", link: routes.studentList },
-        ],
-      },
-    ],
-  },
-
-  {
-    label: "MANAGEMENT",
-    submenuOpen: true,
-    submenuHdr: "Management",
-    submenu: false,
-    showSubRoute: false,
-    submenuItems: [
-      {
-        label: "Library",
-        icon: "ti ti-notebook",
-        submenu: true,
-        showSubRoute: false,
-
-        submenuItems: [
-          { label: "Issue Book", link: routes.libraryIssueBook },
-          { label: "Return", link: routes.libraryReturn },
-        ],
-      },
-      {
-        label: "Sports",
-        link: routes.sportsList,
-        icon: "ti ti-run",
+        label: "Home Work",
+        link: student_routes.homeWork,
+        icon: "ti ti-license",
         showSubRoute: false,
         submenu: false,
       },
       {
-        label: "Players",
-        link: routes.playerList,
-        icon: "ti ti-play-football",
+        label: "Exam Results",
+        link: student_routes.examResult,
+        icon: "ti ti-hexagonal-prism-plus",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Time Table",
+        link: student_routes.studentTimeTable,
+        icon: "ti ti-table",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fees Payment",
+        link: student_routes.feePayments,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "My Attendance",
+        link: student_routes.attendance,
+        icon: "ti ti-calendar-share",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Leaves",
+        link: student_routes.leaves,
+        icon: "ti ti-calendar-stats",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fee Reminder",
+        link: student_routes.feeReminder,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Subjects",
+        link: student_routes.mySubject,
+        icon: "ti ti-book",
+        showSubRoute: false,
+        submenu: false,
+      },
+    ],
+  },
+  {
+    label: "About Me",
+    submenuOpen: true,
+    submenuHdr: "About",
+    submenu: false,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "View Profile",
+        link: student_routes.studentprofileDetail,
+        icon: "ti ti-user",
         showSubRoute: false,
         submenu: false,
       },
@@ -1657,6 +1609,49 @@ export const StudentSidebarData = [
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
+      },
+    ],
+  },
+  {
+    label: "Application",
+    icon: "ti ti-layout-list",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "Chat",
+        link: routes.chat,
+        showSubRoute: false,
+      },
+      {
+        label: "Call",
+        link: routes.audioCall,
+        showSubRoute: false,
+      },
+      {
+        label: "Calendar",
+        link: routes.calendar,
+        showSubRoute: false,
+      },
+      {
+        label: "Email",
+        link: routes.email,
+        showSubRoute: false,
+      },
+      {
+        label: "To Do",
+        link: routes.todo,
+        showSubRoute: false,
+      },
+      {
+        label: "Notes",
+        link: routes.notes,
+        showSubRoute: false,
+      },
+      {
+        label: "File Manager",
+        link: routes.fileManager,
+        showSubRoute: false,
       },
     ],
   },

@@ -14,9 +14,20 @@ import { TimePicker } from "antd";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { addClassRoutine, allClassRoom, allClassRoutine, allRealClasses, deleteRoutine, editClassRoutine, speClassRoutine } from "../../../service/classApi";
-import { allTeacherForOption, getAllSectionForAClass } from "../../../service/api";
-import dayjs from 'dayjs'
+import {
+  addClassRoutine,
+  allClassRoom,
+  allClassRoutine,
+  allRealClasses,
+  deleteRoutine,
+  editClassRoutine,
+  speClassRoutine,
+} from "../../../service/classApi";
+import {
+  allTeacherForOption,
+  getAllSectionForAClass,
+} from "../../../service/api";
+import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 
@@ -32,7 +43,6 @@ interface ClassRoutine {
   firstname: string;
   lastname: string;
 }
-
 
 // add
 interface RoutineFormData {
@@ -63,7 +73,6 @@ interface Teacher {
   lastname: string;
 }
 
-
 interface Room {
   id: number;
   room_no: number;
@@ -74,7 +83,6 @@ interface ClassName {
   class_name: string;
 }
 
-
 const initailFormData: RoutineFormData = {
   teacher: null,
   className: null,
@@ -84,7 +92,7 @@ const initailFormData: RoutineFormData = {
   endTime: "",
   classRoom: "",
   status: "1",
-}
+};
 
 const initialErrorData = {
   teacher: "",
@@ -94,7 +102,7 @@ const initialErrorData = {
   startTime: "",
   endTime: "",
   classRoom: "",
-}
+};
 
 const ClassRoutine = () => {
   const routes = all_routes;
@@ -123,16 +131,17 @@ const ClassRoutine = () => {
     }
   };
 
-
-
   const [allRoutine, setAllRoutine] = useState<ClassRoutine[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [sectionOptions, setSectionOptions] = useState<{ value: number, label: string }[]>([]);
+  const [sectionOptions, setSectionOptions] = useState<
+    { value: number; label: string }[]
+  >([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [allclass, setallclass] = useState<ClassName[]>([])
-  const [routineForm, setRoutineForm] = useState<RoutineFormData>(initailFormData);
-  const [editId, setEditId] = useState<number | null>(null)
+  const [allclass, setallclass] = useState<ClassName[]>([]);
+  const [routineForm, setRoutineForm] =
+    useState<RoutineFormData>(initailFormData);
+  const [editId, setEditId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Partial<RoutineError>>(initialErrorData);
 
   const fetchData = async <T,>(
@@ -157,9 +166,13 @@ const ClassRoutine = () => {
   const fetchSection = async () => {
     try {
       if (routineForm.className) {
-        const { data } = await getAllSectionForAClass(Number(routineForm.className));
+        const { data } = await getAllSectionForAClass(
+          Number(routineForm.className)
+        );
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setSectionOptions(data.data.map((e: any) => ({ value: e.id, label: e.section_name })));
+          setSectionOptions(
+            data.data.map((e: any) => ({ value: e.id, label: e.section_name }))
+          );
         } else {
           setSectionOptions([]);
         }
@@ -168,7 +181,7 @@ const ClassRoutine = () => {
       console.log(error);
       toast.error("Error to fetch section !");
     }
-  }
+  };
 
   useEffect(() => {
     fetchRoutines();
@@ -179,12 +192,9 @@ const ClassRoutine = () => {
 
   useEffect(() => {
     if (routineForm.className) {
-      fetchSection()
+      fetchSection();
     }
-
-  }, [routineForm.className])
-
-
+  }, [routineForm.className]);
 
   const teacherOptions = useMemo(
     () =>
@@ -202,8 +212,7 @@ const ClassRoutine = () => {
   const classOptions = useMemo(
     () => allclass.map((c) => ({ value: c.id, label: c.class_name })),
     [allclass]
-  )
-
+  );
 
   // add class routine ------------------------------------------------------------------------------
 
@@ -215,11 +224,18 @@ const ClassRoutine = () => {
     }));
   };
 
-  const handleSelectChange = (name: keyof RoutineFormData, value: string | number) => {
+  const handleSelectChange = (
+    name: keyof RoutineFormData,
+    value: string | number
+  ) => {
     setRoutineForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTimeChange = (name: "startTime" | "endTime", _time: any, timeString: string) => {
+  const handleTimeChange = (
+    name: "startTime" | "endTime",
+    _time: any,
+    timeString: string
+  ) => {
     setRoutineForm((prev) => ({ ...prev, [name]: timeString }));
   };
 
@@ -237,13 +253,10 @@ const ClassRoutine = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-
-
   const fetchroutinebyid = async (id: number) => {
     // console.log(id)
     try {
-
-      const { data } = await speClassRoutine(id)
+      const { data } = await speClassRoutine(id);
       if (data.success) {
         setRoutineForm({
           teacher: data.data.teacher,
@@ -254,82 +267,75 @@ const ClassRoutine = () => {
           endTime: data.data.endTime,
           classRoom: data.data.classRoom,
           status: data.data.status,
-        })
+        });
       }
-      setEditId(id)
+      setEditId(id);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleRoutineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateRoutine()) return;
     try {
-
       if (editId) {
-
-        const { data } = await editClassRoutine(routineForm, editId)
+        const { data } = await editClassRoutine(routineForm, editId);
         if (data.success) {
-          toast.success(data.message)
-          handleModalPopUp('edit_class_routine')
-          setEditId(null)
+          toast.success(data.message);
+          handleModalPopUp("edit_class_routine");
+          setEditId(null);
         }
-
       } else {
-        const { data } = await addClassRoutine(routineForm)
+        const { data } = await addClassRoutine(routineForm);
         if (data.success) {
-          toast.success(data.message)
-          fetchRoutines()
-          handleModalPopUp('add_class_routine')
-
+          toast.success(data.message);
+          fetchRoutines();
+          handleModalPopUp("add_class_routine");
         }
       }
-      fetchRoutines()
+      fetchRoutines();
       setRoutineForm(initailFormData);
       setErrors(initialErrorData);
-
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     }
   };
 
   const handlecancel = (e: React.MouseEvent<HTMLButtonElement>) => {
-
-    e.preventDefault()
-    setRoutineForm(initailFormData)
+    e.preventDefault();
+    setRoutineForm(initailFormData);
     setErrors(initialErrorData);
-    setEditId(null)
-  }
+    setEditId(null);
+  };
 
   // delete section----------------------------------------------------
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+  const handleDelete = async (
+    id: number,
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
     // console.log(id)
     try {
-
-      const { data } = await deleteRoutine(id)
+      const { data } = await deleteRoutine(id);
       if (data.success) {
-        toast.success(data.message)
+        toast.success(data.message);
         fetchRoutines();
-        setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDeleteId(null);
+        handleModalPopUp("delete-modal");
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setDeleteId(null)
-  }
-
-
+    e.preventDefault();
+    setDeleteId(null);
+  };
 
   const columns = [
     {
@@ -353,9 +359,7 @@ const ClassRoutine = () => {
     {
       title: "Section",
       dataIndex: "section",
-      render: (text: string) => (
-        <span className="text-capitalize">{text}</span>
-      ),
+      render: (text: string) => <span className="text-capitalize">{text}</span>,
       sorter: (a: any, b: any) => a.section.length - b.section.length,
     },
     {
@@ -435,7 +439,6 @@ const ClassRoutine = () => {
     },
   ];
 
-
   return (
     <div>
       <>
@@ -494,8 +497,11 @@ const ClassRoutine = () => {
                       <i className="ti ti-filter me-2" />
                       Filter
                     </Link>
-                    <div className="dropdown-menu drop-width" ref={dropdownMenuRef}>
-                      <form >
+                    <div
+                      className="dropdown-menu drop-width"
+                      ref={dropdownMenuRef}
+                    >
+                      <form>
                         <div className="d-flex align-items-center border-bottom p-3">
                           <h4>Filter</h4>
                         </div>
@@ -607,13 +613,21 @@ const ClassRoutine = () => {
               <div className="card-body p-0 py-3">
                 {/* Guardians List */}
                 {loading ? (
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+                  <div
+                    className="d-flex justify-content-center align-items-center"
+                    style={{ height: "200px" }}
+                  >
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                   </div>
-                ) : (<Table columns={columns} dataSource={allRoutine} Selection={true} />)
-                }
+                ) : (
+                  <Table
+                    columns={columns}
+                    dataSource={allRoutine}
+                    Selection={true}
+                  />
+                )}
                 {/* /Guardians List */}
               </div>
             </div>
@@ -649,36 +663,63 @@ const ClassRoutine = () => {
                       <div className="mb-3">
                         <label className="form-label">Teacher</label>
                         <CommonSelect
-                          className={`select ${errors.teacher ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.teacher ? "is-invalid" : ""
+                          }`}
                           options={teacherOptions}
                           value={routineForm.teacher}
-                          onChange={(opt) => handleSelectChange("teacher", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("teacher", opt ? opt.value : "")
+                          }
                         />
-                        {errors.teacher && <div className="invalid-feedback">{errors.teacher}</div>}
+                        {errors.teacher && (
+                          <div className="invalid-feedback">
+                            {errors.teacher}
+                          </div>
+                        )}
                       </div>
 
                       {/* Class */}
                       <div className="mb-3">
                         <label className="form-label">Class</label>
                         <CommonSelect
-                          className={`select ${errors.className ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.className ? "is-invalid" : ""
+                          }`}
                           options={classOptions}
                           value={routineForm.className}
-                          onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange(
+                              "className",
+                              opt ? opt.value : ""
+                            )
+                          }
                         />
-                        {errors.className && <div className="invalid-feedback">{errors.className}</div>}
+                        {errors.className && (
+                          <div className="invalid-feedback">
+                            {errors.className}
+                          </div>
+                        )}
                       </div>
 
                       {/* Section */}
                       <div className="mb-3">
                         <label className="form-label">Section</label>
                         <CommonSelect
-                          className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
+                          className={`select text-capitalize ${
+                            errors.section ? "is-invalid" : ""
+                          }`}
                           options={sectionOptions}
                           value={routineForm.section}
-                          onChange={(opt) => handleSelectChange("section", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("section", opt ? opt.value : "")
+                          }
                         />
-                        {errors.section && <div className="invalid-feedback">{errors.section}</div>}
+                        {errors.section && (
+                          <div className="invalid-feedback">
+                            {errors.section}
+                          </div>
+                        )}
                       </div>
 
                       {/* Day */}
@@ -688,9 +729,13 @@ const ClassRoutine = () => {
                           className={`select ${errors.day ? "is-invalid" : ""}`}
                           options={weak}
                           value={routineForm.day}
-                          onChange={(opt) => handleSelectChange("day", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("day", opt ? opt.value : "")
+                          }
                         />
-                        {errors.day && <div className="invalid-feedback">{errors.day}</div>}
+                        {errors.day && (
+                          <div className="invalid-feedback">{errors.day}</div>
+                        )}
                       </div>
 
                       {/* Start & End Time */}
@@ -702,11 +747,29 @@ const ClassRoutine = () => {
                               use12Hours
                               placeholder="Choose"
                               format="h:mm A"
-                              className={`form-control timepicker ${errors.startTime ? "is-invalid" : ""}`}
-                              value={routineForm.startTime ? dayjs(routineForm.startTime, "h:mm A") : null}
-                              onChange={(time, timeString) => handleTimeChange("startTime", time, Array.isArray(timeString) ? timeString[0] : timeString)}
+                              className={`form-control timepicker ${
+                                errors.startTime ? "is-invalid" : ""
+                              }`}
+                              value={
+                                routineForm.startTime
+                                  ? dayjs(routineForm.startTime, "h:mm A")
+                                  : null
+                              }
+                              onChange={(time, timeString) =>
+                                handleTimeChange(
+                                  "startTime",
+                                  time,
+                                  Array.isArray(timeString)
+                                    ? timeString[0]
+                                    : timeString
+                                )
+                              }
                             />
-                            {errors.startTime && <div className="invalid-feedback">{errors.startTime}</div>}
+                            {errors.startTime && (
+                              <div className="invalid-feedback">
+                                {errors.startTime}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -717,11 +780,29 @@ const ClassRoutine = () => {
                               use12Hours
                               placeholder="Choose"
                               format="h:mm A"
-                              className={`form-control timepicker ${errors.endTime ? "is-invalid" : ""}`}
-                              value={routineForm.endTime ? dayjs(routineForm.endTime, "h:mm A") : null}
-                              onChange={(time, timeString) => handleTimeChange("endTime", time, Array.isArray(timeString) ? timeString[0] : timeString)}
+                              className={`form-control timepicker ${
+                                errors.endTime ? "is-invalid" : ""
+                              }`}
+                              value={
+                                routineForm.endTime
+                                  ? dayjs(routineForm.endTime, "h:mm A")
+                                  : null
+                              }
+                              onChange={(time, timeString) =>
+                                handleTimeChange(
+                                  "endTime",
+                                  time,
+                                  Array.isArray(timeString)
+                                    ? timeString[0]
+                                    : timeString
+                                )
+                              }
                             />
-                            {errors.endTime && <div className="invalid-feedback">{errors.endTime}</div>}
+                            {errors.endTime && (
+                              <div className="invalid-feedback">
+                                {errors.endTime}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -730,12 +811,23 @@ const ClassRoutine = () => {
                       <div className="mb-3">
                         <label className="form-label">Class Room</label>
                         <CommonSelect
-                          className={`select ${errors.classRoom ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.classRoom ? "is-invalid" : ""
+                          }`}
                           options={roomOptions}
                           value={routineForm.classRoom}
-                          onChange={(opt) => handleSelectChange("classRoom", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange(
+                              "classRoom",
+                              opt ? opt.value : ""
+                            )
+                          }
                         />
-                        {errors.classRoom && <div className="invalid-feedback">{errors.classRoom}</div>}
+                        {errors.classRoom && (
+                          <div className="invalid-feedback">
+                            {errors.classRoom}
+                          </div>
+                        )}
                       </div>
 
                       {/* Status */}
@@ -760,8 +852,12 @@ const ClassRoutine = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <button type="button"
-                    onClick={(e) => handlecancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button
+                    type="button"
+                    onClick={(e) => handlecancel(e)}
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                  >
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -772,7 +868,6 @@ const ClassRoutine = () => {
             </div>
           </div>
         </div>
-
 
         {/* /Add Class Routine */}
         {/* Edit Class Routine */}
@@ -800,36 +895,63 @@ const ClassRoutine = () => {
                       <div className="mb-3">
                         <label className="form-label">Teacher</label>
                         <CommonSelect
-                          className={`select ${errors.teacher ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.teacher ? "is-invalid" : ""
+                          }`}
                           options={teacherOptions}
                           value={routineForm.teacher}
-                          onChange={(opt) => handleSelectChange("teacher", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("teacher", opt ? opt.value : "")
+                          }
                         />
-                        {errors.teacher && <div className="invalid-feedback">{errors.teacher}</div>}
+                        {errors.teacher && (
+                          <div className="invalid-feedback">
+                            {errors.teacher}
+                          </div>
+                        )}
                       </div>
 
                       {/* Class */}
                       <div className="mb-3">
                         <label className="form-label">Class</label>
                         <CommonSelect
-                          className={`select ${errors.className ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.className ? "is-invalid" : ""
+                          }`}
                           options={classOptions}
                           value={routineForm.className}
-                          onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange(
+                              "className",
+                              opt ? opt.value : ""
+                            )
+                          }
                         />
-                        {errors.className && <div className="invalid-feedback">{errors.className}</div>}
+                        {errors.className && (
+                          <div className="invalid-feedback">
+                            {errors.className}
+                          </div>
+                        )}
                       </div>
 
                       {/* Section */}
                       <div className="mb-3">
                         <label className="form-label">Section</label>
                         <CommonSelect
-                          className={`select text-capitalize ${errors.section ? "is-invalid" : ""}`}
+                          className={`select text-capitalize ${
+                            errors.section ? "is-invalid" : ""
+                          }`}
                           options={sectionOptions}
                           value={routineForm.section}
-                          onChange={(opt) => handleSelectChange("section", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("section", opt ? opt.value : "")
+                          }
                         />
-                        {errors.section && <div className="invalid-feedback">{errors.section}</div>}
+                        {errors.section && (
+                          <div className="invalid-feedback">
+                            {errors.section}
+                          </div>
+                        )}
                       </div>
 
                       {/* Day */}
@@ -839,9 +961,13 @@ const ClassRoutine = () => {
                           className={`select ${errors.day ? "is-invalid" : ""}`}
                           options={weak}
                           value={routineForm.day}
-                          onChange={(opt) => handleSelectChange("day", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange("day", opt ? opt.value : "")
+                          }
                         />
-                        {errors.day && <div className="invalid-feedback">{errors.day}</div>}
+                        {errors.day && (
+                          <div className="invalid-feedback">{errors.day}</div>
+                        )}
                       </div>
 
                       {/* Start & End Time */}
@@ -853,11 +979,29 @@ const ClassRoutine = () => {
                               use12Hours
                               placeholder="Choose"
                               format="h:mm A"
-                              className={`form-control timepicker ${errors.startTime ? "is-invalid" : ""}`}
-                              value={routineForm.startTime ? dayjs(routineForm.startTime, "h:mm A") : null}
-                              onChange={(time, timeString) => handleTimeChange("startTime", time, Array.isArray(timeString) ? timeString[0] : timeString)}
+                              className={`form-control timepicker ${
+                                errors.startTime ? "is-invalid" : ""
+                              }`}
+                              value={
+                                routineForm.startTime
+                                  ? dayjs(routineForm.startTime, "h:mm A")
+                                  : null
+                              }
+                              onChange={(time, timeString) =>
+                                handleTimeChange(
+                                  "startTime",
+                                  time,
+                                  Array.isArray(timeString)
+                                    ? timeString[0]
+                                    : timeString
+                                )
+                              }
                             />
-                            {errors.startTime && <div className="invalid-feedback">{errors.startTime}</div>}
+                            {errors.startTime && (
+                              <div className="invalid-feedback">
+                                {errors.startTime}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -868,11 +1012,29 @@ const ClassRoutine = () => {
                               use12Hours
                               placeholder="Choose"
                               format="h:mm A"
-                              className={`form-control timepicker ${errors.endTime ? "is-invalid" : ""}`}
-                              value={routineForm.endTime ? dayjs(routineForm.endTime, "h:mm A") : null}
-                              onChange={(time, timeString) => handleTimeChange("endTime", time, Array.isArray(timeString) ? timeString[0] : timeString)}
+                              className={`form-control timepicker ${
+                                errors.endTime ? "is-invalid" : ""
+                              }`}
+                              value={
+                                routineForm.endTime
+                                  ? dayjs(routineForm.endTime, "h:mm A")
+                                  : null
+                              }
+                              onChange={(time, timeString) =>
+                                handleTimeChange(
+                                  "endTime",
+                                  time,
+                                  Array.isArray(timeString)
+                                    ? timeString[0]
+                                    : timeString
+                                )
+                              }
                             />
-                            {errors.endTime && <div className="invalid-feedback">{errors.endTime}</div>}
+                            {errors.endTime && (
+                              <div className="invalid-feedback">
+                                {errors.endTime}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -881,12 +1043,23 @@ const ClassRoutine = () => {
                       <div className="mb-3">
                         <label className="form-label">Class Room</label>
                         <CommonSelect
-                          className={`select ${errors.classRoom ? "is-invalid" : ""}`}
+                          className={`select ${
+                            errors.classRoom ? "is-invalid" : ""
+                          }`}
                           options={roomOptions}
                           value={routineForm.classRoom}
-                          onChange={(opt) => handleSelectChange("classRoom", opt ? opt.value : "")}
+                          onChange={(opt) =>
+                            handleSelectChange(
+                              "classRoom",
+                              opt ? opt.value : ""
+                            )
+                          }
                         />
-                        {errors.classRoom && <div className="invalid-feedback">{errors.classRoom}</div>}
+                        {errors.classRoom && (
+                          <div className="invalid-feedback">
+                            {errors.classRoom}
+                          </div>
+                        )}
                       </div>
 
                       {/* Status */}
@@ -911,8 +1084,12 @@ const ClassRoutine = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <button type="button"
-                    onClick={(e) => handlecancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button
+                    type="button"
+                    onClick={(e) => handlecancel(e)}
+                    className="btn btn-light me-2"
+                    data-bs-dismiss="modal"
+                  >
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -925,13 +1102,11 @@ const ClassRoutine = () => {
         </div>
         {/* /Edit Class Routine */}
 
-
-
         {/* Delete Modal */}
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <form >
+              <form>
                 <div className="modal-body text-center">
                   <span className="delete-icon">
                     <i className="ti ti-trash-x" />
@@ -941,8 +1116,8 @@ const ClassRoutine = () => {
                     You want to delete all the marked items, this cant be undone
                     once you delete.
                   </p>
-                  {
-                    deleteId && (<div className="d-flex justify-content-center">
+                  {deleteId && (
+                    <div className="d-flex justify-content-center">
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
@@ -950,12 +1125,14 @@ const ClassRoutine = () => {
                       >
                         Cancel
                       </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      <button
+                        onClick={(e) => handleDelete(deleteId, e)}
+                        className="btn btn-danger"
                       >
                         Yes, Delete
                       </button>
-                    </div>)
-                  }
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
