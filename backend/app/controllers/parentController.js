@@ -362,8 +362,6 @@ export const dashboard = async (req, res) => {
       if (!student) continue;
 
       const rollnum = student.rollnum;
-
-
       const [attendanceRows] = await db.query(
         `SELECT 
             attendance AS status,

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ParentModal from "../parentModal";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import { Link } from "react-router-dom";
+import { all_routes } from "../../../../router/all_routes";
 import {
   names,
   parent,
@@ -10,54 +11,37 @@ import {
 import CommonSelect from "../../../../core/common/commonSelect";
 import { Modal } from "react-bootstrap";
 import TooltipOption from "../../../../core/common/tooltipOption";
-import {
-  allParents,
-  deleteFile,
-  deleteParent,
-  editParent,
-  getAllRolePermissions,
-  Imageurl,
-  parentForEdit,
-  speParent,
-  uploadStudentFile,
-} from "../../../../service/api";
+import { allParents, deleteFile, deleteParent, editParent, Imageurl, parentForEdit, speParent, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { Skeleton } from "antd";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-// import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import type { ParentData } from "../parent-list";
+import dayjs from 'dayjs'
 
-export interface ParentData {
-  id: number;
-  img_src: string;
-  name: string;
-  Parent_Add: string;
-  email: string;
-  phone_num: string;
-  stu_img: string;
-  firstname: string;
-  lastname: string;
-}
-
-export interface SpeParentData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
-  Parent_Add: string;
+export interface StudentChild {
   stu_img: string;
   stu_id: number;
   class: string;
   section: string;
   gender: string;
-  rollnum: string;
+  rollnum: number;
   admissiondate: string;
   admissionnum: string;
   Student_Add: string;
   firstname: string;
   lastname: string;
   status: string;
+}
+
+export interface SpeParentData {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  phone_num: string;
+  img_src: string;
+  Parent_Add: string;
+  children: StudentChild[];
 }
 
 export interface ParentDataForEdit {
@@ -67,9 +51,9 @@ export interface ParentDataForEdit {
   img_src: string;
 }
 
-const TParentGrid = () => {
+const ParentGrid = () => {
   const [show, setShow] = useState(false);
-  // const routes = all_routes;
+  const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleApplyClick = () => {
@@ -80,144 +64,121 @@ const TParentGrid = () => {
   const handleClose = () => {
     setShow(false);
   };
-  const tokens = localStorage.getItem("token");
-  const roleId = tokens ? JSON.parse(tokens)?.role : null;
-  const [permission, setPermission] = useState<any>(null);
-  const [allparentData, setAllParentData] = useState<ParentData[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchPermission = async (roleId: number) => {
-    if (roleId) {
-      const { data } = await getAllRolePermissions(roleId);
-      if (data.success) {
-        const currentPermission = data.result
-          .filter((perm: any) => perm?.module_name === "Parents")
-          .map((perm: any) => ({
-            can_create: perm?.can_create,
-            can_delete: perm?.can_delete,
-            can_edit: perm?.can_edit,
-            can_view: perm?.can_view,
-          }));
-        setPermission(currentPermission[0]);
-      }
-    }
-  };
+
+  const [allparentData, setAllParentData] = useState<ParentData[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
   const fetchParents = async () => {
-    setLoading(true);
-    await new Promise((res) => setTimeout(res, 800));
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 800))
     try {
-      const { data } = await allParents();
+      const { data } = await allParents()
       if (data.success) {
-        setAllParentData(data.data);
+        setAllParentData(data.data)
+
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
+
     }
-  };
+  }
 
   useEffect(() => {
-    fetchPermission(roleId);
-    fetchParents();
-  }, []);
+    fetchParents()
+  }, [])
 
   function formatDate(isoString: string) {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   }
 
   // speparentdta ======================================================================
 
   // useState ka sahi tareeka
-  const [speParentData, setSpeParentData] = useState<SpeParentData | null>(
-    null
-  );
-  const [loading2, setLoading2] = useState<boolean>(false);
+  const [speParentData, setSpeParentData] = useState<SpeParentData | null>(null);
+  const [loading2, setLoading2] = useState<boolean>(false)
+
 
   const fetchSpecficParentData = async (parentId: number) => {
-    setShow(true);
-    setLoading2(true);
+    setShow(true)
+    setLoading2(true)
     // await new Promise((res)=>setTimeout(res,500))
     try {
-      const { data } = await speParent(parentId);
+
+      const { data } = await speParent(parentId)
 
       if (data.success) {
-        setSpeParentData(data.data);
+        setSpeParentData(data.data)
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading2(false);
+      setLoading2(false)
     }
-  };
-
-  function formatDateHuman(dateStr: string): string {
-    // Input format: DD-MM-YYYY
-    const [day, month, year] = dateStr.split("-").map(Number);
-
-    // Month names array
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    return `${day} ${monthNames[month - 1]} ${year}`;
   }
 
+  // function formatDateHuman(dateStr: string): string {
+  //   // Input format: DD-MM-YYYY
+  //   const [day, month, year] = dateStr.split("-").map(Number);
+
+  //   // Month names array
+  //   const monthNames = [
+  //     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  //     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  //   ];
+
+  //   return `${day} ${monthNames[month - 1]} ${year}`;
+  // }
+
+
   // delete -----------------------------------------
-  const [parentId, setParentId] = useState<number | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [parentId, setParentId] = useState<number | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
 
   const setDeleteIds = (id: number, userId: number) => {
-    setParentId(id);
-    setUserId(userId);
-  };
+    setParentId(id)
+    setUserId(userId)
+  }
 
-  const handleDelete = async (
-    id: number,
-    userId: number,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
+
+  const handleDelete = async (id: number, userId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     // console.log(parentId, userId)
     try {
-      const { data } = await deleteParent(id, userId);
+
+
+      const { data } = await deleteParent(id, userId)
       if (data.success) {
-        toast.success(data.message);
-        setParentId(null);
-        setUserId(null);
-        fetchParents();
-        handleModalPopUp("delete-modal");
+        toast.success(data.message)
+        setParentId(null)
+        setUserId(null)
+        fetchParents()
+        handleModalPopUp('delete-modal')
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     }
-  };
+  }
 
   const handleCancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setParentId(null);
-    setUserId(null);
-  };
+    e.preventDefault()
+    setParentId(null)
+    setUserId(null)
+  }
+
 
   // edit parent-------------------------------------
   const [formData, setFormData] = useState<ParentDataForEdit>({
@@ -226,36 +187,40 @@ const TParentGrid = () => {
     email: "",
     img_src: "",
   });
-  const [fatImg, setFatImg] = useState<File | null>(null);
-  const [fatImgId, setFatImgId] = useState<number | null>(null);
-  const [orginalImgPath, setOriginalImgPath] = useState<string>("");
-  const [editId, setEditId] = useState<number | null>(null);
+  const [fatImg, setFatImg] = useState<File | null>(null)
+  const [fatImgId, setFatImgId] = useState<number | null>(null)
+  const [orginalImgPath, setOriginalImgPath] = useState<string>("")
+  const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<{
     name?: string;
     phone_num?: string;
     email?: string;
   }>({});
 
+
   const fetchParentDataForEdit = async (id: number) => {
     try {
-      const { data } = await parentForEdit(id);
+      const { data } = await parentForEdit(id)
       if (data.success) {
         setFormData({
           name: data.data.name,
           phone_num: data.data.phone_num,
           email: data.data.email,
           img_src: data.data.img_src,
-        });
-        setEditId(id);
-        setOriginalImgPath(data.data.img_src);
+        })
+        setEditId(id)
+        setOriginalImgPath(data.data.img_src)
       }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -263,9 +228,12 @@ const TParentGrid = () => {
     }));
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
 
       if (!["image/jpeg", "image/png"].includes(file.type)) {
         toast.error("Only JPG, PNG files are allowed.");
@@ -277,11 +245,14 @@ const TParentGrid = () => {
       imgformData.append("stufile", file);
 
       try {
-        const res = await uploadStudentFile(imgformData);
+
+        const res = await uploadStudentFile(imgformData)
         const uploadedPath = res.data.file;
         const id = res.data.insertId;
-        setFormData((prev) => ({ ...prev, img_src: uploadedPath }));
-        setFatImgId(id);
+        setFormData((prev) => ({ ...prev, img_src: uploadedPath }))
+        setFatImgId(id)
+
+
       } catch (error) {
         console.error("Upload failed:", error);
       }
@@ -291,12 +262,12 @@ const TParentGrid = () => {
     if (!id) return;
 
     try {
-      const deletefile = await deleteFile(id);
+      const deletefile = await deleteFile(id)
 
       if (deletefile.data.success) {
         setFatImgId(null);
         setFatImg(null);
-        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }));
+        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }))
       }
     } catch (error) {
       console.error("Error deleting file:", error);
@@ -305,17 +276,20 @@ const TParentGrid = () => {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
+
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length < 3) {
       newErrors.name = "Name must be at least 3 characters";
     }
 
+
     if (!formData.phone_num.trim()) {
       newErrors.phone_num = "Phone number is required";
     } else if (!/^\d{10}$/.test(formData.phone_num)) {
       newErrors.phone_num = "Phone number must be 10 digits";
     }
+
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -338,7 +312,7 @@ const TParentGrid = () => {
         const { data } = await editParent(formData, editId);
         if (data.success) {
           toast.success(data.message);
-          fetchParents();
+          fetchParents()
           handleModalPopUp("edit_parent");
           setFormData({ name: "", phone_num: "", email: "", img_src: "" });
           setErrors({});
@@ -354,21 +328,24 @@ const TParentGrid = () => {
     }
   };
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault;
+    e.preventDefault
 
-    handleModalPopUp("edit_parent");
+    handleModalPopUp('edit_parent')
     setFormData({
       name: "",
       phone_num: "",
       email: "",
       img_src: "",
-    });
-    setEditId(null);
-    setOriginalImgPath("");
-    setFatImgId(null);
-    setFatImg(null);
-    setErrors({});
-  };
+    })
+    setEditId(null)
+    setOriginalImgPath('')
+    setFatImgId(null)
+    setFatImg(null)
+    setErrors({})
+
+  }
+
+
 
   return (
     <>
@@ -382,9 +359,7 @@ const TParentGrid = () => {
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={teacher_routes.teacherDashboard}>
-                      Teacher Dashboard
-                    </Link>
+                    <Link to={routes.adminDashboard}>Dashboard</Link>
                   </li>
                   <li className="breadcrumb-item">Peoples</li>
                   <li className="breadcrumb-item active" aria-current="page">
@@ -439,7 +414,7 @@ const TParentGrid = () => {
                             <CommonSelect
                               className="select"
                               options={parent}
-                              // defaultValue={parent[0]}
+                            // defaultValue={parent[0]}
                             />
                           </div>
                         </div>
@@ -449,7 +424,7 @@ const TParentGrid = () => {
                             <CommonSelect
                               className="select"
                               options={names}
-                              // defaultValue={names[0]}
+                            // defaultValue={names[0]}
                             />
                           </div>
                         </div>
@@ -472,13 +447,13 @@ const TParentGrid = () => {
               </div>
               <div className="d-flex align-items-center bg-white border rounded-2 p-1 mb-3 me-2">
                 <Link
-                  to={teacher_routes.parentList}
+                  to={routes.parentList}
                   className=" btn btn-icon btn-sm me-1 bg-light primary-hover"
                 >
                   <i className="ti ti-list-tree" />
                 </Link>
                 <Link
-                  to={teacher_routes.parentGrid}
+                  to={routes.parentGrid}
                   className=" active btn btn-icon btn-sm  primary-hover"
                 >
                   <i className="ti ti-grid-dots" />
@@ -519,17 +494,14 @@ const TParentGrid = () => {
             </div>
           </div>
           <div className="row">
-            {loading ? (
-              [...Array(5)].map((_, index) => (
+
+            {loading
+              ? [...Array(5)].map((_, index) => (
                 <div className="col-xl-4 col-md-6 d-flex" key={index}>
                   <div className="card flex-fill">
                     {/* Card Header */}
                     <div className="card-header d-flex align-items-center justify-content-between">
-                      <Skeleton.Input
-                        style={{ width: 60 }}
-                        active
-                        size="small"
-                      />
+                      <Skeleton.Input style={{ width: 60 }} active size="small" />
                       <Skeleton.Button active size="small" shape="circle" />
                     </div>
 
@@ -538,10 +510,7 @@ const TParentGrid = () => {
                       <div className="bg-light-300 rounded-2 p-3 mb-3">
                         <div className="d-flex align-items-center">
                           <Skeleton.Avatar active size="large" shape="circle" />
-                          <div
-                            className="ms-2 d-flex flex-column"
-                            style={{ flex: 1 }}
-                          >
+                          <div className="ms-2 d-flex flex-column" style={{ flex: 1 }}>
                             <Skeleton.Input
                               style={{ width: "50%", marginBottom: 8 }}
                               active
@@ -599,28 +568,23 @@ const TParentGrid = () => {
                           size="small"
                         />
                       </div>
-                      <Skeleton.Button
-                        active
-                        size="small"
-                        style={{ width: 80 }}
-                      />
+                      <Skeleton.Button active size="small" style={{ width: 80 }} />
                     </div>
                   </div>
                 </div>
               ))
-            ) : allparentData.length > 0 ? (
-              allparentData.map((parent: any) => (
-                <div className="col-xl-4 col-md-6 d-flex" key={parent.id}>
-                  <div className="card flex-fill">
-                    <div className="card-header d-flex align-items-center justify-content-between">
-                      <Link
-                        to="#"
-                        className="link-primary"
-                        onClick={() => setShow(true)}
-                      >
-                        PRT{parent.id}
-                      </Link>
-                      {permission?.can_edit || permission?.delete ? (
+              : allparentData.length > 0
+                ? allparentData.map((parent: any) => (
+                  <div className="col-xl-4 col-md-6 d-flex" key={parent.id}>
+                    <div className="card flex-fill">
+                      <div className="card-header d-flex align-items-center justify-content-between">
+                        <Link
+                          to="#"
+                          className="link-primary"
+                          onClick={() => setShow(true)}
+                        >
+                          PRT{parent.id}
+                        </Link>
                         <div className="d-flex align-items-center">
                           <div className="dropdown">
                             <Link
@@ -632,113 +596,101 @@ const TParentGrid = () => {
                               <i className="ti ti-dots-vertical fs-14" />
                             </Link>
                             <ul className="dropdown-menu dropdown-menu-right p-3">
-                              {permission?.can_edit ? (
-                                <li>
-                                  <button
-                                    className="dropdown-item rounded-1"
-                                    onClick={() =>
-                                      fetchParentDataForEdit(parent.id)
-                                    }
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#edit_parent"
-                                  >
-                                    <i className="ti ti-edit-circle me-2" />
-                                    Edit
-                                  </button>
-                                </li>
-                              ) : null}
-                              {permission?.can_edit ? (
-                                <li>
-                                  <button
-                                    className="dropdown-item rounded-1"
-                                    onClick={() =>
-                                      setDeleteIds(parent.id, parent.user_id)
-                                    }
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#delete-modal"
-                                  >
-                                    <i className="ti ti-trash-x me-2" />
-                                    Delete
-                                  </button>
-                                </li>
-                              ) : null}
+                              <li>
+                                <button
+                                  className="dropdown-item rounded-1"
+                                  onClick={() => fetchParentDataForEdit(parent.id)}
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#edit_parent"
+                                >
+                                  <i className="ti ti-edit-circle me-2" />
+                                  Edit
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  className="dropdown-item rounded-1"
+                                  onClick={() => setDeleteIds(parent.id, parent.user_id)}
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#delete-modal"
+                                >
+                                  <i className="ti ti-trash-x me-2" />
+                                  Delete
+                                </button>
+                              </li>
                             </ul>
                           </div>
                         </div>
-                      ) : null}
-                    </div>
+                      </div>
 
-                    <div className="card-body">
-                      <div className="bg-light-300 rounded-2 p-3 mb-3">
-                        <div className="d-flex align-items-center">
-                          <Link
-                            to="#"
-                            onClick={() => fetchSpecficParentData(parent.id)}
-                            className="avatar avatar-lg flex-shrink-0"
-                          >
-                            <img
-                              src={`${Imageurl}/${parent.img_src}`}
-                              className="img-fluid rounded-circle"
-                              alt="img"
-                            />
-                          </Link>
-                          <div className="ms-2">
-                            <h6 className="text-dark text-truncate mb-0">
-                              <p
-                                style={{ cursor: "pointer" }}
-                                onClick={() =>
-                                  fetchSpecficParentData(parent.id)
-                                }
-                              >
-                                {parent.name}
-                              </p>
-                            </h6>
-                            <p>Added on {formatDate(parent.Parent_Add)}</p>
+                      <div className="card-body">
+                        <div className="bg-light-300 rounded-2 p-3 mb-3">
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to="#"
+                              onClick={() => fetchSpecficParentData(parent.id)}
+                              className="avatar avatar-lg flex-shrink-0"
+                            >
+                              <img
+                                src={`${Imageurl}/${parent.img_src}`}
+                                className="img-fluid rounded-circle"
+                                alt="img"
+                              />
+                            </Link>
+                            <div className="ms-2">
+                              <h6 className="text-dark text-truncate mb-0">
+                                <p style={{ cursor: 'pointer' }} onClick={() => fetchSpecficParentData(parent.id)}>
+                                  {parent.name}
+                                </p>
+                              </h6>
+                              <p>Added on {formatDate(parent.Parent_Add)}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between gx-2">
+                          <div>
+                            <p className="mb-0">Email</p>
+                            <p className="text-dark">{parent.email}</p>
+                          </div>
+                          <div>
+                            <p className="mb-0">Phone</p>
+                            <p className="text-dark">{parent.phone_num}</p>
                           </div>
                         </div>
                       </div>
-                      <div className="d-flex align-items-center justify-content-between gx-2">
-                        <div>
-                          <p className="mb-0">Email</p>
-                          <p className="text-dark">{parent.email}</p>
-                        </div>
-                        <div>
-                          <p className="mb-0">Phone</p>
-                          <p className="text-dark">{parent.phone_num}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="card-footer d-flex align-items-center justify-content-between">
-                      <div className="d-flex align-items-center">
-                        <div className="d-flex align-items-center">
+                      {
+                        parent.children.map((s: any) => (<div className="card-footer d-flex align-items-center justify-content-between">
+                          <div className="d-flex align-items-center">
+                            <div className="d-flex align-items-center">
+                              <Link
+                                to={`${routes.studentDetail}/${s.rollnum}`}
+                                className="avatar avatar-md flex-shrink-0 p-0 me-2"
+                              >
+                                <img
+                                  src={`${Imageurl}${s.stu_img}`}
+                                  alt="img"
+                                  className="img-fluid rounded-circle"
+                                />
+                              </Link   >
+                              <p className="text-dark">{`${s.firstname} ${s.lastname}`}</p>
+                            </div>
+                          </div>
                           <Link
-                            to={`${teacher_routes.studentDetail}/${parent.rollnum}`}
-                            className="avatar avatar-md flex-shrink-0 p-0 me-2"
+                            to={`${routes.studentDetail}/${s.rollnum}`}
+                            className="btn btn-light btn-sm"
+                            onClick={() => fetchSpecficParentData(parent.id)}
                           >
-                            <img
-                              src={`${Imageurl}${parent.stu_img}`}
-                              alt="img"
-                              className="img-fluid rounded-circle"
-                            />
+                            View Details
                           </Link>
-                          <p className="text-dark">{`${parent.firstname} ${parent.lastname}`}</p>
                         </div>
-                      </div>
-                      <Link
-                        to="#"
-                        className="btn btn-light btn-sm"
-                        onClick={() => fetchSpecficParentData(parent.id)}
-                      >
-                        View Details
-                      </Link>
+                        ))
+                      }
+
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <>No data found</>
-            )}
+                ))
+                : <>No data found</>}
+
 
             {/* /Parent Grid */}
             <div className="col-md-12">
@@ -757,7 +709,7 @@ const TParentGrid = () => {
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form>
+            <form >
               <div className="modal-body text-center">
                 <span className="delete-icon">
                   <i className="ti ti-trash-x" />
@@ -767,8 +719,8 @@ const TParentGrid = () => {
                   You want to delete all the marked items, this cant be undone
                   once you delete.
                 </p>
-                {parentId && userId && (
-                  <div className="d-flex justify-content-center">
+                {
+                  (parentId && userId) && (<div className="d-flex justify-content-center">
                     <button
                       onClick={(e) => handleCancelDelete(e)}
                       className="btn btn-light me-3"
@@ -776,15 +728,11 @@ const TParentGrid = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      onClick={(e) => handleDelete(parentId, userId, e)}
-                      className="btn btn-danger"
-                      data-bs-dismiss="modal"
-                    >
+                    <button onClick={(e) => handleDelete(parentId, userId, e)} className="btn btn-danger" data-bs-dismiss="modal">
                       Yes, Delete
                     </button>
-                  </div>
-                )}
+                  </div>)
+                }
               </div>
             </form>
           </div>
@@ -814,31 +762,23 @@ const TParentGrid = () => {
               <div id="modal-tag" className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="d-flex align-items-center upload-pic flex-wrap row-gap-3 mb-3">
                       <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                        {fatImgId && fatImg ? (
-                          <img
+
+                        {
+                          fatImgId && fatImg ? (<img
                             src={URL.createObjectURL(fatImg)}
                             alt="Parent"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <img
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />) : (<img
                             src={`${Imageurl}/${orginalImgPath}`}
                             alt="Parent"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        )}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />)
+                        }
                       </div>
 
                       <div className="profile-upload">
@@ -869,35 +809,28 @@ const TParentGrid = () => {
                       <label className="form-label">Name</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.name ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
                         placeholder="Enter Name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                       />
-                      {errors.name && (
-                        <div className="invalid-feedback">{errors.name}</div>
-                      )}
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
+
 
                     <div className="mb-3">
                       <label className="form-label">Phone Number</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.phone_num ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.phone_num ? "is-invalid" : ""}`}
                         placeholder="Enter Phone Number"
                         name="phone_num"
                         value={formData.phone_num}
                         onChange={handleChange}
                       />
                       {errors.phone_num && (
-                        <div className="invalid-feedback">
-                          {errors.phone_num}
-                        </div>
+                        <div className="invalid-feedback">{errors.phone_num}</div>
                       )}
                     </div>
 
@@ -905,27 +838,27 @@ const TParentGrid = () => {
                       <label className="form-label">Email Address</label>
                       <input
                         type="email"
-                        className={`form-control ${
-                          errors.email ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
                         placeholder="Enter Email Address"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
                       />
-                      {errors.email && (
-                        <div className="invalid-feedback">{errors.email}</div>
-                      )}
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                     </div>
+
+
                   </div>
                 </div>
               </div>
+
 
               <div className="modal-footer">
                 <button
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn btn-light me-2"
+
                 >
                   Cancel
                 </button>
@@ -941,137 +874,139 @@ const TParentGrid = () => {
 
       <ParentModal />
 
-      {loading2 ? (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "200px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+      {
+        loading2 ? (
+          <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
           </div>
-        </div>
-      ) : (
-        speParentData && (
-          <>
-            <Modal show={show} onHide={handleClose} centered size="lg">
-              <div className="modal-header">
-                <h4 className="modal-title">View Details</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                  onClick={handleClose}
-                >
-                  <i className="ti ti-x" />
-                </button>
+        ) : (speParentData && (<><Modal show={show} onHide={handleClose} centered size="lg">
+          <div className="modal-header">
+            <h4 className="modal-title">View Details</h4>
+            <button
+              type="button"
+              className="btn-close custom-btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              onClick={handleClose}
+            >
+              <i className="ti ti-x" />
+            </button>
+          </div>
+          <div className="modal-body mb-0">
+            <div className="parent-wrap">
+              <div className="row align-items-center">
+                <div className="col-lg-6">
+                  <div className="d-flex align-items-center mb-3">
+                    <span className="avatar avatar-xl me-2">
+                      <img
+                        src={`${Imageurl}/${speParentData.img_src}`}
+                        alt="img"
+                      />
+                    </span>
+                    <div className="parent-name">
+                      <h5 className="mb-1">{speParentData.name}</h5>
+                      <p>Added on {formatDate(speParentData.Parent_Add)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-lg-6">
+                  <ul className="d-flex align-items-center">
+                    <li className="mb-3 me-5">
+                      <p className="mb-1">Email</p>
+                      <h6 className="fw-normal">{speParentData.email}</h6>
+                    </li>
+                    <li className="mb-3">
+                      <p className="mb-1">Phone</p>
+                      <h6 className="fw-normal">{speParentData.phone_num}</h6>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <div className="modal-body mb-0">
-                <div className="parent-wrap">
-                  <div className="row align-items-center">
-                    <div className="col-lg-6">
+            </div>
+            <h5 className="mb-3">Children Details</h5>
+
+            {
+              speParentData?.children?.length > 0 ? (
+                speParentData.children.map((s: StudentChild) => (
+                  <div key={s.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                    {/* Header Section */}
+                    <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                      <span className="link-primary fw-semibold mb-2">{s.admissionnum}</span>
+                      <span
+                        className={`badge ${s.status === "1" ? "badge-soft-success" : "badge-soft-danger"
+                          } badge-md mb-2`}
+                      >
+                        <i className="ti ti-circle-filled me-2" />
+                        {s.status === "1" ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+
+                    {/* Student Info Section */}
+                    <div className="d-flex align-items-center justify-content-between flex-wrap">
                       <div className="d-flex align-items-center mb-3">
-                        <span className="avatar avatar-xl me-2">
+                        <Link to={`${routes.studentDetail}/${s.rollnum}`} className="avatar">
                           <img
-                            src={`${Imageurl}/${speParentData.img_src}`}
-                            alt="img"
+                            src={`${Imageurl}/${s.stu_img}`}
+                            className="img-fluid rounded-circle border"
+                            alt={`${s.firstname} ${s.lastname}`}
                           />
-                        </span>
-                        <div className="parent-name">
-                          <h5 className="mb-1">Thomas</h5>
-                          <p>Added on {formatDate(speParentData.Parent_Add)}</p>
+                        </Link>
+                        <div className="ms-3">
+                          <p className="mb-0 fw-medium">
+                            <Link to={`${routes.studentDetail}/${s.rollnum}`} className="text-dark text-decoration-none">
+                              {`${s.firstname} ${s.lastname}`}
+                            </Link>
+                          </p>
+                          <small className="text-muted text-uppercase">
+                            {s.class} - {s.section}
+                          </small>
                         </div>
                       </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <ul className="d-flex align-items-center">
-                        <li className="mb-3 me-5">
-                          <p className="mb-1">Email</p>
-                          <h6 className="fw-normal">{speParentData.email}</h6>
+
+                      {/* Student Details */}
+                      <ul className="d-flex align-items-center flex-wrap mb-0">
+                        <li className="mb-3 me-4">
+                          <p className="mb-1 text-muted">Roll No</p>
+                          <h6 className="fw-normal">{s.rollnum}</h6>
+                        </li>
+                        <li className="mb-3 me-4">
+                          <p className="mb-1 text-muted">Gender</p>
+                          <h6 className="fw-normal">{s.gender}</h6>
                         </li>
                         <li className="mb-3">
-                          <p className="mb-1">Phone</p>
-                          <h6 className="fw-normal">
-                            {speParentData.phone_num}
-                          </h6>
+                          <p className="mb-1 text-muted">Date of Joined</p>
+                          <h6 className="fw-normal">{dayjs(s.admissiondate).format('DD MMM YYYY')}</h6>
                         </li>
                       </ul>
-                    </div>
-                  </div>
-                </div>
-                <h5 className="mb-3">Children Details</h5>
-                <div className="border rounded p-4 pb-1 mb-3">
-                  <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                    <span className="link-primary mb-2">
-                      {speParentData.admissionnum}
-                    </span>
-                    <span
-                      className={`badge ${
-                        speParentData.status == "1"
-                          ? "badge-soft-success"
-                          : "badge-soft-danger"
-                      } badge-md mb-2`}
-                    >
-                      <i className="ti ti-circle-filled me-2" />
-                      {speParentData.status == "1" ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                    <div className="d-flex align-items-center mb-3">
-                      <Link
-                        to={`${teacher_routes.studentDetail}/${speParentData.rollnum}`}
-                        className="avatar"
-                      >
-                        <img
-                          src={`${Imageurl}/${speParentData.stu_img}`}
-                          className="img-fluid rounded-circle"
-                          alt="img"
-                        />
-                      </Link>
-                      <div className="ms-2">
-                        <p className="mb-0">
-                          <Link
-                            to={`${teacher_routes.studentDetail}/${speParentData.rollnum}`}
-                          >{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
-                        </p>
-                        <span className="text-uppercase">
-                          {speParentData.class} - {speParentData.section}
-                        </span>
+
+                      {/* Action Button */}
+                      <div className="d-flex align-items-center">
+                        <Link
+                          to={`${routes.studentDetail}/${s.rollnum}`}
+                          className="btn btn-primary btn-sm mb-3"
+                        >
+                          View Details
+                        </Link>
                       </div>
                     </div>
-                    <ul className="d-flex align-items-center flex-wrap">
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Roll No</p>
-                        <h6 className="fw-normal">{speParentData.rollnum}</h6>
-                      </li>
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Gender</p>
-                        <h6 className="fw-normal">{speParentData.gender}</h6>
-                      </li>
-                      <li className="mb-3">
-                        <p className="mb-1">Date of Joined</p>
-                        <h6 className="fw-normal">
-                          {formatDateHuman(speParentData.admissiondate)}
-                        </h6>
-                      </li>
-                    </ul>
-                    <div className="d-flex align-items-center">
-                      <Link
-                        to={`${teacher_routes.studentDetail}/${speParentData.rollnum}`}
-                        className="btn btn-primary mb-3"
-                      >
-                        View Details
-                      </Link>
-                    </div>
                   </div>
-                </div>
-              </div>
-            </Modal>
-          </>
-        )
-      )}
+                ))
+              ) : (
+                <p className="text-muted fst-italic">No student records available.</p>
+              )
+            }
+
+
+
+
+
+          </div>
+        </Modal></>))
+      }
     </>
   );
 };
 
-export default TParentGrid;
+export default ParentGrid;
