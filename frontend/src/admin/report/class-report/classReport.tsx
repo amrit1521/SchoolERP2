@@ -18,6 +18,7 @@ import { all_routes } from "../../router/all_routes";
 import { toast } from "react-toastify";
 import { allStudents, getAllSection } from "../../../service/api";
 import { Spinner } from "../../../spinner";
+import dayjs from 'dayjs'
 
 interface rowsProps {
   id: number;
@@ -340,6 +341,10 @@ const ClassReport = () => {
     {
       title: "DOB",
       dataIndex: "dob",
+      render:(text:string)=>(
+
+        <span>{dayjs(text).format('DD MMM YYYY')}</span>
+      ),
       sorter: (a: TableData, b: TableData) => a.dob.length - b.dob.length,
     },
     {

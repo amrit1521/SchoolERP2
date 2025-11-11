@@ -308,7 +308,7 @@ exports.allStudents = async (req, res) => {
                 ON u.id = s.stu_id
           RIGHT JOIN classes  c ON c.id =  s.class_id
           RIGHT JOIN sections se ON se.id = s.section_id
-          LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+          LEFT JOIN parents_info p ON s.parent_id = p.parent_id AND relation = "Father"
           JOIN roles r on r.id=u.roll_id
           
                 WHERE u.roll_id=3
@@ -1057,7 +1057,7 @@ FROM students s
 LEFT JOIN users u 
     ON s.stu_id = u.id 
 LEFT JOIN parents_info father 
-    ON s.stu_id = father.user_id AND father.relation = 'Father'
+    ON s.parent_id = father.parent_id AND father.relation = 'Father'
     LEFT JOIN classes c ON s.class_id = c.id
     LEFT JOIN sections se ON s.section_id = se.id
 WHERE u.roll_id = 3
