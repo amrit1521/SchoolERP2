@@ -4,26 +4,19 @@ const bcrypt = require('bcryptjs');
 const transporter = require('../../utils/sendEmail')
 const dayjs = require('dayjs');
 const { sendWhatsApp, sendRegisterMessage } = require('../../utils/sendOtpViaMobile');
-async function getUserId(rollnum) {
+const { generateRandomPassword } = require('../../utils/generatePassword');
 
+async function getUserId(rollnum) {
   const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
   return stu[0].stu_id
 
-}
-
-
-function generateRandomPassword(length = 12) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!&";
-  return Array.from({ length }, () =>
-    chars.charAt(Math.floor(Math.random() * chars.length))
-  ).join("");
 }
 
 function generateParentId() {
   return Math.floor(100000 + Math.random() * 900000);
 }
 
-// ✅ Converts 'null', 'undefined', or '' strings to real null
+
 function cleanNullStrings(obj) {
   const clean = {};
   for (let key in obj) {
@@ -45,14 +38,13 @@ function safeJSON(value) {
 exports.addStudent = async (req, res) => {
   let connection;
   try {
-    // 🧼 Clean incoming FormData
+
     const data = cleanNullStrings(req.body);
-    console.log("Cleaned Data:", data);
 
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // ✅ 1. Check duplicate email
+
     const [existingUser] = await connection.query(
       "SELECT id FROM users WHERE email = ? LIMIT 1",
       [data.email]
@@ -62,7 +54,7 @@ exports.addStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    // ✅ 2. Create user
+
     const genPassword = generateRandomPassword();
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
@@ -73,15 +65,15 @@ exports.addStudent = async (req, res) => {
     );
     const userId = userRes.insertId;
 
-    // ✅ 3. Handle parent_id correctly
+
     let parentId;
-    if (data.parent_id && data.parent_id !== "null") {
+    if (data.parent_id && data.parent_id != null) {
       parentId = parseInt(data.parent_id);
     } else {
       parentId = generateParentId();
     }
 
-    // ✅ 4. Insert into students
+
     await connection.query(
       `INSERT INTO students (
         stu_id, parent_id, academicyear, admissionnum, admissiondate, rollnum,
@@ -121,7 +113,7 @@ exports.addStudent = async (req, res) => {
       ]
     );
 
-    // ✅ 5. Update uploaded file status
+  
     const imageFiles = [
       data.stuimg,
       data.fatimg,
@@ -135,7 +127,7 @@ exports.addStudent = async (req, res) => {
       await connection.query("UPDATE files SET status=1 WHERE filename=?", [file]);
     }
 
-    // ✅ 6. Insert parents info (with user_id + parent_id)
+
     const parentsData = [
       {
         relation: "Father",
@@ -144,6 +136,7 @@ exports.addStudent = async (req, res) => {
         phone_num: data.fat_phone,
         occuption: data.fat_occu,
         img_src: data.fatimg,
+        parent_user_id: data.fat_user_id || null
       },
       {
         relation: "Mother",
@@ -152,6 +145,7 @@ exports.addStudent = async (req, res) => {
         phone_num: data.mot_phone,
         occuption: data.mot_occu,
         img_src: data.motimg,
+        parent_user_id: data.mot_user_id || null
       },
       {
         relation: "Guardian",
@@ -163,18 +157,20 @@ exports.addStudent = async (req, res) => {
         address: data.gua_address,
         img_src: data.guaimg,
         guardian_Is: data.guardianIs,
+        parent_user_id: data.gua_user_id || null
       },
     ];
 
     for (const p of parentsData.filter((p) => p.name)) {
       await connection.query(
         `INSERT INTO parents_info (
-          parent_id, user_id, name, email, phone_num, occuption,
+          parent_id, user_id,parent_user_id, name, email, phone_num, occuption,
           relation, relation_det, address, img_src, guardian_Is
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           parentId,
           userId,
+          p.parent_user_id,
           p.name,
           p.email,
           p.phone_num,
@@ -188,7 +184,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    // ✅ 7. Hostel Info
+  
     if (data.hostel || data.room_num) {
       await connection.query(
         `INSERT INTO hostel_info (user_id, hostel, room_num) VALUES (?, ?, ?)`,
@@ -196,7 +192,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    // ✅ 8. Transport Info
+    
     if (data.route || data.vehicle_num || data.picup_point) {
       await connection.query(
         `INSERT INTO transport_info (user_id, route, vehicle_num, pickup_point)
@@ -205,7 +201,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    // ✅ 9. Bank Info
+ 
     if (data.bank_name || data.ifsc_num || data.other_det) {
       await connection.query(
         `INSERT INTO other_info (user_id, bank_name, branch, ifsc_num, other_det)
@@ -214,10 +210,10 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    // ✅ 10. Commit
+    
     await connection.commit();
 
-    // ✅ 11. Send Email + SMS (same as before)
+  
     transporter
       .sendMail({
         from: process.env.SMTP_USER,
@@ -467,7 +463,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
     const sql = `
       SELECT 
         u.id AS user_id, u.firstname, u.lastname, u.status, u.mobile, u.email,
-        s.id AS student_id, s.academicyear, s.admissionnum, s.admissiondate, s.rollnum, 
+        s.id AS student_id,s.parent_id AS family_id, s.academicyear, s.admissionnum, s.admissiondate, s.rollnum, 
          s.class_id AS class, s.section_id AS section, s.gender, s.dob, s.bloodgp, s.religion, s.caste, s.house, 
         s.stu_img, s.category, s.motherton, s.lanknown, s.curr_address, s.perm_address, 
         s.allergies, s.medications, s.prev_school, s.prev_school_address,s.stu_condition, s.medicalcert, 
@@ -477,7 +473,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
         o.bank_name, o.branch, o.ifsc_num, o.other_det,
         p.id AS parent_id, p.name AS parent_name, p.email AS parent_email, 
         p.phone_num AS parent_phone, p.occuption, p.relation, p.relation_det, 
-        p.address AS parent_address, p.img_src AS parent_img, p.guardian_Is
+        p.address AS parent_address, p.img_src AS parent_img, p.guardian_Is , p.parent_user_id
       FROM users u
       LEFT JOIN students s ON u.id = s.stu_id
       JOIN classes cl ON cl.id = s.class_id
@@ -485,7 +481,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
       LEFT JOIN hostel_info h ON s.stu_id = h.user_id
       LEFT JOIN transport_info t ON s.stu_id = t.user_id
       LEFT JOIN other_info o ON s.stu_id = o.user_id
-      LEFT JOIN parents_info p ON u.id = p.user_id
+      LEFT JOIN parents_info p ON s.parent_id = p.parent_id
      
       WHERE u.id = ?;
     `;
@@ -506,6 +502,7 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
         address: r.parent_address,
         img_src: r.parent_img,
         guardian_Is: r.guardian_Is,
+        parent_user_id: r.parent_user_id
       })).filter(p => p.id !== null)
     });
 
@@ -518,19 +515,14 @@ exports.getStudentByRollnumForEdit = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
   const { rollnum } = req.params;
-  const data = req.body;
+  const data = cleanNullStrings(req.body);
   let connection;
   if (!rollnum) {
     return res.status(400).json({ success: false, message: "Student RollNumber is required" });
   }
 
   const id = await getUserId(rollnum)
-
-  const [studentsParentId] =await db.query('SELECT parent_id FROM students WHERE stu_id=?' , [id])
-  const parentId = studentsParentId[0].parent_id
-
-
-
+  const parentId = data.parent_id
   try {
     connection = await db.getConnection();
     await connection.beginTransaction();
@@ -578,7 +570,6 @@ exports.updateStudent = async (req, res) => {
       ]
     );
 
-
     const parentsData = [
       {
         relation: "Father",
@@ -587,6 +578,7 @@ exports.updateStudent = async (req, res) => {
         phone_num: data.fat_phone,
         occuption: data.fat_occu,
         img_src: data.fatimg,
+        parent_user_id: data.fat_user_id
       },
       {
         relation: "Mother",
@@ -595,6 +587,7 @@ exports.updateStudent = async (req, res) => {
         phone_num: data.mot_phone,
         occuption: data.mot_occu,
         img_src: data.motimg,
+        parent_user_id: data.mot_user_id
       },
       {
         relation: "Guardian",
@@ -606,20 +599,21 @@ exports.updateStudent = async (req, res) => {
         address: data.gua_address || "",
         img_src: data.guaimg,
         guardian_Is: data.guardianIs || "",
+        parent_user_id: data.gua_user_id
       },
     ].filter(p => p.name);
 
 
     await Promise.all(parentsData.map(async parent => {
       const [existingParent] = await connection.query(
-        `SELECT id FROM parents_info WHERE user_id = ? AND relation = ? LIMIT 1`,
-        [id, parent.relation]
+        `SELECT id FROM parents_info WHERE parent_id = ? AND relation = ? LIMIT 1`,
+        [parentId, parent.relation]
       );
 
       if (existingParent.length > 0) {
         return connection.query(
           `UPDATE parents_info 
-           SET name=?, email=?, phone_num=?, occuption=?, relation_det=?, address=?, img_src=?, guardian_Is=?
+           SET name=?, email=?, phone_num=?, occuption=?, relation_det=?, address=?, img_src=?, guardian_Is=? , parent_id=?,parent_user_id=?
            WHERE id=?`,
           [
             parent.name,
@@ -630,13 +624,16 @@ exports.updateStudent = async (req, res) => {
             parent.address || "",
             parent.img_src || null,
             parent.guardian_Is || "",
+            parentId,
+            parent.parent_user_id,
             existingParent[0].id,
+
           ]
         );
       } else {
         return connection.query(
-          `INSERT INTO parents_info (user_id, name, email, phone_num, occuption, relation, relation_det, address, img_src, guardian_Is)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO parents_info (user_id, name, email, phone_num, occuption, relation, relation_det, address, img_src, guardian_Is , parent_id,parent_user_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,? ,?)`,
           [
             id,
             parent.name,
@@ -648,6 +645,8 @@ exports.updateStudent = async (req, res) => {
             parent.address || "",
             parent.img_src || null,
             parent.guardian_Is || "",
+            parentId,
+            parent.parent_user_id
           ]
         );
       }
@@ -690,8 +689,6 @@ exports.updateStudent = async (req, res) => {
     }
 
     await Promise.all(otherInfoQueries);
-
-
     await connection.commit();
 
     return res.status(200).json({ success: true, message: "Student updated successfully" });
@@ -721,6 +718,7 @@ exports.specificDetailsStu = async (req, res) => {
         u.email,
        
         s.id AS student_id,
+        s.parent_id,
         s.academicyear,
         s.admissionnum,
         s.admissiondate,
@@ -773,15 +771,15 @@ exports.specificDetailsStu = async (req, res) => {
       LEFT JOIN transport_pickupPoints tp ON tp.id = t.pickup_point
       LEFT JOIN  vehicle_info vi ON vi.id = t.vehicle_num
       LEFT JOIN other_info o ON s.stu_id=o.user_id
-      LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+      LEFT JOIN parents_info p ON s.parent_id = p.parent_id AND relation = "Father"
       LEFT JOIN classes c ON s.class_id = c.id
       LEFT JOIN sections se ON s.section_id = se.id
       WHERE s.rollnum = ?;
     `;
-    const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE user_id=?`
+    const sql2 = `SELECT id,name,email,phone_num , relation ,img_src,guardian_is FROM parents_info WHERE parent_id=?`
 
     const [student] = await db.query(sql, [rollnum]);
-    const [parents] = await db.query(sql2, [id])
+    const [parents] = await db.query(sql2, [student[0].parent_id])
 
     return res.status(200).json({
       message: 'Student fetched successfully!',
@@ -1143,7 +1141,6 @@ exports.studentForOption2 = async (req, res) => {
 }
 
 exports.filterStudentsForParmotion = async (req, res) => {
-
   const data = req.body;
 
   try {
@@ -1157,24 +1154,25 @@ exports.filterStudentsForParmotion = async (req, res) => {
         s.class_id,
         s.section_id,
         s.stu_img,
-        UPPER(c.class_name) as class,
-        UPPER( se.section_name) as section,
+        UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section,
         en.examName,
-        er.mark_obtained,
-        er.max_mark
-      FROM exam_result er
-      JOIN examName en ON er.exam_name_id = en.id
-      JOIN students s ON er.roll_num = s.rollnum
+        COALESCE(er.mark_obtained, 0) AS mark_obtained,
+        COALESCE(er.max_mark, 0) AS max_mark
+      FROM students s
       JOIN users u ON u.id = s.stu_id
-      JOIN classes  c ON c.id =  s.class_id
+      JOIN classes c ON c.id = s.class_id
       JOIN sections se ON se.id = s.section_id
+      LEFT JOIN exam_result er ON er.roll_num = s.rollnum
+      LEFT JOIN examName en ON er.exam_name_id = en.id
       WHERE s.class_id = ? 
         AND s.section_id = ?
-        AND (en.examName = 'Semester1' OR en.examName = 'Semester2')
+        AND (en.examName IN ('Semester1', 'Semester2') OR en.examName IS NULL)
       ORDER BY s.rollnum;
     `;
 
     const [rows] = await db.query(sql, [data.class, data.section]);
+    // console.log(rows);
 
     if (!rows.length) {
       return res.status(200).json({
@@ -1183,19 +1181,19 @@ exports.filterStudentsForParmotion = async (req, res) => {
       });
     }
 
-
     const studentMap = {};
+
     rows.forEach((row) => {
       if (!studentMap[row.student_id]) {
         studentMap[row.student_id] = {
           rollnum: row.rollnum,
           admissionnum: row.admissionnum,
           firstname: row.firstname,
+          lastname: row.lastname,
           student_id: row.student_id,
           class: row.class,
           section: row.section,
           stu_img: row.stu_img,
-          lastname: row.lastname,
           semester1: { obtained: 0, max: 0 },
           semester2: { obtained: 0, max: 0 },
         };
@@ -1210,12 +1208,12 @@ exports.filterStudentsForParmotion = async (req, res) => {
       }
     });
 
-
     const finalResult = Object.values(studentMap).map((stu) => {
       const totalObtained = stu.semester1.obtained + stu.semester2.obtained;
       const totalMax = stu.semester1.max + stu.semester2.max;
 
-      const percent = totalMax > 0 ? Number(((totalObtained / totalMax) * 100).toFixed(2)) : 0;
+      const percent =
+        totalMax > 0 ? Number(((totalObtained / totalMax) * 100).toFixed(2)) : 0;
 
       const result = percent >= 33 ? "Pass" : "Fail";
 
@@ -1235,17 +1233,18 @@ exports.filterStudentsForParmotion = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Student fetched  successfully fro promotion!",
+      message: "Student fetched successfully for promotion!",
       students: finalResult,
     });
   } catch (error) {
-    console.error("❌ Error in getFinalResultByClassSection:", error);
+    console.error("❌ Error in filterStudentsForParmotion:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error!",
     });
   }
 };
+
 
 exports.promoteStudents = async (req, res) => {
   let connection;
