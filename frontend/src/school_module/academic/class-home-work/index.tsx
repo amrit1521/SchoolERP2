@@ -104,6 +104,7 @@ const ClassHomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
+    title:""
   });
 
   const handleChange = (
@@ -161,6 +162,7 @@ const ClassHomeWork = () => {
           status: "1",
           attachments: "",
           description: "",
+          title:""
         })
       }
 

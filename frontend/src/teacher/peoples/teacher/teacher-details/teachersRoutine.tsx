@@ -1,7 +1,7 @@
 
 import TeacherModal from "../teacherModal";
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import { useEffect, useState } from "react";

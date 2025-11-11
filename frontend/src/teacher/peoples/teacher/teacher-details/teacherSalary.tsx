@@ -1,6 +1,6 @@
 
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
 import TeacherSidebar from "./teacherSidebar";

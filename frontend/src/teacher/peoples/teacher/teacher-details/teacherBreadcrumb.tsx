@@ -1,7 +1,8 @@
 
 import { Link } from 'react-router-dom'
-import { all_routes } from '../../../router/all_routes'
+import { all_routes } from '../../../../router/all_routes'
 import type React from 'react';
+import { teacher_routes } from '../../../../admin/router/teacher_routes';
 
 type Props = {
   teacher_id:string;
@@ -17,7 +18,7 @@ const TeacherBreadcrumb:React.FC<Props> = ({teacher_id}) => {
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={routes.adminDashboard}>Dashboard</Link>
+                    <Link to={teacher_routes.teacherDashboard}>Dashboard</Link>
                   </li>
                   <li className="breadcrumb-item">
                     <Link to={routes.teacherList}>Teachers</Link>
