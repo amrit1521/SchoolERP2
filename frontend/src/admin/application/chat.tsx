@@ -166,7 +166,7 @@ const Chat = () => {
     };
   }, [currentUserId, conversationId]);
 
-  
+
 
   // ✅ when conversation changes, join the room
   useEffect(() => {
@@ -538,29 +538,37 @@ const Chat = () => {
 
                       {/* <Slider {...profile}> */}
 
-                        <div className="d-flex gap-1">
+                      <div className="d-flex gap-1">
                         {
                           onlineUsers && onlineUsers.length > 0 ? (
-                            onlineUsers.map((u: any, index: number) => (
-                              <div style={{cursor:'pointer'}} key={index} onClick={() => privateRoom(u.user_id)} className="top-contacts-box me-1">
-                                <div className="avatar avatar-lg avatar-online border border-1">
-                                  <img
-                                    src={u.user_img ? `${Imageurl}/${u.user_img}` : "/assets/img/profiles/avatar-01.jpg"}
-                                    className="rounded-circle"
-                                    alt={u.name || "User"}
-                                  />
-                                
-                                </div>
+                            onlineUsers
+                              // 👇 current user ko exclude kar diya
+                              .filter((u: any) => u.user_id !== currentUserId)
+                              .map((u: any, index: number) => (
+                                <div
+                                  style={{ cursor: 'pointer' }}
+                                  key={index}
+                                  onClick={() => privateRoom(u.user_id)}
+                                  className="top-contacts-box me-1"
+                                >
+                                  <div className="avatar avatar-lg avatar-online border border-1">
+                                    <img
+                                      src={u.user_img ? `${Imageurl}/${u.user_img}` : "/assets/img/profiles/avatar-01.jpg"}
+                                      className="rounded-circle"
+                                      alt={u.name || "User"}
+                                    />
+                                  </div>
                                   {/* <span>{u.name}</span> */}
-                              </div>
-                            ))
+                                </div>
+                              ))
                           ) : (
                             <div className="text-muted text-center w-100">No User Online</div>
                           )
                         }
-                        </div>
+                      </div>
 
-                        {/* <div className="top-contacts-box  me-1">
+
+                      {/* <div className="top-contacts-box  me-1">
                           <div className="avatar avatar-lg avatar-online">
                             <ImageWithBasePath
                               src="assets/img/profiles/avatar-01.jpg"
@@ -673,7 +681,7 @@ const Chat = () => {
                                         className="p-2 border rounded d-block mb-2"
                                       >
                                         <div className="d-flex align-items-center">
-                                          <div className={`avatar  avatar-lg ${u.is_online?'avatar-online':''} me-2 flex-shrink-0`}>
+                                          <div className={`avatar  avatar-lg ${u.is_online ? 'avatar-online' : ''} me-2 flex-shrink-0`}>
                                             {
                                               u.user_img ? (<img
                                                 src={`${Imageurl}/${u.user_img}`}
