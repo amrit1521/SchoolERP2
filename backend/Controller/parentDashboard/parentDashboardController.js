@@ -16,9 +16,10 @@ exports.getParentDataByParentId = async (req, res) => {
                 p.phone_num,
                 p.img_src,
                 p.created_at AS Parent_Add,
-                p.relation
+                p.relation,
+                p.parent_id
             FROM parents_info p   
-            WHERE p.parent_id = ? and relation="Father"`;
+            WHERE p.parent_user_id = ?`;
     const sql2 = `SELECT
                        s.stu_id,
                         s.admissionnum,
@@ -39,8 +40,7 @@ exports.getParentDataByParentId = async (req, res) => {
                      where s.parent_id=?`;
 
     const [parent] = await db.query(sql, [userId]);
-    const [students] = await db.query(sql2, [userId]);
-
+    const [students] = await db.query(sql2, [parent[0].parent_id]);
     if (parent.length === 0) {
       return res
         .status(404)
@@ -101,6 +101,14 @@ exports.getAllStudentsOfParents = async (req, res) => {
         .status(400)
         .json({ message: "user Not found!", success: false });
     }
+
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const sql = `
             SELECT 
                 u.id AS user_id,
@@ -142,7 +150,7 @@ exports.getAllStudentsOfParents = async (req, res) => {
             WHERE s.parent_id=?
         `;
 
-    const [students] = await db.query(sql, [userId]);
+    const [students] = await db.query(sql, [parentData[0]?.parent_id]);
 
     res.status(200).json({
       message: "Students fetched successfully",
@@ -160,6 +168,13 @@ exports.getAllStudentsOfParents = async (req, res) => {
 exports.getAllMyChildrenHomeWork = async (req, res) => {
   const { userId } = req.params;
   try {
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -170,7 +185,7 @@ exports.getAllMyChildrenHomeWork = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -206,19 +221,11 @@ exports.getAllMyChildrenHomeWork = async (req, res) => {
         student?.class_id,
         student?.section_id,
       ]);
-      result.push(
-        userRows
-          .filter(
-            (user) =>
-              user.class_id == home_work[0]?.class_id &&
-              user.section_id == home_work[0]?.section_id
-          )
-          .map((data) => ({
-            student_id: data.stu_id,
-            student_name: data.name,
-            home_work: home_work,
-          }))[0]
-      );
+      result.push({
+        student_id: student.stu_id,
+        student_name: student.name,
+        home_work: home_work,
+      });
     }
     return res.status(200).json({
       message: "Fetched all homework successfully!",
@@ -244,6 +251,13 @@ exports.getAllChildAttendance = async (req, res) => {
       });
     }
 
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -254,7 +268,7 @@ exports.getAllChildAttendance = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -339,6 +353,13 @@ exports.getAllChildrenFeeReminder = async (req, res) => {
       });
     }
 
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -349,7 +370,7 @@ exports.getAllChildrenFeeReminder = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -374,17 +395,13 @@ exports.getAllChildrenFeeReminder = async (req, res) => {
                 WHERE fa.student_rollnum = ?`;
 
     const result = [];
-    for (fees of userRows) {
-      const [rows] = await db.execute(sql, [fees.rollnum]);
-      result.push(
-        userRows
-          .filter((item) => item.rollnum == fees.rollnum)
-          .map((data) => ({
-            student_id: data.stu_id,
-            student_name: data.name,
-            fees: rows,
-          }))[0]
-      );
+    for (user of userRows) {
+      const [rows] = await db.execute(sql, [user.rollnum]);
+      result.push({
+        student_id: user.stu_id,
+        student_name: user.name,
+        fees: rows,
+      });
     }
 
     if (result.length <= 0) {
@@ -415,6 +432,14 @@ exports.getAllChildLeaveData = async (req, res) => {
         message: "user not found.",
       });
     }
+
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -425,7 +450,7 @@ exports.getAllChildLeaveData = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -461,19 +486,15 @@ exports.getAllChildLeaveData = async (req, res) => {
             ORDER BY la.applied_on DESC
             `;
     const result = [];
-    for (leave of userRows) {
-      const [leave_inform] = await db.query(sql, leave.rollnum);
-      const [stuAllLeave] = await db.query(sql2, leave.rollnum);
-      result.push(
-        userRows
-          .filter((item) => item.rollnum == leave?.rollnum)
-          .map((data) => ({
-            student_id: data.stu_id,
-            student_name: data.name,
-            leave_inform: leave_inform,
-            stuAllLeave: stuAllLeave,
-          }))[0]
-      );
+    for (user of userRows) {
+      const [leave_inform] = await db.query(sql, user.rollnum);
+      const [stuAllLeave] = await db.query(sql2, user.rollnum);
+      result.push({
+        student_id: user.stu_id,
+        student_name: user.name,
+        leave_inform: leave_inform,
+        stuAllLeave: stuAllLeave,
+      });
     }
 
     return res.status(200).json({
@@ -501,6 +522,12 @@ exports.getTimeTableForAllChild = async (req, res) => {
         message: "user not found.",
       });
     }
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
 
     const [userRows] = await db.query(
       `SELECT
@@ -512,7 +539,7 @@ exports.getTimeTableForAllChild = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
@@ -540,13 +567,11 @@ exports.getTimeTableForAllChild = async (req, res) => {
         [timetable?.class_id, timetable?.section_id]
       );
       result.push(
-        userRows
-          .filter((item) => item?.student_id == timetable.student_id)
-          .map((data) => ({
-            student_id: data.stu_id,
-            student_name: data.name,
+        {
+            student_id: timetable.stu_id,
+            student_name: timetable.name,
             timetable: timetableRows,
-          }))[0]
+          }
       );
     }
 
@@ -564,18 +589,24 @@ exports.getTimeTableForAllChild = async (req, res) => {
   }
 };
 
-
 exports.getFeesDeatilsOfAllChild = async (req, res) => {
   try {
     const userId = req.params?.userId;
-  
-    if(!userId){
+
+    if (!userId) {
       return res.status(404).json({
-      success: false,
-      message:"user not found."
-    });
+        success: false,
+        message: "user not found.",
+      });
     }
-  
+
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -586,12 +617,12 @@ exports.getFeesDeatilsOfAllChild = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
     }
-      
+
     const sql = `
       SELECT 
         sfa.id,
@@ -622,27 +653,26 @@ exports.getFeesDeatilsOfAllChild = async (req, res) => {
        
     `;
     const result = [];
-    for(user of userRows){
+    for (user of userRows) {
       const [rows] = await db.query(sql, [user.rollnum]);
       result.push({
-        student_id:user.stu_id,
-        student_name:user.name,
-        feesdata:rows
+        student_id: user.stu_id,
+        student_name: user.name,
+        feesdata: rows,
       });
     }
 
     return res.status(200).json({
       success: true,
       message: "Fee details fetched successfully",
-      feesdata: result
+      feesdata: result,
     });
-
   } catch (error) {
     console.error("❌ Error fetching fee details:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -656,8 +686,14 @@ exports.getExamResultOfAllChild = async (req, res) => {
       message: "User not found.",
     });
   }
-
   try {
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -668,11 +704,13 @@ exports.getExamResultOfAllChild = async (req, res) => {
       FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
 
     if (!userRows || userRows.length === 0) {
-      return res.status(404).json({ success: false, message: "Student not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Student not found." });
     }
 
     const sql = `
@@ -719,7 +757,7 @@ exports.getExamResultOfAllChild = async (req, res) => {
             class: row.class_name,
             section: row.section_name,
             exam_name: row.examName,
-            img:row.stu_img,
+            img: row.stu_img,
             totalMax: 0,
             totalObtained: 0,
             subjects: [],
@@ -737,7 +775,9 @@ exports.getExamResultOfAllChild = async (req, res) => {
         examsMap[row.examName].totalObtained += row.mark_obtained || 0;
       }
       for (const exam of Object.values(examsMap)) {
-        const allPassed = exam.subjects.every((s) => s.result.toLowerCase() === "pass");
+        const allPassed = exam.subjects.every(
+          (s) => s.result.toLowerCase() === "pass"
+        );
         const overallPercentage = exam.totalMax
           ? (exam.totalObtained / exam.totalMax) * 100
           : 0;
@@ -748,15 +788,17 @@ exports.getExamResultOfAllChild = async (req, res) => {
           class: exam.class,
           section: exam.section,
           exam_name: exam.exam_name,
-          img:exam.img,
-          marks: Number(overallPercentage.toFixed(2)), 
+          img: exam.img,
+          marks: Number(overallPercentage.toFixed(2)),
           result_status: allPassed ? "Pass" : "Fail",
         });
       }
     }
 
     if (!finalResults.length) {
-      return res.status(404).json({ success: false, message: "No results found!" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No results found!" });
     }
 
     return res.status(200).json({
@@ -766,6 +808,8 @@ exports.getExamResultOfAllChild = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching exam results:", error);
-    return res.status(500).json({ success: false, message: "Internal server error!" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error!" });
   }
 };

@@ -128,7 +128,7 @@ const PParentDashboard = () => {
       if (data.success) {
         console.log("parent details: ", data.data);
         setParentDetails({
-          parentId: data.data?.id,
+          parentId: data.data?.parent_id,
           parentName: data.data?.name,
           parentImg: data.data?.img_src,
           parentAddedOn: data.data?.Parent_Add,
@@ -281,6 +281,7 @@ const PParentDashboard = () => {
       fetchFeeReminder(activeStudent?.student_rollnum);
       fetchHomeWork(activeStudent?.class_id, activeStudent?.section_id);
       fetchAvailableLeaves(activeStudent?.studentId);
+      fetchExamResult(Number(parentDetails?.parentId));
     }
   }, [activeStudent]);
 
@@ -288,7 +289,6 @@ const PParentDashboard = () => {
     fetchNotice();
     fetchParentEvents(roleId);
     fetchParentDetails(userId);
-    fetchExamResult(userId);
   }, []);
   // console.log(parentDetails);
   // console.log("active student : ", activeStudent);
