@@ -3,32 +3,58 @@ const db = require('../../config/db');
 // ✅ Get all messages in a conversation
 exports.getMessages = async (req, res) => {
   const { conversationId, userId } = req.params;
-  console.log(userId)
+
   try {
     const [rows] = await db.query(
-      `SELECT 
+      `
+      SELECT 
         m.*, 
-        CONCAT(u.firstname," " ,u.lastname ) AS name
-       FROM messages m 
-       LEFT JOIN users u ON m.sender_id = u.id 
-       WHERE m.conversation_id = ? 
-       ORDER BY m.created_at ASC`,
+        CONCAT(u.firstname, " ", u.lastname) AS name,
+        CASE 
+          WHEN r.role_name = 'student' THEN s.stu_img
+          WHEN r.role_name = 'teacher' THEN t.img_src
+          WHEN u.remark = 'staff' THEN st.img_src
+          ELSE NULL
+        END AS user_img
+      FROM messages m
+      LEFT JOIN users u ON m.sender_id = u.id
+      LEFT JOIN roles r ON u.roll_id = r.id
+      LEFT JOIN students s ON s.stu_id = u.id
+      LEFT JOIN teachers t ON t.user_id = u.id
+      LEFT JOIN staffs st ON st.user_id = u.id
+      WHERE m.conversation_id = ?
+      ORDER BY m.created_at ASC
+      `,
       [conversationId]
     );
 
     const [userData] = await db.query(
       `
-        SELECT CONCAT(firstname, " ",lastname) AS name , last_seen , is_online FROM users WHERE id = ?
-      `, [userId]
-    )
-
-
+      SELECT 
+        CONCAT(firstname, " ", lastname) AS name,
+        last_seen,
+        is_online,
+        CASE 
+          WHEN r.role_name = 'student' THEN s.stu_img
+          WHEN r.role_name = 'teacher' THEN t.img_src
+          WHEN u.remark = 'staff' THEN st.img_src
+          ELSE NULL
+        END AS user_img
+      FROM users u
+      LEFT JOIN roles r ON u.roll_id = r.id
+      LEFT JOIN students s ON s.stu_id = u.id
+      LEFT JOIN teachers t ON t.user_id = u.id
+      LEFT JOIN staffs st ON st.user_id = u.id
+      WHERE u.id = ?
+      `,
+      [userId]
+    );
 
     return res.json({
       success: true,
       message: 'Messages fetched successfully.',
       data: rows,
-      userData: userData[0]
+      userData: userData[0],
     });
   } catch (err) {
     console.error('getMessages Error:', err);
@@ -153,7 +179,6 @@ exports.sendFileMessage = async (req, res) => {
   }
 };
 
-
 exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
   const { userId } = req.params;
 
@@ -162,7 +187,7 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
       c.id AS conversation_id,
       c.type,
 
-     
+      -- 🧍 Other user ID (for private chat)
       CASE 
         WHEN c.type = 'private' THEN 
           (
@@ -174,6 +199,8 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
           )
         ELSE NULL
       END AS other_user_id,
+
+      -- 🧍 Other user name or group name
       CASE 
         WHEN c.type = 'private' THEN 
           (
@@ -186,7 +213,43 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
         ELSE c.name
       END AS name,
 
+      -- 🖼️ Other user image
+      CASE 
+        WHEN c.type = 'private' THEN 
+          (
+            SELECT 
+              CASE 
+                WHEN r.role_name = 'student' THEN s.stu_img
+                WHEN r.role_name = 'teacher' THEN t.img_src
+                WHEN r.role_name = 'staff' THEN st.img_src
+                ELSE NULL
+              END
+            FROM users u
+            LEFT JOIN roles r ON u.roll_id = r.id
+            LEFT JOIN students s ON s.stu_id = u.id
+            LEFT JOIN teachers t ON t.user_id = u.id
+            LEFT JOIN staffs st ON st.user_id = u.id
+            JOIN conversation_members cm2 ON cm2.user_id = u.id
+            WHERE cm2.conversation_id = c.id AND u.id != ?
+            LIMIT 1
+          )
+        ELSE NULL
+      END AS user_img,
 
+      -- 💡 Other user online status
+      CASE 
+        WHEN c.type = 'private' THEN 
+          (
+            SELECT u.is_online
+            FROM users u
+            JOIN conversation_members cm2 ON cm2.user_id = u.id
+            WHERE cm2.conversation_id = c.id AND u.id != ?
+            LIMIT 1
+          )
+        ELSE NULL
+      END AS is_online,
+
+      -- 💬 Last message text
       (
         SELECT m.message_text 
         FROM messages m
@@ -195,7 +258,7 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
         LIMIT 1
       ) AS last_message,
 
-    
+      -- 📎 Last message type (text, image, etc.)
       (
         SELECT m.message_type 
         FROM messages m
@@ -204,7 +267,7 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
         LIMIT 1
       ) AS last_message_type,
 
-  
+      -- 🕓 Last message time
       (
         SELECT m.created_at 
         FROM messages m 
@@ -220,8 +283,8 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
   `;
 
   try {
-    // userId used 3 times → pass 3 copies
-    const [rows] = await db.query(sql, [userId, userId, userId]);
+    // userId used 5 times → pass 5 copies
+    const [rows] = await db.query(sql, [userId, userId, userId, userId, userId]);
 
     return res.status(200).json({
       success: true,

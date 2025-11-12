@@ -27,7 +27,9 @@ import CommonSelect from "../../../../core/common/commonSelect";
 // import { useLocation } from "react-router-dom";
 import TagInput from "../../../../core/common/Taginput";
 import {
+  createUserAccount,
   deleteFile,
+  deleteUserAccount2,
   editStudent,
   getAllSectionForAClass,
   getAllTransportRoutes,
@@ -93,6 +95,10 @@ export interface StudentData {
   condition: string;
   allergies: string[];
   medications: string[];
+  parent_id: number | null;
+  fat_user_id: number | null;
+  mot_user_id: number | null;
+  gua_user_id: number | null;
 }
 
 const fieldLabels: Record<keyof StudentData, string> = {
@@ -147,6 +153,10 @@ const fieldLabels: Record<keyof StudentData, string> = {
   condition: "Medical Condition",
   allergies: "Allergies",
   medications: "Medications",
+  parent_id: "Family id",
+  fat_user_id: "Father User id",
+  mot_user_id: "Mother User Id",
+  gua_user_id: "Guardian User Id"
 };
 
 const EditStudent = () => {
@@ -199,16 +209,20 @@ const EditStudent = () => {
           caste: student.caste || "",
           motherton: student.motherton || "",
           lanknown: student.lanknown ? JSON.parse(student.lanknown) : [],
+          parent_id: student.family_id,
 
           fat_name: parentMap["father"]?.name || "",
           fat_email: parentMap["father"]?.email || "",
           fat_phone: parentMap["father"]?.phone_num || "",
           fat_occu: parentMap["father"]?.occuption || "",
+          fat_user_id: parentMap['father']?.parent_user_id || null,
 
           mot_name: parentMap["mother"]?.name || "",
           mot_email: parentMap["mother"]?.email || "",
           mot_phone: parentMap["mother"]?.phone_num || "",
           mot_occu: parentMap["mother"]?.occuption || "",
+          mot_user_id: parentMap['mother']?.parent_user_id || null,
+
 
           gua_name: parentMap["guardian"]?.name || "",
           gua_relation: parentMap["guardian"]?.relation_det || "",
@@ -217,6 +231,8 @@ const EditStudent = () => {
           gua_occu: parentMap["guardian"]?.occuption || "",
           gua_address: parentMap["guardian"]?.address || "",
           guardianIs: parentMap["guardian"]?.guardian_Is || "",
+          gua_user_id: parentMap['guardian']?.parent_user_id || null,
+
 
           curr_address: student.curr_address || "",
           perm_address: student.perm_address || "",
@@ -326,6 +342,11 @@ const EditStudent = () => {
     condition: "",
     allergies: [],
     medications: [],
+    parent_id: null,
+    fat_user_id: null,
+    mot_user_id: null,
+    gua_user_id: null,
+
   });
   const [stuImg, setStuImg] = useState<File | null>(null);
   const [fatImg, setFatImg] = useState<File | null>(null);
@@ -657,8 +678,8 @@ const EditStudent = () => {
     }
 
 
-   const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
-    const sanitizePhone = (phone:string) => phone.replace(/[\s\-]/g, "").trim();
+    const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
+    const sanitizePhone = (phone: string) => phone.replace(/[\s\-]/g, "").trim();
     if (!data.primarycont || data.primarycont.trim() === "") {
       newErrors.primarycont = "Contact number is required!";
     } else {
@@ -782,6 +803,10 @@ const EditStudent = () => {
           condition: "",
           allergies: [],
           medications: [],
+          parent_id: null,
+          fat_user_id: null,
+          mot_user_id: null,
+          gua_user_id: null,
         });
         setStuImg(null);
         setFatImg(null);
@@ -872,6 +897,10 @@ const EditStudent = () => {
       condition: "",
       allergies: [],
       medications: [],
+      parent_id: null,
+      fat_user_id: null,
+      mot_user_id: null,
+      gua_user_id: null,
     });
     setStuImg(null);
     setFatImg(null);
@@ -953,6 +982,142 @@ const EditStudent = () => {
       fetchSection();
     }
   }, [studentData.class]);
+
+
+
+  const createAccount = async (e: React.MouseEvent<HTMLButtonElement>, type: 'fat' | 'mot' | 'gua') => {
+    e.preventDefault()
+    try {
+
+      const relationMap: Record<'fat' | 'mot' | 'gua', { name: string; phone: string; email: string }> = {
+        fat: {
+          name: studentData.fat_name?.trim() || "",
+          phone: studentData.fat_phone?.trim() || "",
+          email: studentData.fat_email?.trim() || "",
+        },
+        mot: {
+          name: studentData.mot_name?.trim() || "",
+          phone: studentData.mot_phone?.trim() || "",
+          email: studentData.mot_email?.trim() || "",
+        },
+        gua: {
+          name: studentData.gua_name?.trim() || "",
+          phone: studentData.gua_phone?.trim() || "",
+          email: studentData.gua_email?.trim() || "",
+        },
+      };
+
+
+      const selected = relationMap[type];
+      const relationLabel = type === "fat" ? "Father" : type === "mot" ? "Mother" : "Guardian";
+
+
+      const nameRegex = /^[A-Za-z\s]+$/;
+      const phoneRegex = /^\d{10}$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!selected.name) {
+        toast.error(`Please enter ${relationLabel}'s name`);
+        return;
+      }
+      if (!nameRegex.test(selected.name)) {
+        toast.error(`${relationLabel}'s name must contain only letters`);
+        return;
+      }
+
+      if (!selected.phone) {
+        toast.error(`Please enter ${relationLabel}'s contact number`);
+        return;
+      }
+      if (!phoneRegex.test(selected.phone)) {
+        toast.error(`Invalid ${relationLabel}'s contact number (must be 10 digits)`);
+        return;
+      }
+
+      if (!selected.email) {
+        toast.error(`Please enter ${relationLabel}'s email`);
+        return;
+      }
+      if (!emailRegex.test(selected.email)) {
+        toast.error(`Invalid ${relationLabel}'s email format`);
+        return;
+      }
+
+
+      const [first, last] = selected.name.split(" ");
+      const payload = {
+        firstname: first || selected.name,
+        lastname: last || "",
+        mobile: selected.phone,
+        email: selected.email,
+        role: 6
+      };
+
+
+      const { data } = await createUserAccount(payload);
+      if (data.success) {
+        toast.success(`${relationLabel} account created successfully!`);
+        const newUserId = data.userId;
+        if (type === "fat") {
+          setStudentData((prev) => ({ ...prev, fat_user_id: newUserId }));
+        } else if (type === "mot") {
+          setStudentData((prev) => ({ ...prev, mot_user_id: newUserId }));
+        } else {
+          setStudentData((prev) => ({ ...prev, gua_user_id: newUserId }));
+        }
+
+      } else {
+        toast.error(data.message || `Failed to create ${relationLabel}'s account`);
+      }
+
+    } catch (error: any) {
+      console.error("Error creating parent account:", error);
+      toast.error(error.response?.data?.message || "Something went wrong while creating the account!");
+    }
+  };
+
+
+
+  const deleteAccount = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    type: "fat" | "mot" | "gua",
+    id: number
+  ) => {
+    e.preventDefault();
+
+
+    if (!id) {
+      toast.error("Invalid user ID!");
+      return;
+    }
+    const confirmDelete = window.confirm("Are you sure you want to delete this account?");
+    if (!confirmDelete) return;
+
+    try {
+
+      const { data } = await deleteUserAccount2(id);
+      if (data?.success) {
+        toast.success(data.message || "User account deleted successfully!");
+        setStudentData((prev) => {
+          const updatedData = { ...prev };
+          if (type === "fat") updatedData.fat_user_id = null;
+          else if (type === "mot") updatedData.mot_user_id = null;
+          else if (type === "gua") updatedData.gua_user_id = null;
+          return updatedData;
+        });
+      } else {
+        toast.error(data?.message || "Failed to delete user account!");
+      }
+
+    } catch (error: any) {
+      console.error("Delete account error:", error);
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong while deleting the account!";
+      toast.error(message);
+    }
+  };
+
 
   return (
     <>
@@ -1058,9 +1223,8 @@ const EditStudent = () => {
                           <label className="form-label">Academic Year</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.academicyear ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.academicyear ? "is-invalid" : ""
+                              }`}
                             options={academicYear}
                             value={studentData.academicyear}
                             onChange={(option) =>
@@ -1089,9 +1253,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="admissionnum"
-                            className={`form-control ${
-                              errors.admissionnum ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.admissionnum ? "is-invalid" : ""
+                              }`}
                             value={studentData.admissionnum}
                             onChange={handleInputChange}
                           />
@@ -1113,16 +1276,15 @@ const EditStudent = () => {
                           <span className="text-danger"> *</span>
                           <div className="input-icon position-relative">
                             <DatePicker
-                              className={`form-control datetimepicker ${
-                                errors.admissiondate ? "is-invalid" : ""
-                              }`}
+                              className={`form-control datetimepicker ${errors.admissiondate ? "is-invalid" : ""
+                                }`}
                               format="DD MMM YYYY"
                               value={
                                 studentData.admissiondate
                                   ? dayjs(
-                                      studentData.admissiondate,
-                                      "DD MMM YYYY"
-                                    )
+                                    studentData.admissiondate,
+                                    "DD MMM YYYY"
+                                  )
                                   : null
                               }
                               placeholder="Select Date"
@@ -1160,9 +1322,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="rollnum"
-                            className={`form-control ${
-                              errors.rollnum ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.rollnum ? "is-invalid" : ""
+                              }`}
                             value={studentData.rollnum}
                             onChange={handleInputChange}
                           />
@@ -1183,9 +1344,8 @@ const EditStudent = () => {
                           <label className="form-label">Status</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.status ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.status ? "is-invalid" : ""
+                              }`}
                             options={status}
                             value={studentData.status}
                             onChange={(option) =>
@@ -1214,9 +1374,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="firstname"
-                            className={`form-control ${
-                              errors.firstname ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.firstname ? "is-invalid" : ""
+                              }`}
                             value={studentData.firstname}
                             onChange={handleInputChange}
                           />
@@ -1239,9 +1398,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="lastname"
-                            className={`form-control ${
-                              errors.lastname ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.lastname ? "is-invalid" : ""
+                              }`}
                             value={studentData.lastname}
                             onChange={handleInputChange}
                           />
@@ -1262,9 +1420,8 @@ const EditStudent = () => {
                           <label className="form-label">Class</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.class ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.class ? "is-invalid" : ""
+                              }`}
                             options={classOptions}
                             value={studentData.class}
                             onChange={(option) =>
@@ -1291,9 +1448,8 @@ const EditStudent = () => {
                           <label className="form-label">Section</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.section ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.section ? "is-invalid" : ""
+                              }`}
                             options={sectionOptions}
                             value={studentData.section}
                             onChange={(option) =>
@@ -1320,9 +1476,8 @@ const EditStudent = () => {
                           <label className="form-label">Gender</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.section ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.section ? "is-invalid" : ""
+                              }`}
                             options={gender}
                             value={studentData.gender}
                             onChange={(option) =>
@@ -1350,9 +1505,8 @@ const EditStudent = () => {
                           <span className="text-danger"> *</span>
                           <div className="input-icon position-relative">
                             <DatePicker
-                              className={`form-control datetimepicker ${
-                                errors.section ? "is-invalid" : ""
-                              }`}
+                              className={`form-control datetimepicker ${errors.section ? "is-invalid" : ""
+                                }`}
                               format="DD MMM YYYY"
                               value={
                                 studentData.dob
@@ -1428,9 +1582,8 @@ const EditStudent = () => {
                           <label className="form-label">Religion</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.religion ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.religion ? "is-invalid" : ""
+                              }`}
                             options={religion}
                             value={studentData.religion}
                             onChange={(option) =>
@@ -1457,9 +1610,8 @@ const EditStudent = () => {
                           <label className="form-label">Category</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.category ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.category ? "is-invalid" : ""
+                              }`}
                             options={cast}
                             value={studentData.category}
                             onChange={(option) =>
@@ -1490,9 +1642,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="primarycont"
-                            className={`form-control ${
-                              errors.primarycont ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.primarycont ? "is-invalid" : ""
+                              }`}
                             value={studentData.primarycont}
                             onChange={handleInputChange}
                           />
@@ -1515,9 +1666,8 @@ const EditStudent = () => {
                           <input
                             type="email"
                             name="email"
-                            className={`form-control ${
-                              errors.email ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.email ? "is-invalid" : ""
+                              }`}
                             value={studentData.email}
                             onChange={handleInputChange}
                           />
@@ -1540,9 +1690,8 @@ const EditStudent = () => {
                           <input
                             type="text"
                             name="caste"
-                            className={`form-control ${
-                              errors.caste ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.caste ? "is-invalid" : ""
+                              }`}
                             value={studentData.caste}
                             onChange={handleInputChange}
                           />
@@ -1563,9 +1712,8 @@ const EditStudent = () => {
                           <label className="form-label">Mother Tongue</label>
                           <span className="text-danger"> *</span>
                           <CommonSelect
-                            className={`select ${
-                              errors.motherton ? "is-invalid" : ""
-                            }`}
+                            className={`select ${errors.motherton ? "is-invalid" : ""
+                              }`}
                             options={mothertongue}
                             value={studentData.motherton}
                             onChange={(option) =>
@@ -1616,6 +1764,11 @@ const EditStudent = () => {
                     </div>
                   </div>
                   <div className="card-body pb-0">
+
+                    <div className="d-flex align-items-center justify-content-end ">
+                      {studentData.fat_user_id ? (<button onClick={(e) => deleteAccount(e, 'fat', Number(studentData.fat_user_id))} className="btn btn-sm btn-outline-danger">Delete Acount</button>) : (<button type="button" className="btn btn-sm btn-outline-success" onClick={(e) => createAccount(e, 'fat')}>Create Father Account</button>)}
+                    </div>
+
                     <div className="border-bottom mb-3">
                       <h5 className="mb-3">Father’s Info</h5>
                       <div className="row">
@@ -1684,9 +1837,8 @@ const EditStudent = () => {
                             <input
                               name="fat_name"
                               type="text"
-                              className={`form-control ${
-                                errors.fat_name ? "is-invalid" : ""
-                              }`}
+                              className={`form-control ${errors.fat_name ? "is-invalid" : ""
+                                }`}
                               value={studentData.fat_name}
                               onChange={handleInputChange}
                             />
@@ -1708,9 +1860,8 @@ const EditStudent = () => {
                               name="fat_email"
                               onChange={handleInputChange}
                               type="text"
-                              className={`form-control ${
-                                errors.fat_email ? "is-invalid" : ""
-                              }`}
+                              className={`form-control ${errors.fat_email ? "is-invalid" : ""
+                                }`}
                               value={studentData.fat_email}
                             />
                             {errors.fat_email && (
@@ -1731,9 +1882,8 @@ const EditStudent = () => {
                               name="fat_phone"
                               onChange={handleInputChange}
                               type="text"
-                              className={`form-control ${
-                                errors.fat_phone ? "is-invalid" : ""
-                              }`}
+                              className={`form-control ${errors.fat_phone ? "is-invalid" : ""
+                                }`}
                               value={studentData.fat_phone}
                             />
                             {errors.fat_phone && (
@@ -1762,6 +1912,12 @@ const EditStudent = () => {
                         </div>
                       </div>
                     </div>
+
+                    <div className="d-flex align-items-center justify-content-end ">
+
+                      {studentData.mot_user_id ? (<button onClick={(e) => deleteAccount(e, 'mot', Number(studentData.mot_user_id))} className="ms-1 btn btn-sm btn-outline-danger">Delete Acount</button>) : (<button type="button" className="btn btn-sm btn-outline-success" onClick={(e) => createAccount(e, 'mot')}>Create Mother Account</button>)}
+                    </div>
+
                     <div className="border-bottom mb-3">
                       <h5 className="mb-3">Mother’s Info</h5>
                       <div className="row">
@@ -1831,9 +1987,8 @@ const EditStudent = () => {
                               name="mot_name"
                               onChange={handleInputChange}
                               type="text"
-                              className={`form-control ${
-                                errors.mot_name ? "is-invalid" : ""
-                              }`}
+                              className={`form-control ${errors.mot_name ? "is-invalid" : ""
+                                }`}
                               value={studentData.mot_name}
                             />
                             {errors.mot_name && (
@@ -1902,6 +2057,11 @@ const EditStudent = () => {
                         </div>
                       </div>
                     </div>
+
+                    <div className="d-flex align-items-center justify-content-end ">
+                      {studentData.gua_user_id ? (<button onClick={(e) => deleteAccount(e, 'gua', Number(studentData.gua_user_id))} className="ms-1 btn btn-sm btn-outline-danger">Delete Acount</button>) : (<button type="button" className="btn btn-sm btn-outline-success" onClick={(e) => createAccount(e, 'gua')}>Create Guardian Account</button>)}
+                    </div>
+
                     <div>
                       <h5 className="mb-3">Guardian Details</h5>
                       <div className="row">
@@ -2266,9 +2426,8 @@ const EditStudent = () => {
                             name="curr_address"
                             onChange={handleInputChange}
                             type="text"
-                            className={`form-control ${
-                              errors.curr_address ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.curr_address ? "is-invalid" : ""
+                              }`}
                             value={studentData.curr_address}
                           />
                           {errors.curr_address && (
@@ -2291,9 +2450,8 @@ const EditStudent = () => {
                             name="perm_address"
                             onChange={handleInputChange}
                             type="text"
-                            className={`form-control ${
-                              errors.perm_address ? "is-invalid" : ""
-                            }`}
+                            className={`form-control ${errors.perm_address ? "is-invalid" : ""
+                              }`}
                             value={studentData.perm_address}
                           />
                           {errors.perm_address && (
@@ -2319,13 +2477,13 @@ const EditStudent = () => {
                       </span>
                       <h4 className="text-dark">Transport Information</h4>
                     </div>
-                    <div className="form-check form-switch">
+                    {/* <div className="form-check form-switch">
                       <input
                         className="form-check-input"
                         type="checkbox"
                         role="switch"
                       />
-                    </div>
+                    </div> */}
                   </div>
                   <div className="card-body pb-1">
                     <div className="row">
@@ -2390,13 +2548,13 @@ const EditStudent = () => {
                       </span>
                       <h4 className="text-dark">Hostel Information</h4>
                     </div>
-                    <div className="form-check form-switch">
+                    {/* <div className="form-check form-switch">
                       <input
                         className="form-check-input"
                         type="checkbox"
                         role="switch"
                       />
-                    </div>
+                    </div> */}
                   </div>
                   <div className="card-body pb-1">
                     <div className="row">

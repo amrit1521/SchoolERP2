@@ -1,11 +1,12 @@
 
 import TeacherModal from '../teacherModal'
 import { Link, useParams } from 'react-router-dom'
-import { all_routes } from '../../../router/all_routes'
+import { all_routes } from '../../../../router/all_routes'
 import TeacherSidebar from './teacherSidebar'
 import TeacherBreadcrumb from './teacherBreadcrumb'
 import { useEffect, useState } from 'react'
 import { Documenturl, sepTeacher } from '../../../../service/api'
+import { teacher_routes } from '../../../../admin/router/teacher_routes'
 
 const TeacherDetails = () => {
   const routes = all_routes
@@ -53,7 +54,7 @@ const TeacherDetails = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="nav-link active">
+                      <Link to={`${teacher_routes.teacherDetails}/${teacher.teacher_id}`} className="nav-link active">
                         <i className="ti ti-school me-2" />
                         Teacher Details
                       </Link>

@@ -100,30 +100,38 @@ exports.speParentData = async (req, res) => {
         const sql = `
       SELECT 
         p.id,
+        p.user_id,
         p.name,
         p.email,
         p.phone_num,
         p.img_src,
         p.created_at AS Parent_Add,
-        st.stu_img,
-        st.stu_id,
-        UPPER(c.class_name) AS class,
-        UPPER( s.section_name) AS section,
-        st.gender,
-        st.rollnum,
-        st.admissiondate,
-        st.admissionnum,
-        st.created_at AS Student_Add,
-        u.firstname,
-        u.lastname,
-        u.status
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'stu_img', st.stu_img,
+            'stu_id', st.stu_id,
+            'class', UPPER(c.class_name),
+            'section', UPPER(s.section_name),
+            'gender', st.gender,
+            'rollnum', st.rollnum,
+            'admissiondate', st.admissiondate,
+            'admissionnum', st.admissionnum,
+            'Student_Add', st.created_at,
+            'firstname', u.firstname,
+            'lastname', u.lastname,
+            'status', u.status
+          )
+        ) AS children
       FROM parents_info p
-      LEFT JOIN students st ON p.user_id = st.stu_id
-      LEFT JOIN users u ON st.stu_id = u.id   
-       LEFT JOIN classes c ON st.class_id = c.id
-      LEFT JOIN sections s ON st.section_id = s.id
+      LEFT JOIN students st ON p.parent_id = st.parent_id
+      LEFT JOIN users u ON st.stu_id = u.id
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id  
       WHERE p.id = ? AND p.relation = "Father"
+      GROUP BY 
+        p.id, p.user_id, p.name, p.email, p.phone_num, p.img_src, p.created_at
     `;
+
         const [result] = await db.query(sql, [parentId]);
 
         if (result.length === 0) {
@@ -140,6 +148,7 @@ exports.speParentData = async (req, res) => {
         return res.status(500).json({ message: "Internal server error!", success: false });
     }
 };
+
 
 exports.speParentDataForEdit = async (req, res) => {
     const { id } = req.params;
@@ -280,78 +289,185 @@ exports.getSiblings = async (req, res) => {
 
 
 // Guardian Controller
+// exports.allGuardian = async (req, res) => {
+//     try {
+//         const sql = `
+//             SELECT 
+//                 p.id,
+//                 p.user_id,
+//                 p.name,
+//                 p.email,
+//                 p.phone_num,
+//                 p.img_src,
+//                 p.created_at AS Gua_Add,
+//                 st.stu_img,
+//                 st.stu_id,
+//                 UPPER(c.class_name) AS class,
+//                 UPPER( s.section_name) AS section,
+//                  st.rollnum,
+//                 st.created_at AS Student_Add,
+//                 u.firstname,
+//                 u.lastname
+//             FROM parents_info p
+//             LEFT JOIN students st ON p.user_id = st.stu_id
+//             LEFT JOIN users u ON st.stu_id = u.id 
+//             LEFT JOIN classes c ON st.class_id = c.id
+//             LEFT JOIN sections s ON st.section_id = s.id
+
+//             WHERE p.relation = "Guardian"
+//         `;
+//         const [result] = await db.query(sql);
+//         return res.status(200).json({ message: 'All Guardians fetched successfully!', success: true, data: result });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Internal server error!', success: false });
+//     }
+// };
+
 exports.allGuardian = async (req, res) => {
     try {
         const sql = `
-            SELECT 
-                p.id,
-                p.user_id,
-                p.name,
-                p.email,
-                p.phone_num,
-                p.img_src,
-                p.created_at AS Gua_Add,
-                st.stu_img,
-                st.stu_id,
-                UPPER(c.class_name) AS class,
-                UPPER( s.section_name) AS section,
-                 st.rollnum,
-                st.created_at AS Student_Add,
-                u.firstname,
-                u.lastname
-            FROM parents_info p
-            LEFT JOIN students st ON p.user_id = st.stu_id
-            LEFT JOIN users u ON st.stu_id = u.id 
-            LEFT JOIN classes c ON st.class_id = c.id
-            LEFT JOIN sections s ON st.section_id = s.id
+      SELECT 
+        p.id,
+        p.user_id,
+        p.name,
+        p.email,
+        p.phone_num,
+        p.img_src,
+        p.created_at AS Gua_Add,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'stu_img', st.stu_img,
+            'stu_id', st.stu_id,
+            'rollnum', st.rollnum,
+            'Student_Add', st.created_at,
+            'firstname', u.firstname,
+            'lastname', u.lastname,
+            'class', UPPER(c.class_name),
+            'section', UPPER(s.section_name)
+          )
+        ) AS children
+      FROM parents_info p
+      LEFT JOIN students st ON st.parent_id = p.parent_id
+      LEFT JOIN users u ON st.stu_id = u.id  
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id
+      WHERE p.relation = 'Guardian'
+      GROUP BY 
+        p.id, p.user_id, p.name, p.email, p.phone_num, p.img_src, p.created_at
+      ORDER BY p.id ASC
+    `;
 
-            WHERE p.relation = "Guardian"
-        `;
         const [result] = await db.query(sql);
-        return res.status(200).json({ message: 'All Guardians fetched successfully!', success: true, data: result });
+
+        return res.status(200).json({
+            success: true,
+            message: "All guardians with their children fetched successfully!",
+            data: result,
+        });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Internal server error!', success: false });
+        console.error("allGuardian Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error!",
+        });
     }
 };
+
+
+// exports.speGuardianData = async (req, res) => {
+//     const { guaId } = req.params;
+//     try {
+//         const sql = `
+//             SELECT 
+//                 p.id,
+//                 p.name,
+//                 p.email,
+//                 p.phone_num,
+//                 p.img_src,
+//                 p.created_at AS Guardian_Add,
+//                 st.stu_img,
+//                 st.stu_id,
+//                 UPPER(c.class_name) AS class,
+//                 UPPER( s.section_name) AS section,
+//                 st.gender,
+//                 st.rollnum,
+//                 st.admissiondate,
+//                 st.admissionnum,
+//                 st.created_at AS Student_Add,
+//                 u.firstname,
+//                 u.lastname,
+//                 u.status
+//             FROM parents_info p
+//             LEFT JOIN students st ON p.user_id = st.stu_id
+//             LEFT JOIN users u ON st.stu_id = u.id 
+//              LEFT JOIN classes c ON st.class_id = c.id
+//             LEFT JOIN sections s ON st.section_id = s.id  
+//             WHERE p.id = ? AND p.relation = "Guardian"
+//         `;
+//         const [result] = await db.query(sql, [guaId]);
+//         if (result.length === 0) {
+//             return res.status(404).json({ message: 'Guardian not found!', success: false });
+//         }
+//         return res.status(200).json({ message: 'Guardian fetched successfully!', success: true, data: result[0] });
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ message: 'Internal server error!', success: false });
+//     }
+// };
+
 
 exports.speGuardianData = async (req, res) => {
     const { guaId } = req.params;
     try {
         const sql = `
-            SELECT 
-                p.id,
-                p.name,
-                p.email,
-                p.phone_num,
-                p.img_src,
-                p.created_at AS Guardian_Add,
-                st.stu_img,
-                st.stu_id,
-                UPPER(c.class_name) AS class,
-                UPPER( s.section_name) AS section,
-                st.gender,
-                st.rollnum,
-                st.admissiondate,
-                st.admissionnum,
-                st.created_at AS Student_Add,
-                u.firstname,
-                u.lastname,
-                u.status
-            FROM parents_info p
-            LEFT JOIN students st ON p.user_id = st.stu_id
-            LEFT JOIN users u ON st.stu_id = u.id 
-             LEFT JOIN classes c ON st.class_id = c.id
-            LEFT JOIN sections s ON st.section_id = s.id  
-            WHERE p.id = ? AND p.relation = "Guardian"
-        `;
+      SELECT 
+        p.id,
+        p.user_id,
+        p.name,
+        p.email,
+        p.phone_num,
+        p.img_src,
+        p.created_at AS Guardian_Add,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'stu_img', st.stu_img,
+            'stu_id', st.stu_id,
+            'class', UPPER(c.class_name),
+            'section', UPPER(s.section_name),
+            'gender', st.gender,
+            'rollnum', st.rollnum,
+            'admissiondate', st.admissiondate,
+            'admissionnum', st.admissionnum,
+            'Student_Add', st.created_at,
+            'firstname', u.firstname,
+            'lastname', u.lastname,
+            'status', u.status
+          )
+        ) AS children
+      FROM parents_info p
+      LEFT JOIN students st ON p.parent_id = st.parent_id
+      LEFT JOIN users u ON st.stu_id = u.id
+      LEFT JOIN classes c ON st.class_id = c.id
+      LEFT JOIN sections s ON st.section_id = s.id  
+      WHERE p.id = ? AND p.relation = "Guardian"
+      GROUP BY 
+        p.id, p.user_id, p.name, p.email, p.phone_num, p.img_src, p.created_at
+    `;
+
         const [result] = await db.query(sql, [guaId]);
+
         if (result.length === 0) {
             return res.status(404).json({ message: 'Guardian not found!', success: false });
         }
-        return res.status(200).json({ message: 'Guardian fetched successfully!', success: true, data: result[0] });
+
+        return res.status(200).json({
+            message: 'Guardian fetched successfully!',
+            success: true,
+            data: result[0],
+        });
     } catch (error) {
-        console.error(error);
+        console.error('speGuardianData Error:', error);
         return res.status(500).json({ message: 'Internal server error!', success: false });
     }
 };

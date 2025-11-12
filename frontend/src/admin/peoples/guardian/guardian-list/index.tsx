@@ -19,43 +19,32 @@ import TooltipOption from "../../../../core/common/tooltipOption";
 import { allGuardians, deleteFile, deleteGuardian, editGuardian, guardianForEdit, Imageurl, speGuardian, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import type { Guardian } from "../guardian-grid";
 
-export interface GuaData {
+export interface GuardianChild {
+  class: string;
+  gender: string;
+  status: string;
+  stu_id: number;
+  rollnum: number;
+  section: string;
+  stu_img: string;
+  lastname: string;
+  firstname: string;
+  Student_Add: string;
+  admissionnum: string;
+  admissiondate: string;
+}
+
+export interface SpeGuardianData {
   id: number;
   user_id: number;
   name: string;
   email: string;
   phone_num: string;
   img_src: string;
-  Gua_Add: string;   
-  stu_img: string;
- rollnum: number;
-  section: string;
-  class: string;
-  Student_Add: string; 
-  firstname: string;
-  lastname: string;
-}
-
-export interface SpeGuardianData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
   Guardian_Add: string;
-  stu_img: string;
-  stu_id: number;
-  class: string;
-  section: string;
-  gender: string;
-  rollnum: string;
-  admissiondate: string;
-  admissionnum: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  status: string;
+  children: GuardianChild[];
 }
 
 export interface GuardianDataForEdit {
@@ -81,7 +70,7 @@ const GuardianList = () => {
 
 
   // const data = guardianListData;
-  const [allGuaData, setAllGuaData] = useState<GuaData[]>([])
+  const [allGuaData, setAllGuaData] = useState<Guardian[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   const fetchGuardians = async () => {
@@ -155,12 +144,9 @@ const GuardianList = () => {
     id: guardian.id,
     userId: guardian.user_id,
     name: guardian.name,
-    child: `${guardian.firstname} ${guardian.lastname}`,
-    class: `${guardian.class}, ${guardian.section}`,
+    child: guardian.children,
     phone: guardian.phone_num,
     email: guardian.email,
-    rollnum: guardian.rollnum,
-    stu_img: guardian.stu_img,
     img: guardian.img_src,
     action: guardian.id
   }));
@@ -407,28 +393,58 @@ const GuardianList = () => {
       ),
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
+
+
     {
-      title: "Child",
+      title: "Children",
       dataIndex: "child",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
-            <img
-              src={`${Imageurl}/${record.stu_img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
-            </p>
-            <span className="fs-12">{record.class}</span>
-          </div>
+      render: (children: any[]) => (
+        <div className="d-flex flex-column gap-2">
+          {Array.isArray(children) && children.length > 0 ? (
+            children.map((c: any, index: number) => (
+              <div key={index} className="d-flex align-items-center">
+                {c.stu_id ? (
+                  <>
+                    <Link
+                      to={`${routes.studentDetail}/${c.rollnum}`}
+                      className="avatar avatar-sm"
+                    >
+                      <img
+                        src={`${Imageurl}/${c.stu_img}`}
+                        className="img-fluid rounded-circle"
+                        alt={c.firstname || "student"}
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Link>
+                    <div className="ms-2">
+                      <p className="text-dark mb-0 fs-14">
+                        <Link to={`${routes.studentDetail}/${c.rollnum}`}>
+                          {c.firstname} {c.lastname}
+                        </Link>
+                      </p>
+                      <span className="fs-12 text-muted">
+                        Class: {c.class || "-"} | Sec: {c.section || "-"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-muted fs-13">No student linked</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <span className="text-muted fs-13">No student data</span>
+          )}
         </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.Child.length - b.Child.length,
+      sorter: (a: any, b: any) => a.children.length - b.children.length,
     },
+
+
     {
       title: "Phone",
       dataIndex: "phone",
@@ -921,76 +937,99 @@ const GuardianList = () => {
                   </div>
 
                   <h5 className="mb-3">Children Details</h5>
-                  <div className="border rounded p-4 pb-1 mb-3">
-                    <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                      <span className="link-primary mb-2">
-                        {speGuardianData.admissionnum}
-                      </span>
-                      <span
-                        className={`badge ${speGuardianData.status == "1"
-                          ? "badge-soft-success"
-                          : "badge-soft-danger"
-                          } badge-md mb-2`}
-                      >
-                        <i className="ti ti-circle-filled me-2" />
-                        {speGuardianData.status == "1" ? "Active" : "Inactive"}
-                      </span>
-                    </div>
 
-                    <div className="d-flex align-items-center justify-content-between flex-wrap">
-                      <div className="d-flex align-items-center mb-3">
-                        <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`} className="avatar">
-                          <img
-                            src={`${Imageurl}/${speGuardianData.stu_img}`}
-                            className="rounded-circle object-fit-cover"
-                            alt="img"
+                  {speGuardianData?.children?.length > 0 ? (
+                    speGuardianData.children.map((child: any) => (
+                      <div key={child.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                        {/* Header Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                          <span className="link-primary fw-semibold mb-2">
+                            {child.admissionnum || "N/A"}
+                          </span>
 
-                          />
-                        </Link>
-                        <div className="ms-2">
-                          <p className="mb-0">
-                            <Link to={`${routes.studentDetail}/${speGuardianData.rollnum}`}>{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
-                          </p>
-                          <span>
-                            {speGuardianData.class}, {speGuardianData.section}
+                          <span
+                            className={`badge ${child.status === "1"
+                              ? "badge-soft-success"
+                              : "badge-soft-danger"
+                              } badge-md mb-2`}
+                          >
+                            <i className="ti ti-circle-filled me-2" />
+                            {child.status === "1" ? "Active" : "Inactive"}
                           </span>
                         </div>
-                      </div>
 
-                      <ul className="d-flex align-items-center flex-wrap">
-                        <li className="mb-3 me-4">
-                          <p className="mb-1">Roll No</p>
-                          <h6 className="fw-normal">{speGuardianData.rollnum}</h6>
-                        </li>
-                        <li className="mb-3 me-4">
-                          <p className="mb-1">Gender</p>
-                          <h6 className="fw-normal">{speGuardianData.gender}</h6>
-                        </li>
-                        <li className="mb-3">
-                          <p className="mb-1">Date of Joined</p>
-                          <h6 className="fw-normal">
-                            {formatDateHuman(speGuardianData.admissiondate)}
-                          </h6>
-                        </li>
-                      </ul>
+                        {/* Student Info Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <div className="d-flex align-items-center mb-3">
+                            <Link
+                              to={`${routes.studentDetail}/${child.stu_id}`}
+                              className="avatar"
+                            >
+                              <img
+                                src={`${Imageurl}/${child.stu_img}`}
+                                className="img-fluid rounded-circle"
+                                alt={`${child.firstname} ${child.lastname}`}
+                              />
+                            </Link>
+                            <div className="ms-2">
+                              <p className="mb-0 fw-semibold">
+                                <Link
+                                  to={`${routes.studentDetail}/${child.rollnum}`}
+                                  className="text-decoration-none text-dark"
+                                >
+                                  {`${child.firstname} ${child.lastname}`}
+                                </Link>
+                              </p>
+                              <small className="text-muted">
+                                {child.class || "N/A"}, {child.section || "N/A"}
+                              </small>
+                            </div>
+                          </div>
 
-                      <div className="d-flex align-items-center">
-                        <Link
-                          to={`${routes.studentDetail}/${speGuardianData.rollnum}`}
-                          className="btn btn-primary mb-3"
-                        >
-                          View Details
-                        </Link>
+                          {/* Student Details */}
+                          <ul className="d-flex align-items-center flex-wrap mb-0">
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Roll No</p>
+                              <h6 className="fw-normal">{child.rollnum || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Gender</p>
+                              <h6 className="fw-normal text-capitalize">{child.gender || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Date of Joined</p>
+                              <h6 className="fw-normal">
+                                {formatDateHuman(child.admissiondate) || "N/A"}
+                              </h6>
+                            </li>
+                          </ul>
+
+                          {/* Action */}
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to={`${routes.studentDetail}/${child.rollnum}`}
+                              className="btn btn-primary mb-3"
+                            >
+                              View Details
+                            </Link>
+                          </div>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="alert alert-warning mt-3">
+                      No children found for this guardian.
                     </div>
-                  </div>
+                  )}
+
+
                 </div>
               </Modal>
             </>
           )
         )
       }
-      
+
     </>
   );
 };

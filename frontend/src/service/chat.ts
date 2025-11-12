@@ -2,6 +2,7 @@ import { api, api2 } from "./api";
 
 
 export const allChatUsers = () => api.get('/chatusers/allusers')
+export const OnlineChatUsers = () => api.get('/chatusers/onlineusers')
 
 // message
 export const allConversationforSpecficUser = (userId: number) => api.get(`/message/allcoversation/${userId}`)

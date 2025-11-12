@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
   // classduration,
-  
+
   // classSylabus,
-  language,
+  // language,
   // period,
   // routinename,
   // subjectGroup,
-  teacher,
+  // teacher,
   Time,
   Timeto,
 
@@ -17,7 +17,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 import { Link } from "react-router-dom";
 import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { addTimeTable, filterTimeTable, getAllSectionForAClass, getTimeTable } from "../../../service/api";
+import { addTimeTable, allTeacherForOption, filterTimeTable, getAllSectionForAClass, getAllSubject, getTimeTable, Imageurl } from "../../../service/api";
 // allTeacherForOption
 import { toast } from "react-toastify";
 import Skeleton from 'react-loading-skeleton'
@@ -105,11 +105,12 @@ const ClassTimetable = () => {
   interface TimeTable {
     day: string;
     subject: string;
-    class: number |null;
-    section: number |null;
+    class: number | null;
+    section: number | null;
     teacher: string;
     timefrom: string;
     timeto: string;
+
   }
 
   const [tableData, setTableData] = useState<TimeTable>({
@@ -147,6 +148,15 @@ const ClassTimetable = () => {
       if (res.data.success) {
         toast.success(res.data.message)
         fetchTimeTable()
+        setTableData({
+          day: "Monday",
+          subject: "",
+          class: null,
+          section: null,
+          teacher: "",
+          timefrom: "",
+          timeto: "",
+        })
         handleModalPopUp(`add_time_table`)
       }
     } catch (error) {
@@ -166,6 +176,8 @@ const ClassTimetable = () => {
     day: string;
     timefrom: string;
     timeto: string;
+    img_src: string;
+    teacher_id: number;
   }
 
   const [timeTable, setTimeTable] = useState<TimeTableData[]>([])
@@ -257,10 +269,34 @@ const ClassTimetable = () => {
     value: number;
     label: string;
   }
+  interface Teacher {
+    id: number;
+    firstname: string;
+    lastname: string;
+  }
+
+  interface Subject {
+    id: number;
+    name: string;
+  }
 
   const [classOptions, setClassOptions] = useState<Option[]>([])
   const [sectionOptions, setSectionOptions] = useState<Option[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([])
 
+
+  const fetchData = async <T,>(
+    apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
+    setter: React.Dispatch<React.SetStateAction<T>>
+  ) => {
+    try {
+      const { data } = await apiFn();
+      if (data.success) setter(data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchClass = async () => {
     try {
@@ -296,8 +332,13 @@ const ClassTimetable = () => {
     }
   }
 
+  const fetchSubjects = () => fetchData(getAllSubject, setSubjects);
+  const fetchTeachers = () => fetchData(allTeacherForOption, setTeachers);
+
 
   useEffect(() => {
+    fetchTeachers()
+    fetchSubjects()
     fetchClass()
   }, [])
 
@@ -306,6 +347,29 @@ const ClassTimetable = () => {
       fetchSection()
     }
   }, [tableData.class])
+
+  const teacherOptions = useMemo(
+    () =>
+      teachers.map((t) => ({
+        value: t.id,
+        label: `${t.firstname} ${t.lastname}`,
+      })),
+    [teachers]
+  );
+
+  const subjectOptions = useMemo(
+    () =>
+      subjects.map((s) => ({
+        value: s.id,
+        label: s.name
+      })),
+
+    [subjects]
+  )
+
+
+  // console.log(subjectOptions)
+
 
 
   return (
@@ -499,12 +563,12 @@ const ClassTimetable = () => {
                           <p className="text-dark">Class : {`${item.class}-${item.section}`}</p>
                           <div className="bg-white rounded p-1 mt-1">
                             <Link
-                              to={routes.teacherDetails}
+                              to={`${routes.teacherDetails}/${item.teacher_id}`}
                               className="text-muted d-flex align-items-center"
                             >
                               <span className="avatar avatar-sm me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/teachers/teacher-07.jpg"
+                                <img
+                                  src={`${Imageurl}/${item.img_src}`}
                                   alt="Img"
                                 />
                               </span>
@@ -597,6 +661,7 @@ const ClassTimetable = () => {
                         <CommonSelect
                           className="select"
                           options={classOptions}
+                          value={tableData.class}
                           onChange={(option) => handleSelectChange("class", option ? option.value : "")}
                         />
                       </div>
@@ -607,6 +672,7 @@ const ClassTimetable = () => {
                         <CommonSelect
                           className="select"
                           options={sectionOptions}
+                          value={tableData.section}
                           onChange={(option) => handleSelectChange("section", option ? option.value : "")}
                         />
                       </div>
@@ -653,7 +719,8 @@ const ClassTimetable = () => {
                                   <label className="form-label">Subject</label>
                                   <CommonSelect
                                     className="select"
-                                    options={language}
+                                    options={subjectOptions}
+                                    value={tableData.subject}
                                     onChange={(option) => handleSelectChange("subject", option ? option.value : "")}
                                   />
                                 </div>
@@ -663,7 +730,8 @@ const ClassTimetable = () => {
                                   <label className="form-label">Teacher</label>
                                   <CommonSelect
                                     className="select"
-                                    options={teacher}
+                                    options={teacherOptions}
+                                    value={tableData.teacher}
                                     onChange={(option) => handleSelectChange("teacher", option ? option.value : "")}
                                   />
                                 </div>
@@ -674,6 +742,7 @@ const ClassTimetable = () => {
                                   <CommonSelect
                                     className="select"
                                     options={Time}
+                                    value={tableData.timefrom}
                                     onChange={(option) => handleSelectChange("timefrom", option ? option.value : "")}
                                   />
                                 </div>
@@ -685,6 +754,7 @@ const ClassTimetable = () => {
                                     <CommonSelect
                                       className="select"
                                       options={Timeto}
+                                      value={tableData.timeto}
                                       onChange={(option) => handleSelectChange("timeto", option ? option.value : "")}
                                     />
                                   </div>

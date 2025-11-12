@@ -24,6 +24,7 @@ import { allRealClasses } from "../../../service/classApi";
 export interface Homework {
   id: number;
   className: string;
+  title: string;
   section: string;
   subject: string;
   homeworkDate: string;
@@ -81,6 +82,7 @@ const ClassHomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
+    title: ""
   });
   const [errors, setErrors] = useState<Partial<Record<keyof HomeworkFormData, string>>>({});
   const [editId, setEditId] = useState<number | null>(null)
@@ -205,6 +207,7 @@ const ClassHomeWork = () => {
     id: hw.id,
     section: hw.section,
     class: hw.className,
+    title: hw.title,
     subject: hw.subject,
     homeworkDate: dayjs(hw.homeworkDate).format('DD MMM YYYY'),
     submissionDate: dayjs(hw.submissionDate).format('DD MMM YYYY'),
@@ -240,7 +243,7 @@ const ClassHomeWork = () => {
       [name]: date,
     }));
   };
- 
+
 
 
   const validateForm = (): boolean => {
@@ -249,6 +252,8 @@ const ClassHomeWork = () => {
     if (!formData.className) newErrors.className = "Class is required";
     if (!formData.section) newErrors.section = "Section is required";
     if (!formData.subject) newErrors.subject = "Subject is required";
+    if (!formData.title.trim()) newErrors.title = "Subejct Title is required !"
+    else if (formData.title.length < 6) newErrors.title = 'Subject Title must be at least 6 chracters!'
     if (!formData.teacherId) newErrors.teacherId = "Teacher is required";
     if (!formData.homeworkDate) newErrors.homeworkDate = "Homework date is required";
     if (!formData.submissionDate) newErrors.submissionDate = "Submission date is required";
@@ -261,7 +266,7 @@ const ClassHomeWork = () => {
 
     setErrors(newErrors);
 
-    return Object.keys(newErrors).length === 0; 
+    return Object.keys(newErrors).length === 0;
   };
 
 
@@ -280,6 +285,7 @@ const ClassHomeWork = () => {
           status: data.data.status,
           attachments: data.data.attachements,
           description: data.data.description,
+          title: data.data.title
 
         })
         setEditId(id)
@@ -289,7 +295,7 @@ const ClassHomeWork = () => {
       console.log(error)
     }
   }
- 
+
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -304,6 +310,7 @@ const ClassHomeWork = () => {
       status: "1",
       attachments: "",
       description: "",
+      title: ""
     })
     setErrors({});
   }
@@ -316,7 +323,7 @@ const ClassHomeWork = () => {
     if (!validateForm()) return; // stop if validation fails
 
     try {
-
+      console.log(formData)
       if (editId) {
         const { data } = await editHomework(formData, editId)
         if (data.success) {
@@ -343,6 +350,7 @@ const ClassHomeWork = () => {
         status: "1",
         attachments: "",
         description: "",
+        title: ""
       });
       setErrors({});
 
@@ -411,6 +419,15 @@ const ClassHomeWork = () => {
       dataIndex: "subject",
       sorter: (a: TableData, b: TableData) =>
         a.subject.length - b.subject.length,
+    },
+    {
+      title: "Subject Title",
+      dataIndex: "title",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
+      sorter: (a: TableData, b: TableData) =>
+        a.title.length - b.title.length,
     },
     {
       title: "Homework Date",
@@ -700,7 +717,6 @@ const ClassHomeWork = () => {
                         )}
                       </div>
 
-                      {/* Section + Subject */}
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
@@ -718,41 +734,58 @@ const ClassHomeWork = () => {
                             )}
                           </div>
                         </div>
+
                         <div className="col-md-6">
+                          {/* Teacher */}
                           <div className="mb-3">
-                            <label className="form-label">Subject</label>
+                            <label className="form-label">Teacher</label>
                             <CommonSelect
-                              className={`select ${errors.subject ? "is-invalid" : ""}`}
-                              options={subjectOptions}
-                              value={formData.subject}
+                              className={`select ${errors.teacherId ? "is-invalid" : ""}`}
+                              options={teacherOptions}
+                              value={formData.teacherId}
                               onChange={(opt) =>
-                                handleSelectChange("subject", opt?.value || "")
+                                handleSelectChange("teacherId", opt?.value || "")
                               }
                             />
-                            {errors.subject && (
-                              <div className="invalid-feedback">{errors.subject}</div>
+                            {errors.teacherId && (
+                              <div className="invalid-feedback">{errors.teacherId}</div>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Teacher */}
-                      <div className="mb-3">
-                        <label className="form-label">Teacher</label>
-                        <CommonSelect
-                          className={`select ${errors.teacherId ? "is-invalid" : ""}`}
-                          options={teacherOptions}
-                          value={formData.teacherId}
-                          onChange={(opt) =>
-                            handleSelectChange("teacherId", opt?.value || "")
-                          }
-                        />
-                        {errors.teacherId && (
-                          <div className="invalid-feedback">{errors.teacherId}</div>
-                        )}
                       </div>
+                      <div className="row">
 
-                      {/* Homework Date + Submission Date */}
+
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject</label>
+                          <CommonSelect
+                            className={`select ${errors.subject ? "is-invalid" : ""}`}
+                            options={subjectOptions}
+                            value={formData.subject}
+                            onChange={(opt) =>
+                              handleSelectChange("subject", opt?.value || "")
+                            }
+                          />
+                          {errors.subject && (
+                            <div className="invalid-feedback">{errors.subject}</div>
+                          )}
+                        </div>
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject Title</label>
+                          <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className={`form-control ${errors.title ? "is-invalid" : ""}`}
+                          />
+                          {errors.title && (
+                            <div className="invalid-feedback">{errors.title}</div>
+                          )}
+                        </div>
+
+                      </div>
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
@@ -821,8 +854,6 @@ const ClassHomeWork = () => {
                           </div>
                         </div>
                       </div>
-
-                      {/* Attachments */}
                       <div className="mb-3">
                         <label className="form-label">Attachments</label>
                         <input
@@ -926,7 +957,6 @@ const ClassHomeWork = () => {
                         )}
                       </div>
 
-                      {/* Section + Subject */}
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
@@ -944,38 +974,57 @@ const ClassHomeWork = () => {
                             )}
                           </div>
                         </div>
+
                         <div className="col-md-6">
+                          {/* Teacher */}
                           <div className="mb-3">
-                            <label className="form-label">Subject</label>
+                            <label className="form-label">Teacher</label>
                             <CommonSelect
-                              className={`select ${errors.subject ? "is-invalid" : ""}`}
-                              options={subjectOptions}
-                              value={formData.subject}
+                              className={`select ${errors.teacherId ? "is-invalid" : ""}`}
+                              options={teacherOptions}
+                              value={formData.teacherId}
                               onChange={(opt) =>
-                                handleSelectChange("subject", opt?.value || "")
+                                handleSelectChange("teacherId", opt?.value || "")
                               }
                             />
-                            {errors.subject && (
-                              <div className="invalid-feedback">{errors.subject}</div>
+                            {errors.teacherId && (
+                              <div className="invalid-feedback">{errors.teacherId}</div>
                             )}
                           </div>
                         </div>
-                      </div>
 
-                      {/* Teacher */}
-                      <div className="mb-3">
-                        <label className="form-label">Teacher</label>
-                        <CommonSelect
-                          className={`select ${errors.teacherId ? "is-invalid" : ""}`}
-                          options={teacherOptions}
-                          value={formData.teacherId}
-                          onChange={(opt) =>
-                            handleSelectChange("teacherId", opt?.value || "")
-                          }
-                        />
-                        {errors.teacherId && (
-                          <div className="invalid-feedback">{errors.teacherId}</div>
-                        )}
+                      </div>
+                      <div className="row">
+
+
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject</label>
+                          <CommonSelect
+                            className={`select ${errors.subject ? "is-invalid" : ""}`}
+                            options={subjectOptions}
+                            value={formData.subject}
+                            onChange={(opt) =>
+                              handleSelectChange("subject", opt?.value || "")
+                            }
+                          />
+                          {errors.subject && (
+                            <div className="invalid-feedback">{errors.subject}</div>
+                          )}
+                        </div>
+                        <div className="mb-3 col-md-6">
+                          <label className="form-label">Subject Title</label>
+                          <input
+                            type="text"
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className={`form-control ${errors.title ? "is-invalid" : ""}`}
+                          />
+                          {errors.title && (
+                            <div className="invalid-feedback">{errors.title}</div>
+                          )}
+                        </div>
+
                       </div>
 
                       {/* Homework Date + Submission Date */}
