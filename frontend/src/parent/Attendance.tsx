@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { all_routes } from "../router/all_routes";
+// import { all_routes } from "../router/all_routes";
 import TooltipOption from "../core/common/tooltipOption";
 import PredefinedDateRanges from "../core/common/datePicker";
 import Table from "../core/common/dataTable/index";
@@ -16,7 +16,7 @@ import { getAllChildAttendance } from "../service/parentDashboardApi";
 import { parent_routes } from "../admin/router/parent_routes";
 
 const PAttendance = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
   // const data = attendancereportData;
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token)?.id : null;

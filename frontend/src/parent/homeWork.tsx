@@ -81,6 +81,7 @@ const PHomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
+    title: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof HomeworkFormData, string>>
@@ -335,6 +336,7 @@ const PHomeWork = () => {
           status: data.data.status,
           attachments: data.data.attachements,
           description: data.data.description,
+          title: data.data.title,
         });
         setEditId(id);
       }
@@ -356,6 +358,7 @@ const PHomeWork = () => {
       status: "1",
       attachments: "",
       description: "",
+      title: "",
     });
     setErrors({});
   };
@@ -391,6 +394,7 @@ const PHomeWork = () => {
         status: "1",
         attachments: "",
         description: "",
+        title: "",
       });
       setErrors({});
     } catch (error) {
