@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 // import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
@@ -11,8 +11,9 @@ import {
 } from "../../../service/api";
 import { useEffect, useState } from "react";
 import { Skeleton } from "antd";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
-const CStudentDetails = () => {
+const PStudentDetails = () => {
   interface Parent {
     id: number;
     name: string;
@@ -52,7 +53,7 @@ const CStudentDetails = () => {
   //   return <p className='spinner' role='status'>loading...</p>
   // }
   // console.log(id)
-  const routes = all_routes;
+  // const routes = all_routes;
   return (
     <>
       {/* Page Wrapper */}
@@ -76,16 +77,16 @@ const CStudentDetails = () => {
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
                       <Link
-                        to={`${routes.studentDetail}/${rollnum}`}
+                        to={`${parent_routes.childDetails}/${rollnum}`}
                         className="nav-link active"
                       >
                         <i className="ti ti-school me-2" />
-                        Student Details
+                        Child Details
                       </Link>
                     </li>
                     <li>
                       <Link
-                        to={`${routes.studentTimeTable}/${rollnum}`}
+                        to={`${parent_routes.childTimeTable}/${rollnum}`}
                         className="nav-link"
                       >
                         <i className="ti ti-table-options me-2" />
@@ -94,7 +95,7 @@ const CStudentDetails = () => {
                     </li>
                     <li>
                       <Link
-                        to={`${routes.studentLeaves}/${rollnum}`}
+                        to={`${parent_routes.childLeaves}/${rollnum}`}
                         className="nav-link"
                       >
                         <i className="ti ti-calendar-due me-2" />
@@ -103,7 +104,7 @@ const CStudentDetails = () => {
                     </li>
                     <li>
                       <Link
-                        to={`${routes.studentFees}/${rollnum}`}
+                        to={`${parent_routes.childFees}/${rollnum}`}
                         className="nav-link"
                       >
                         <i className="ti ti-report-money me-2" />
@@ -112,7 +113,7 @@ const CStudentDetails = () => {
                     </li>
                     <li>
                       <Link
-                        to={`${routes.studentResult}/${rollnum}`}
+                        to={`${parent_routes.childResult}/${rollnum}`}
                         className="nav-link"
                       >
                         <i className="ti ti-bookmark-edit me-2" />
@@ -121,7 +122,7 @@ const CStudentDetails = () => {
                     </li>
                     <li>
                       <Link
-                        to={`${routes.studentLibrary}/${rollnum}`}
+                        to={`${parent_routes.childLibrary}/${rollnum}`}
                         className="nav-link"
                       >
                         <i className="ti ti-books me-2" />
@@ -636,4 +637,4 @@ const CStudentDetails = () => {
   );
 };
 
-export default CStudentDetails;
+export default PStudentDetails;

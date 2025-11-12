@@ -116,15 +116,15 @@ const ChildGrid = () => {
           {/* Page Header */}
           <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
             <div className="my-auto mb-2">
-              <h3 className="page-title mb-1">Students</h3>
+              <h3 className="page-title mb-1">Children</h3>
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={routes.adminDashboard}>Dashboard</Link>
+                    <Link to={routes.adminDashboard}>Parent Dashboard</Link>
                   </li>
                   <li className="breadcrumb-item">Peoples</li>
                   <li className="breadcrumb-item active" aria-current="page">
-                    Students Grid
+                    Child Grid
                   </li>
                 </ol>
               </nav>
@@ -148,7 +148,7 @@ const ChildGrid = () => {
           {/* /Page Header */}
           {/* Filter */}
           <div className="bg-white p-3 border rounded-1 d-flex align-items-center justify-content-between flex-wrap mb-4 pb-0">
-            <h4 className="mb-3">Students Grid</h4>
+            <h4 className="mb-3">Child Grid</h4>
             <div className="d-flex align-items-center flex-wrap">
               <div className="input-icon-start mb-3 me-2 position-relative">
                 <PredefinedDateRanges />
@@ -227,7 +227,7 @@ const ChildGrid = () => {
                         Reset
                       </Link>
                       <Link
-                        to={routes.studentGrid}
+                        to={parent_routes.childGrid}
                         className="btn btn-primary"
                         onClick={handleApplyClick}
                       >
@@ -239,13 +239,13 @@ const ChildGrid = () => {
               </div>
               <div className="d-flex align-items-center bg-white border rounded-2 p-1 mb-3 me-2">
                 <Link
-                  to={routes.studentList}
+                  to={parent_routes.childList}
                   className="btn btn-icon btn-sm me-1 bg-light primary-hover"
                 >
                   <i className="ti ti-list-tree" />
                 </Link>
                 <Link
-                  to={routes.studentGrid}
+                  to={parent_routes.childGrid}
                   className="active btn btn-icon btn-sm primary-hover"
                 >
                   <i className="ti ti-grid-dots" />
@@ -334,7 +334,7 @@ const ChildGrid = () => {
                     <div className="card flex-fill">
                       <div className="card-header d-flex align-items-center justify-content-between">
                         <Link
-                          to={routes.studentDetail}
+                          to={parent_routes.childDetails}
                           className="link-primary"
                         >
                           {student.admissionnum}
@@ -401,7 +401,7 @@ const ChildGrid = () => {
                         <div className="bg-light-300 rounded-2 p-3 mb-3">
                           <div className="d-flex align-items-center">
                             <Link
-                              to={`${routes.studentDetail}/${student.rollnum}`}
+                              to={`${parent_routes.childDetails}/${student.rollnum}`}
                               className="avatar avatar-lg flex-shrink-0"
                             >
                               <img
@@ -414,7 +414,7 @@ const ChildGrid = () => {
                               <h6 className="mb-0">
                                 <Link
                                   className="text-capitalize"
-                                  to={`${routes.studentDetail}/${student.rollnum}`}
+                                  to={`${parent_routes.childDetails}/${student.rollnum}`}
                                 >{`${student.firstname} ${student.lastname}`}</Link>
                               </h6>
                               <p>{`${student.class}, ${student.section}`}</p>

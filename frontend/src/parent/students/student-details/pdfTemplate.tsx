@@ -1,4 +1,4 @@
-import { Imageurl } from "../../../../service/api";
+import { Imageurl } from "../../../service/api";
 
 // Common school data
 const schoolData = {

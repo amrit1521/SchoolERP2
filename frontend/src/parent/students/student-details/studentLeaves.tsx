@@ -1,21 +1,25 @@
-
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
-import Table from "../../../../core/common/dataTable/index";
-import type { TableData } from "../../../../core/data/interface";
+import Table from "../../../core/common/dataTable/index";
+import type { TableData } from "../../../core/data/interface";
 // import { leaveData } from "../../../../core/data/json/leaveData";
 // import { Attendance } from "../../../../core/data/json/attendance";
 import { useEffect, useState } from "react";
-import { getLeaveData, getStuAttendanceData, specificStudentData1 } from "../../../../service/api";
+import {
+  getLeaveData,
+  getStuAttendanceData,
+  specificStudentData1,
+} from "../../../service/api";
 import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import { toast } from "react-toastify";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
-const StudentLeaves = () => {
-  const routes = all_routes;
+const PStudentLeaves = () => {
+  // const routes = all_routes;
   // const data = leaveData;
   // const data2 = Attendance;
 
@@ -29,83 +33,76 @@ const StudentLeaves = () => {
 
   const { rollnum } = useParams<{ rollnum: string }>();
 
-  const [student, setStudent] = useState<any>({})
-  const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([])
-  const [leaveDataa, setLeaveDataa] = useState<any>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [token ,setToken] = useState<string|null>(null)
-
+  const [student, setStudent] = useState<any>({});
+  const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([]);
+  const [leaveDataa, setLeaveDataa] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [token, setToken] = useState<string | null>(null);
 
   // ✅ Student API function
-const fetchStudent = async (rollnum: number) => {
-  try {
-    const res = await specificStudentData1(rollnum);
+  const fetchStudent = async (rollnum: number) => {
+    try {
+      const res = await specificStudentData1(rollnum);
 
-    if (res?.data?.success) {
-      setStudent(res.data.student);
-      return res.data.student; 
-    } else {
-      console.warn("Failed to fetch student data");
+      if (res?.data?.success) {
+        setStudent(res.data.student);
+        return res.data.student;
+      } else {
+        console.warn("Failed to fetch student data");
+        return null;
+      }
+    } catch (error) {
+      console.error("❌ Error fetching student data:", error);
       return null;
     }
-  } catch (error) {
-    console.error("❌ Error fetching student data:", error);
-    return null;
-  }
-};
+  };
 
-// ✅ Leave API function
-const fetchLeave = async (rollnum: number) => {
-  try {
-    const res = await getLeaveData(rollnum);
+  // ✅ Leave API function
+  const fetchLeave = async (rollnum: number) => {
+    try {
+      const res = await getLeaveData(rollnum);
 
-    if (res?.data?.success) {
-      setLeaveInform(res.data.leave_inform);
-      setLeaveDataa(res.data.stuAllLeave);
-    } else {
-      console.warn("Failed to fetch leave data");
+      if (res?.data?.success) {
+        setLeaveInform(res.data.leave_inform);
+        setLeaveDataa(res.data.stuAllLeave);
+      } else {
+        console.warn("Failed to fetch leave data");
+        setLeaveDataa([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching leave data:", error);
       setLeaveDataa([]);
     }
-  } catch (error) {
-    console.error("❌ Error fetching leave data:", error);
-    setLeaveDataa([]);
-  }
-};
+  };
 
+  const fetchStudentAndLeave = async () => {
+    setLoading(true);
+    try {
+      await new Promise((res) => setTimeout(res, 200));
+      const studentData = await fetchStudent(Number(rollnum));
 
-const fetchStudentAndLeave = async () => {
-  setLoading(true);
-  try {
-    await new Promise((res)=>setTimeout(res, 200))
-    const studentData = await fetchStudent(Number(rollnum));
-
-  
-    if (studentData?.rollnum) {
-      await fetchLeave(Number(studentData.rollnum));
+      if (studentData?.rollnum) {
+        await fetchLeave(Number(studentData.rollnum));
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Unexpected error:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-
-useEffect(() => {
-  setToken(localStorage.getItem('token'))
-  if (rollnum) {
-    fetchStudentAndLeave();
-  }
-}, [rollnum]);
-
+  useEffect(() => {
+    setToken(localStorage.getItem("token"));
+    if (rollnum) {
+      fetchStudentAndLeave();
+    }
+  }, [rollnum]);
 
   const handleAdd = () => {
-    fetchStudentAndLeave()
-  }
+    fetchStudentAndLeave();
+  };
 
-
-
-  const tableData = leaveDataa.map((item:any) => ({
+  const tableData = leaveDataa.map((item: any) => ({
     key: item.id,
     leaveType: item.leave_type,
     leaveDate: `${dayjs(item.from_date).format("DD MMM YYYY")} to  ${dayjs(
@@ -115,7 +112,6 @@ useEffect(() => {
     appliedOn: dayjs(item.applied_on).format("DD MMM YYYY"),
     status: item.status == "1" ? "Approved" : "Pending",
   }));
-
 
   const columns = [
     {
@@ -164,38 +160,86 @@ useEffect(() => {
     },
   ];
 
+  // attendance ====================================
 
-// attendance ====================================
-
-
-
-interface AttendanceData {
-  id: number;
-  attendance: string;
-  attendance_date_info: string;
-}
-
-const [attendanceSummary, setAttendanceSummary] = useState<any>({});
-const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
-
-const fetchStudentAttendance = async (rollnum: string) => {
-  try {
-    const { data } = await getStuAttendanceData(rollnum);
-    setAttendanceSummary(data.summary);
-    setAttendanceData(data.details);
-  } catch (error: any) {
-    console.log(error);
-    toast.error(error.response?.data?.message || "Failed to fetch attendance");
+  interface AttendanceData {
+    id: number;
+    attendance: string;
+    attendance_date_info: string;
   }
-};
 
+  const [attendanceSummary, setAttendanceSummary] = useState<any>({});
+  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
 
-function getDaysInMonth(year: number, monthIndex: number): number {
-  return new Date(year, monthIndex + 1, 0).getDate();
-}
+  const fetchStudentAttendance = async (rollnum: string) => {
+    try {
+      const { data } = await getStuAttendanceData(rollnum);
+      setAttendanceSummary(data.summary);
+      setAttendanceData(data.details);
+    } catch (error: any) {
+      console.log(error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch attendance"
+      );
+    }
+  };
 
+  function getDaysInMonth(year: number, monthIndex: number): number {
+    return new Date(year, monthIndex + 1, 0).getDate();
+  }
 
-function generateAttendanceTable(attendanceData: AttendanceData[]) {
+  function generateAttendanceTable(attendanceData: AttendanceData[]) {
+    const monthNames = [
+      "jan",
+      "feb",
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct",
+      "nov",
+      "dec",
+    ];
+
+    const years = new Set(
+      attendanceData.map((item) =>
+        new Date(item.attendance_date_info).getFullYear()
+      )
+    );
+
+    // Prepare a map for faster lookup
+    const attendanceMap: Record<string, string> = {};
+    attendanceData.forEach((item) => {
+      const date = new Date(item.attendance_date_info);
+      const day = date.getDate();
+      const month = monthNames[date.getMonth()];
+      attendanceMap[`${month}-${day}`] = item.attendance;
+    });
+
+    const rows: any[] = [];
+    const sampleYear = [...years][0] || new Date().getFullYear();
+
+    for (let m = 0; m < 12; m++) {
+      const daysInMonth = getDaysInMonth(sampleYear, m);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayStr = d.toString().padStart(2, "0");
+        let row = rows.find((r) => r.date === dayStr);
+        if (!row) {
+          row = { key: dayStr, date: dayStr };
+          rows.push(row);
+        }
+        const month = monthNames[m];
+        row[month] = attendanceMap[`${month}-${d}`] || "";
+      }
+    }
+
+    return rows;
+  }
+
+  const tabledata2 = generateAttendanceTable(attendanceData);
   const monthNames = [
     "jan",
     "feb",
@@ -211,94 +255,35 @@ function generateAttendanceTable(attendanceData: AttendanceData[]) {
     "dec",
   ];
 
-
-  const years = new Set(
-    attendanceData.map((item) =>
-      new Date(item.attendance_date_info).getFullYear()
-    )
-  );
-
-  // Prepare a map for faster lookup
-  const attendanceMap: Record<string, string> = {};
-  attendanceData.forEach((item) => {
-    const date = new Date(item.attendance_date_info);
-    const day = date.getDate();
-    const month = monthNames[date.getMonth()];
-    attendanceMap[`${month}-${day}`] = item.attendance;
-  });
-
-  const rows: any[] = [];
-  const sampleYear = [...years][0] || new Date().getFullYear();
-
-  for (let m = 0; m < 12; m++) {
-    const daysInMonth = getDaysInMonth(sampleYear, m);
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dayStr = d.toString().padStart(2, "0");
-      let row = rows.find((r) => r.date === dayStr);
-      if (!row) {
-        row = { key: dayStr, date: dayStr };
-        rows.push(row);
-      }
-      const month = monthNames[m];
-      row[month] = attendanceMap[`${month}-${d}`] || "";
-    }
-  }
-
-  return rows;
-}
-
-const tabledata2 = generateAttendanceTable(attendanceData);
-const monthNames = [
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
-];
-
-const columns2 = [
-  {
-    title: "Date | Month",
-    dataIndex: "date",
-    sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
-  },
-  ...monthNames.map((month) => ({
-    title: month.toUpperCase(),
-    dataIndex: month,
-    render: (text: string) => {
-      if (!text) return <span className="attendance-range bg-light"></span>;
-      const colorMap: Record<string, string> = {
-        Present: "bg-success",
-        Holiday: "bg-pending",
-        Halfday: "bg-dark",
-        Late: "bg-info",
-        Absent: "bg-danger",
-      };
-      return (
-        <span
-          className={`attendance-range ${
-            colorMap[text] || "bg-secondary"
-          }`}
-          title={text}
-        ></span>
-      );
+  const columns2 = [
+    {
+      title: "Date | Month",
+      dataIndex: "date",
+      sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
     },
-    sorter: (a: any, b: any) =>
-      (a[month] || "").localeCompare(b[month] || ""),
-  })),
-];
-
-
-
-
-
+    ...monthNames.map((month) => ({
+      title: month.toUpperCase(),
+      dataIndex: month,
+      render: (text: string) => {
+        if (!text) return <span className="attendance-range bg-light"></span>;
+        const colorMap: Record<string, string> = {
+          Present: "bg-success",
+          Holiday: "bg-pending",
+          Halfday: "bg-dark",
+          Late: "bg-info",
+          Absent: "bg-danger",
+        };
+        return (
+          <span
+            className={`attendance-range ${colorMap[text] || "bg-secondary"}`}
+            title={text}
+          ></span>
+        );
+      },
+      sorter: (a: any, b: any) =>
+        (a[month] || "").localeCompare(b[month] || ""),
+    })),
+  ];
 
   return (
     <>
@@ -307,7 +292,9 @@ const columns2 = [
         <div className="content">
           <div className="row">
             {/* Page Header */}
-            {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
+            {token && (
+              <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />
+            )}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -320,38 +307,55 @@ const columns2 = [
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childDetails}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-school me-2" />
                         Student Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childTimeTable}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link active">
+                      <Link
+                        to={`${parent_routes.childLeaves}/${rollnum}`}
+                        className="nav-link active"
+                      >
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
-
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childFees}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childResult}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childLibrary}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>
@@ -373,14 +377,18 @@ const columns2 = [
                           </Link>
                         </li>
                         <li className="mb-3">
-                          {student && (<button
-                            onClick={() => fetchStudentAttendance(student.rollnum)}
-                            className="nav-link rounded fs-12 fw-semibold"
-                            data-bs-toggle="tab"
-                            data-bs-target="#attendance"
-                          >
-                            Attendance
-                          </button>)}
+                          {student && (
+                            <button
+                              onClick={() =>
+                                fetchStudentAttendance(student.rollnum)
+                              }
+                              className="nav-link rounded fs-12 fw-semibold"
+                              data-bs-toggle="tab"
+                              data-bs-target="#attendance"
+                            >
+                              Attendance
+                            </button>
+                          )}
                         </li>
                       </ul>
                     </div>
@@ -390,32 +398,47 @@ const columns2 = [
                     {/* Leave */}
                     <div className="tab-pane fade show active" id="leave">
                       <div className="row gx-3">
-
-                        {
-                          loading ?
-                            Array.from({ length: 4 }).map((_, index) => (
-                              <div key={index} className="col-lg-6 col-xxl-3 d-flex">
+                        {loading
+                          ? Array.from({ length: 4 }).map((_, index) => (
+                              <div
+                                key={index}
+                                className="col-lg-6 col-xxl-3 d-flex"
+                              >
                                 <div className="card flex-fill">
                                   <div className="card-body">
                                     <h5 className="mb-2">
-                                      <Skeleton.Input active size="small" style={{ width: 150 }} />
+                                      <Skeleton.Input
+                                        active
+                                        size="small"
+                                        style={{ width: 150 }}
+                                      />
                                     </h5>
                                     <div className="d-flex align-items-center flex-wrap">
                                       <span className="pe-2 me-2 mb-0 d-inline-block">
-                                        <Skeleton.Input active size="small" style={{ width: 80 }} />
+                                        <Skeleton.Input
+                                          active
+                                          size="small"
+                                          style={{ width: 80 }}
+                                        />
                                       </span>
                                       <span className="mb-0 d-inline-block">
-                                        <Skeleton.Input active size="small" style={{ width: 100 }} />
+                                        <Skeleton.Input
+                                          active
+                                          size="small"
+                                          style={{ width: 100 }}
+                                        />
                                       </span>
-
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             ))
-                            :
-                            leaveInform && leaveInform.map((item) => (
-                              <div key={item.id} className="col-lg-6 col-xxl-3 d-flex">
+                          : leaveInform &&
+                            leaveInform.map((item) => (
+                              <div
+                                key={item.id}
+                                className="col-lg-6 col-xxl-3 d-flex"
+                              >
                                 <div className="card flex-fill">
                                   <div className="card-body">
                                     <h5 className="mb-2 text-capitalize">{`${item.name} (${item.total_allowed})`}</h5>
@@ -423,14 +446,14 @@ const columns2 = [
                                       <p className="border-end pe-2 me-2 mb-0">
                                         Used : {item.used}
                                       </p>
-                                      <p className="mb-0">Available : {item.avilable}</p>
+                                      <p className="mb-0">
+                                        Available : {item.avilable}
+                                      </p>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))
-                        }
-
+                            ))}
                       </div>
                       <div className="card">
                         <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -447,20 +470,27 @@ const columns2 = [
                         </div>
                         {/* Leaves List */}
                         <div className="card-body p-0 py-3">
-
-                          {
-                            loading ?
-                              <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                                <div className="spinner-border text-primary" role="status">
-                                  <span className="visually-hidden">Loading...</span>
-                                </div>
-                              </div> : <Table
-                                dataSource={tableData}
-                                columns={columns}
-                                Selection={false}
-                              />
-                          }
-
+                          {loading ? (
+                            <div
+                              className="d-flex justify-content-center align-items-center"
+                              style={{ height: "200px" }}
+                            >
+                              <div
+                                className="spinner-border text-primary"
+                                role="status"
+                              >
+                                <span className="visually-hidden">
+                                  Loading...
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <Table
+                              dataSource={tableData}
+                              columns={columns}
+                              Selection={false}
+                            />
+                          )}
                         </div>
                         {/* /Leaves List */}
                       </div>
@@ -689,11 +719,13 @@ const columns2 = [
                           </div>
                           {/* Attendance List */}
 
-                          {tabledata2.length > 0 && (<Table
-                            dataSource={tabledata2}
-                            columns={columns2}
-                            Selection={false}
-                          />)}
+                          {tabledata2.length > 0 && (
+                            <Table
+                              dataSource={tabledata2}
+                              columns={columns2}
+                              Selection={false}
+                            />
+                          )}
                           {/* /Attendance List */}
                         </div>
                       </div>
@@ -707,9 +739,11 @@ const columns2 = [
         </div>
       </div>
       {/* /Page Wrapper */}
-      {student.rollnum && (<StudentModals onAdd={handleAdd} rollnum={Number(student.rollnum)} />)}
+      {student.rollnum && (
+        <StudentModals onAdd={handleAdd} rollnum={Number(student.rollnum)} />
+      )}
     </>
   );
 };
 
-export default StudentLeaves;
+export default PStudentLeaves;

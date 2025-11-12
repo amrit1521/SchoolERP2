@@ -4,16 +4,17 @@ import { Select } from "antd";
 import { toast } from "react-toastify";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import {
   getAllExamNameForAStud,
   getExamResult,
   specificStudentData1,
-} from "../../../../service/api";
+} from "../../../service/api";
 import { PdfTemplate1, PdfTemplate2, PdfTemplate3 } from "./pdfTemplate";
 
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
 async function waitForImagesToLoad(el: HTMLElement, timeoutMs = 5000) {
   const imgs = Array.from(el.querySelectorAll("img"));
@@ -567,8 +568,8 @@ const Template3Preview = ({
   );
 };
 
-const StudentResult: React.FC = () => {
-  const routes = all_routes;
+const PStudentResult: React.FC = () => {
+  // const routes = all_routes;
   const { rollnum } = useParams<{ rollnum: string }>();
   const [student, setStudent] = useState<any>({});
   const [results, setResults] = useState<any[]>([]);
@@ -677,7 +678,7 @@ const StudentResult: React.FC = () => {
                 <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                   <li>
                     <Link
-                      to={`${routes.studentDetail}/${rollnum}`}
+                      to={`${parent_routes.childDetails}/${rollnum}`}
                       className="nav-link"
                     >
                       <i className="ti ti-school me-2" />
@@ -686,7 +687,7 @@ const StudentResult: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to={`${routes.studentTimeTable}/${rollnum}`}
+                      to={`${parent_routes.childTimeTable}/${rollnum}`}
                       className="nav-link"
                     >
                       <i className="ti ti-table-options me-2" />
@@ -695,7 +696,7 @@ const StudentResult: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to={`${routes.studentLeaves}/${rollnum}`}
+                      to={`${parent_routes.childLeaves}/${rollnum}`}
                       className="nav-link"
                     >
                       <i className="ti ti-calendar-due me-2" />
@@ -704,8 +705,8 @@ const StudentResult: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to={`${routes.studentFees}/${rollnum}`}
-                      className="nav-link active"
+                      to={`${parent_routes.childFees}/${rollnum}`}
+                      className="nav-link"
                     >
                       <i className="ti ti-report-money me-2" />
                       Fees
@@ -713,7 +714,7 @@ const StudentResult: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to={`${routes.studentResult}/${rollnum}`}
+                      to={`${parent_routes.childResult}/${rollnum}`}
                       className="nav-link active"
                     >
                       <i className="ti ti-bookmark-edit me-2" />
@@ -722,7 +723,7 @@ const StudentResult: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to={`${routes.studentLibrary}/${rollnum}`}
+                      to={`${parent_routes.childLibrary}/${rollnum}`}
                       className="nav-link"
                     >
                       <i className="ti ti-books me-2" />
@@ -841,4 +842,4 @@ const StudentResult: React.FC = () => {
   );
 };
 
-export default StudentResult;
+export default PStudentResult;

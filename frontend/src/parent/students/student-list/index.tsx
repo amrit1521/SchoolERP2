@@ -18,7 +18,6 @@ import {
 import CommonSelect from "../../../core/common/commonSelect";
 import TooltipOption from "../../../core/common/tooltipOption";
 import {
-  allStudents,
   deleteStudent,
   disableStudent,
   enableStudent,
@@ -29,6 +28,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { getAllChildrenOfParent } from "../../../service/parentDashboardApi";
+import { parent_routes } from "../../../admin/router/parent_routes";
 // import { findNonSerializableValue } from "@reduxjs/toolkit";
 
 const ChildList = () => {
@@ -306,14 +306,14 @@ const ChildList = () => {
                   <li>
                     <Link
                       className="dropdown-item rounded-1"
-                      to={`${routes.studentDetail}/${rollnum}`}
+                      to={`${parent_routes.childDetails}/${rollnum}`}
                     >
                       <i className="ti ti-menu me-2" />
                       View Student
                     </Link>
                   </li>
                 ) : null}
-                {permission?.can_view ? (
+                {permission?.can_edit ? (
                   <li>
                     <Link
                       className="dropdown-item rounded-1"
@@ -381,15 +381,17 @@ const ChildList = () => {
           {/* Page Header */}
           <div className="d-md-flex d-block align-items-center justify-content-between mb-3">
             <div className="my-auto mb-2">
-              <h3 className="page-title mb-1">Students List</h3>
+              <h3 className="page-title mb-1">Child List</h3>
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={routes.adminDashboard}>Dashboard</Link>
+                    <Link to={parent_routes.parentDashboard}>
+                      Parent Dashboard
+                    </Link>
                   </li>
-                  <li className="breadcrumb-item">Students</li>
+                  <li className="breadcrumb-item">Children</li>
                   <li className="breadcrumb-item active" aria-current="page">
-                    All Students
+                    All Child
                   </li>
                 </ol>
               </nav>
@@ -397,8 +399,7 @@ const ChildList = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
 
-              {token &&
-              (JSON.parse(token).role === 1 || JSON.parse(token).role === 2) ? (
+              {permission?.can_delete ? (
                 <div className="mb-2">
                   <Link
                     to={routes.addStudent}
@@ -415,7 +416,7 @@ const ChildList = () => {
           {/* Students List */}
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
-              <h4 className="mb-3">Students List</h4>
+              <h4 className="mb-3">Child List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
                   <PredefinedDateRanges />
@@ -497,7 +498,7 @@ const ChildList = () => {
                           Reset
                         </Link>
                         <Link
-                          to={routes.studentGrid}
+                          to={parent_routes.childGrid}
                           className="btn btn-primary"
                           onClick={handleApplyClick}
                         >
@@ -509,13 +510,13 @@ const ChildList = () => {
                 </div>
                 <div className="d-flex align-items-center bg-white border rounded-2 p-1 mb-3 me-2">
                   <Link
-                    to={routes.studentList}
+                    to={parent_routes.childList}
                     className="active btn btn-icon btn-sm me-1 primary-hover"
                   >
                     <i className="ti ti-list-tree" />
                   </Link>
                   <Link
-                    to={routes.studentGrid}
+                    to={parent_routes.childGrid}
                     className="btn btn-icon btn-sm bg-light primary-hover"
                   >
                     <i className="ti ti-grid-dots" />

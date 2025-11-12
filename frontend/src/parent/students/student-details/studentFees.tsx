@@ -1,26 +1,26 @@
-
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
 import { useEffect, useState } from "react";
-import { getFeesDetailsSpecStudent, specificStudentData1 } from "../../../../service/api";
+import {
+  getFeesDetailsSpecStudent,
+  specificStudentData1,
+} from "../../../service/api";
 import { Skeleton } from "antd";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
-
-const StudentFees = () => {
-  const routes = all_routes
+const PStudentFees = () => {
+  // const routes = all_routes;
   const { rollnum } = useParams<{ rollnum: string }>();
 
-  const [student, setStudent] = useState<any>({})
-  const [feesInfo, setFeesInfo] = useState<any>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [token , setToken] = useState<string|null>(null)
+  const [student, setStudent] = useState<any>({});
+  const [feesInfo, setFeesInfo] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [token, setToken] = useState<string | null>(null);
 
-
-  
   const fetchStudent = async (rollnum: number) => {
     try {
       const res = await specificStudentData1(rollnum);
@@ -44,7 +44,6 @@ const StudentFees = () => {
       // console.log(res.data)
       if (res?.data?.success) {
         setFeesInfo(res.data.feesdata);
-
       } else {
         console.warn("Failed to fetch leave data");
         setFeesInfo([]);
@@ -55,14 +54,11 @@ const StudentFees = () => {
     }
   };
 
-
   const fetchStudentAndFees = async () => {
     setLoading(true);
-       await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-   
       const studentData = await fetchStudent(Number(rollnum));
-
 
       if (studentData?.rollnum) {
         await fetchFees(Number(studentData.rollnum));
@@ -74,16 +70,12 @@ const StudentFees = () => {
     }
   };
 
-
   useEffect(() => {
-    setToken(localStorage.getItem('token'))
+    setToken(localStorage.getItem("token"));
     if (rollnum) {
       fetchStudentAndFees();
     }
   }, [rollnum]);
-
-
-
 
   return (
     <>
@@ -92,7 +84,9 @@ const StudentFees = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-            {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
+            {token && (
+              <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />
+            )}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -105,38 +99,55 @@ const StudentFees = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childDetails}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-school me-2" />
-                        Student Details
+                        Child Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childTimeTable}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childLeaves}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
-
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link active">
+                      <Link
+                        to={`${parent_routes.childFees}/${rollnum}`}
+                        className="nav-link active"
+                      >
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childResult}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childLibrary}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>
@@ -197,28 +208,88 @@ const StudentFees = () => {
                             </tr>
                           </thead>
 
-
-
                           <tbody>
                             {loading ? (
                               // 🔹 Show 5 skeleton rows
                               [...Array(5)].map((_, i) => (
                                 <tr key={i}>
                                   <td>
-                                    <Skeleton.Input active size="small" style={{ width: 80 }} />
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 80 }}
+                                    />
                                     <div>
-                                      <Skeleton.Input active size="small" style={{ width: 60, marginTop: 5 }} />
+                                      <Skeleton.Input
+                                        active
+                                        size="small"
+                                        style={{ width: 60, marginTop: 5 }}
+                                      />
                                     </div>
                                   </td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 100 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 120 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 70 }} /></td>
-                                  <td><Skeleton.Button active size="small" style={{ width: 80 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 100 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 80 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 120 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 60 }} /></td>
-                                  <td><Skeleton.Input active size="small" style={{ width: 60 }} /></td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 100 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 120 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 70 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Button
+                                      active
+                                      size="small"
+                                      style={{ width: 80 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 100 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 80 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 120 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 60 }}
+                                    />
+                                  </td>
+                                  <td>
+                                    <Skeleton.Input
+                                      active
+                                      size="small"
+                                      style={{ width: 60 }}
+                                    />
+                                  </td>
                                 </tr>
                               ))
                             ) : feesInfo.length > 0 ? (
@@ -228,18 +299,25 @@ const StudentFees = () => {
                                   <td>
                                     <p className="text-primary">
                                       {fee.class}-{fee.section}
-                                      <span className="d-block">({fee.feesGroup})</span>
+                                      <span className="d-block">
+                                        ({fee.feesGroup})
+                                      </span>
                                     </p>
                                   </td>
                                   <td>{fee.feesType}</td>
                                   {/* <td>{new Date(fee.assigned_date).toLocaleDateString()}</td> */}
-                                  <td>{dayjs(fee.dueDate).format('DD MMM YYYY')}</td>
+                                  <td>
+                                    {dayjs(fee.dueDate).format("DD MMM YYYY")}
+                                  </td>
                                   <td>{fee.totalAmount || "-"}</td>
                                   <td>{fee.AmountPay || "-"}</td>
                                   <td>
                                     <span
-                                      className={`badge ${fee.status === "1" ? "badge-soft-success" : "badge-soft-danger"
-                                        } d-inline-flex align-items-center`}
+                                      className={`badge ${
+                                        fee.status === "1"
+                                          ? "badge-soft-success"
+                                          : "badge-soft-danger"
+                                      } d-inline-flex align-items-center`}
                                     >
                                       <i className="ti ti-circle-filled fs-5 me-1" />
                                       {fee.status === "1" ? "Paid" : "Unpaid"}
@@ -249,7 +327,9 @@ const StudentFees = () => {
                                   <td>{fee.mode || "-"}</td>
                                   <td>
                                     {fee.collectionDate
-                                      ? dayjs(fee.collectionDate).format('DD MMM YYYY')
+                                      ? dayjs(fee.collectionDate).format(
+                                          "DD MMM YYYY"
+                                        )
                                       : "-"}
                                   </td>
                                   <td>{fee.discount || "0"}%</td>
@@ -277,9 +357,14 @@ const StudentFees = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {student.rollnum && (<StudentModals onAdd={fetchStudentAndFees} rollnum={Number(student.rollnum)} />)}
+      {student.rollnum && (
+        <StudentModals
+          onAdd={fetchStudentAndFees}
+          rollnum={Number(student.rollnum)}
+        />
+      )}
     </>
   );
 };
 
-export default StudentFees;
+export default PStudentFees;
