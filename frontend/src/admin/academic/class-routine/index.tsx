@@ -139,8 +139,7 @@ const ClassRoutine = () => {
   >([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [allclass, setallclass] = useState<ClassName[]>([]);
-  const [routineForm, setRoutineForm] =
-    useState<RoutineFormData>(initailFormData);
+  const [routineForm, setRoutineForm] =useState<RoutineFormData>(initailFormData);
   const [editId, setEditId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Partial<RoutineError>>(initialErrorData);
 
@@ -204,6 +203,8 @@ const ClassRoutine = () => {
       })),
     [teachers]
   );
+
+
   const roomOptions = useMemo(
     () => rooms.map((r) => ({ value: String(r.id), label: String(r.room_no) })),
     [rooms]

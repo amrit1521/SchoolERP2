@@ -845,6 +845,8 @@ exports.addExamResult2 = async (req, res) => {
           parseFloat(minMarks)
         );
 
+      //  console.log(grade  ,result)
+
         if (existingResult) {
           if (existingResult.mark_obtained !== mark) {
             await db.execute(
