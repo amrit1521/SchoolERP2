@@ -3,9 +3,9 @@ import axios from "axios";
 const BASE_URL: string =
   import.meta.env.VITE_SERVERURL || "http://localhost:3004";
 export const API_URL = `${BASE_URL}/api`;
-export const Imageurl = `${API_URL}/stu/uploads/image/`;
-export const Documenturl = `${API_URL}/stu/uploads/document/`;
-export const Audiourl = `${API_URL}/chat/uploads/audio/`;
+export const Imageurl = `${API_URL}/stu/uploads/image`;
+export const Documenturl = `${API_URL}/stu/uploads/document`;
+export const Audiourl = `${API_URL}/chat/uploads/audio`;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -48,7 +48,7 @@ export const getStudentHomework = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/getstudentHomework/${classId}/${sectionId}`);
 export const getStudentFeeReminder = (rollNum: number) =>
   api.get(`/studentdashboard/getstudentfeereminder/${rollNum}`);
-export const getStudentClassTeachersList = (classId: number,sectionId:number) =>
+export const getStudentClassTeachersList = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/student-class-teachers?classId=${classId}&sectionId=${sectionId}`);
 
 //user apis-------------------
@@ -387,6 +387,7 @@ export const resetPassword = (data: object) =>
   api.post("/auth/reset-password", data);
 export const createUserAccount = (data: object) => api.post('/auth/create', data)
 export const deleteUserAccount = (id: number) => api.delete(`/auth//deleteacc/${id}`)
+export const deleteUserAccount2 = (id: number) => api.delete(`/auth//deleteacc2/${id}`)
 
 // transport =================================================================
 export const addRoutes = (data: object) =>

@@ -8,6 +8,7 @@ router.post('/forgot-password',forgotPasswordLimiter , authController.forgotPass
 router.post('/reset-password' , authController.verifyOtpAndUpdatePassword)
 router.post('/create' , authController.createAccount)
 router.delete('/deleteacc/:id' , authController.deleteAccount)
+router.delete('/deleteacc2/:id' , authController.deleteAccount2)
 
 
 // only for trial
