@@ -267,9 +267,6 @@ Warm regards,
   }
 };
 
-
-
-
 exports.allStudents = async (req, res) => {
   try {
     const sql = `
@@ -880,7 +877,23 @@ exports.getTimeTable = async (req, res) => {
     const student = studentRows[0];
 
     const [timetableRows] = await db.query(
-      `SELECT * FROM timetable WHERE class = ? AND section= ? ORDER BY day, timefrom`,
+                `SELECT 
+                 tt.id,
+                 tt.day,
+                 UPPER(c.class_name) as class,
+                 UPPER( s.section_name) as section,
+                 cs.name AS subject,
+                 tt.timeto,
+                 tt.timefrom,
+                 t.img_src,
+                 CONCAT(u.firstname," " ,u.lastname) AS teacher
+                 FROM timetable tt
+                 JOIN teachers t ON tt.teacher = t.user_id
+                 JOIN users u ON tt.teacher =u.id
+                JOIN classes c ON c.id = tt.class
+                JOIN sections s ON s.id = tt.section
+                JOIN class_subject cs ON cs.id= tt.subject
+                WHERE tt.class = ? AND tt.section= ? ORDER BY day, timefrom`,
       [student.class_id, student.section_id]
     );
 

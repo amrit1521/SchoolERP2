@@ -43,29 +43,28 @@ exports.addTimeTable = async (req, res) => {
 
 exports.getTimeTable = async (req, res) => {
   try {
-    // aage future me esi ka use akrenge jab espe kam akrenge tb
-    //  const sql = `SELECT
-    //              tt.id,
-    //              tt.day,
-    //              tt.teacher,
-    //              tt.class,
-    //              tt.section,
-    //              tt.subject,
-    //              tt.timeto,
-    //              tt.timefrom,
-    //              t.img_src,
-    //              u.firstname,
-    //              u.lastname
-    //              FROM timetable tt
-    //              LEFT JOIN teachers t ON tt.teacher = t.user_id
-    //              LEFT JOIN users u ON tt.teacher =u.id
 
-    //      `
+    const sql = `SELECT
+                 tt.id,
+                 tt.day,
+                 UPPER(c.class_name) as class,
+                 UPPER( s.section_name) as section,
+                 cs.name AS subject,
+                 tt.timeto,
+                 tt.timefrom,
+                 t.img_src,
+                 t.teacher_id,
+                 CONCAT(u.firstname," " ,u.lastname) AS teacher
+                 FROM timetable tt
+                 JOIN teachers t ON tt.teacher = t.user_id
+                 JOIN users u ON tt.teacher =u.id
+                JOIN classes c ON c.id = tt.class
+                JOIN sections s ON s.id = tt.section
+                 JOIN class_subject cs ON cs.id = tt.subject
+         `
 
-    // 2️⃣ Get timetable for that class + section
-    // const [timetableRows] = await db.query(`SELECT * FROM timetable ORDER BY day, timefrom`);
     const [timetableRows] = await db.query(
-      `SELECT * FROM timetable ORDER BY day, timefrom`
+      sql
     );
 
     return res.status(200).json({
@@ -112,7 +111,23 @@ exports.getTimeTableSpecClass = async (req, res) => {
     const section = student.section_id;
 
     const [timetableRows] = await db.query(
-      `SELECT * FROM timetable WHERE class=? and section=? ORDER BY day, timefrom`,
+      `SELECT
+                 tt.id,
+                 tt.day,
+                 UPPER(c.class_name) as class,
+                 UPPER( s.section_name) as section,
+                 cs.name AS subject,
+                 tt.timeto,
+                 tt.timefrom,
+                 t.img_src,
+                 CONCAT(u.firstname," " ,u.lastname) AS teacher
+                 FROM timetable tt
+                 JOIN teachers t ON tt.teacher = t.user_id
+                 JOIN users u ON tt.teacher =u.id
+                JOIN classes c ON c.id = tt.class
+                JOIN sections s ON s.id = tt.section  
+                  JOIN class_subject cs ON cs.id = tt.subject
+                WHERE tt.class=? and tt.section=? ORDER BY day, timefrom`,
       [studentClass, section]
     );
 
@@ -142,10 +157,25 @@ exports.filterTimeTable = async (req, res) => {
 
   try {
     const sql = `
-      SELECT *
-      FROM timetable
-      WHERE \`class\` = ? AND section = ?
-      ORDER BY day, timefrom
+                 SELECT
+                 tt.id,
+                 tt.day,
+                 UPPER(c.class_name) as class,
+                 UPPER( s.section_name) as section,
+                 cs.name AS subject,
+                 tt.timeto,
+                 tt.timefrom,
+                 t.img_src,
+                 t.teacher_id,
+                 CONCAT(u.firstname," " ,u.lastname) AS teacher
+                 FROM timetable tt
+                 JOIN teachers t ON tt.teacher = t.user_id
+                 JOIN users u ON tt.teacher =u.id
+                JOIN classes c ON c.id = tt.class
+                JOIN sections s ON s.id = tt.section
+                 JOIN class_subject cs ON cs.id = tt.subject
+                WHERE tt.class = ? AND tt.section = ?
+                ORDER BY day, timefrom
     `;
 
     const [rows] = await db.query(sql, [data.class, data.section]);
@@ -177,7 +207,24 @@ exports.getTimeTableSpecTeacher = async (req, res) => {
     }
 
     const [timetableRows] = await db.query(
-      `SELECT * FROM timetable WHERE teacher=? ORDER BY day, timefrom`,
+      `SELECT
+      
+                 tt.id,
+                 tt.day,
+                 UPPER(c.class_name) as class,
+                 UPPER( s.section_name) as section,
+                 cs.name AS subject,
+                 tt.timeto,
+                 tt.timefrom,
+                 t.img_src,
+                 CONCAT(u.firstname," " ,u.lastname) AS teacher
+                 FROM timetable tt
+                 JOIN teachers t ON tt.teacher = t.user_id
+                 JOIN users u ON tt.teacher =u.id
+                JOIN classes c ON c.id = tt.class
+                JOIN sections s ON s.id = tt.section
+                  JOIN class_subject cs ON cs.id = tt.subject
+                 WHERE tt.teacher=? ORDER BY day, timefrom`,
       [userId]
     );
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import ImageWithBasePath from "../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../core/common/imageWithBasePath";
 import {
   // classduration,
 
@@ -21,6 +21,7 @@ import {
   filterTimeTable,
   getAllRolePermissions,
   getAllSectionForAClass,
+  Imageurl,
 } from "../service/api";
 // allTeacherForOption
 import { toast } from "react-toastify";
@@ -174,6 +175,7 @@ const StudentClassTimetable = () => {
     day: string;
     timefrom: string;
     timeto: string;
+    img_src:string;
   }
 
   const [timeTable, setTimeTable] = useState<TimeTableData[]>([]);
@@ -536,12 +538,12 @@ const StudentClassTimetable = () => {
                           </p>
                           <div className="bg-white rounded p-1 mt-1">
                             <Link
-                              to={routes.teacherDetails}
+                              to='#'
                               className="text-muted d-flex align-items-center"
                             >
                               <span className="avatar avatar-sm me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/teachers/teacher-07.jpg"
+                                <img
+                                  src={`${Imageurl}/${item.img_src}`}
                                   alt="Img"
                                 />
                               </span>
