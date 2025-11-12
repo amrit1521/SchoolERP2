@@ -136,7 +136,7 @@ const PStudentResult: React.FC = () => {
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = ((canvas.height - 70) * imgWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save(`Result_${modalStudentItem.rollnum}_T${selectedTemplateId}.pdf`);
       toast.success("PDF downloaded successfully!");
@@ -300,9 +300,10 @@ const PStudentResult: React.FC = () => {
                 <div
                   className="d-flex flex-wrap justify-content-center gap-4"
                   style={{
-                    maxHeight: "70vh",
+                    maxHeight: "80vh",
                     overflowY: "auto",
                     padding: "10px",
+                    paddingBottom: "30px",
                   }}
                 >
                   {templateConfigs.map((template) => {

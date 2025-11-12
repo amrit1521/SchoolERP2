@@ -813,3 +813,10 @@ exports.getExamResultOfAllChild = async (req, res) => {
       .json({ success: false, message: "Internal server error!" });
   }
 };
+
+
+// import {
+//   getExamNameForStudent,
+//   getExamResultForStudent,
+//   getSpecStudentProfileDetails,
+// } from "../service/studentapi";
