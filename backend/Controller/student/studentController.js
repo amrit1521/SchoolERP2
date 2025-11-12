@@ -61,8 +61,8 @@ exports.addStudent = async (req, res) => {
     const hashPassword = await bcrypt.hash(genPassword, 10);
 
     const [userRes] = await connection.query(
-      `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (firstname, lastname, mobile, email, password, roll_id, status , created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ? , NOW())`,
       [
         data.firstname,
         data.lastname,

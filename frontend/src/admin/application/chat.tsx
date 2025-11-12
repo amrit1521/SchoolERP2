@@ -6,14 +6,14 @@ import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
-import Slider from "react-slick";
+// import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, OnlineChatUsers, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
@@ -22,7 +22,7 @@ import { CiMicrophoneOn } from "react-icons/ci";
 import { CiPause1 } from "react-icons/ci";
 import { GrResume } from "react-icons/gr";
 import { FaStopCircle } from "react-icons/fa";
-import { Audiourl } from "../../service/api";
+import { Audiourl, Imageurl } from "../../service/api";
 // import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // interface Message {
@@ -78,46 +78,47 @@ const Chat = () => {
   const handleRemoveVisible = () => {
     setIsVisible(false);
   };
-  const profile = {
-    loop: true,
-    margin: 15,
-    items: 5,
-    nav: false,
-    dots: false,
-    autoplay: false,
-    slidesToShow: 5,
-    speed: 500,
-    responsive: [
-      {
-        breakpoint: 992,
-        settings: {
-          slidesToShow: 5,
-        },
-      },
-      {
-        breakpoint: 800,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 776,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 567,
-        settings: {
-          slidesToShow: 3,
-        },
-      },
-    ],
-  };
+  // const profile = {
+  //   loop: true,
+  //   margin: 15,
+  //   items: 5,
+  //   nav: false,
+  //   dots: false,
+  //   autoplay: false,
+  //   slidesToShow: 5,
+  //   speed: 500,
+  //   responsive: [
+  //     {
+  //       breakpoint: 992,
+  //       settings: {
+  //         slidesToShow: 5,
+  //       },
+  //     },
+  //     {
+  //       breakpoint: 800,
+  //       settings: {
+  //         slidesToShow: 4,
+  //       },
+  //     },
+  //     {
+  //       breakpoint: 776,
+  //       settings: {
+  //         slidesToShow: 4,
+  //       },
+  //     },
+  //     {
+  //       breakpoint: 567,
+  //       settings: {
+  //         slidesToShow: 3,
+  //       },
+  //     },
+  //   ],
+  // };
 
   const BASE_URL: string = import.meta.env.VITE_SERVERURL || "http://localhost:3004";
   // my code
   const [users, setUsers] = useState<any>([])
+  const [onlineUsers, setOnlineUsers] = useState<any>([])
   const [isNewChat, setIsNewChat] = useState<boolean>(false)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [allConversationUser, setAllConverSationUser] = useState<any>([])
@@ -146,31 +147,26 @@ const Chat = () => {
     });
 
     setSocket(newSocket);
-
-    // ✅ when user is known — emit to backend
     if (currentUserId) {
       newSocket.emit("user_connected", currentUserId);
     }
-
-    // ✅ listen for new messages globally (from backend)
     newSocket.on("new_message", (msg: any) => {
-      // show message only if user is in same conversation
       if (msg.conversation_id === conversationId) {
         setSpeRoomConv((prev: any) => [...prev, msg]);
       }
     });
-
     newSocket.on("message_deleted", ({ messageId }) => {
       setSpeRoomConv((prev: any) =>
         prev.filter((msg: any) => msg.id !== messageId)
       );
     });
-
     // cleanup
     return () => {
       newSocket.disconnect();
     };
   }, [currentUserId, conversationId]);
+
+  
 
   // ✅ when conversation changes, join the room
   useEffect(() => {
@@ -193,6 +189,18 @@ const Chat = () => {
     }
   };
 
+  const fetchOnlineUsers = async () => {
+
+    try {
+      const { data } = await OnlineChatUsers()
+      if (data.success) {
+        setOnlineUsers(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
   const fetchAllConverationWithUser = async (id: number) => {
     setLoading1(true);
     try {
@@ -206,7 +214,6 @@ const Chat = () => {
       setLoading1(false);
     }
   };
-
   const fetchSpeRoomConv = async (roomId: number, userId: number) => {
     setLoading2(true);
     try {
@@ -222,7 +229,6 @@ const Chat = () => {
       setLoading2(false);
     }
   };
-
   const privateRoom = async (id: number) => {
     if (!currentUserId || !id) {
       toast.success('Sender and Reciever id is required ');
@@ -245,16 +251,19 @@ const Chat = () => {
       toast.error(error.response.data.message);
     }
   };
-
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
       setCurrentUserId(token.id);
       fetchAllConverationWithUser(token.id);
+
     }
   }, []);
 
+  useEffect(() => {
+    fetchOnlineUsers()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -293,10 +302,7 @@ const Chat = () => {
       setLoading3(false);
     }
   };
-
-
   // for audio recording
-
   useEffect(() => {
     if (isRecording && !isPaused) {
       timerRef.current = setInterval(() => {
@@ -310,8 +316,6 @@ const Chat = () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isRecording, isPaused]);
-
-
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
       .toString()
@@ -319,8 +323,6 @@ const Chat = () => {
     const s = (seconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
-
-
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -370,24 +372,18 @@ const Chat = () => {
       toast.error(err.response.data.message)
     }
   };
-
-
   const pauseRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
     }
   };
-
-
   const resumeRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
     }
   };
-
-
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -397,7 +393,6 @@ const Chat = () => {
   }
 
   // delete message
-
   const deleteUserMessage = async (id: number) => {
     if (!id) {
       toast.error('Id Not Provided or This message already deleted !')
@@ -414,10 +409,7 @@ const Chat = () => {
       toast.error(error.response.data.message)
     }
   }
-
-
   // formate time
-
   function formatTimeAgo(dateString: any) {
     const date = new Date(dateString);
     const now = new Date();
@@ -439,8 +431,6 @@ const Chat = () => {
       year: "numeric",
     });
   }
-
-
   const formatMessageTimeInConversation = (dateString: any) => {
 
     const date = new Date(dateString);
@@ -542,19 +532,35 @@ const Chat = () => {
                     <div className="top-online-contacts p-4 pb-0">
                       <div className="fav-title">
                         <h5>Online Now</h5>
-                        <Link to="#">View All</Link>
+                        {/* <Link to="#">View All</Link> */}
                       </div>
-                      <Slider {...profile}>
-                        <div className="top-contacts-box me-1">
-                          <div className="avatar avatar-lg avatar-online">
-                            <ImageWithBasePath
-                              src="assets/img/profiles/avatar-02.jpg"
-                              className="rounded-circle"
-                              alt=""
-                            />
-                          </div>
+
+
+                      {/* <Slider {...profile}> */}
+
+                        <div className="d-flex gap-1">
+                        {
+                          onlineUsers && onlineUsers.length > 0 ? (
+                            onlineUsers.map((u: any, index: number) => (
+                              <div style={{cursor:'pointer'}} key={index} onClick={() => privateRoom(u.user_id)} className="top-contacts-box me-1">
+                                <div className="avatar avatar-lg avatar-online border border-1">
+                                  <img
+                                    src={u.user_img ? `${Imageurl}/${u.user_img}` : "/assets/img/profiles/avatar-01.jpg"}
+                                    className="rounded-circle"
+                                    alt={u.name || "User"}
+                                  />
+                                
+                                </div>
+                                  {/* <span>{u.name}</span> */}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-muted text-center w-100">No User Online</div>
+                          )
+                        }
                         </div>
-                        <div className="top-contacts-box  me-1">
+
+                        {/* <div className="top-contacts-box  me-1">
                           <div className="avatar avatar-lg avatar-online">
                             <ImageWithBasePath
                               src="assets/img/profiles/avatar-01.jpg"
@@ -598,8 +604,12 @@ const Chat = () => {
                               alt=""
                             />
                           </div>
-                        </div>
-                      </Slider>
+                        </div> */}
+
+
+                      {/* </Slider> */}
+
+
                     </div>
                     {/* /Top Online Contacts */}
                     <div className="sidebar-body chat-body" id="chatsidebar">
@@ -617,8 +627,8 @@ const Chat = () => {
                                   >
                                     <div className="d-flex align-items-center">
                                       <div className="avatar  avatar-lg  me-2 flex-shrink-0">
-                                        <ImageWithBasePath
-                                          src="assets/img/profiles/avatar-02.jpg"
+                                        <img
+                                          src={`${Imageurl}/${u.user_img}`}
                                           className="rounded-circle"
                                           alt="image"
                                         />
@@ -663,12 +673,18 @@ const Chat = () => {
                                         className="p-2 border rounded d-block mb-2"
                                       >
                                         <div className="d-flex align-items-center">
-                                          <div className="avatar  avatar-lg avatar-online me-2 flex-shrink-0">
-                                            <ImageWithBasePath
-                                              src="assets/img/profiles/avatar-04.jpg"
-                                              className="rounded-circle"
-                                              alt="image"
-                                            />
+                                          <div className={`avatar  avatar-lg ${u.is_online?'avatar-online':''} me-2 flex-shrink-0`}>
+                                            {
+                                              u.user_img ? (<img
+                                                src={`${Imageurl}/${u.user_img}`}
+                                                className="rounded-circle"
+                                                alt="image"
+                                              />) : (<ImageWithBasePath
+                                                src="assets/img/profiles/avatar-04.jpg"
+                                                className="rounded-circle"
+                                                alt="image"
+                                              />)
+                                            }
                                           </div>
                                           <div className="flex-grow-1 overflow-hidden me-2">
                                             <h6 className="mb-1 text-truncate">
@@ -728,11 +744,18 @@ const Chat = () => {
                           </ul>
                         </div>
                         <div className="avatar avatar-lg me-2">
-                          <ImageWithBasePath
-                            src="assets/img/profiles/avatar-02.jpg"
-                            className="rounded-circle"
-                            alt="image"
-                          />
+                          {
+                            otherUser.user_img ? (<img
+                              src={`${Imageurl}/${otherUser.user_img}`}
+                              className="rounded-circle dreams_chat"
+                              alt="image"
+                            />) : (
+                              <ImageWithBasePath
+                                src="assets/img/profiles/avatar-02.jpg"
+                                className="rounded-circle dreams_chat"
+                                alt="image"
+                              />)
+                          }
                         </div>
                         <div>
                           <h6>{otherUser ? otherUser.name : "Select User"}</h6>
@@ -1074,19 +1097,36 @@ const Chat = () => {
                                   </div>
                                 </div>
                                 <div className="chat-avatar">
-                                  <ImageWithBasePath
-                                    src="assets/img/profiles/avatar-10.jpg"
-                                    className="rounded-circle dreams_chat"
-                                    alt="image"
-                                  />
+                                  {
+                                    m.user_img ? (<img
+                                      src={`${Imageurl}/${m.user_img}`}
+                                      className="rounded-circle dreams_chat"
+                                      alt="image"
+                                    />) : (
+                                      <ImageWithBasePath
+                                        src="assets/img/profiles/avatar-02.jpg"
+                                        className="rounded-circle dreams_chat"
+                                        alt="image"
+                                      />)
+                                  }
                                 </div>
                               </div></> : <><div className="chats">
                                 <div className="chat-avatar">
-                                  <ImageWithBasePath
-                                    src="assets/img/profiles/avatar-02.jpg"
-                                    className="rounded-circle dreams_chat"
-                                    alt="image"
-                                  />
+
+                                  {
+                                    m.user_img ? (<img
+                                      src={`${Imageurl}/${m.user_img}`}
+                                      className="rounded-circle dreams_chat"
+                                      alt="image"
+                                    />) : (
+                                      <ImageWithBasePath
+                                        src="assets/img/profiles/avatar-02.jpg"
+                                        className="rounded-circle dreams_chat"
+                                        alt="image"
+                                      />)
+                                  }
+
+
                                 </div>
                                 <div className="chat-content">
                                   <div className="chat-profile-name">
@@ -1169,7 +1209,7 @@ const Chat = () => {
                                   </div>
                                   <div className="message-content">
 
-                                   {m.message_type == 'text' && (<span>  {m.message_text}</span>)}
+                                    {m.message_type == 'text' && (<span>  {m.message_text}</span>)}
                                     {m.message_type === 'audio' && (
                                       <audio controls preload="auto" src={`${Audiourl}/${m.file_url}`}>
                                         Your browser does not support the audio element.

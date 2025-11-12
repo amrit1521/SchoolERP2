@@ -221,8 +221,8 @@ exports.createAccount = async (req, res) => {
     const [userResult] = await conn.query(
       `
       INSERT INTO users 
-      (firstname, lastname, mobile, email, password, roll_id, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (firstname, lastname, mobile, email, password, roll_id, status ,created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ? , NOW())
       `,
       [firstname.trim(), lastname.trim(), mobile.trim(), email.trim(), hashPassword, role, "1"]
     );

@@ -705,7 +705,7 @@ const StudentResult: React.FC = () => {
                   <li>
                     <Link
                       to={`${routes.studentFees}/${rollnum}`}
-                      className="nav-link active"
+                      className="nav-link "
                     >
                       <i className="ti ti-report-money me-2" />
                       Fees
