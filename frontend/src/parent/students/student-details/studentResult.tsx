@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-// import { getExamResult, specificStudentData1 } from "../service/api";
+import { getExamResult, specificStudentData1 } from "../../../service/api";
 import { PdfTemplate1, PdfTemplate2, PdfTemplate3 } from "./pdfTemplate";
-import {
-  getExamResultForStudent,
-  // getSpecStudentProfileDetails,
-} from "../service/studentapi";
+import StudentSidebar from "./studentSidebar";
+import StudentBreadcrumb from "./studentBreadcrumb";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
 async function waitForImagesToLoad(el: HTMLElement, timeoutMs = 5000) {
   const imgs = Array.from(el.querySelectorAll("img"));
@@ -28,14 +27,12 @@ async function waitForImagesToLoad(el: HTMLElement, timeoutMs = 5000) {
   ]);
 }
 
-const StudentExamResult: React.FC = () => {
-  // const { rollnum } = useParams<{ rollnum: string }>();
-  // const [student, setStudent] = useState<any>({});
+const PStudentResult: React.FC = () => {
+  const { rollnum } = useParams<{ rollnum: string }>();
+  const [student, setStudent] = useState<any>({});
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
-  const userId = token ? JSON.parse(token)?.id : null;
-  // const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalStudentItem, setModalStudentItem] = useState<any>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
@@ -49,39 +46,37 @@ const StudentExamResult: React.FC = () => {
     { id: 3, label: "t-3", component: PdfTemplate3, badge: "info" },
   ];
 
-  // const fetchStudent = async (userId: number) => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await getSpecStudentProfileDetails(userId);
-  //     setStudent(res.data.student);
-  //   } catch {
-  //     toast.error("Failed to fetch student data");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  const fetchResult = async (userId: number) => {
-    if (!userId) return;
+  const fetchStudent = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data } = await getExamResultForStudent(userId);
-      if (data && data.success) setResults(data.data || []);
-      else setResults([]);
+      const res = await specificStudentData1(Number(rollnum));
+      setStudent(res.data.student);
     } catch {
-      setResults([]);
-      toast.error("Failed to fetch exam results");
+      toast.error("Failed to fetch student data");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (userId) {
-      // fetchStudent(userId);
-      fetchResult(userId);
+  const fetchResult = async (rn: number) => {
+    if (!rn) return;
+    try {
+      const { data } = await getExamResult(rn);
+      if (data && data.success) setResults(data.data || []);
+      else setResults([]);
+    } catch {
+      setResults([]);
+      toast.error("Failed to fetch exam results");
     }
-  }, [userId]);
+  };
+
+  useEffect(() => {
+    setToken(localStorage.getItem("token"));
+    if (rollnum) {
+      fetchStudent();
+      fetchResult(Number(rollnum));
+    }
+  }, [rollnum]);
 
   const handleDownloadTemplate = async () => {
     if (!modalStudentItem || !selectedTemplateId) {
@@ -141,7 +136,7 @@ const StudentExamResult: React.FC = () => {
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
-      const imgHeight = ((canvas.height - 180) * imgWidth) / canvas.width;
+      const imgHeight = ((canvas.height - 70) * imgWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       pdf.save(`Result_${modalStudentItem.rollnum}_T${selectedTemplateId}.pdf`);
       toast.success("PDF downloaded successfully!");
@@ -161,14 +156,70 @@ const StudentExamResult: React.FC = () => {
       <div className="page-wrapper">
         <div className="content">
           <div className="row">
-            {/* {token && (
+            {token && (
               <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />
-            )} */}
+            )}
           </div>
           <div className="row">
-            {/* <StudentSidebar student={student} loading={loading} /> */}
-            <div className="col-xxl-12 col-xl-12">
+            <StudentSidebar student={student} loading={loading} />
+            <div className="col-xxl-9 col-xl-8">
               <div className="row">
+                <ul className="nav nav-tabs nav-tabs-bottom mb-4">
+                  <li>
+                    <Link
+                      to={`${parent_routes.childDetails}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-school me-2" />
+                      Student Details
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${parent_routes.childTimeTable}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-table-options me-2" />
+                      Time Table
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${parent_routes.childLeaves}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-calendar-due me-2" />
+                      Leave & Attendance
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${parent_routes.childFees}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-report-money me-2" />
+                      Fees
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${parent_routes.childResult}/${rollnum}`}
+                      className="nav-link active"
+                    >
+                      <i className="ti ti-bookmark-edit me-2" />
+                      Exam & Results
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`${parent_routes.childLibrary}/${rollnum}`}
+                      className="nav-link"
+                    >
+                      <i className="ti ti-books me-2" />
+                      Library
+                    </Link>
+                  </li>
+                </ul>
                 <div className="card">
                   <div className="card-header">
                     <h4>Exams & Results</h4>
@@ -357,4 +408,4 @@ const StudentExamResult: React.FC = () => {
   );
 };
 
-export default StudentExamResult;
+export default PStudentResult;

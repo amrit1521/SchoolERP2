@@ -289,6 +289,24 @@ import TStudentAttendance from "../teacher/attendance/student-attendance.tsx";
 import THoliday from "../teacher/holidays/index.tsx";
 import TStudentLeaves from "../teacher/peoples/students/student-details/studentLeaves.tsx";
 import TStudentLibrary from "../teacher/peoples/students/student-details/studentLibrary.tsx";
+import PParentDashboard from "../parent/parentDashboard/index.tsx";
+import { parent_routes } from "../admin/router/parent_routes.tsx";
+import ChildGrid from "../parent/students/student-grid/index.tsx";
+import ChildList from "../parent/students/student-list/index.tsx";
+import PStudentDetails from "../parent/students/student-details/studentDetails.tsx";
+import PStudentTimeTable from "../parent/students/student-details/studentTimeTable.tsx";
+import PStudentLeaves from "../parent/students/student-details/studentLeaves.tsx";
+import PStudentResult from "../parent/students/student-details/studentResult.tsx";
+import PStudentLibrary from "../parent/students/student-details/studentLibrary.tsx";
+import PStudentFees from "../parent/students/student-details/studentFees.tsx";
+import PHoliday from "../parent/holidays/index.tsx";
+import PFeesPayments from "../parent/feePayments.tsx";
+import PFeesReminder from "../parent/feeReminder.tsx";
+import PAttendance from "../parent/Attendance.tsx";
+import PHomeWork from "../parent/homeWork.tsx";
+import PLeaves from "../parent/Leave.tsx";
+import PStudentClassSubject from "../parent/studentClassSubject.tsx";
+import PStudentClassTimetable from "../parent/studentTimeTable.tsx";
 
 const routes = all_routes;
 
@@ -529,6 +547,92 @@ export const publicRoutes = [
   {
     path: teacher_routes.holidays,
     element: <THoliday />,
+    route: Route,
+  },
+  //parent dashboard routes:
+  {
+    path: parent_routes.parentDashboard,
+    element: <PParentDashboard />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childGrid,
+    element: <ChildGrid />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childList,
+    element: <ChildList />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childDetails}/:rollnum`,
+    element: <PStudentDetails />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childTimeTable}/:rollnum`,
+    element: <PStudentTimeTable />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childLeaves}/:rollnum`,
+    element: <PStudentLeaves />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childFees}/:rollnum`,
+    element: <PStudentFees />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childResult}/:rollnum`,
+    element: <PStudentResult />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.childLibrary}/:rollnum`,
+    element: <PStudentLibrary />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childAttendance,
+    element: <PAttendance />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childFeePayments,
+    element: <PFeesPayments />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childHomeWork,
+    element: <PHomeWork />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childFeeReminder,
+    element: <PFeesReminder />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childleaves,
+    element: <PLeaves />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childSubject,
+    element: <PStudentClassSubject />,
+    route: Route,
+  },
+  {
+    path: parent_routes.childsTimeTable,
+    element: <PStudentClassTimetable />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.holidays}`,
+    element: <PHoliday />,
     route: Route,
   },
   {

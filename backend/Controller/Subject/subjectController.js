@@ -1,11 +1,9 @@
-const db = require('../../config/db');
-
+const db = require("../../config/db");
 
 exports.addSubject = async (req, res) => {
   const { name, code, type, status } = req.body;
 
   try {
-
     const [existing] = await db.query(
       `SELECT id FROM class_subject WHERE name = ? AND code = ? AND type = ?`,
       [name, code, type]
@@ -17,7 +15,6 @@ exports.addSubject = async (req, res) => {
         success: false,
       });
     }
-
 
     const [subject_res] = await db.query(
       `INSERT INTO class_subject (name, code, type, status) VALUES (?,?,?,?)`,
@@ -38,7 +35,6 @@ exports.addSubject = async (req, res) => {
   }
 };
 
-
 exports.allSubject = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -58,7 +54,6 @@ exports.allSubject = async (req, res) => {
     });
   }
 };
-
 
 exports.getSubjectById = async (req, res) => {
   const { id } = req.params;
@@ -86,7 +81,7 @@ exports.getSubjectById = async (req, res) => {
     return res.status(200).json({
       message: "Subject fetched successfully!",
       success: true,
-      data: rows[0], 
+      data: rows[0],
     });
   } catch (error) {
     console.error("Error in getSubjectById:", error);
@@ -96,8 +91,6 @@ exports.getSubjectById = async (req, res) => {
     });
   }
 };
-
-
 
 exports.updateSubject = async (req, res) => {
   const { id } = req.params;
@@ -111,7 +104,6 @@ exports.updateSubject = async (req, res) => {
   }
 
   try {
-
     const [existing] = await db.query(
       `SELECT id FROM class_subject WHERE name = ? AND code = ? AND type = ? AND id != ?`,
       [name, code, type, id]
@@ -161,7 +153,9 @@ exports.deleteSubject = async (req, res) => {
   }
 
   try {
-    const [result] = await db.query(`DELETE FROM class_subject WHERE id=?`, [id]);
+    const [result] = await db.query(`DELETE FROM class_subject WHERE id=?`, [
+      id,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
@@ -176,6 +170,64 @@ exports.deleteSubject = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in deleteSubject:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+exports.allSubjectForClass = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+    console.log("parentdata: ", parentData);
+    const [userRows] = await db.query(
+      `SELECT
+        s.stu_id,
+        s.class_id,
+        CONCAT(u.firstname,' ',u.lastname) as name,
+        s.section_id,
+        s.rollnum
+        FROM students s
+      LEFT JOIN users u ON u.id = s.stu_id
+      WHERE s.parent_id = ?`,
+      [parentData[0]?.parent_id]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const sql = `SELECT 
+                cs.name,
+                cs.code,
+                cs.type,
+                cs.id,
+                cs.status
+              from class_syllabus csl
+              LEFT JOIN class_subject cs ON cs.id = csl.subject_id
+              WHERE csl.class_id=?`;
+    const result = [];
+    for (subject of userRows) {
+      const [rows] = await db.query(sql, [subject.class_id]);
+      result.push({
+        student_id: subject.stu_id,
+        student_name: subject.name,
+        subjects: rows,
+      });
+    }
+    return res.status(200).json({
+      message: "All subjects fetched successfully!",
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in allSubject:", error);
     return res.status(500).json({
       message: "Internal server error!",
       success: false,

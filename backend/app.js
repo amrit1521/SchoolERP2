@@ -27,8 +27,8 @@ app.use('/api/stu/uploads/image', express.static(path.join(__dirname, 'uploads/i
 app.use('/api/stu/uploads/document', express.static(path.join(__dirname, 'uploads/document')))
 
 
-
 // routes
+app.use('/api/parentdashboard',require('./routes/parentDashboard/parentDashboard.routes'));
 app.use('/api/studentdashboard',require('./routes/studentDashboard/studentDashboard.routes'));
 app.use('/api/teacherdashboard',require('./routes/teacherDashboard/teacherDasboard.routes'));
 app.use('/api/admindashboard',require('./routes/adminRoutes/admin.routes'));

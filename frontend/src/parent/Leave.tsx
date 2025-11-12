@@ -1,24 +1,21 @@
 import { Link } from "react-router-dom";
-import { all_routes } from "../router/all_routes";
+// import { all_routes } from "../router/all_routes";
 // import StudentModals from "../admin/peoples/students/studentModals";
 import Table from "../core/common/dataTable/index";
 import type { TableData } from "../core/data/interface";
 // import { leaveData } from "../../../../core/data/json/leaveData";
 // import { Attendance } from "../../../../core/data/json/attendance";
-import { useEffect, useState } from "react";
-// import { getLeaveData } from "../service/api";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import TooltipOption from "../core/common/tooltipOption";
-import {
-  getSpecStudentProfileDetails,
-  getStudentLeaveData,
-} from "../service/studentapi";
-import { toast } from "react-toastify";
-import StudentModals from "./studentModals";
+// import { getStudentLeaveData } from "../service/studentapi";
+import { parent_routes } from "../admin/router/parent_routes";
+import { getAllChildLeaveData } from "../service/parentDashboardApi";
+import CommonSelect from "../core/common/commonSelect";
 
-const MyLeaves = () => {
-  const routes = all_routes;
+const PLeaves = () => {
+  // const routes = all_routes;
   // const data = leaveData;
   // const data2 = Attendance;
 
@@ -29,34 +26,54 @@ const MyLeaves = () => {
     used: number;
     avilable: number;
   }
-
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   // const { rollnum } = useParams<{ rollnum: string }>();
-  const [student, setStudent] = useState<any>({});
+  // const [student, setStudent] = useState<any>({});
   const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([]);
   const [leaveDataa, setLeaveDataa] = useState<any>([]);
+  const [allChildLeaveData, setAllChildLeaveData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token)?.id : null;
+  const [studentOption, setStudentOptions] = useState<any[]>([]);
+  const [filter, setFilter] = useState<{
+    studentId: number | null;
+    studentName: string | null;
+  }>({
+    studentId: null,
+    studentName: null,
+  });
+  // const fetchStudent = async (rollnum: number) => {
+  //   try {
+  //     const res = await specificStudentData1(rollnum);
 
-  const fetchStudent = async (userId: number) => {
-    setLoading(true);
-    try {
-      const res = await getSpecStudentProfileDetails(userId);
-      setStudent(res.data.student);
-    } catch {
-      toast.error("Failed to fetch student data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (res?.data?.success) {
+  //       setStudent(res.data.student);
+  //       return res.data.student;
+  //     } else {
+  //       console.warn("Failed to fetch student data");
+  //       return null;
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching student data:", error);
+  //     return null;
+  //   }
+  // };
 
   const fetchLeave = async (userId: number) => {
     try {
-      const res = await getStudentLeaveData(userId);
+      const { data } = await getAllChildLeaveData(userId);
 
-      if (res?.data?.success) {
-        setLeaveInform(res.data.leave_inform);
-        setLeaveDataa(res.data.stuAllLeave);
+      if (data?.success) {
+        setAllChildLeaveData(data.data);
+        setLeaveInform(data.data[0]?.leave_inform);
+        setLeaveDataa(data.data[0]?.stuAllLeave);
+        setStudentOptions(
+          data.data.map((item: any) => ({
+            value: item?.student_id,
+            label: item?.student_name,
+          }))
+        );
       } else {
         console.warn("Failed to fetch leave data");
         setLeaveDataa([]);
@@ -86,14 +103,31 @@ const MyLeaves = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchStudent(userId);
       fetchStudentAndLeave(userId);
     }
   }, [userId]);
 
-  const handleAdd = () => {
-    fetchStudentAndLeave(userId);
+  const handleApplyClick = () => {
+    if (filter?.studentId) {
+      setLeaveInform(
+        allChildLeaveData.filter(
+          (leave: any) => leave.student_id == filter?.studentId
+        )[0]?.leave_inform
+      );
+      setLeaveDataa(
+        allChildLeaveData.filter(
+          (leave: any) => leave.student_id == filter?.studentId
+        )[0]?.stuAllLeave
+      );
+    }
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
   };
+
+  // const handleAdd = () => {
+  //   fetchStudentAndLeave(userId);
+  // };
 
   const tableData = leaveDataa.map((item: any) => ({
     key: item.id,
@@ -164,7 +198,9 @@ const MyLeaves = () => {
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={routes.studentDashboard}>Student Dashboard</Link>
+                    <Link to={parent_routes.parentDashboard}>
+                      Parent Dashboard
+                    </Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Leaves
@@ -175,7 +211,7 @@ const MyLeaves = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
+                {/* <Link
                   to="#"
                   className="btn btn-primary"
                   data-bs-toggle="modal"
@@ -183,7 +219,7 @@ const MyLeaves = () => {
                 >
                   <i className="ti ti-calendar-event me-2" />
                   Apply Leave
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>
@@ -192,7 +228,6 @@ const MyLeaves = () => {
             <div className="col-xxl-12 col-xl-12">
               <div className="row">
                 <div className="col-md-12">
-                  {/* Leave Nav*/}
                   {/* /Leave Nav*/}
                   <div className="tab-content">
                     {/* Leave */}
@@ -257,6 +292,67 @@ const MyLeaves = () => {
                       </div>
                       <div className="card">
                         {/* Leaves List */}
+                        <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
+                          <h4 className="mb-3">Leaves</h4>
+                          <div className="d-flex align-items-center flex-wrap">
+                            {/* Filter Dropdown */}
+                            <div className="dropdown mb-3 me-2">
+                              <Link
+                                to="#"
+                                className="btn btn-outline-light bg-white dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                data-bs-auto-close="outside"
+                              >
+                                <i className="ti ti-filter me-2" />
+                                Filter
+                              </Link>
+                              <div
+                                className="dropdown-menu drop-width"
+                                ref={dropdownMenuRef}
+                              >
+                                <form>
+                                  <div className="d-flex align-items-center border-bottom p-3">
+                                    <h4>Filter</h4>
+                                  </div>
+                                  <div className="p-3 border-bottom pb-0">
+                                    <div className="row">
+                                      <div className="col-md-12">
+                                        <div className="mb-3">
+                                          <label className="form-label">
+                                            Child Name
+                                          </label>
+                                          <CommonSelect
+                                            className="select"
+                                            options={studentOption}
+                                            value={filter?.studentId}
+                                            onChange={(opt: any) =>
+                                              setFilter(() => ({
+                                                studentId: opt.value,
+                                                studentName: opt.label,
+                                              }))
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="p-3 d-flex align-items-center justify-content-end">
+                                    <Link to="#" className="btn btn-light me-3">
+                                      Reset
+                                    </Link>
+                                    <Link
+                                      to="#"
+                                      className="btn btn-primary"
+                                      onClick={handleApplyClick}
+                                    >
+                                      Apply
+                                    </Link>
+                                  </div>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         <div className="card-body p-0 py-3">
                           {loading ? (
                             <div
@@ -292,11 +388,11 @@ const MyLeaves = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {student.rollnum && (
+      {/* {student.rollnum && (
         <StudentModals onAdd={handleAdd} rollnum={Number(student.rollnum)} />
-      )}
+      )} */}
     </>
   );
 };
 
-export default MyLeaves;
+export default PLeaves;
