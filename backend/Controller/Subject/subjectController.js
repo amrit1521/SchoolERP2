@@ -180,6 +180,14 @@ exports.deleteSubject = async (req, res) => {
 exports.allSubjectForClass = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    const [parentData] = await db.execute(
+      `SELECT p.parent_id
+            FROM parents_info p   
+            WHERE p.parent_user_id = ?`,
+      [userId]
+    );
+    console.log("parentdata: ", parentData);
     const [userRows] = await db.query(
       `SELECT
         s.stu_id,
@@ -190,32 +198,28 @@ exports.allSubjectForClass = async (req, res) => {
         FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [userId]
+      [parentData[0]?.parent_id]
     );
     if (!userRows || userRows.length === 0) {
       return res.status(404).json({ message: "Student not found" });
     }
     const sql = `SELECT 
-       cs.name,
-       cs.code,
-       cs.type,
-       cs.id,
-       cs.status
-	  from class_syllabus csl
-    LEFT JOIN class_subject cs ON cs.id = csl.subject_id
-    WHERE csl.class_id=?`;
+                cs.name,
+                cs.code,
+                cs.type,
+                cs.id,
+                cs.status
+              from class_syllabus csl
+              LEFT JOIN class_subject cs ON cs.id = csl.subject_id
+              WHERE csl.class_id=?`;
     const result = [];
     for (subject of userRows) {
       const [rows] = await db.query(sql, [subject.class_id]);
-      result.push(
-        userRows
-          .filter((item) => item.class_id == subject.class_id)
-          .map((data) => ({
-            student_id: data.stu_id,
-            student_name: data.name,
-            subjects: rows,
-          }))[0]
-      );
+      result.push({
+        student_id: subject.stu_id,
+        student_name: subject.name,
+        subjects: rows,
+      });
     }
     return res.status(200).json({
       message: "All subjects fetched successfully!",
