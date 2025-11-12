@@ -687,12 +687,6 @@ exports.getExamResultOfAllChild = async (req, res) => {
     });
   }
   try {
-    const [parentData] = await db.execute(
-      `SELECT p.parent_id
-            FROM parents_info p   
-            WHERE p.parent_user_id = ?`,
-      [userId]
-    );
 
     const [userRows] = await db.query(
       `SELECT
@@ -704,7 +698,7 @@ exports.getExamResultOfAllChild = async (req, res) => {
       FROM students s
       LEFT JOIN users u ON u.id = s.stu_id
       WHERE s.parent_id = ?`,
-      [parentData[0]?.parent_id]
+      [userId]
     );
 
     if (!userRows || userRows.length === 0) {
