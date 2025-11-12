@@ -106,7 +106,6 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-
 //VERIFY OTP + UPDATE PASSWORD =====================
 exports.verifyOtpAndUpdatePassword = async (req, res) => {
   try {
@@ -149,7 +148,6 @@ exports.verifyOtpAndUpdatePassword = async (req, res) => {
   }
 };
 
-
 // otp send on mobile number 
 exports.sendOtpMobile = async (req, res) => {
   const { mobile } = req.body;
@@ -174,9 +172,6 @@ exports.sendOtpMobile = async (req, res) => {
     return res.status(500).json({ message: 'Error while sending otp via sms', success: false })
   }
 };
-
-
-
 
 exports.createAccount = async (req, res) => {
   const { firstname, lastname, mobile, role, email } = req.body;
@@ -315,6 +310,75 @@ exports.deleteAccount = async (req, res) => {
     if (connection) connection.release();
   }
 };
+
+exports.deleteAccount2 = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required.",
+    });
+  }
+
+  let connection;
+  try {
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    const [userRows] = await connection.query(
+      "SELECT id FROM users WHERE id = ?",
+      [id]
+    );
+
+    if (userRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: "Account not found!",
+      });
+    }
+
+    const [result] = await connection.query(
+      "DELETE FROM users WHERE id = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: "Failed to delete account!",
+      });
+    }
+
+    // ✅ Fixed: use same connection inside transaction
+    const [result2] = await connection.query(
+      `UPDATE parents_info SET parent_user_id = ? WHERE parent_user_id = ?`,
+      [null, id]
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully!",
+    });
+  } catch (error) {
+    if (connection) await connection.rollback();
+    console.error("Delete account error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting account!",
+      error: error.message,
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+
 
 
 

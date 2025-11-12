@@ -29,7 +29,7 @@ import TagInput from "../../../../core/common/Taginput";
 import {
   createUserAccount,
   deleteFile,
-  deleteUserAccount,
+  deleteUserAccount2,
   editStudent,
   getAllSectionForAClass,
   getAllTransportRoutes,
@@ -1095,7 +1095,7 @@ const EditStudent = () => {
 
     try {
 
-      const { data } = await deleteUserAccount(id);
+      const { data } = await deleteUserAccount2(id);
       if (data?.success) {
         toast.success(data.message || "User account deleted successfully!");
         setStudentData((prev) => {
