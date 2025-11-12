@@ -126,7 +126,6 @@ const PParentDashboard = () => {
     try {
       const { data } = await getParentDataByParentId(userId);
       if (data.success) {
-        console.log("parent details: ", data.data);
         setParentDetails({
           parentId: data.data?.parent_id,
           parentName: data.data?.name,
@@ -316,7 +315,7 @@ const PParentDashboard = () => {
               <h6 className="mb-0">Select Student</h6>
               <div className="student-active d-flex align-items-center ms-2">
                 {parentDetails
-                  ? parentDetails?.child?.map((item: any) => {
+                  ? parentDetails?.child?.map((item: any, index: number) => {
                       return (
                         <Link
                           to="#"
@@ -324,6 +323,7 @@ const PParentDashboard = () => {
                           className={`avatar avatar-lg p-1 me-2 ${
                             activeStudent === "student-1" && "active"
                           }`}
+                          key={index}
                         >
                           <img
                             src={`${Imageurl}/${item?.student_image}`}
@@ -602,8 +602,11 @@ const PParentDashboard = () => {
                   style={{ maxHeight: "450px", overflowY: "auto" }}
                 >
                   {leaveData
-                    ? leaveData?.map((leave: any) => (
-                        <div className="bg-light-300 d-sm-flex align-items-center justify-content-between p-3 mb-3">
+                    ? leaveData?.map((leave: any, index: number) => (
+                        <div
+                          className="bg-light-300 d-sm-flex align-items-center justify-content-between p-3 mb-3"
+                          key={index}
+                        >
                           <div className="d-flex align-items-center mb-2 mb-sm-0">
                             <div className="avatar avatar-lg bg-danger-transparent flex-shrink-0 me-2">
                               <i className="ti ti-brand-socket-io" />
@@ -740,9 +743,12 @@ const PParentDashboard = () => {
                   style={{ maxHeight: "450px", overflowY: "auto" }}
                 >
                   {feeReminder
-                    ? feeReminder?.map((fee: any) => {
+                    ? feeReminder?.map((fee: any, index: number) => {
                         return (
-                          <div className="d-flex align-items-center justify-content-between py-3">
+                          <div
+                            className="d-flex align-items-center justify-content-between py-3"
+                            key={index}
+                          >
                             <div className="d-flex align-items-center overflow-hidden me-2">
                               <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
                                 <i className="ti ti-bus-stop fs-16" />
@@ -795,8 +801,8 @@ const PParentDashboard = () => {
                       </thead>
                       <tbody>
                         {examResult
-                          ? examResult.map((exam: any) => (
-                              <tr>
+                          ? examResult.map((exam: any, index: number) => (
+                              <tr key={index}>
                                 <td>{exam?.rollNum}</td>
                                 <td>
                                   <div className="d-flex align-items-center">
@@ -852,8 +858,11 @@ const PParentDashboard = () => {
                 <div className="card-body">
                   <div className="notice-widget">
                     {allNotice
-                      ? allNotice?.map((notice: any) => (
-                          <div className="d-flex align-items-center justify-content-between mb-4">
+                      ? allNotice?.map((notice: any, index: number) => (
+                          <div
+                            className="d-flex align-items-center justify-content-between mb-4"
+                            key={index}
+                          >
                             <div className="d-flex align-items-center overflow-hidden me-2">
                               <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
                                 <i className="ti ti-books fs-16" />
