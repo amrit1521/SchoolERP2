@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+// import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import { Link } from "react-router-dom";
+import { all_routes } from "../../../../router/all_routes";
 import {
   allClass,
   names,
@@ -14,58 +16,35 @@ import type { TableData } from "../../../../core/data/interface";
 import Table from "../../../../core/common/dataTable/index";
 // import { guardianListData } from "../../../../core/data/json/guardianList";
 import TooltipOption from "../../../../core/common/tooltipOption";
-import {
-  allGuardians,
-  deleteFile,
-  deleteGuardian,
-  editGuardian,
-  getAllRolePermissions,
-  guardianForEdit,
-  Imageurl,
-  speGuardian,
-  uploadStudentFile,
-} from "../../../../service/api";
+import { allGuardians, deleteFile, deleteGuardian, editGuardian, guardianForEdit, Imageurl, speGuardian, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-// import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import type { Guardian } from "../guardian-grid";
 
-export interface GuaData {
+export interface GuardianChild {
+  class: string;
+  gender: string;
+  status: string;
+  stu_id: number;
+  rollnum: number;
+  section: string;
+  stu_img: string;
+  lastname: string;
+  firstname: string;
+  Student_Add: string;
+  admissionnum: string;
+  admissiondate: string;
+}
+
+export interface SpeGuardianData {
   id: number;
   user_id: number;
   name: string;
   email: string;
   phone_num: string;
   img_src: string;
-  Gua_Add: string;
-  stu_img: string;
-  rollnum: number;
-  section: string;
-  class: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-}
-
-export interface SpeGuardianData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
   Guardian_Add: string;
-  stu_img: string;
-  stu_id: number;
-  class: string;
-  section: string;
-  gender: string;
-  rollnum: string;
-  admissiondate: string;
-  admissionnum: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  status: string;
+  children: GuardianChild[];
 }
 
 export interface GuardianDataForEdit {
@@ -75,9 +54,9 @@ export interface GuardianDataForEdit {
   img_src: string;
 }
 
-const TGuardianList = () => {
+const GuardianList = () => {
   const [show, setShow] = useState(false);
-  // const routes = all_routes;
+  const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleApplyClick = () => {
@@ -89,64 +68,46 @@ const TGuardianList = () => {
     setShow(false);
   };
 
-  // const data = guardianListData;
-  const tokens = localStorage.getItem("token");
-  const roleId = tokens ? JSON.parse(tokens)?.role : null;
-  const [permission, setPermission] = useState<any>(null);
-  const [allGuaData, setAllGuaData] = useState<GuaData[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
 
-  const fetchPermission = async (roleId: number) => {
-    if (roleId) {
-      const { data } = await getAllRolePermissions(roleId);
-      if (data.success) {
-        const currentPermission = data.result
-          .filter((perm: any) => perm?.module_name === "Guardians")
-          .map((perm: any) => ({
-            can_create: perm?.can_create,
-            can_delete: perm?.can_delete,
-            can_edit: perm?.can_edit,
-            can_view: perm?.can_view,
-          }));
-        setPermission(currentPermission[0]);
-      }
-    }
-  };
+  // const data = guardianListData;
+  const [allGuaData, setAllGuaData] = useState<Guardian[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
   const fetchGuardians = async () => {
-    setLoading(true);
-    await new Promise((res) => setTimeout(res, 800));
+    setLoading(true)
+    await new Promise((res) => setTimeout(res, 800))
     try {
-      const { data } = await allGuardians();
+      const { data } = await allGuardians()
       if (data.success) {
-        setAllGuaData(data.data);
+        setAllGuaData(data.data)
+
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
+
     }
-  };
+  }
 
   useEffect(() => {
-    fetchPermission(roleId);
-    fetchGuardians();
-  }, []);
+    fetchGuardians()
+  }, [])
 
   function formatDate(isoString: string) {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   }
 
   // speguardiandta ======================================================================
 
-  const [speGuardianData, setSpeGuardianData] =
-    useState<SpeGuardianData | null>(null);
+  const [speGuardianData, setSpeGuardianData] = useState<SpeGuardianData | null>(null);
   const [loading2, setLoading2] = useState<boolean>(false);
 
   const fetchSpecficGuardianData = async (guardianId: number) => {
@@ -170,74 +131,62 @@ const TGuardianList = () => {
   function formatDateHuman(dateStr: string): string {
     const [day, month, year] = dateStr.split("-").map(Number);
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
 
     return `${day} ${monthNames[month - 1]} ${year}`;
   }
+
 
   const tableData = allGuaData.map((guardian) => ({
     key: guardian.id,
     id: guardian.id,
     userId: guardian.user_id,
     name: guardian.name,
-    child: `${guardian.firstname} ${guardian.lastname}`,
-    class: `${guardian.class}, ${guardian.section}`,
+    child: guardian.children,
     phone: guardian.phone_num,
     email: guardian.email,
-    rollnum: guardian.rollnum,
-    stu_img: guardian.stu_img,
     img: guardian.img_src,
-    action: guardian.id,
+    action: guardian.id
   }));
 
   // delete -----------------------------------------
-  const [guaId, setGuaId] = useState<number | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [guaId, setGuaId] = useState<number | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
 
   const setDeleteIds = (id: number, userId: number) => {
-    setGuaId(id);
-    setUserId(userId);
-  };
+    setGuaId(id)
+    setUserId(userId)
+  }
 
-  const handleDelete = async (
-    id: number,
-    userId: number,
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
+
+  const handleDelete = async (id: number, userId: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     // console.log(parentId, userId)
     try {
-      const { data } = await deleteGuardian(id, userId);
+
+      const { data } = await deleteGuardian(id, userId)
       if (data.success) {
-        toast.success(data.message);
-        setGuaId(null);
-        setUserId(null);
-        fetchGuardians();
-        handleModalPopUp("delete-modal");
+        toast.success(data.message)
+        setGuaId(null)
+        setUserId(null)
+        fetchGuardians()
+        handleModalPopUp('delete-modal')
       }
+
     } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      console.log(error)
+      toast.error(error.response.data.message)
     }
-  };
+  }
+
 
   const handleCancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setGuaId(null);
-    setUserId(null);
-  };
+    e.preventDefault()
+    setGuaId(null)
+    setUserId(null)
+  }
 
   // edit guardian-------------------------------------
   const [formData, setFormData] = useState<GuardianDataForEdit>({
@@ -246,36 +195,40 @@ const TGuardianList = () => {
     email: "",
     img_src: "",
   });
-  const [guaImg, setGuaImg] = useState<File | null>(null);
-  const [guaImgId, setGuaImgId] = useState<number | null>(null);
-  const [orginalImgPath, setOriginalImgPath] = useState<string>("");
-  const [editId, setEditId] = useState<number | null>(null);
+  const [guaImg, setGuaImg] = useState<File | null>(null)
+  const [guaImgId, setGuaImgId] = useState<number | null>(null)
+  const [orginalImgPath, setOriginalImgPath] = useState<string>("")
+  const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<{
     name?: string;
     phone_num?: string;
     email?: string;
   }>({});
 
+
   const fetchGuardianDataForEdit = async (id: number) => {
     try {
-      const { data } = await guardianForEdit(id);
+      const { data } = await guardianForEdit(id)
       if (data.success) {
         setFormData({
           name: data.data.name,
           phone_num: data.data.phone_num,
           email: data.data.email,
           img_src: data.data.img_src,
-        });
-        setEditId(id);
-        setOriginalImgPath(data.data.img_src);
+        })
+        setEditId(id)
+        setOriginalImgPath(data.data.img_src)
       }
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.response.data.message);
-    }
-  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -283,9 +236,12 @@ const TGuardianList = () => {
     }));
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
 
       if (!["image/jpeg", "image/png"].includes(file.type)) {
         toast.error("Only JPG, PNG files are allowed.");
@@ -297,11 +253,14 @@ const TGuardianList = () => {
       imgformData.append("stufile", file);
 
       try {
-        const res = await uploadStudentFile(imgformData);
+
+        const res = await uploadStudentFile(imgformData)
         const uploadedPath = res.data.file;
         const id = res.data.insertId;
-        setFormData((prev) => ({ ...prev, img_src: uploadedPath }));
-        setGuaImgId(id);
+        setFormData((prev) => ({ ...prev, img_src: uploadedPath }))
+        setGuaImgId(id)
+
+
       } catch (error) {
         console.error("Upload failed:", error);
       }
@@ -311,12 +270,12 @@ const TGuardianList = () => {
     if (!id) return;
 
     try {
-      const deletefile = await deleteFile(id);
+      const deletefile = await deleteFile(id)
 
       if (deletefile.data.success) {
         setGuaImgId(null);
         setGuaImg(null);
-        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }));
+        setFormData((prev) => ({ ...prev, img_src: orginalImgPath }))
       }
     } catch (error) {
       console.error("Error deleting file:", error);
@@ -325,17 +284,20 @@ const TGuardianList = () => {
   const validateForm = () => {
     const newErrors: typeof errors = {};
 
+
     if (!formData.name.trim()) {
       newErrors.name = "Name is required";
     } else if (formData.name.length < 3) {
       newErrors.name = "Name must be at least 3 characters";
     }
 
+
     if (!formData.phone_num.trim()) {
       newErrors.phone_num = "Phone number is required";
     } else if (!/^\d{10}$/.test(formData.phone_num)) {
       newErrors.phone_num = "Phone number must be 10 digits";
     }
+
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -358,7 +320,7 @@ const TGuardianList = () => {
         const { data } = await editGuardian(formData, editId);
         if (data.success) {
           toast.success(data.message);
-          fetchGuardians();
+          fetchGuardians()
           handleModalPopUp("edit_guardian");
           setFormData({ name: "", phone_num: "", email: "", img_src: "" });
           setErrors({});
@@ -374,21 +336,23 @@ const TGuardianList = () => {
     }
   };
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault;
+    e.preventDefault
 
-    handleModalPopUp("edit_guardian");
+    handleModalPopUp('edit_guardian')
     setFormData({
       name: "",
       phone_num: "",
       email: "",
       img_src: "",
-    });
-    setEditId(null);
-    setOriginalImgPath("");
-    setGuaImgId(null);
-    setGuaImg(null);
-    setErrors({});
-  };
+    })
+    setEditId(null)
+    setOriginalImgPath('')
+    setGuaImgId(null)
+    setGuaImg(null)
+    setErrors({})
+  }
+
+
 
   const columns = [
     {
@@ -429,33 +393,58 @@ const TGuardianList = () => {
       ),
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
+
+
     {
-      title: "Child",
+      title: "Children",
       dataIndex: "child",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link
-            to={`${teacher_routes.studentDetail}/${record.rollnum}`}
-            className="avatar avatar-md"
-          >
-            <img
-              src={`${Imageurl}/${record.stu_img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-              <Link to={`${teacher_routes.studentDetail}/${record.rollnum}`}>
-                {text}
-              </Link>
-            </p>
-            <span className="fs-12">{record.class}</span>
-          </div>
+      render: (children: any[]) => (
+        <div className="d-flex flex-column gap-2">
+          {Array.isArray(children) && children.length > 0 ? (
+            children.map((c: any, index: number) => (
+              <div key={index} className="d-flex align-items-center">
+                {c.stu_id ? (
+                  <>
+                    <Link
+                      to={`${routes.studentDetail}/${c.rollnum}`}
+                      className="avatar avatar-sm"
+                    >
+                      <img
+                        src={`${Imageurl}/${c.stu_img}`}
+                        className="img-fluid rounded-circle"
+                        alt={c.firstname || "student"}
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Link>
+                    <div className="ms-2">
+                      <p className="text-dark mb-0 fs-14">
+                        <Link to={`${routes.studentDetail}/${c.rollnum}`}>
+                          {c.firstname} {c.lastname}
+                        </Link>
+                      </p>
+                      <span className="fs-12 text-muted">
+                        Class: {c.class || "-"} | Sec: {c.section || "-"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-muted fs-13">No student linked</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <span className="text-muted fs-13">No student data</span>
+          )}
         </div>
       ),
-      sorter: (a: TableData, b: TableData) => a.Child.length - b.Child.length,
+      sorter: (a: any, b: any) => a.children.length - b.children.length,
     },
+
+
     {
       title: "Phone",
       dataIndex: "phone",
@@ -492,32 +481,28 @@ const TGuardianList = () => {
                     View Guardian
                   </button>
                 </li>
-                {permission?.can_edit ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => fetchGuardianDataForEdit(id)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#edit_guardian"
-                    >
-                      <i className="ti ti-edit-circle me-2" />
-                      Edit
-                    </button>
-                  </li>
-                ) : null}
-                {permission?.can_delete ? (
-                  <li>
-                    <button
-                      className="dropdown-item rounded-1"
-                      onClick={() => setDeleteIds(id, record.userId)}
-                      data-bs-toggle="modal"
-                      data-bs-target="#delete-modal"
-                    >
-                      <i className="ti ti-trash-x me-2" />
-                      Delete
-                    </button>
-                  </li>
-                ) : null}
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => fetchGuardianDataForEdit(id)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#edit_guardian"
+                  >
+                    <i className="ti ti-edit-circle me-2" />
+                    Edit
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item rounded-1"
+                    onClick={() => setDeleteIds(id, record.userId)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete-modal"
+                  >
+                    <i className="ti ti-trash-x me-2" />
+                    Delete
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -525,6 +510,7 @@ const TGuardianList = () => {
       ),
     },
   ];
+
 
   return (
     <>
@@ -538,9 +524,7 @@ const TGuardianList = () => {
               <nav>
                 <ol className="breadcrumb mb-0">
                   <li className="breadcrumb-item">
-                    <Link to={teacher_routes.teacherDashboard}>
-                      Teacher Dashboard
-                    </Link>
+                    <Link to={routes.adminDashboard}>Dashboard</Link>
                   </li>
                   <li className="breadcrumb-item">Peoples</li>
                   <li className="breadcrumb-item active" aria-current="page">
@@ -599,7 +583,7 @@ const TGuardianList = () => {
                               <CommonSelect
                                 className="select"
                                 options={parent}
-                                // defaultValue={parent[0]}
+                              // defaultValue={parent[0]}
                               />
                             </div>
                           </div>
@@ -609,7 +593,7 @@ const TGuardianList = () => {
                               <CommonSelect
                                 className="select"
                                 options={names}
-                                // defaultValue={names[0]}
+                              // defaultValue={names[0]}
                               />
                             </div>
                           </div>
@@ -619,7 +603,7 @@ const TGuardianList = () => {
                               <CommonSelect
                                 className="select"
                                 options={allClass}
-                                // defaultValue={allClass[0]}
+                              // defaultValue={allClass[0]}
                               />
                             </div>
                           </div>
@@ -629,7 +613,7 @@ const TGuardianList = () => {
                               <CommonSelect
                                 className="select"
                                 options={status}
-                                // defaultValue={status[0]}
+                              // defaultValue={status[0]}
                               />
                             </div>
                           </div>
@@ -652,13 +636,13 @@ const TGuardianList = () => {
                 </div>
                 <div className="d-flex align-items-center bg-white border rounded-2 p-1 mb-3 me-2">
                   <Link
-                    to={teacher_routes.guardiansList}
+                    to={routes.guardiansList}
                     className="active btn btn-icon btn-sm me-1 primary-hover"
                   >
                     <i className="ti ti-list-tree" />
                   </Link>
                   <Link
-                    to={teacher_routes.guardiansGrid}
+                    to={routes.guardiansGrid}
                     className="btn btn-icon btn-sm bg-light primary-hover"
                   >
                     <i className="ti ti-grid-dots" />
@@ -700,34 +684,31 @@ const TGuardianList = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              {loading ? (
-                <div
-                  className="d-flex justify-content-center align-items-center"
-                  style={{ height: "200px" }}
-                >
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+              {
+                loading ? (
+                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Table
-                  dataSource={tableData}
-                  columns={columns}
-                  Selection={true}
-                />
-              )}
+                ) :
+                  (<Table dataSource={tableData} columns={columns} Selection={true} />)
+              }
 
               {/* /Student List */}
             </div>
           </div>
+
         </div>
       </div>
+
+
 
       {/* Delete Modal */}
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form>
+            <form >
               <div className="modal-body text-center">
                 <span className="delete-icon">
                   <i className="ti ti-trash-x" />
@@ -737,8 +718,8 @@ const TGuardianList = () => {
                   You want to delete all the marked items, this cant be undone
                   once you delete.
                 </p>
-                {guaId && userId && (
-                  <div className="d-flex justify-content-center">
+                {
+                  (guaId && userId) && (<div className="d-flex justify-content-center">
                     <button
                       onClick={(e) => handleCancelDelete(e)}
                       className="btn btn-light me-3"
@@ -746,15 +727,11 @@ const TGuardianList = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      onClick={(e) => handleDelete(guaId, userId, e)}
-                      className="btn btn-danger"
-                      data-bs-dismiss="modal"
-                    >
+                    <button onClick={(e) => handleDelete(guaId, userId, e)} className="btn btn-danger" data-bs-dismiss="modal">
                       Yes, Delete
                     </button>
-                  </div>
-                )}
+                  </div>)
+                }
               </div>
             </form>
           </div>
@@ -786,31 +763,23 @@ const TGuardianList = () => {
               <div id="modal-tag" className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
                     <div className="d-flex align-items-center upload-pic flex-wrap row-gap-3 mb-3">
                       <div className="d-flex align-items-center justify-content-center avatar avatar-xxl border border-dashed me-2 flex-shrink-0 text-dark frames">
-                        {guaImgId && guaImg ? (
-                          <img
+
+                        {
+                          guaImgId && guaImg ? (<img
                             src={URL.createObjectURL(guaImg)}
                             alt="guardian"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <img
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />) : (<img
                             src={`${Imageurl}/${orginalImgPath}`}
                             alt="guardian"
                             className=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        )}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />)
+                        }
                       </div>
 
                       <div className="profile-upload">
@@ -841,35 +810,28 @@ const TGuardianList = () => {
                       <label className="form-label">Name</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.name ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
                         placeholder="Enter Name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                       />
-                      {errors.name && (
-                        <div className="invalid-feedback">{errors.name}</div>
-                      )}
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                     </div>
+
 
                     <div className="mb-3">
                       <label className="form-label">Phone Number</label>
                       <input
                         type="text"
-                        className={`form-control ${
-                          errors.phone_num ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.phone_num ? "is-invalid" : ""}`}
                         placeholder="Enter Phone Number"
                         name="phone_num"
                         value={formData.phone_num}
                         onChange={handleChange}
                       />
                       {errors.phone_num && (
-                        <div className="invalid-feedback">
-                          {errors.phone_num}
-                        </div>
+                        <div className="invalid-feedback">{errors.phone_num}</div>
                       )}
                     </div>
 
@@ -877,27 +839,27 @@ const TGuardianList = () => {
                       <label className="form-label">Email Address</label>
                       <input
                         type="email"
-                        className={`form-control ${
-                          errors.email ? "is-invalid" : ""
-                        }`}
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
                         placeholder="Enter Email Address"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
                       />
-                      {errors.email && (
-                        <div className="invalid-feedback">{errors.email}</div>
-                      )}
+                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                     </div>
+
+
                   </div>
                 </div>
               </div>
+
 
               <div className="modal-footer">
                 <button
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn btn-light me-2"
+
                 >
                   Cancel
                 </button>
@@ -911,148 +873,165 @@ const TGuardianList = () => {
       </div>
       {/* /Edit Parent */}
 
-      {loading2 ? (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "200px" }}
-        >
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+      {
+        loading2 ? (
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{ height: "200px" }}
+          >
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
           </div>
-        </div>
-      ) : (
-        speGuardianData && (
-          <>
-            <Modal show={show} onHide={handleClose} centered size="lg">
-              <div className="modal-header">
-                <h4 className="modal-title">View Details</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                  onClick={handleClose}
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <div className="modal-body mb-0">
-                <div className="guardian-wrap">
-                  {" "}
-                  {/* ✅ parent-wrap → guardian-wrap */}
-                  <div className="row align-items-center">
-                    <div className="col-lg-6">
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="avatar avatar-xl me-2">
-                          <img
-                            src={`${Imageurl}/${speGuardianData.img_src}`}
-                            alt="img"
-                            style={{ objectFit: "cover" }}
-                          />
-                        </span>
-                        <div className="guardian-name">
-                          {" "}
-                          {/* ✅ parent-name → guardian-name */}
-                          <h5 className="mb-1">{speGuardianData.name}</h5>
-                          <p>
-                            Added on {formatDate(speGuardianData.Guardian_Add)}
-                          </p>
+        ) : (
+          speGuardianData && (
+            <>
+              <Modal show={show} onHide={handleClose} centered size="lg">
+                <div className="modal-header">
+                  <h4 className="modal-title">View Details</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                    onClick={handleClose}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+                <div className="modal-body mb-0">
+                  <div className="guardian-wrap"> {/* ✅ parent-wrap → guardian-wrap */}
+                    <div className="row align-items-center">
+                      <div className="col-lg-6">
+                        <div className="d-flex align-items-center mb-3">
+                          <span className="avatar avatar-xl me-2">
+                            <img
+                              src={`${Imageurl}/${speGuardianData.img_src}`}
+                              alt="img"
+                              style={{ objectFit: 'cover' }}
+                            />
+                          </span>
+                          <div className="guardian-name"> {/* ✅ parent-name → guardian-name */}
+                            <h5 className="mb-1">{speGuardianData.name}</h5>
+                            <p>
+                              Added on {formatDate(speGuardianData.Guardian_Add)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="col-lg-6">
-                      <ul className="d-flex align-items-center">
-                        <li className="mb-3 me-5">
-                          <p className="mb-1">Email</p>
-                          <h6 className="fw-normal">{speGuardianData.email}</h6>
-                        </li>
-                        <li className="mb-3">
-                          <p className="mb-1">Phone</p>
-                          <h6 className="fw-normal">
-                            {speGuardianData.phone_num}
-                          </h6>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <h5 className="mb-3">Children Details</h5>
-                <div className="border rounded p-4 pb-1 mb-3">
-                  <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                    <span className="link-primary mb-2">
-                      {speGuardianData.admissionnum}
-                    </span>
-                    <span
-                      className={`badge ${
-                        speGuardianData.status == "1"
-                          ? "badge-soft-success"
-                          : "badge-soft-danger"
-                      } badge-md mb-2`}
-                    >
-                      <i className="ti ti-circle-filled me-2" />
-                      {speGuardianData.status == "1" ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-
-                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                    <div className="d-flex align-items-center mb-3">
-                      <Link
-                        to={`${teacher_routes.studentDetail}/${speGuardianData.rollnum}`}
-                        className="avatar"
-                      >
-                        <img
-                          src={`${Imageurl}/${speGuardianData.stu_img}`}
-                          className="rounded-circle object-fit-cover"
-                          alt="img"
-                        />
-                      </Link>
-                      <div className="ms-2">
-                        <p className="mb-0">
-                          <Link
-                            to={`${teacher_routes.studentDetail}/${speGuardianData.rollnum}`}
-                          >{`${speGuardianData.firstname} ${speGuardianData.lastname}`}</Link>
-                        </p>
-                        <span>
-                          {speGuardianData.class}, {speGuardianData.section}
-                        </span>
+                      <div className="col-lg-6">
+                        <ul className="d-flex align-items-center">
+                          <li className="mb-3 me-5">
+                            <p className="mb-1">Email</p>
+                            <h6 className="fw-normal">{speGuardianData.email}</h6>
+                          </li>
+                          <li className="mb-3">
+                            <p className="mb-1">Phone</p>
+                            <h6 className="fw-normal">
+                              {speGuardianData.phone_num}
+                            </h6>
+                          </li>
+                        </ul>
                       </div>
                     </div>
-
-                    <ul className="d-flex align-items-center flex-wrap">
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Roll No</p>
-                        <h6 className="fw-normal">{speGuardianData.rollnum}</h6>
-                      </li>
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Gender</p>
-                        <h6 className="fw-normal">{speGuardianData.gender}</h6>
-                      </li>
-                      <li className="mb-3">
-                        <p className="mb-1">Date of Joined</p>
-                        <h6 className="fw-normal">
-                          {formatDateHuman(speGuardianData.admissiondate)}
-                        </h6>
-                      </li>
-                    </ul>
-
-                    <div className="d-flex align-items-center">
-                      <Link
-                        to={`${teacher_routes.studentDetail}/${speGuardianData.rollnum}`}
-                        className="btn btn-primary mb-3"
-                      >
-                        View Details
-                      </Link>
-                    </div>
                   </div>
+
+                  <h5 className="mb-3">Children Details</h5>
+
+                  {speGuardianData?.children?.length > 0 ? (
+                    speGuardianData.children.map((child: any) => (
+                      <div key={child.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                        {/* Header Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                          <span className="link-primary fw-semibold mb-2">
+                            {child.admissionnum || "N/A"}
+                          </span>
+
+                          <span
+                            className={`badge ${child.status === "1"
+                              ? "badge-soft-success"
+                              : "badge-soft-danger"
+                              } badge-md mb-2`}
+                          >
+                            <i className="ti ti-circle-filled me-2" />
+                            {child.status === "1" ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        {/* Student Info Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <div className="d-flex align-items-center mb-3">
+                            <Link
+                              to={`${routes.studentDetail}/${child.stu_id}`}
+                              className="avatar"
+                            >
+                              <img
+                                src={`${Imageurl}/${child.stu_img}`}
+                                className="img-fluid rounded-circle"
+                                alt={`${child.firstname} ${child.lastname}`}
+                              />
+                            </Link>
+                            <div className="ms-2">
+                              <p className="mb-0 fw-semibold">
+                                <Link
+                                  to={`${routes.studentDetail}/${child.rollnum}`}
+                                  className="text-decoration-none text-dark"
+                                >
+                                  {`${child.firstname} ${child.lastname}`}
+                                </Link>
+                              </p>
+                              <small className="text-muted">
+                                {child.class || "N/A"}, {child.section || "N/A"}
+                              </small>
+                            </div>
+                          </div>
+
+                          {/* Student Details */}
+                          <ul className="d-flex align-items-center flex-wrap mb-0">
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Roll No</p>
+                              <h6 className="fw-normal">{child.rollnum || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Gender</p>
+                              <h6 className="fw-normal text-capitalize">{child.gender || "N/A"}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Date of Joined</p>
+                              <h6 className="fw-normal">
+                                {formatDateHuman(child.admissiondate) || "N/A"}
+                              </h6>
+                            </li>
+                          </ul>
+
+                          {/* Action */}
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to={`${routes.studentDetail}/${child.rollnum}`}
+                              className="btn btn-primary mb-3"
+                            >
+                              View Details
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="alert alert-warning mt-3">
+                      No children found for this guardian.
+                    </div>
+                  )}
+
+
                 </div>
-              </div>
-            </Modal>
-          </>
+              </Modal>
+            </>
+          )
         )
-      )}
+      }
+
     </>
   );
 };
 
-export default TGuardianList;
+export default GuardianList;

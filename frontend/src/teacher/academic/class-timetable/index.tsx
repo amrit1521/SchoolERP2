@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import {
   language,
   teacher,
@@ -14,6 +14,7 @@ import {
   filterTimeTable,
   getAllRolePermissions,
   getAllSectionForAClass,
+  Imageurl,
 } from "../../../service/api";
 // allTeacherForOption
 import { toast } from "react-toastify";
@@ -21,12 +22,12 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import { teacher_routes } from "../../../admin/router/teacher_routes";
 import { getTimeTableForSpecTeacher } from "../../../service/teacherDashboardApi";
 
 const TClassTimetable = () => {
-  const routes = all_routes;
+  // const routes = all_routes;
 
   // const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   // const handleApplyClick = () => {
@@ -167,6 +168,7 @@ const TClassTimetable = () => {
     day: string;
     timefrom: string;
     timeto: string;
+    img_src:string;
   }
   interface Permission {
     can_create?: boolean;
@@ -541,12 +543,12 @@ const TClassTimetable = () => {
                           </p>
                           <div className="bg-white rounded p-1 mt-1">
                             <Link
-                              to={routes.teacherDetails}
+                               to='#'
                               className="text-muted d-flex align-items-center"
                             >
                               <span className="avatar avatar-sm me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/teachers/teacher-07.jpg"
+                                <img
+                                  src={`${Imageurl}/${item.img_src}`}
                                   alt="Img"
                                 />
                               </span>

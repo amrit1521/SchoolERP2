@@ -1,12 +1,12 @@
 
 import {Link, useParams } from 'react-router-dom'
-import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
+// import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
 import { all_routes } from '../../../router/all_routes'
 import StudentModals from '../studentModals'
 import StudentSidebar from './studentSidebar'
 import StudentBreadcrumb from './studentBreadcrumb'
 import { useEffect, useState } from 'react'
-import { getStuTimeTable, specificStudentData1 } from '../../../../service/api'
+import { getStuTimeTable, Imageurl, specificStudentData1 } from '../../../../service/api'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 
@@ -22,6 +22,7 @@ const StudentTimeTable = () => {
         day: string;
         timefrom: string;
         timeto: string;
+        img_src:string;
     }
 
     const { rollnum } = useParams<{ rollnum: string }>();
@@ -225,8 +226,8 @@ const StudentTimeTable = () => {
                                                                             className="text-muted d-flex align-items-center"
                                                                         >
                                                                             <span className="avatar avatar-sm me-2">
-                                                                                <ImageWithBasePath
-                                                                                    src="assets/img/teachers/teacher-07.jpg"
+                                                                                <img
+                                                                                    src={`${Imageurl}/${item.img_src}`}
                                                                                     alt="Img"
                                                                                 />
                                                                             </span>

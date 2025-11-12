@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import {
   // classSection,
@@ -435,55 +435,58 @@ const TExamSchedule = () => {
     },
   ];
 
-  if (permission?.can_edit || permission?.can_delete) {
-    columns.push({
-      title: "Action",
-      dataIndex: "id",
-      sorter: (a: TableData, b: TableData) => a.id - b.id,
-      render: (_: any, record: any) => (
-        <div className="d-flex align-items-center">
-          <div className="dropdown">
-            <Link
-              to="#"
-              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="ti ti-dots-vertical fs-14" />
-            </Link>
-            <ul className="dropdown-menu dropdown-menu-right p-3">
-              {permission?.can_edit ? (
-                <li>
-                  <button
-                    className="dropdown-item rounded-1"
-                    onClick={() => fetchById(record?.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_exam_schedule"
-                  >
-                    <i className="ti ti-edit-circle me-2" />
-                    Edit
-                  </button>
-                </li>
-              ) : null}
-              {permission?.can_delete ? (
-                <li>
-                  <button
-                    className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(record?.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
-                  >
-                    <i className="ti ti-trash-x me-2" />
-                    Delete
-                  </button>
-                </li>
-              ) : null}
-            </ul>
-          </div>
+if (permission?.can_edit || permission?.can_delete) {
+  columns.push({
+    title: "Action",
+    dataIndex: "id",
+    // ✅ Force TypeScript to accept the correct render signature
+    render: (_: any, record: any): JSX.Element => (
+      <div className="d-flex align-items-center">
+        <div className="dropdown">
+          <Link
+            to="#"
+            className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i className="ti ti-dots-vertical fs-14" />
+          </Link>
+
+          <ul className="dropdown-menu dropdown-menu-right p-3">
+            {permission?.can_edit && (
+              <li>
+                <button
+                  className="dropdown-item rounded-1"
+                  onClick={() => fetchById(record?.id)}
+                  data-bs-toggle="modal"
+                  data-bs-target="#edit_exam_schedule"
+                >
+                  <i className="ti ti-edit-circle me-2" />
+                  Edit
+                </button>
+              </li>
+            )}
+
+            {permission?.can_delete && (
+              <li>
+                <button
+                  className="dropdown-item rounded-1"
+                  onClick={() => setDeleteId(record?.id)}
+                  data-bs-toggle="modal"
+                  data-bs-target="#delete-modal"
+                >
+                  <i className="ti ti-trash-x me-2" />
+                  Delete
+                </button>
+              </li>
+            )}
+          </ul>
         </div>
-      ),
-    });
-  }
+      </div>
+    ),
+  } as any); 
+}
+
 
   return (
     <div>

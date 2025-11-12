@@ -19,7 +19,23 @@ import TooltipOption from "../../../../core/common/tooltipOption";
 import { allParents, deleteFile, deleteParent, editParent, Imageurl, parentForEdit, speParent, uploadStudentFile } from "../../../../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import type { SpeParentData } from "../parent-grid";
+import dayjs from 'dayjs'
 
+
+
+export interface Child {
+  class: string | null;
+  stu_id: number | null;
+  rollnum: number | null;
+  section: string | null;
+  stu_img: string | null;
+  lastname: string | null;
+  firstname: string | null;
+  Student_Add: string | null;
+}
+
+// Interface for each parent entry
 export interface ParentData {
   id: number;
   user_id: number;
@@ -27,36 +43,8 @@ export interface ParentData {
   email: string;
   phone_num: string;
   img_src: string;
-  Parent_Add: string;   
-  stu_img: string;
-  stu_id: number;
-  section: string;
-  class: string;
-  Student_Add: string;  
-  firstname: string;
-  lastname: string;
-  rollnum:number;
-}
-
-export interface SpeParentData {
-  id: number;
-  name: string;
-  email: string;
-  phone_num: string;
-  img_src: string;
   Parent_Add: string;
-  stu_img: string;
-  stu_id: number;
-  class: string;
-  section: string;
-  gender: string;
-  rollnum: string;
-  admissiondate: string;
-  admissionnum: string;
-  Student_Add: string;
-  firstname: string;
-  lastname: string;
-  status: string;
+  children: Child[];
 }
 
 export interface ParentDataForEdit {
@@ -108,18 +96,17 @@ const ParentList = () => {
 
   }, [])
 
+  // console.log(parents[0].children)
+
 
   const tableData = parents.map((parent) => ({
     key: parent.id,
     id: parent.id,
     userId: parent.user_id,
     name: parent.name,
-    child: `${parent.firstname} ${parent.lastname}`,
-    class: `${parent.class},${parent.section}`,
+    child: parent.children,
     phone: parent.phone_num,
     email: parent.email,
-   rollnum:parent.rollnum,
-    stu_img: parent.stu_img,
     img: parent.img_src
 
   }))
@@ -371,7 +358,7 @@ const ParentList = () => {
       title: "ID",
       dataIndex: "id",
       render: (text: number) => (
-        <div  onClick={() => setShow(true)} className="link-primary">
+        <div style={{cursor:'pointer'}} onClick={() => fetchSpecficParentData(text)} className="link-primary">
           PRT{text}
         </div>
       ),
@@ -406,29 +393,54 @@ const ParentList = () => {
       sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
     },
     {
-      title: "Child",
+      title: "Children",
       dataIndex: "child",
-      render: (text: string, record: any) => (
-
-        <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
-            <img
-              src={`${Imageurl}/${record.stu_img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
-            </p>
-            <span className="fs-12">{record.class}</span>
-          </div>
+      render: (children: any[]) => (
+        <div className="d-flex flex-column gap-2">
+          {Array.isArray(children) && children.length > 0 ? (
+            children.map((c: any, index: number) => (
+              <div key={index} className="d-flex align-items-center">
+                {c.stu_id ? (
+                  <>
+                    <Link
+                      to={`${routes.studentDetail}/${c.rollnum}`}
+                      className="avatar avatar-sm"
+                    >
+                      <img
+                        src={`${Imageurl}/${c.stu_img}`}
+                        className="img-fluid rounded-circle"
+                        alt={c.firstname || "student"}
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Link>
+                    <div className="ms-2">
+                      <p className="text-dark mb-0 fs-14">
+                        <Link to={`${routes.studentDetail}/${c.rollnum}`}>
+                          {c.firstname} {c.lastname}
+                        </Link>
+                      </p>
+                      <span className="fs-12 text-muted">
+                        Class: {c.class || "-"} | Sec: {c.section || "-"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-muted fs-13">No student linked</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <span className="text-muted fs-13">No student data</span>
+          )}
         </div>
-        
       ),
-      sorter: (a: TableData, b: TableData) => a.Child.length - b.Child.length,
+      sorter: (a: any, b: any) => a.children.length - b.children.length,
     },
+
     {
       title: "Phone",
       dataIndex: "phone",
@@ -890,7 +902,7 @@ const ParentList = () => {
                           />
                         </span>
                         <div className="parent-name">
-                          <h5 className="mb-1">Thomas</h5>
+                          <h5 className="mb-1">{speParentData.name}</h5>
                           <p>Added on {formatDate(speParentData.Parent_Add)}</p>
                         </div>
                       </div>
@@ -910,54 +922,78 @@ const ParentList = () => {
                   </div>
                 </div>
                 <h5 className="mb-3">Children Details</h5>
-                <div className="border rounded p-4 pb-1 mb-3">
-                  <div className="d-flex align-items-center justify-content-between flex-wrap pb-1 mb-3 border-bottom">
-                    <span className="link-primary mb-2">{speParentData.admissionnum}</span>
-                    <span className={`badge ${speParentData.status == "1" ? "badge-soft-success" : "badge-soft-danger"} badge-md mb-2`}>
-                      <i className="ti ti-circle-filled me-2" />
-                      {speParentData.status == "1" ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                    <div className="d-flex align-items-center mb-3">
-                      <Link to={routes.studentDetail} className="avatar">
-                        <img
-                          src={`${Imageurl}/${speParentData.stu_img}`}
-                          className="img-fluid rounded-circle"
-                          alt="img"
-                        />
-                      </Link>
-                      <div className="ms-2">
-                        <p className="mb-0">
-                          <Link to={routes.studentDetail}>{`${speParentData.firstname} ${speParentData.lastname}`}</Link>
-                        </p>
-                        <span>{speParentData.class}, {speParentData.section}</span>
+
+
+                {
+                  speParentData?.children?.length > 0 ? (
+                    speParentData.children.map((s: any) => (
+                      <div key={s.stu_id} className="border rounded p-4 pb-1 mb-3 shadow-sm">
+                        {/* Header Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap pb-2 mb-3 border-bottom">
+                          <span className="link-primary fw-semibold mb-2">{s.admissionnum}</span>
+                          <span
+                            className={`badge ${s.status === "1" ? "badge-soft-success" : "badge-soft-danger"
+                              } badge-md mb-2`}
+                          >
+                            <i className="ti ti-circle-filled me-2" />
+                            {s.status === "1" ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        {/* Student Info Section */}
+                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+                          <div className="d-flex align-items-center mb-3">
+                            <Link to={`${routes.studentDetail}/${s.rollnum}`} className="avatar">
+                              <img
+                                src={`${Imageurl}/${s.stu_img}`}
+                                className="img-fluid rounded-circle border"
+                                alt={`${s.firstname} ${s.lastname}`}
+                              />
+                            </Link>
+                            <div className="ms-3">
+                              <p className="mb-0 fw-medium">
+                                <Link to={`${routes.studentDetail}/${s.rollnum}`} className="text-dark text-decoration-none">
+                                  {`${s.firstname} ${s.lastname}`}
+                                </Link>
+                              </p>
+                              <small className="text-muted text-uppercase">
+                                {s.class} - {s.section}
+                              </small>
+                            </div>
+                          </div>
+
+                          {/* Student Details */}
+                          <ul className="d-flex align-items-center flex-wrap mb-0">
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Roll No</p>
+                              <h6 className="fw-normal">{s.rollnum}</h6>
+                            </li>
+                            <li className="mb-3 me-4">
+                              <p className="mb-1 text-muted">Gender</p>
+                              <h6 className="fw-normal">{s.gender}</h6>
+                            </li>
+                            <li className="mb-3">
+                              <p className="mb-1 text-muted">Date of Joined</p>
+                              <h6 className="fw-normal">{dayjs(s.admissiondate).format('DD MMM YYYY')}</h6>
+                            </li>
+                          </ul>
+
+                          {/* Action Button */}
+                          <div className="d-flex align-items-center">
+                            <Link
+                              to={`${routes.studentDetail}/${s.rollnum}`}
+                              className="btn btn-primary btn-sm mb-3"
+                            >
+                              View Details
+                            </Link>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <ul className="d-flex align-items-center flex-wrap">
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Roll No</p>
-                        <h6 className="fw-normal">{speParentData.rollnum}</h6>
-                      </li>
-                      <li className="mb-3 me-4">
-                        <p className="mb-1">Gender</p>
-                        <h6 className="fw-normal">{speParentData.gender}</h6>
-                      </li>
-                      <li className="mb-3">
-                        <p className="mb-1">Date of Joined</p>
-                        <h6 className="fw-normal">{formatDate(speParentData.admissiondate)}</h6>
-                      </li>
-                    </ul>
-                    <div className="d-flex align-items-center">
-                      <Link
-                        to={`${routes.studentDetail}/${speParentData.stu_id}`}
-                        className="btn btn-primary mb-3"
-                      >
-                        View Details
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+                    ))
+                  ) : (
+                    <p className="text-muted fst-italic">No student records available.</p>
+                  )
+                }
 
               </div>
             ))

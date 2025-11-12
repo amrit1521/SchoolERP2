@@ -158,7 +158,6 @@ export const attendance = async (req, res) => {
 };
 
 
-
 export const timetable = async (req, res) => {
   try {
 
@@ -313,9 +312,6 @@ export const FreesPayment = async (req, res) => {
   const [rows] = await db.query("SELECT * FROM notifications");
   res.json(rows);
 };
-
-
-
 export const dashboard = async (req, res) => {
   try {
     // 1️⃣ Get Parent Info
@@ -335,7 +331,7 @@ export const dashboard = async (req, res) => {
 
 
     const [parentLinks] = await db.query(
-      `SELECT user_id FROM parents_info WHERE parent_id = ?`,
+      `SELECT parent_id FROM parents_info WHERE parent_user_id = ?`,
       [parentUser.id]
     );
 
@@ -359,15 +355,13 @@ export const dashboard = async (req, res) => {
          LEFT JOIN classes as c ON c.id=s.class_id
           LEFT JOIN sections as se ON se.id=s.section_id
          WHERE s.stu_id = ?`,
-        [link.user_id]
+        [link.parent_id]
       );
 
-      const student = studentRows[0];
+      const student = studentRows[0]; 
       if (!student) continue;
 
       const rollnum = student.rollnum;
-
-
       const [attendanceRows] = await db.query(
         `SELECT 
             attendance AS status,

@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonSelect from "../../../../core/common/commonSelect";
-import { all_routes } from "../../../router/all_routes";
 import { toast } from "react-toastify";
 import { Card, Input, Space, message } from "antd";
 import Table from "../../../../core/common/dataTable/index";
@@ -22,6 +21,7 @@ import {
   getStudentExamResultEditList,
 } from "../../../../service/api";
 import { allRealClasses } from "../../../../service/classApi";
+import { teacher_routes } from "../../../../admin/router/teacher_routes";
 
 // ---------- Types ----------
 interface Subject {
@@ -56,7 +56,6 @@ interface FilterData {
 type MarksData = Record<string, Record<string, MarksEntry>>;
 
 export default function ExamMarkUpload() {
-  const routes = all_routes;
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -394,7 +393,7 @@ export default function ExamMarkUpload() {
                 <nav>
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
-                      <Link to={routes.adminDashboard}>Dashboard</Link>
+                      <Link to={teacher_routes.teacherDashboard}>Dashboard</Link>
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="#">Academic </Link>

@@ -264,8 +264,8 @@ const StudentPromotion = () => {
     {
       title: "Admission No",
       dataIndex: "AdmissionNo",
-      render: (text: string) => (
-        <Link to={routes.studentDetail} className="link-primary">
+      render: (text: string,record:any) => (
+        <Link to={`${routes.studentDetail}/${record.RollNo}`} className="link-primary">
           {text}
         </Link>
       ),
@@ -283,7 +283,7 @@ const StudentPromotion = () => {
       dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to="#" className="avatar avatar-md">
+          <Link  to={`${routes.studentDetail}/${record.RollNo}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.img}`}
               className="img-fluid rounded-circle"
@@ -292,7 +292,7 @@ const StudentPromotion = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to="#">{text}</Link>
+              <Link  to={`${routes.studentDetail}/${record.RollNo}`} >{text}</Link>
             </p>
           </div>
         </div>

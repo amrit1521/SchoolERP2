@@ -12,30 +12,22 @@ exports.addHomework = async (req, res) => {
       description,
       status,
       teacherId,
+      title
     } = req.body;
 
-    if (
-      !className ||
-      !section ||
-      !subject ||
-      !homeworkDate ||
-      !submissionDate ||
-      !description
-    ) {
-      return res.status(400).json({
-        message: "All required fields must be provided",
-        success: false,
-      });
+    if (!className || !section || !subject || !homeworkDate || !submissionDate || !description || !title) {
+      return res.status(400).json({ message: "All required fields must be provided", success: false });
     }
 
     const sql = `
       INSERT INTO home_work 
-      (class_id, section_id, subject, homeworkDate, submissionDate, attachements, description, status, teacherId, created_at, updated_at) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      (class_id,title, section_id, subject, homeworkDate, submissionDate, attachements, description, status, teacherId, created_at, updated_at) 
+      VALUES (?, ?,?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
     const values = [
       className,
+      title,
       section,
       subject,
       homeworkDate,
@@ -69,6 +61,7 @@ exports.allHomework = async (req, res) => {
         hw.homeworkDate,
         hw.submissionDate,
         hw.attachements,
+        hw.title,
         hw.description,
         hw.status,
         hw.created_at,
@@ -110,7 +103,7 @@ exports.getHomeworkById = async (req, res) => {
     }
 
     const sql = `
-      SELECT id ,class_id AS className , section_id AS section ,subject , homeWorkDate , submissionDate , teacherId , status , attachements , description
+      SELECT id ,class_id AS className ,title, section_id AS section ,subject , homeWorkDate , submissionDate , teacherId , status , attachements , description
         FROM
       home_work
       WHERE id = ?
@@ -150,17 +143,19 @@ exports.updateHomework = async (req, res) => {
       description,
       status,
       teacherId,
+      title
     } = req.body;
 
     const sql = `
       UPDATE home_work 
-      SET class_id = ?, section_id = ?, subject = ?, homeworkDate = ?, submissionDate = ?, attachements = ?, 
+      SET class_id = ?,title=? , section_id = ?, subject = ?, homeworkDate = ?, submissionDate = ?, attachements = ?, 
           description = ?, status = ?, teacherId = ?, updated_at = NOW()
       WHERE id = ?
     `;
 
     const values = [
       className,
+      title,
       section,
       subject,
       homeworkDate,
@@ -242,6 +237,7 @@ exports.getAllStudentHomeWork = async (req, res) => {
         hw.subject AS subject_id,
         t.img_src,
         hw.status,
+        hw.title,
         hw.teacherId,
         hw.homeworkDate,
         hw.submissionDate,
@@ -259,7 +255,7 @@ exports.getAllStudentHomeWork = async (req, res) => {
         WHERE hw.class_id = ? AND hw.section_id = ?`,
       [studentClass, section]
     );
-    console.log(home_work);
+    
     return res.status(200).json({
       message: "Fetched all homework successfully!",
       success: true,
@@ -363,7 +359,7 @@ exports.getAllTeacherHomeWork = async (req, res) => {
 //        WHERE hw.class_id = ? AND hw.section_id = ?`,
 //       [studentClass, section]
 //     );
-// // console.log(home_work);
+
 //     return res.json({
 //       success: true,
 //       data: home_work,

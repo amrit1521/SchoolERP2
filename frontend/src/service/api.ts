@@ -3,9 +3,9 @@ import axios from "axios";
 const BASE_URL: string =
   import.meta.env.VITE_SERVERURL || "http://localhost:3004";
 export const API_URL = `${BASE_URL}/api`;
-export const Imageurl = `${API_URL}/stu/uploads/image/`;
-export const Documenturl = `${API_URL}/stu/uploads/document/`;
-export const Audiourl = `${API_URL}/chat/uploads/audio/`;
+export const Imageurl = `${API_URL}/stu/uploads/image`;
+export const Documenturl = `${API_URL}/stu/uploads/document`;
+export const Audiourl = `${API_URL}/chat/uploads/audio`;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -48,7 +48,7 @@ export const getStudentHomework = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/getstudentHomework/${classId}/${sectionId}`);
 export const getStudentFeeReminder = (rollNum: number) =>
   api.get(`/studentdashboard/getstudentfeereminder/${rollNum}`);
-export const getStudentClassTeachersList = (classId: number,sectionId:number) =>
+export const getStudentClassTeachersList = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/student-class-teachers?classId=${classId}&sectionId=${sectionId}`);
 
 //user apis-------------------
@@ -325,7 +325,7 @@ export const parentForEdit = (id: number) =>
   api.get(`/parent/parentforedit/${id}`);
 export const editParent = (data: object, id: number) =>
   api.put(`/parent/editparent/${id}`, data);
-export const fatherOption = ()=>api.get('/parent/fatheroption')
+export const fatherOption = () => api.get('/parent/fatheroption')
 
 // guardian routes
 export const allGuardians = () => api.get("/parent/allguardians");
@@ -367,7 +367,7 @@ export const uploadTeacherFile = (data: object) =>
   api2.post("/teacher/upload", data);
 export const deleteTeacherFile = (id: number) =>
   api.delete(`/teacher/deletefile/${id}`);
-export const teacherLeaveReport = ()=>api.get(`teacher/teacherleavereport`)
+export const teacherLeaveReport = () => api.get(`teacher/teacherleavereport`)
 
 // homwwork=================================================================
 export const addHomeWork = (data: object) =>
@@ -385,6 +385,9 @@ export const forgotPassword = (email: object) =>
   api.post("/auth/forgot-password", email);
 export const resetPassword = (data: object) =>
   api.post("/auth/reset-password", data);
+export const createUserAccount = (data: object) => api.post('/auth/create', data)
+export const deleteUserAccount = (id: number) => api.delete(`/auth//deleteacc/${id}`)
+export const deleteUserAccount2 = (id: number) => api.delete(`/auth//deleteacc2/${id}`)
 
 // transport =================================================================
 export const addRoutes = (data: object) =>
@@ -431,5 +434,5 @@ export const deleteAssignedVehicleById = (id: number) =>
   api.delete(`/transport/delete-assigned-vehicle/${id}`);
 
 
-export const allDrivers = ()=>api.get('/transport/alldrivers')
-export const allDriversForOption = ()=>api.get('/transport/alldriversforopt')
+export const allDrivers = () => api.get('/transport/alldrivers')
+export const allDriversForOption = () => api.get('/transport/alldriversforopt')

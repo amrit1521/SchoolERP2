@@ -369,5 +369,6 @@ export interface HomeworkFormData {
   status: string;
   attachments: string;
   description: string;
+  title:string;
 }
 

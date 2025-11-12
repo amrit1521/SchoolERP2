@@ -2,7 +2,7 @@
 const pool = require('../config/db');
 
 module.exports = (io) => {
-  const userSockets = {}; // userSockets = { userId: Set(socketIds) }
+  const userSockets = {}; 
 
   io.on('connection', (socket) => {
     console.log('🔵 Socket connected:', socket.id);
