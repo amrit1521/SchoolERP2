@@ -6,11 +6,16 @@ import type { TableData } from "../core/data/interface";
 // import { leaveData } from "../../../../core/data/json/leaveData";
 // import { Attendance } from "../../../../core/data/json/attendance";
 import { useEffect, useState } from "react";
-import { getLeaveData } from "../service/api";
+// import { getLeaveData } from "../service/api";
 import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import TooltipOption from "../core/common/tooltipOption";
-import { getStudentLeaveData } from "../service/studentapi";
+import {
+  getSpecStudentProfileDetails,
+  getStudentLeaveData,
+} from "../service/studentapi";
+import { toast } from "react-toastify";
+import StudentModals from "./studentModals";
 
 const MyLeaves = () => {
   const routes = all_routes;
@@ -26,29 +31,24 @@ const MyLeaves = () => {
   }
 
   // const { rollnum } = useParams<{ rollnum: string }>();
-  // const [student, setStudent] = useState<any>({});
+  const [student, setStudent] = useState<any>({});
   const [leaveInform, setLeaveInform] = useState<LeaveInform[]>([]);
   const [leaveDataa, setLeaveDataa] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token)?.id : null;
 
-  // const fetchStudent = async (rollnum: number) => {
-  //   try {
-  //     const res = await specificStudentData1(rollnum);
-
-  //     if (res?.data?.success) {
-  //       setStudent(res.data.student);
-  //       return res.data.student;
-  //     } else {
-  //       console.warn("Failed to fetch student data");
-  //       return null;
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching student data:", error);
-  //     return null;
-  //   }
-  // };
+  const fetchStudent = async (userId: number) => {
+    setLoading(true);
+    try {
+      const res = await getSpecStudentProfileDetails(userId);
+      setStudent(res.data.student);
+    } catch {
+      toast.error("Failed to fetch student data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchLeave = async (userId: number) => {
     try {
@@ -86,13 +86,14 @@ const MyLeaves = () => {
 
   useEffect(() => {
     if (userId) {
+      fetchStudent(userId);
       fetchStudentAndLeave(userId);
     }
   }, [userId]);
 
-  // const handleAdd = () => {
-  //   fetchStudentAndLeave(userId);
-  // };
+  const handleAdd = () => {
+    fetchStudentAndLeave(userId);
+  };
 
   const tableData = leaveDataa.map((item: any) => ({
     key: item.id,
@@ -291,9 +292,9 @@ const MyLeaves = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {/* {student.rollnum && (
+      {student.rollnum && (
         <StudentModals onAdd={handleAdd} rollnum={Number(student.rollnum)} />
-      )} */}
+      )}
     </>
   );
 };
