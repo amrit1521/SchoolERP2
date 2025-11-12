@@ -4,6 +4,7 @@ import { all_routes } from "../../router/all_routes";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import ReactApexChart from "react-apexcharts";
 import {
+  getAllChildExamResult,
   getParentDataByParentId,
   getParentUpcommingEvents,
   getTotalAvailableLeaves,
@@ -18,6 +19,7 @@ import {
   Imageurl,
 } from "../../service/api";
 import { toast } from "react-toastify";
+import { parent_routes } from "../../admin/router/parent_routes";
 
 interface ParentInfo {
   parentId: string;
@@ -116,6 +118,7 @@ const PParentDashboard = () => {
   const [eventsData, setEventsData] = useState<any[]>([]);
   const [studentHomeWork, setStudentHomeWork] = useState<any[]>([]);
   const [feeReminder, setFeeReminder] = useState<any[]>([]);
+  const [examResult, setExamResult] = useState<any[]>([]);
   const [availableLeaves, setAvailableLeaves] = useState<any[]>([]);
 
   const fetchParentDetails = async (userId: number) => {
@@ -192,7 +195,7 @@ const PParentDashboard = () => {
       console.error("Error fetching leave data:", error);
     }
   };
-
+  console.log(availableLeaves.length == 0 && "");
   const fetchNotice = async () => {
     try {
       const { data } = await getAllNotice();
@@ -244,11 +247,24 @@ const PParentDashboard = () => {
     }
   };
 
+  const fetchExamResult = async (userId: number) => {
+    try {
+      const { data } = await getAllChildExamResult(userId);
+      if (data?.success) {
+        setExamResult(data.data);
+      } else {
+        console.warn("Failed to fetch exam result data");
+        setExamResult([]);
+      }
+    } catch (error) {
+      console.error("Error fetching exam result data:", error);
+    }
+  };
+
   const fetchAvailableLeaves = async (userId: number) => {
     try {
       const { data } = await getTotalAvailableLeaves(userId);
       if (data?.success) {
-        console.log("leaves total : ", data.data);
         setAvailableLeaves(data.data);
       } else {
         console.warn("Failed to fetch leaves data");
@@ -272,6 +288,7 @@ const PParentDashboard = () => {
     fetchNotice();
     fetchParentEvents(roleId);
     fetchParentDetails(userId);
+    fetchExamResult(userId);
   }, []);
   // console.log(parentDetails);
   // console.log("active student : ", activeStudent);
@@ -443,9 +460,9 @@ const PParentDashboard = () => {
               <div className="card flex-fill">
                 <div className="card-header  d-flex align-items-center justify-content-between">
                   <h4 className="card-title">Events List</h4>
-                  <Link to={routes.events} className="fw-medium">
+                  {/* <Link to={routes.events} className="fw-medium">
                     View All
-                  </Link>
+                  </Link> */}
                 </div>
                 <div className="card-body p-0">
                   <ul className="list-group list-group-flush">
@@ -546,7 +563,7 @@ const PParentDashboard = () => {
               <div className="card flex-fill">
                 <div className="card-header d-flex align-items-center justify-content-between">
                   <h4 className="card-title">Leave Status</h4>
-                  <div className="dropdown">
+                  {/* <div className="dropdown">
                     <Link
                       to="#"
                       className="bg-white dropdown-toggle"
@@ -572,7 +589,13 @@ const PParentDashboard = () => {
                         </Link>
                       </li>
                     </ul>
-                  </div>
+                  </div> */}
+                  <Link
+                    to={parent_routes.childleaves}
+                    className="link-primary fw-medium"
+                  >
+                    View All
+                  </Link>
                 </div>
                 <div
                   className="card-body"
@@ -609,7 +632,7 @@ const PParentDashboard = () => {
               <div className="card flex-fill">
                 <div className="card-header d-flex align-items-center justify-content-between">
                   <h4 className="card-titile">Home Works</h4>
-                  <div className="dropdown">
+                  {/* <div className="dropdown">
                     <Link
                       to="#"
                       className="bg-white dropdown-toggle"
@@ -635,7 +658,7 @@ const PParentDashboard = () => {
                         </Link>
                       </li>
                     </ul>
-                  </div>
+                  </div> */}
                 </div>
                 <div
                   className="card-body py-1"
@@ -706,7 +729,7 @@ const PParentDashboard = () => {
                 <div className="card-header d-flex align-items-center justify-content-between">
                   <h4 className="card-titile">Fees Reminder</h4>
                   <Link
-                    to={routes.feesAssign}
+                    to={parent_routes.childFeeReminder}
                     className="link-primary fw-medium"
                   >
                     View All
@@ -754,62 +777,7 @@ const PParentDashboard = () => {
               <div className="card flex-fill">
                 <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
                   <h4 className="card-title mb-3">Exam Result</h4>
-                  <div className="d-flex align-items-center">
-                    <div className="dropdown me-3 mb-3">
-                      <Link
-                        to="#"
-                        className="bg-white dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                      >
-                        <i className="ti ti-calendar me-2" />
-                        All Classes
-                      </Link>
-                      <ul className="dropdown-menu mt-2 p-3">
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            I
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            II
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            III
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="dropdown mb-3">
-                      <Link
-                        to="#"
-                        className="bg-white dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                      >
-                        <i className="ti ti-calendar me-2" />
-                        All Exams
-                      </Link>
-                      <ul className="dropdown-menu mt-2 p-3">
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Quartely
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Practical
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            1st Term
-                          </Link>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
+                  <div className="d-flex align-items-center"></div>
                 </div>
                 <div className="card-body px-0">
                   <div className="custom-datatable-filter table-responsive">
@@ -826,180 +794,45 @@ const PParentDashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td>35013</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-01.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Janet</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>III</td>
-                          <td>A</td>
-                          <td>89%</td>
-                          <td>Quartely</td>
-                          <td>
-                            <span className="badge bg-success">Pass</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>35013</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-02.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Joann</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>IV</td>
-                          <td>B</td>
-                          <td>88%</td>
-                          <td>Practical</td>
-                          <td>
-                            <span className="badge bg-success">Pass</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>35010</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-04.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Gifford</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>I</td>
-                          <td>B</td>
-                          <td>21%</td>
-                          <td>Mid Term</td>
-                          <td>
-                            <span className="badge bg-success">Pass</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>35009</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-05.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Lisa</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>II</td>
-                          <td>B</td>
-                          <td>31%</td>
-                          <td>Annual</td>
-                          <td>
-                            <span className="badge bg-danger">Fail</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>35015</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-08.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Riana</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>III</td>
-                          <td>A</td>
-                          <td>89%</td>
-                          <td>Quartely</td>
-                          <td>
-                            <span className="badge bg-success">Pass</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>35013</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <Link
-                                to={routes.studentDetail}
-                                className="avatar avatar-md"
-                              >
-                                <ImageWithBasePath
-                                  src="assets/img/students/student-06.jpg"
-                                  className="img-fluid rounded-circle"
-                                  alt="img"
-                                />
-                              </Link>
-                              <div className="ms-2">
-                                <p className="text-dark mb-0">
-                                  <Link to={routes.studentDetail}>Angelo</Link>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>IV</td>
-                          <td>B</td>
-                          <td>88%</td>
-                          <td>Practical</td>
-                          <td>
-                            <span className="badge bg-danger">Fail</span>
-                          </td>
-                        </tr>
+                        {examResult
+                          ? examResult.map((exam: any) => (
+                              <tr>
+                                <td>{exam?.rollNum}</td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    <Link
+                                      to={parent_routes.childDetails}
+                                      className="avatar avatar-md"
+                                    >
+                                      <img
+                                        src={`${Imageurl}/${exam?.img}`}
+                                        className="img-fluid rounded-circle"
+                                        alt="img"
+                                      />
+                                    </Link>
+                                    <div className="ms-2">
+                                      <p className="text-dark mb-0">
+                                        <Link to={parent_routes.childDetails}>
+                                          {exam?.student_name}
+                                        </Link>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>{exam?.class}</td>
+                                <td className="text-capitalize">
+                                  {exam?.section}
+                                </td>
+                                <td>{exam?.marks}%</td>
+                                <td>{exam?.exam_name}</td>
+                                <td>
+                                  <span className="badge bg-success">
+                                    {exam?.result_status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          : null}
                       </tbody>
                     </table>
                   </div>
@@ -1012,9 +845,9 @@ const PParentDashboard = () => {
               <div className="card flex-fill">
                 <div className="card-header  d-flex align-items-center justify-content-between">
                   <h4 className="card-title">Notice Board</h4>
-                  <Link to={routes.noticeBoard} className="fw-medium">
+                  {/* <Link to={routes.noticeBoard} className="fw-medium">
                     View All
-                  </Link>
+                  </Link> */}
                 </div>
                 <div className="card-body">
                   <div className="notice-widget">
@@ -1038,9 +871,9 @@ const PParentDashboard = () => {
                                 </p>
                               </div>
                             </div>
-                            <Link to={routes.noticeBoard}>
+                            {/* <Link to={routes.noticeBoard}>
                               <i className="ti ti-chevron-right fs-16" />
-                            </Link>
+                            </Link> */}
                           </div>
                         ))
                       : null}

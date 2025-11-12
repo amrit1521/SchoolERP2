@@ -1,14 +1,18 @@
-
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+// import { all_routes } from "../../../router/all_routes";
 import StudentModals from "../studentModals";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
 // import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import { useEffect, useState } from "react";
-import { getStuIssueBookData, Imageurl, specificStudentData1 } from "../../../../service/api";
+import {
+  getStuIssueBookData,
+  Imageurl,
+  specificStudentData1,
+} from "../../../service/api";
 import { Skeleton } from "antd";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
+import { parent_routes } from "../../../admin/router/parent_routes";
 
 export interface IssuedBook {
   id: number;
@@ -20,17 +24,13 @@ export interface IssuedBook {
   status: string;
 }
 
-
-const StudentLibrary = () => {
-
+const PStudentLibrary = () => {
   const { rollnum } = useParams<{ rollnum: string }>();
 
-  const [student, setStudent] = useState<any>({})
-  const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
-  const [token ,setToken] = useState<string|null>(null)
-
-
+  const [student, setStudent] = useState<any>({});
+  const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [token, setToken] = useState<string | null>(null);
 
   const fetchStudent = async (rollnum: number) => {
     try {
@@ -49,14 +49,12 @@ const StudentLibrary = () => {
     }
   };
 
-
   const fetchIsuueBook = async (rollnum: number) => {
     try {
       const res = await getStuIssueBookData(rollnum);
       //  console.log(res.data)
       if (res?.data?.success) {
         setIssuedBookInfo(res.data.data);
-
       } else {
         console.warn("Failed to fetch Issue book  data");
         setIssuedBookInfo([]);
@@ -67,11 +65,10 @@ const StudentLibrary = () => {
     }
   };
 
-
   const fetchStudentAndIssuebook = async () => {
     setLoading(true);
     try {
-      await new Promise((res) => setTimeout(res, 500))
+      await new Promise((res) => setTimeout(res, 500));
       const studentData = await fetchStudent(Number(rollnum));
 
       // Agar student mila to uska rollnum se leave data fetch karo
@@ -87,12 +84,12 @@ const StudentLibrary = () => {
 
   // ✅ Example: useEffect me call
   useEffect(() => {
-    setToken(localStorage.getItem('token'))
+    setToken(localStorage.getItem("token"));
     if (rollnum) {
       fetchStudentAndIssuebook();
     }
   }, [rollnum]);
-  const routes = all_routes;
+  // const routes = all_routes;
 
   return (
     <>
@@ -101,7 +98,9 @@ const StudentLibrary = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-           {token&&( <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />)}
+            {token && (
+              <StudentBreadcrumb token={token} rollnum={Number(rollnum)} />
+            )}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -114,38 +113,55 @@ const StudentLibrary = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link to={`${routes.studentDetail}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childDetails}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-school me-2" />
                         Student Details
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentTimeTable}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childTimeTable}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-table-options me-2" />
                         Time Table
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLeaves}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childLeaves}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
-
                     </li>
                     <li>
-                      <Link to={`${routes.studentFees}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childFees}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-report-money me-2" />
                         Fees
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentResult}/${rollnum}`} className="nav-link">
+                      <Link
+                        to={`${parent_routes.childResult}/${rollnum}`}
+                        className="nav-link"
+                      >
                         <i className="ti ti-bookmark-edit me-2" />
                         Exam &amp; Results
                       </Link>
                     </li>
                     <li>
-                      <Link to={`${routes.studentLibrary}/${rollnum}`} className="nav-link active">
+                      <Link
+                        to={`${parent_routes.childLibrary}/${rollnum}`}
+                        className="nav-link active"
+                      >
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>
@@ -185,86 +201,130 @@ const StudentLibrary = () => {
                     </div>
                     <div className="card-body pb-1">
                       <div className="row">
+                        {loading ? (
+                          [...Array(3)].map((_, index) => (
+                            <div
+                              className="col-xxl-4 col-md-6 d-flex"
+                              key={index}
+                            >
+                              <div className="card mb-3 flex-fill">
+                                <div className="card-body pb-1">
+                                  {/* Image placeholder (same size as real image) */}
+                                  <span className="avatar avatar-xl mb-3 d-flex align-items-center justify-content-center">
+                                    <Skeleton.Avatar
+                                      active
+                                      size={80}
+                                      shape="square"
+                                    />
+                                  </span>
 
-                        {
-                          loading ? (
-                            [...Array(3)].map((_, index) => (
-                              <div className="col-xxl-4 col-md-6 d-flex" key={index}>
-                                <div className="card mb-3 flex-fill">
-                                  <div className="card-body pb-1">
-                                    {/* Image placeholder (same size as real image) */}
-                                    <span className="avatar avatar-xl mb-3 d-flex align-items-center justify-content-center">
-                                      <Skeleton.Avatar active size={80} shape="square" />
-                                    </span>
+                                  {/* Book title placeholder */}
+                                  <div className="mb-3">
+                                    <Skeleton.Input
+                                      active
+                                      style={{ width: "70%", height: 20 }}
+                                    />
+                                  </div>
 
-                                    {/* Book title placeholder */}
-                                    <div className="mb-3">
-                                      <Skeleton.Input active style={{ width: "70%", height: 20 }} />
-                                    </div>
-
-                                    {/* Row placeholders */}
-                                    <div className="row">
-                                      <div className="col-sm-6">
-                                        <div className="mb-3">
-                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
-                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
-                                        </div>
+                                  {/* Row placeholders */}
+                                  <div className="row">
+                                    <div className="col-sm-6">
+                                      <div className="mb-3">
+                                        <Skeleton.Input
+                                          active
+                                          style={{ width: "80%", height: 16 }}
+                                        />
+                                        <Skeleton.Input
+                                          active
+                                          style={{
+                                            width: "60%",
+                                            height: 16,
+                                            marginTop: 6,
+                                          }}
+                                        />
                                       </div>
-                                      <div className="col-sm-6">
-                                        <div className="mb-3">
-                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
-                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
-                                        </div>
+                                    </div>
+                                    <div className="col-sm-6">
+                                      <div className="mb-3">
+                                        <Skeleton.Input
+                                          active
+                                          style={{ width: "80%", height: 16 }}
+                                        />
+                                        <Skeleton.Input
+                                          active
+                                          style={{
+                                            width: "60%",
+                                            height: 16,
+                                            marginTop: 6,
+                                          }}
+                                        />
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))
-                          ) : issuedBookInfo.length > 0 ? (
-                            issuedBookInfo.map((book) => (
-                              <div className="col-xxl-4 col-md-6 d-flex" key={book.id}>
-                                <div className="card mb-3 flex-fill">
-
-                                  <div className="card-body pb-1">
-
-                                    <span className="avatar avatar-xl mb-3">
-                                      <img
-                                        src={`${Imageurl}/${book.bookImg}`}
-                                        className="img-fluid rounded"
-                                        alt={book.bookName}
-                                      />
-                                    </span>
-                                    <div className="d-flex align-item-center justify-content-between">
-                                      <h6 className="mb-3">{book.bookName}</h6>
-                                      <p className={`badge ${book.status === "Taken" ? "text-danger" : "text-success"}`}>
-                                        {book.status}
-                                      </p>
-
-
-                                    </div>
-                                    <div className="row">
-                                      <div className="col-sm-6">
-                                        <div className="mb-3">
-                                          <span className="fs-12 mb-1">Book taken on</span>
-                                          <p className="text-dark" >{dayjs(book.takenOn).format('DD MMM YYYY')}</p>
-                                        </div>
+                            </div>
+                          ))
+                        ) : issuedBookInfo.length > 0 ? (
+                          issuedBookInfo.map((book) => (
+                            <div
+                              className="col-xxl-4 col-md-6 d-flex"
+                              key={book.id}
+                            >
+                              <div className="card mb-3 flex-fill">
+                                <div className="card-body pb-1">
+                                  <span className="avatar avatar-xl mb-3">
+                                    <img
+                                      src={`${Imageurl}/${book.bookImg}`}
+                                      className="img-fluid rounded"
+                                      alt={book.bookName}
+                                    />
+                                  </span>
+                                  <div className="d-flex align-item-center justify-content-between">
+                                    <h6 className="mb-3">{book.bookName}</h6>
+                                    <p
+                                      className={`badge ${
+                                        book.status === "Taken"
+                                          ? "text-danger"
+                                          : "text-success"
+                                      }`}
+                                    >
+                                      {book.status}
+                                    </p>
+                                  </div>
+                                  <div className="row">
+                                    <div className="col-sm-6">
+                                      <div className="mb-3">
+                                        <span className="fs-12 mb-1">
+                                          Book taken on
+                                        </span>
+                                        <p className="text-dark">
+                                          {dayjs(book.takenOn).format(
+                                            "DD MMM YYYY"
+                                          )}
+                                        </p>
                                       </div>
-                                      <div className="col-sm-6">
-                                        <div className="mb-3">
-                                          <span className="fs-12 mb-1">Last Date</span>
-                                          <p className="text-dark">{dayjs(book.last_date).format('DD MMM YYYY')}</p>
-                                        </div>
+                                    </div>
+                                    <div className="col-sm-6">
+                                      <div className="mb-3">
+                                        <span className="fs-12 mb-1">
+                                          Last Date
+                                        </span>
+                                        <p className="text-dark">
+                                          {dayjs(book.last_date).format(
+                                            "DD MMM YYYY"
+                                          )}
+                                        </p>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))
-                          ) : (
-                            <>No issued book</>
-                          )
-                        }
+                            </div>
+                          ))
+                        ) : (
+                          <>No issued book</>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -275,9 +335,11 @@ const StudentLibrary = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {student.rollnum && (<StudentModals onAdd={() => { }} rollnum={Number(student.rollnum)} />)}
+      {student.rollnum && (
+        <StudentModals onAdd={() => {}} rollnum={Number(student.rollnum)} />
+      )}
     </>
   );
 };
 
-export default StudentLibrary;
+export default PStudentLibrary;

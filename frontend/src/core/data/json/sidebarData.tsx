@@ -1702,6 +1702,72 @@ export const ParentSidebarData = [
   },
 
   {
+    label: "Menu",
+    submenuOpen: true,
+    showSubRoute: false,
+    submenuHdr: "Menus",
+
+    submenuItems: [
+      {
+        label: "Home Work",
+        link: parent_routes.childHomeWork,
+        icon: "ti ti-license",
+        showSubRoute: false,
+        submenu: false,
+      },
+      // {
+      //   label: "Exam Results",
+      //   link: student_routes.examResult,
+      //   icon: "ti ti-hexagonal-prism-plus",
+      //   showSubRoute: false,
+      //   submenu: false,
+      // },
+      {
+        label: "Time Table",
+        link: parent_routes.childsTimeTable,
+        icon: "ti ti-table",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fees Payment",
+        link: parent_routes.childFeePayments,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Attendance",
+        link: parent_routes.childAttendance,
+        icon: "ti ti-calendar-share",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Leaves",
+        link: parent_routes.childleaves,
+        icon: "ti ti-calendar-stats",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Fee Reminder",
+        link: parent_routes.childFeeReminder,
+        icon: "ti ti-report-money",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
+        label: "Subjects",
+        link: parent_routes.childSubject,
+        icon: "ti ti-book",
+        showSubRoute: false,
+        submenu: false,
+      },
+    ],
+  },
+
+  {
     label: "HRM",
     submenuOpen: true,
     submenuHdr: "HRM",
@@ -1710,7 +1776,7 @@ export const ParentSidebarData = [
     submenuItems: [
       {
         label: "Holidays",
-        link: routes.holidays,
+        link: parent_routes.holidays,
         icon: "ti ti-briefcase",
         showSubRoute: false,
         submenu: false,
