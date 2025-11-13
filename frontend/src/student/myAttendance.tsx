@@ -2,45 +2,55 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../core/common/tooltipOption";
-import PredefinedDateRanges from "../core/common/datePicker";
+// import PredefinedDateRanges from "../core/common/datePicker";
 import Table from "../core/common/dataTable/index";
 
-import type { TableData } from "../core/data/interface";
+// import type { TableData } from "../core/data/interface";
 // import { attendancereportData } from "../../../core/data/json/attendence_report";
 // import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 
+// import { Spinner } from "../spinner";
+// import { Imageurl } from "../service/api";
+import { getStudentAttendanceData } from "../service/studentapi";
+import { toast } from "react-toastify";
 import { Spinner } from "../spinner";
-import { Imageurl } from "../service/api";
-import { getStudentAttendance } from "../service/studentapi";
 
+interface AttendanceData {
+  id: number;
+  attendance: string;
+  attendance_date_info: string;
+}
 const MyAttendance = () => {
   const routes = all_routes;
   // const data = attendancereportData;
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token)?.id : null;
-  const renderTitle = (title1: any, title2: any) => {
-    return (
-      <>
-        <div className="text-center">
-          <span className="day-num d-block">{title1}</span>
-          <span>{title2}</span>
-        </div>
-      </>
-    );
-  };
-
-  const [stuAttendanceData, setStuAttendanceData] = useState<any>([]);
+  // const renderTitle = (title1: any, title2: any) => {
+  //   return (
+  //     <>
+  //       <div className="text-center">
+  //         <span className="day-num d-block">{title1}</span>
+  //         <span>{title2}</span>
+  //       </div>
+  //     </>
+  //   );
+  // };
+  const [attendanceSummary, setAttendanceSummary] = useState<any>({});
+  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
+  // const [stuAttendanceData, setStuAttendanceData] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
-  const fetchReport = async (userId: number) => {
-    setLoading(true);
+  const [tableData2, setTableData2] = useState<any[]>([]);
+  const fetchStudentAttendance = async (userId: number) => {
     try {
-      const { data } = await getStudentAttendance(userId);
-      if (data.success) {
-        setStuAttendanceData(data.data);
-      }
-    } catch (error) {
+      setLoading(true);
+      const { data } = await getStudentAttendanceData(userId);
+      setAttendanceSummary(data.summary);
+      setAttendanceData(data.details);
+    } catch (error: any) {
       console.log(error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch attendance"
+      );
     } finally {
       setLoading(false);
     }
@@ -48,500 +58,113 @@ const MyAttendance = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchReport(userId);
+      fetchStudentAttendance(userId);
     }
   }, [userId]);
 
-  const columns = [
+  function getDaysInMonth(year: number, monthIndex: number): number {
+    return new Date(year, monthIndex + 1, 0).getDate();
+  }
+
+  function generateAttendanceTable(attendanceData: AttendanceData[]) {
+    const monthNames = [
+      "jan",
+      "feb",
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct",
+      "nov",
+      "dec",
+    ];
+
+    const years = new Set(
+      attendanceData?.map((item) =>
+        new Date(item.attendance_date_info).getFullYear()
+      )
+    );
+
+    // Prepare a map for faster lookup
+    const attendanceMap: Record<string, string> = {};
+    attendanceData?.forEach((item) => {
+      const date = new Date(item.attendance_date_info);
+      const day = date.getDate();
+      const month = monthNames[date.getMonth()];
+      attendanceMap[`${month}-${day}`] = item.attendance;
+    });
+
+    const rows: any[] = [];
+    const sampleYear = [...years][0] || new Date().getFullYear();
+
+    for (let m = 0; m < 12; m++) {
+      const daysInMonth = getDaysInMonth(sampleYear, m);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayStr = d.toString().padStart(2, "0");
+        let row = rows.find((r) => r.date === dayStr);
+        if (!row) {
+          row = { key: dayStr, date: dayStr };
+          rows.push(row);
+        }
+        const month = monthNames[m];
+        row[month] = attendanceMap[`${month}-${d}`] || "";
+      }
+    }
+
+    return rows;
+  }
+  useEffect(() => {
+    if (attendanceData) {
+      setTableData2(generateAttendanceTable(attendanceData));
+    }
+  }, [attendanceData]);
+
+  const monthNames = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
+
+  const columns2 = [
     {
-      title: "Student/Date",
-      dataIndex: "name",
-      render: (text: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <Link to="#" className="avatar avatar-md">
-            <img
-              src={`${Imageurl}/${record.img}`}
-              className="img-fluid rounded-circle"
-              alt="img"
-            />
-          </Link>
-          <div className="ms-2">
-            <p className="text-dark mb-0">
-              <Link to="#">{text}</Link>
-            </p>
-          </div>
-        </div>
-      ),
-      sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
-      fixed: "left",
+      title: "Date | Month",
+      dataIndex: "date",
+      sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
     },
-    {
-      title: "%",
-      dataIndex: "percentage",
-      render: (text: string, record: any) => (
-        <>
-          <span className={record.percentClass}>{text}</span>
-        </>
-      ),
-      sorter: (a: TableData, b: TableData) => a.name.length - b.name.length,
-    },
-    {
-      title: "P",
-      dataIndex: "p",
-    },
-    {
-      title: "L",
-      dataIndex: "l",
-    },
-    {
-      title: "A",
-      dataIndex: "a",
-    },
-    {
-      title: "H",
-      dataIndex: "h",
-    },
-    {
-      title: "F",
-      dataIndex: "f",
-    },
-    {
-      title: () => renderTitle("01", "M"),
-      dataIndex: "m01",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("02", "T"),
-      dataIndex: "t02",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("03", "W"),
-      dataIndex: "w03",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("04", "T"),
-      dataIndex: "t04",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("05", "F"),
-      dataIndex: "f05",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("06", "S"),
-      dataIndex: "s06",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("07", "S"),
-      dataIndex: "s07",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("08", "M"),
-      dataIndex: "m08",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("09", "T"),
-      dataIndex: "t09",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("10", "W"),
-      dataIndex: "w10",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("11", "T"),
-      dataIndex: "t011",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("12", "F"),
-      dataIndex: "f012",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("13", "S"),
-      dataIndex: "s13",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("14", "S"),
-      dataIndex: "s14",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("15", "M"),
-      dataIndex: "m15",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("16", "T"),
-      dataIndex: "t16",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("17", "W"),
-      dataIndex: "w17",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("18", "T"),
-      dataIndex: "t018",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("19", "F"),
-      dataIndex: "f019",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("20", "S"),
-      dataIndex: "s20",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("21", "S"),
-      dataIndex: "s21",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("22", "M"),
-      dataIndex: "m22",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
-    {
-      title: () => renderTitle("23", "T"),
-      dataIndex: "t23",
-      render: (text: string) => (
-        <>
-          {text === "1" ? (
-            <span className="attendance-range bg-success"></span>
-          ) : text === "2" ? (
-            <span className="attendance-range bg-pending"></span>
-          ) : text === "3" ? (
-            <span className="attendance-range bg-dark"></span>
-          ) : text === "4" ? (
-            <span className="attendance-range bg-danger"></span>
-          ) : (
-            <span className="attendance-range bg-info"></span>
-          )}
-        </>
-      ),
-    },
+    ...monthNames.map((month) => ({
+      title: month.toUpperCase(),
+      dataIndex: month,
+      render: (text: string) => {
+        if (!text) return <span className="attendance-range bg-light"></span>;
+        const colorMap: Record<string, string> = {
+          Present: "bg-success",
+          Holiday: "bg-pending",
+          Halfday: "bg-dark",
+          Late: "bg-info",
+          Absent: "bg-danger",
+        };
+        return (
+          <span
+            className={`attendance-range ${colorMap[text] || "bg-secondary"}`}
+            title={text}
+          ></span>
+        );
+      },
+      sorter: (a: any, b: any) =>
+        (a[month] || "").localeCompare(b[month] || ""),
+    })),
   ];
 
   return (
@@ -603,63 +226,166 @@ const MyAttendance = () => {
               </li>
             </ul>
           </div>
-          {/* Attendance List */}
-          <div className="card">
-            <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
-              <h4 className="mb-3">My Attendance</h4>
-              <div className="d-flex align-items-center flex-wrap">
-                <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+          {/* Attendance */}
+          <div className="tab-pane" id="attendance">
+            <div className="card">
+              <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-1">
+                <h4 className="mb-3">Attendance</h4>
+                <div className="d-flex align-items-center flex-wrap">
+                  <div className="d-flex align-items-center flex-wrap me-3">
+                    <p className="text-dark mb-3 me-2">
+                      Last Updated on : 25 May 2024
+                    </p>
+                    <Link
+                      to="#"
+                      className="btn btn-primary btn-icon btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 mb-3"
+                    >
+                      <i className="ti ti-refresh-dot" />
+                    </Link>
+                  </div>
+                  <div className="dropdown mb-3">
+                    <Link
+                      to="#"
+                      className="btn btn-outline-light bg-white dropdown-toggle"
+                      data-bs-toggle="dropdown"
+                      data-bs-auto-close="outside"
+                    >
+                      <i className="ti ti-calendar-due me-2" />
+                      Year : 2024 / 2025
+                    </Link>
+                    <ul className="dropdown-menu p-3">
+                      <li>
+                        <Link to="#" className="dropdown-item rounded-1">
+                          Year : 2024 / 2025
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="#" className="dropdown-item rounded-1">
+                          Year : 2023 / 2024
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="#" className="dropdown-item rounded-1">
+                          Year : 2022 / 2023
+                        </Link>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="dropdown mb-3">
-                  <Link
-                    to="#"
-                    className="btn btn-outline-light bg-white dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                  >
-                    <i className="ti ti-sort-ascending-2 me-2" />
-                    Sort by A-Z
-                  </Link>
-                  <ul className="dropdown-menu p-3">
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1 active">
-                        Ascending
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Descending
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Recently Viewed
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Recently Added
-                      </Link>
-                    </li>
-                  </ul>
+              </div>
+              <div className="card-body pb-1">
+                <div className="row">
+                  {/* Total Present */}
+                  <div className="col-md-6 col-xxl-3 d-flex">
+                    <div className="d-flex align-items-center rounded border p-3 mb-3 flex-fill">
+                      <span className="avatar avatar-lg bg-primary-transparent rounded me-2 flex-shrink-0 text-primary">
+                        <i className="ti ti-user-check fs-24" />
+                      </span>
+                      <div className="ms-2">
+                        <p className="mb-1">Present</p>
+                        <h5>{attendanceSummary?.Present ?? 0}</h5>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Total Present */}
+                  {/* Total Absent */}
+                  <div className="col-md-6 col-xxl-3 d-flex">
+                    <div className="d-flex align-items-center rounded border p-3 mb-3 flex-fill">
+                      <span className="avatar avatar-lg bg-danger-transparent rounded me-2 flex-shrink-0 text-danger">
+                        <i className="ti ti-user-check fs-24" />
+                      </span>
+                      <div className="ms-2">
+                        <p className="mb-1">Absent</p>
+                        <h5>{attendanceSummary?.Absent ?? 0}</h5>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Total Absent */}
+                  {/* Half Day */}
+                  <div className="col-md-6 col-xxl-3 d-flex">
+                    <div className="d-flex align-items-center rounded border p-3 mb-3 flex-fill">
+                      <span className="avatar avatar-lg bg-info-transparent rounded me-2 flex-shrink-0 text-info">
+                        <i className="ti ti-user-check fs-24" />
+                      </span>
+                      <div className="ms-2">
+                        <p className="mb-1">Half Day</p>
+                        <h5>{attendanceSummary?.Halfday ?? 0}</h5>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Half Day */}
+                  {/* Late to School*/}
+                  <div className="col-md-6 col-xxl-3 d-flex">
+                    <div className="d-flex align-items-center rounded border p-3 mb-3 flex-fill">
+                      <span className="avatar avatar-lg bg-warning-transparent rounded me-2 flex-shrink-0 text-warning">
+                        <i className="ti ti-user-check fs-24" />
+                      </span>
+                      <div className="ms-2">
+                        <p className="mb-1">Late</p>
+                        <h5>{attendanceSummary?.Late ?? 0}</h5>
+                      </div>
+                    </div>
+                  </div>
+                  {/* /Late to School*/}
                 </div>
               </div>
             </div>
-            <div className="card-body p-0 py-3">
-              {/* Student List */}
-              {loading ? (
-                <Spinner />
-              ) : (
-                <Table
-                  dataSource={stuAttendanceData}
-                  columns={columns}
-                  Selection={false}
-                />
-              )}
-              {/* /Student List */}
+            <div className="card">
+              <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-1">
+                <h4 className="mb-3">Leave &amp; Attendance</h4>
+              </div>
+              <div className="card-body p-0 py-3">
+                <div className="px-3">
+                  <div className="d-flex align-items-center flex-wrap">
+                    <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
+                      <span className="avatar avatar-sm bg-success rounded me-2 flex-shrink-0 ">
+                        <i className="ti ti-checks" />
+                      </span>
+                      <p className="text-dark">Present</p>
+                    </div>
+                    <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
+                      <span className="avatar avatar-sm bg-danger rounded me-2 flex-shrink-0 ">
+                        <i className="ti ti-x" />
+                      </span>
+                      <p className="text-dark">Absent</p>
+                    </div>
+                    <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
+                      <span className="avatar avatar-sm bg-info rounded me-2 flex-shrink-0 ">
+                        <i className="ti ti-clock-x" />
+                      </span>
+                      <p className="text-dark">Late</p>
+                    </div>
+                    <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
+                      <span className="avatar avatar-sm bg-dark rounded me-2 flex-shrink-0 ">
+                        <i className="ti ti-calendar-event" />
+                      </span>
+                      <p className="text-dark">Halfday</p>
+                    </div>
+                    <div className="d-flex align-items-center bg-white border rounded p-2 me-3 mb-3">
+                      <span className="avatar avatar-sm bg-pending rounded me-2 flex-shrink-0 ">
+                        <i className="ti ti-calendar-event" />
+                      </span>
+                      <p className="text-dark">Holiday</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Attendance List */}
+                {loading ? (
+                  <Spinner />
+                ) : (
+                  tableData2.length > 0 && (
+                    <Table
+                      dataSource={tableData2}
+                      columns={columns2}
+                      Selection={false}
+                    />
+                  )
+                )}
+                {/* /Attendance List */}
+              </div>
             </div>
           </div>
-          {/* /Attendance List */}
+          {/* /Attendance */}
         </div>
       </div>
       {/* /Page Wrapper */}
