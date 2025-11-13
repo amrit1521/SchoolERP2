@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 // import { classhomework } from "../../../core/data/json/class_home_work";
 import Table from "../core/common/dataTable/index";
-import { language, weak } from "../core/common/selectoption/selectoption";
+// import { language, weak } from "../core/common/selectoption/selectoption";
 import type { HomeworkFormData, TableData } from "../core/data/interface";
 import CommonSelect from "../core/common/commonSelect";
 import PredefinedDateRanges from "../core/common/datePicker";
@@ -21,7 +21,6 @@ import {
   getAllSectionForAClass,
   getAllSubject,
   Imageurl,
- 
 } from "../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../handlePopUpmodal";
@@ -40,7 +39,7 @@ export interface Homework {
   firstname: string;
   lastname: string;
   img_src?: string;
-  title:string;
+  title: string;
 }
 
 export interface Teacher {
@@ -66,12 +65,12 @@ export interface classes {
 
 const HomeWork = () => {
   const routes = all_routes;
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
+  // const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  // const handleApplyClick = () => {
+  //   if (dropdownMenuRef.current) {
+  //     dropdownMenuRef.current.classList.remove("show");
+  //   }
+  // };
 
   // State
   const [formData, setFormData] = useState<HomeworkFormData>({
@@ -84,7 +83,7 @@ const HomeWork = () => {
     status: "1",
     attachments: "",
     description: "",
-    title:"",
+    title: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof HomeworkFormData, string>>
@@ -118,7 +117,6 @@ const HomeWork = () => {
     if (roleId) {
       const { data } = await getAllRolePermissions(roleId);
       if (data.success) {
-      
         const currentPermission = data.result
           .filter((perm: any) => perm?.module_name === "HomeWork")
           .map((perm: any) => ({
@@ -137,7 +135,7 @@ const HomeWork = () => {
     if (userId) {
       try {
         const { data } = await getAllStudentHomeWork(userId);
-          console.log(data.data)
+        console.log(data.data);
         if (data.success) {
           setHomeworks(data.data);
         }
@@ -232,7 +230,7 @@ const HomeWork = () => {
     key: hw.id,
     id: hw.id,
     section: hw.section,
-    title:hw.title,
+    title: hw.title,
     class: hw.className,
     subject: hw.subject,
     homeworkDate: dayjs(hw.homeworkDate).format("DD MMM YYYY"),
@@ -299,7 +297,6 @@ const HomeWork = () => {
 
   // edit---------------------------
 
-
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setEditId(null);
@@ -313,7 +310,7 @@ const HomeWork = () => {
       status: "1",
       attachments: "",
       description: "",
-      title:""
+      title: "",
     });
     setErrors({});
   };
@@ -349,7 +346,7 @@ const HomeWork = () => {
         status: "1",
         attachments: "",
         description: "",
-        title:""
+        title: "",
       });
       setErrors({});
     } catch (error) {
@@ -409,11 +406,10 @@ const HomeWork = () => {
       sorter: (a: TableData, b: TableData) =>
         a.section.length - b.section.length,
     },
-     {
+    {
       title: "Subject Title",
       dataIndex: "title",
-      sorter: (a: TableData, b: TableData) =>
-        a.title.length - b.title.length,
+      sorter: (a: TableData, b: TableData) => a.title.length - b.title.length,
     },
     {
       title: "Subject",
@@ -455,8 +451,6 @@ const HomeWork = () => {
       sorter: (a: TableData, b: TableData) =>
         a.createdBy.length - b.createdBy.length,
     },
-
-   
   ];
 
   return (
@@ -510,7 +504,7 @@ const HomeWork = () => {
                   <div className="input-icon-start mb-3 me-2 position-relative">
                     <PredefinedDateRanges />
                   </div>
-                  <div className="dropdown mb-3 me-2">
+                  {/* <div className="dropdown mb-3 me-2">
                     <Link
                       to="#"
                       className="btn btn-outline-light bg-white dropdown-toggle"
@@ -584,7 +578,7 @@ const HomeWork = () => {
                         </div>
                       </form>
                     </div>
-                  </div>
+                  </div> */}
                   <div className="dropdown mb-3">
                     <Link
                       to="#"
