@@ -192,40 +192,6 @@ const MyAttendance = () => {
             </div>
           </div>
           {/* /Page Header */}
-          <div className="attendance-types page-header justify-content-end">
-            <ul className="attendance-type-list">
-              <li>
-                <span className="attendance-icon bg-success">
-                  <i className="ti ti-checks" />
-                </span>
-                Present
-              </li>
-              <li>
-                <span className="attendance-icon bg-danger">
-                  <i className="ti ti-x" />
-                </span>
-                Absent
-              </li>
-              <li>
-                <span className="attendance-icon bg-pending">
-                  <i className="ti ti-clock-x" />
-                </span>
-                Late
-              </li>
-              <li>
-                <span className="attendance-icon bg-dark">
-                  <i className="ti ti-calendar-event" />
-                </span>
-                Halfday
-              </li>
-              <li>
-                <span className="attendance-icon bg-info">
-                  <i className="ti ti-clock-up" />
-                </span>
-                Holiday
-              </li>
-            </ul>
-          </div>
           {/* Attendance */}
           <div className="tab-pane" id="attendance">
             <div className="card">
