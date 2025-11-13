@@ -10,3 +10,5 @@ export const getAllIssueBookForSpecClass = (userId: number) =>
   api.get(`/library/getallissuebookforspecclass/${userId}`);
 export const getAllFeesAssignDetailsForSpecClass = (userId: number) =>
   api.get(`/fees/allassigndetailsforspecclass/${userId}`);
+export const getSpecTeacherProfileDetails = (userId: number) =>
+  api.get(`/teacherdashboard/getspecteacher-detail/${userId}`);

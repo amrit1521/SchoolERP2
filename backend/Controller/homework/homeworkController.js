@@ -301,6 +301,7 @@ exports.getAllTeacherHomeWork = async (req, res) => {
         hw.submissionDate,
         hw.attachements,
         hw.description,
+        hw.title,
         t.user_id,
         cs.name as subject,
         u.firstname,u.lastname 

@@ -1469,6 +1469,22 @@ export const TeacherSidebarData = [
     ],
   },
   {
+    label: "About Me",
+    submenuOpen: true,
+    submenuHdr: "About",
+    submenu: false,
+    showSubRoute: false,
+    submenuItems: [
+      {
+        label: "View Profile",
+        link: teacher_routes.teacherDetails,
+        icon: "ti ti-user",
+        showSubRoute: false,
+        submenu: false,
+      },
+    ],
+  },
+  {
     label: "HRM",
     submenuOpen: true,
     submenuHdr: "HRM",
