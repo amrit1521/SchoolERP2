@@ -7,53 +7,274 @@ import {
   questions,
   sections,
 } from "../../core/common/selectoption/selectoption";
-import { faq_data } from "../../core/data/json/faq_data";
+// import { faq_data } from "../../core/data/json/faq_data";
 import type { TableData } from "../../core/data/interface";
 import Table from "../../core/common/dataTable/index";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import React, { useEffect, useState } from "react";
+import { handleModalPopUp } from "../../handlePopUpmodal";
+import { addFaq, allFaq, deleteFaq, editFaq, faqById, replyFaq } from "../../service/faq";
+import { toast } from "react-toastify";
+import { Spinner } from "../../spinner";
+
+
+
+interface Faq {
+  id: number;
+  category: string;
+  question: string;
+  answers: string;
+}
+
+interface FAQFormData {
+  category: string;
+  question: string;
+}
+
+interface FAQFormErrors {
+  category?: string;
+  question?: string;
+  answer?: string;
+}
 
 const Faq = () => {
-  const data = faq_data;
+  // const data = faq_data;
   const routes = all_routes;
+
+
+  const [faqs, setFaqs] = useState<Faq[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [formData, setFormData] = useState<FAQFormData>({
+    category: "",
+    question: "",
+
+  });
+  const [errors, setErrors] = useState<FAQFormErrors>({});
+  const [editId, setEditId] = useState<number | null>(null)
+  const [answer, setAnswer] = useState<string>("")
+  const [replyId, setReplyId] = useState<number | null>(null)
+
+
+
+  const fetchFaqs = async () => {
+    setLoading(true)
+    try {
+
+      const { data } = await allFaq()
+      if (data.success) {
+        setFaqs(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchFaqs()
+  }, [])
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validateForm = (): FAQFormErrors => {
+    const newErrors: FAQFormErrors = {};
+
+    if (!formData.category.trim()) {
+      newErrors.category = "Category is required";
+    } else if (formData.category.length < 3) {
+      newErrors.category = "Category must be at least 3 characters long";
+    }
+
+    if (!formData.question.trim()) {
+      newErrors.question = "Question is required";
+    } else if (formData.question.length < 10) {
+      newErrors.question = "Question must be at least 10 characters";
+    }
+
+
+    return newErrors;
+  };
+
+  const fetchEditData = async (id: number) => {
+
+    if (!id) {
+      toast.warn('Id not provided !')
+      return
+    }
+    try {
+
+      const { data } = await faqById(Number(id))
+
+      if (data.success) {
+        setFormData({
+          question: data.data.question,
+          category: data.data.category,
+
+        })
+        setEditId(data.data.id)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    try {
+
+      const apiCall = editId ? editFaq(formData, editId) : addFaq(formData)
+
+      const { data } = await apiCall
+      if (data.success) {
+        toast.success(data.message)
+        setFormData({ category: "", question: "" });
+        setErrors({});
+        setEditId(null)
+        fetchFaqs()
+        handleModalPopUp(editId ? 'edit_faq' : 'add_faq')
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  };
+
+  const handleEditCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setFormData({ category: "", question: "" });
+    setErrors({});
+    setEditId(null)
+
+  }
+
+  // delete class--------------------------------------------------------------------
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const { data } = await deleteFaq(id)
+      if (data.success) {
+        setDeleteId(null)
+        toast.success(data.message)
+        fetchFaqs()
+        handleModalPopUp('delete-modal')
+
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
+
+  // answer
+  const handleSubmitAnswer = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!answer.trim()) {
+      toast.error('Ansered is required !')
+      return
+    } else if (answer.length < 5) {
+      toast.error('Ansered must be at least 5 chracters!')
+      return
+    }
+    if (!replyId) {
+      return
+    }
+    const payload = {
+      answer:answer
+    }
+    try {
+      const { data } = await replyFaq(payload, replyId)
+
+      if (data.success) {
+        toast.success(data.message)
+        setReplyId(null)
+        setAnswer("")
+        fetchFaqs()
+        handleModalPopUp('reply_faq')
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
+  const handleAnsCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setAnswer("")
+    setReplyId(null)
+  }
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
+      sorter: (a: TableData, b: TableData) => a.id - b.id,
       render: (text: any) => (
         <Link to="#" className="link-primary">
-          {text}
+          FAQ{text}
         </Link>
       ),
     },
     {
       title: "Questions",
-      dataIndex: "questions",
-      key: "questions",
-      sorter: (a: TableData, b: TableData) =>
-        a.questions.length - b.questions.length,
+      dataIndex: "question",
+      key: "question",
+      sorter: (a: FAQFormData, b: FAQFormData) =>
+        a.question.length - b.question.length,
     },
     {
       title: "Answers",
-      dataIndex: "answers",
-      key: "answers",
-      sorter: (a: TableData, b: TableData) =>
-        a.answers.length - b.answers.length,
+      dataIndex: "answer",
+      key: "answer",
+      render: (text: string, record: any) => (
+        text ? (<span>{text}</span>) : (<button data-bs-toggle="modal"
+          data-bs-target="#reply_faq" className="btn btn-sm btn-outline-primary" onClick={() => setReplyId(record.id)}>Reply</button>)
+
+      ),
+      sorter: (a: any, b: any) =>
+        a.answer.length - b.answer.length,
     },
     {
       title: "Category",
       dataIndex: "category",
       key: "category",
-      sorter: (a: TableData, b: TableData) =>
+      sorter: (a: FAQFormData, b: FAQFormData) =>
         a.category.length - b.category.length,
     },
     {
       title: "Action",
       dataIndex: "action",
       key: "action",
-      render: () => (
+      render: (_:string, record: any) => (
         <div className="d-flex align-items-center">
           <div className="dropdown">
             <Link
@@ -66,26 +287,26 @@ const Faq = () => {
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => fetchEditData(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#edit_faq"
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => setDeleteId(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
@@ -116,7 +337,7 @@ const Faq = () => {
                   </li>
                 </ol>
               </nav>
-            </div> 
+            </div>
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
@@ -236,7 +457,9 @@ const Faq = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Faq List */}
-              <Table dataSource={data} columns={columns} Selection={true} />
+              {
+                loading ? (<Spinner />) : (<Table dataSource={faqs} columns={columns} Selection={true} />)
+              }
               {/* /Faq List */}
             </div>
           </div>
@@ -244,12 +467,13 @@ const Faq = () => {
       </div>
       {/* /Page Wrapper */}
       {/* Add FAQ */}
-      <div className="modal fade" id="add_faq">
+      <div className="modal fade" id="add_faq" tabIndex={-1} aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
               <h4 className="modal-title">Add FAQ</h4>
               <button
+                onClick={(e) => handleEditCancel(e)}
                 type="button"
                 className="btn-close custom-btn-close"
                 data-bs-dismiss="modal"
@@ -258,41 +482,82 @@ const Faq = () => {
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+
+            {/* ✅ FORM */}
+            <form onSubmit={handleSubmit} noValidate>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
+                    {/* Category Field */}
                     <div className="mb-3">
                       <label className="form-label">Category</label>
-                      <input type="text" className="form-control" />
+                      <input
+                        type="text"
+                        name="category"
+                        className={`form-control ${errors.category ? "is-invalid" : ""
+                          }`}
+                        value={formData.category}
+                        onChange={handleChange}
+                        placeholder="Enter category"
+                      />
+                      {errors.category && (
+                        <div className="text-danger small mt-1">
+                          {errors.category}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Question Field */}
                     <div className="mb-3">
                       <label className="form-label">Question</label>
                       <textarea
-                        className="form-control"
+                        name="question"
+                        className={`form-control ${errors.question ? "is-invalid" : ""
+                          }`}
                         rows={4}
-                        defaultValue={""}
+                        value={formData.question}
+                        onChange={handleChange}
+                        placeholder="Enter your question"
                       />
+                      {errors.question && (
+                        <div className="text-danger small mt-1">
+                          {errors.question}
+                        </div>
+                      )}
                     </div>
-                    <div className="mb-0">
+
+                    {/* Answer Field */}
+                    {/* <div className="mb-0">
                       <label className="form-label">Answer</label>
                       <textarea
-                        className="form-control"
+                        name="answer"
+                        className={`form-control ${errors.answer ? "is-invalid" : ""
+                          }`}
                         rows={4}
-                        defaultValue={""}
+                        value={formData.answer}
+                        onChange={handleChange}
+                        placeholder="Enter the answer"
                       />
-                    </div>
+                      {errors.answer && (
+                        <div className="text-danger small mt-1">
+                          {errors.answer}
+                        </div>
+                      )}
+                    </div> */}
                   </div>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <Link
-                  to="#"
+                <button
+                  onClick={(e) => handleEditCancel(e)}
+                  type="button"
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
                 >
                   Cancel
-                </Link>
+                </button>
                 <button type="submit" className="btn btn-primary">
                   Add FAQ
                 </button>
@@ -317,49 +582,64 @@ const Faq = () => {
                 <i className="ti ti-x" />
               </button>
             </div>
-            <form>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
+
+                    {/* Category Field */}
                     <div className="mb-3">
                       <label className="form-label">Category</label>
                       <input
                         type="text"
-                        className="form-control"
-                        placeholder="Enter Category"
+                        name="category"
+                        className={`form-control ${errors.category ? "is-invalid" : ""
+                          }`}
+                        value={formData.category}
+                        onChange={handleChange}
+                        placeholder="Enter category"
                       />
+                      {errors.category && (
+                        <div className="text-danger small mt-1">
+                          {errors.category}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Question Field */}
                     <div className="mb-3">
                       <label className="form-label">Question</label>
                       <textarea
-                        className="form-control"
-                        placeholder="How do I reset my password?"
+                        name="question"
+                        className={`form-control ${errors.question ? "is-invalid" : ""
+                          }`}
                         rows={4}
-                        defaultValue={""}
+                        value={formData.question}
+                        onChange={handleChange}
+                        placeholder="Enter your question"
                       />
+                      {errors.question && (
+                        <div className="text-danger small mt-1">
+                          {errors.question}
+                        </div>
+                      )}
                     </div>
-                    <div className="mb-0">
-                      <label className="form-label">Answer</label>
-                      <textarea
-                        placeholder="You can reset your password from the login page."
-                        className="form-control"
-                        rows={4}
-                        defaultValue={""}
-                      />
-                    </div>
+
                   </div>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <Link
-                  to="#"
+                <button
+                  onClick={(e) => handleEditCancel(e)}
+                  type="button"
                   className="btn btn-light me-2"
                   data-bs-dismiss="modal"
                 >
                   Cancel
-                </Link>
+                </button>
                 <button type="submit" className="btn btn-primary">
-                  Save Changes
+                  Edit FAQ
                 </button>
               </div>
             </form>
@@ -367,6 +647,64 @@ const Faq = () => {
         </div>
       </div>
       {/* /Edit FAQ */}
+
+      {/* ANS FAQ */}
+      <div className="modal fade" id="reply_faq" tabIndex={-1} aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h4 className="modal-title">Ans FAQ</h4>
+              <button
+                onClick={(e) => handleAnsCancel(e)}
+                type="button"
+                className="btn-close custom-btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              >
+                <i className="ti ti-x" />
+              </button>
+            </div>
+
+            {/* ✅ FORM */}
+            <form onSubmit={handleSubmitAnswer}>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-12">
+                    {/* Answer Field */}
+                    <div className="mb-0">
+                      <label className="form-label">Answer</label>
+                      <textarea
+                        name="answer"
+                        className={`form-control`}
+                        rows={4}
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Enter the answer"
+                      />
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  onClick={(e) => handleAnsCancel(e)}
+                  type="button"
+                  className="btn btn-light me-2"
+                  data-bs-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Ans FAQ
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Add FAQ */}
       {/* Delete Modal */}
       <div className="modal fade" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
@@ -378,21 +716,25 @@ const Faq = () => {
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone
-                  once you delete.
+                  You want to delete all the marked items, this cant be undone once
+                  you delete.
                 </p>
-                <div className="d-flex justify-content-center">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-3"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-danger">
-                    Yes, Delete
-                  </button>
-                </div>
+                {
+                  deleteId && (
+                    <div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        data-bs-dismiss="modal"
+                      >
+                        Cancel
+                      </button>
+                      <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                        Yes, Delete
+                      </button>
+
+                    </div>
+                  )}
               </div>
             </form>
           </div>

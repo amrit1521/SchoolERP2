@@ -15,11 +15,7 @@ import { Spinner } from "../../../../spinner";
 const StaffsAttendance = () => {
   const routes = all_routes;
   // const data = staffsAttendance;
-
-
-
   const { staffid } = useParams()
-
   const [staffData, setStaffData] = useState<any>({})
   const [loading, setLoading] = useState<boolean>(false)
 

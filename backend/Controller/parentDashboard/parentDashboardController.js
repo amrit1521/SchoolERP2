@@ -145,7 +145,7 @@ exports.getAllStudentsOfParents = async (req, res) => {
                 ON u.id = s.stu_id
             RIGHT JOIN classes  c ON c.id =  s.class_id
             RIGHT JOIN sections se ON se.id = s.section_id
-            LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
+            LEFT JOIN parents_info p ON s.parent_id = p.parent_id AND relation = "Father"
             JOIN roles r on r.id=u.roll_id
             WHERE s.parent_id=?
         `;

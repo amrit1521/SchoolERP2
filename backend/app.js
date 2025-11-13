@@ -62,6 +62,7 @@ app.use('/api/account' , require('./routes/accounts/accountsRoutes'))
 app.use('/api/chatusers' , require('./routes/chat/chatUsersRoutes'))
 app.use('/api/chat' , require('./routes/chat/chatRoutes'))
 app.use('/api/message' , require('./routes/chat/messageRoutes'))
+app.use('/api/faq' , require('./routes/faq/faqRoutes'))
 
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error:", err.stack);

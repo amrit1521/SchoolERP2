@@ -410,10 +410,12 @@ const Chat = () => {
     }
   }
   // formate time
-  function formatTimeAgo(dateString: any) {
-    const date = new Date(dateString);
+  function formatTimeAgo(dateInput: string | number | Date): string {
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return "Invalid date"; // safety check
+
     const now = new Date();
-    const seconds = Math.floor((Number(now) - Number(date)) / 1000);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (seconds < 60) return "Just now";
     const minutes = Math.floor(seconds / 60);
@@ -424,13 +426,13 @@ const Chat = () => {
     if (days === 1) return "Yesterday";
     if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
 
-    // For old messages (more than a week)
     return date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   }
+
   const formatMessageTimeInConversation = (dateString: any) => {
 
     const date = new Date(dateString);
@@ -449,12 +451,10 @@ const Chat = () => {
               {/* sidebar group */}
               <div className="sidebar-group left-sidebar chat_sidebar">
                 {/* Chats sidebar */}
-
                 <div
                   id="chats"
                   className="left-sidebar-wrap sidebar active slimscroll"
                 >
-
                   <div className="slimscroll-active-sidebar">
                     {/* Left Chat Title */}
                     <div className="left-chat-title all-chats d-flex justify-content-between align-items-center">
@@ -534,10 +534,7 @@ const Chat = () => {
                         <h5>Online Now</h5>
                         {/* <Link to="#">View All</Link> */}
                       </div>
-
-
                       {/* <Slider {...profile}> */}
-
                       <div className="d-flex gap-1">
                         {
                           onlineUsers && onlineUsers.length > 0 ? (
@@ -566,8 +563,6 @@ const Chat = () => {
                           )
                         }
                       </div>
-
-
                       {/* <div className="top-contacts-box  me-1">
                           <div className="avatar avatar-lg avatar-online">
                             <ImageWithBasePath
@@ -613,11 +608,7 @@ const Chat = () => {
                             />
                           </div>
                         </div> */}
-
-
                       {/* </Slider> */}
-
-
                     </div>
                     {/* /Top Online Contacts */}
                     <div className="sidebar-body chat-body" id="chatsidebar">
@@ -725,7 +716,6 @@ const Chat = () => {
                       }
                     </div>
                   </div>
-
                 </div>
 
                 {/* / Chats sidebar */}
@@ -768,8 +758,13 @@ const Chat = () => {
                         <div>
                           <h6>{otherUser ? otherUser.name : "Select User"}</h6>
                           <small className="last-seen">
-                            {otherUser.is_online == 1 ? 'Online' : `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`}
+                            {otherUser?.is_online === 1
+                              ? "Online"
+                              : otherUser?.last_seen
+                                ? `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`
+                                : "Last Seen: Just now"}
                           </small>
+
                         </div>
                       </div>
                       <div className="chat-options ">

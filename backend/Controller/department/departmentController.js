@@ -1,4 +1,4 @@
-const { success } = require('zod');
+
 const db = require('../../config/db');
 
 // ---------------- Add Department ----------------

@@ -383,8 +383,7 @@ const Apexchart = () => {
               <h3 className="page-title">Charts</h3>
               <ul className="breadcrumb">
                 <li className="breadcrumb-item">
-                  <Link to={routes.adminDashboard}
->Dashboard</Link>
+                  <Link to={routes.adminDashboard}>Dashboard</Link>
                 </li>
                 <li className="breadcrumb-item active">Charts</li>
               </ul>
