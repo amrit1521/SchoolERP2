@@ -17,16 +17,18 @@ import {
   deleteSubject,
   editSubject,
   getAllRolePermissions,
-  getAllSubject,
+  // getAllSubject,
 } from "../service/api";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../handlePopUpmodal";
+import { getAllSubjectForStudent } from "../service/studentapi";
 
 const StudentClassSubject = () => {
   const routes = all_routes;
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const token = localStorage.getItem("token");
   const roleId = token ? JSON.parse(token)?.role : null;
+  const userId = token ? JSON.parse(token)?.id : null;
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
       dropdownMenuRef.current.classList.remove("show");
@@ -42,7 +44,7 @@ const StudentClassSubject = () => {
   }
 
   const [permission, setPermission] = useState<any>(null);
-  const [allSubject, setSAllSubject] = useState<AllSubject[]>([]);
+  const [allSubject, setAllSubject] = useState<AllSubject[]>([]);
   const [loading, setloading] = useState<boolean>(false);
 
   const fetchPermission = async (roleId: number) => {
@@ -62,13 +64,13 @@ const StudentClassSubject = () => {
     }
   };
 
-  const fetchAllSubject = async () => {
+  const fetchAllSubject = async (userId: number) => {
     setloading(true);
     await new Promise((res) => setTimeout(res, 500));
     try {
-      const { data } = await getAllSubject();
+      const { data } = await getAllSubjectForStudent(userId);
       if (data.success) {
-        setSAllSubject(data.data);
+        setAllSubject(data.data);
       }
     } catch (error: any) {
       console.log(error);
@@ -79,13 +81,11 @@ const StudentClassSubject = () => {
   };
 
   useEffect(() => {
+    if (userId) {
+      fetchAllSubject(userId);
+    }
     fetchPermission(roleId);
   }, []);
-  useEffect(() => {
-    if (permission) {
-      fetchAllSubject();
-    }
-  }, [permission]);
 
   const tabledata = allSubject.map((item) => ({
     key: item.id,
@@ -165,7 +165,7 @@ const StudentClassSubject = () => {
       }
 
       setformdata({ name: "", code: "", type: "", status: "" });
-      fetchAllSubject();
+      fetchAllSubject(userId);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Something went wrong");
     }
@@ -195,7 +195,7 @@ const StudentClassSubject = () => {
       const { data } = await deleteSubject(id);
       if (data.success) {
         toast.success(data.message);
-        fetchAllSubject();
+        fetchAllSubject(userId);
         handleModalPopUp("delete-modal");
         setDeleteId(null);
       }

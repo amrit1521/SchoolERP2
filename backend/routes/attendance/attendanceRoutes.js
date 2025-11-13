@@ -26,6 +26,7 @@ router.get('/getteacherattendancereport' , attendanaceController.getTeacherAtten
 
 //student role:
 router.get('/getstuattendances/:userId' , attendanaceController.getStuAttendance)
+router.get('/getstuattendancesdata/:userId' , attendanaceController.getStuAttendanceData)
 
 
 module.exports = router

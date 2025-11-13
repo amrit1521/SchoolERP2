@@ -14,6 +14,7 @@ import "slick-carousel/slick/slick-theme.css";
 import AdminDashboardModal from "./adminDashboardModal";
 import {
   ActionOnLeaveRequest,
+  getAllClassSubject,
   getAllLeaveRequest,
   getAllNotice,
   getAllUserCountForRole,
@@ -478,7 +479,13 @@ const AdminDashboard = () => {
   const [filteredLeaves, setFilteredLeaves] = useState<any[]>([]);
   const [filter, setFilter] = useState<{ date: string | null }>({ date: null });
   const [filterType, setFilterType] = useState("today");
-
+  const [allClassSubject, setAllClassSubject] = useState<any[]>([]);
+  const [classSubject, setClassSubject] = useState<any[]>([]);
+  const [classOption, setClassOption] = useState<any[]>([]); // Store class options for dropdown
+  const [selectedClasses, setSelectedClasses] = useState<{
+    value: number | null;
+    label: string | null;
+  }>({ value: null, label: null });
   const fetchStudent = async (id: number) => {
     try {
       const { data } = await getUsersById(id);
@@ -756,6 +763,38 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAllClassSubjects = async () => {
+    try {
+      const { data } = await getAllClassSubject();
+      if (data.success) {
+        setAllClassSubject(data.data);
+        setClassSubject(data.data[0]?.subjects);
+        setSelectedClasses({
+          value: data.data[0]?.class_id,
+          label: data.data[0]?.class_name,
+        });
+        setClassOption(
+          data.data.map((item: any) => ({
+            value: item.class_id,
+            label: item.class_name,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching class subjects:", error);
+    }
+  };
+
+  const handleClassChange = (classes: any) => {
+    setSelectedClasses(classes);
+    const selectedClassData = allClassSubject.find(
+      (classItem: any) => classItem.class_id === classes?.value
+    );
+    if (selectedClassData) {
+      setClassSubject(selectedClassData.subjects);
+    }
+  };
+
   useEffect(() => {
     const cls = performanceCategoryCount.find(
       (c) => c.class_name === selectedClass
@@ -841,6 +880,7 @@ const AdminDashboard = () => {
     fetchPerformanceCountPerClass();
     fetchRoutines();
     fetchAllLeaveRequest();
+    fetchAllClassSubjects();
   }, []);
 
   const handleApplyApproveRequest = async (id: number) => {
@@ -2540,7 +2580,7 @@ const AdminDashboard = () => {
               {/* Top Subjects */}
               <div className="col-xxl-4 col-xl-6 d-flex">
                 <div className="card flex-fill">
-                  <div className="card-header  d-flex align-items-center justify-content-between">
+                  <div className="card-header d-flex align-items-center justify-content-between">
                     <h4 className="card-title">Top Subjects</h4>
                     <div className="dropdown">
                       <Link
@@ -2548,30 +2588,23 @@ const AdminDashboard = () => {
                         className="bg-white dropdown-toggle"
                         data-bs-toggle="dropdown"
                       >
-                        <i className="ti ti-school-bell  me-2" />
-                        Class II
+                        <i className="ti ti-school-bell me-2" />
+                        {selectedClasses
+                          ? `Class ${selectedClasses?.label}`
+                          : "Select Class"}
                       </Link>
                       <ul className="dropdown-menu mt-2 p-3">
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Class I
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Class II
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Class III
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="#" className="dropdown-item rounded-1">
-                            Class IV
-                          </Link>
-                        </li>
+                        {classOption.map((classItem: any) => (
+                          <li key={classItem.value}>
+                            <Link
+                              to="#"
+                              className="dropdown-item rounded-1"
+                              onClick={() => handleClassChange(classItem)}
+                            >
+                              Class {classItem.label}
+                            </Link>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   </div>
@@ -2582,144 +2615,35 @@ const AdminDashboard = () => {
                     >
                       <i className="ti ti-info-square-rounded me-2 fs-14" />
                       <div className="fs-14">
-                        These Result are obtained from the syllabus completion
-                        on the respective Class
+                        These results are obtained from the syllabus completion
+                        for the selected class.
                       </div>
                     </div>
                     <ul className="list-group">
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Maths</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-primary rounded"
-                                role="progressbar"
-                                style={{ width: "20%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
+                      {classSubject &&
+                        classSubject.map((sub: any, index: number) => (
+                          <li className="list-group-item" key={index}>
+                            <div className="row align-items-center">
+                              <div className="col-sm-4">
+                                <p className="text-dark">
+                                  {sub?.subject_name} ({sub?.code})
+                                </p>
+                              </div>
+                              <div className="col-sm-8">
+                                <div className="progress progress-xs flex-grow-1">
+                                  <div
+                                    className="progress-bar bg-secondary rounded"
+                                    role="progressbar"
+                                    style={{ width: `${20 * (index + 1)}%` }}
+                                    aria-valuenow={30}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Physics</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-secondary rounded"
-                                role="progressbar"
-                                style={{ width: "30%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Chemistry</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-info rounded"
-                                role="progressbar"
-                                style={{ width: "40%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Botany</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-success rounded"
-                                role="progressbar"
-                                style={{ width: "50%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">English</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-warning rounded"
-                                role="progressbar"
-                                style={{ width: "70%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Spanish</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-danger rounded"
-                                role="progressbar"
-                                style={{ width: "80%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="row align-items-center">
-                          <div className="col-sm-4">
-                            <p className="text-dark">Japanese</p>
-                          </div>
-                          <div className="col-sm-8">
-                            <div className="progress progress-xs flex-grow-1">
-                              <div
-                                className="progress-bar bg-primary rounded"
-                                role="progressbar"
-                                style={{ width: "85%" }}
-                                aria-valuenow={30}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </li>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 </div>

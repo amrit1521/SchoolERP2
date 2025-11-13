@@ -163,6 +163,7 @@ export const deleteSubject = (id: number) =>
 export const speSubject = (id: number) => api.get(`/subject/spesubject/${id}`);
 export const editSubject = (data: object, id: number) =>
   api.put(`/subject/editsubject/${id}`, data);
+export const getAllClassSubject = () => api.get("/subject/allclasssubject");
 
 // table routes-----------------------------
 export const addTimeTable = (data: object) =>

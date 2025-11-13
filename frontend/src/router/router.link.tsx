@@ -307,6 +307,11 @@ import PHomeWork from "../parent/homeWork.tsx";
 import PLeaves from "../parent/Leave.tsx";
 import PStudentClassSubject from "../parent/studentClassSubject.tsx";
 import PStudentClassTimetable from "../parent/studentTimeTable.tsx";
+import TTeacherDetails from "../teacher/teacher-details/teacherDetails.tsx";
+import TTeachersRoutine from "../teacher/teacher-details/teachersRoutine.tsx";
+import TTeacherLeave from "../teacher/teacher-details/teacherLeave.tsx";
+import TTeacherSalary from "../teacher/teacher-details/teacherSalary.tsx";
+import TTeacherLibrary from "../teacher/teacher-details/teacherLibrary.tsx";
 
 const routes = all_routes;
 
@@ -542,6 +547,31 @@ export const publicRoutes = [
   {
     path: teacher_routes.studentAttendance,
     element: <TStudentAttendance />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.teacherDetails,
+    element: <TTeacherDetails />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.teachersRoutine,
+    element: <TTeachersRoutine />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.teacherLeaves,
+    element: <TTeacherLeave />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.teacherSalary,
+    element: <TTeacherSalary />,
+    route: Route,
+  },
+  {
+    path: teacher_routes.teacherLibrary,
+    element: <TTeacherLibrary />,
     route: Route,
   },
   {

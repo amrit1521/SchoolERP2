@@ -177,6 +177,59 @@ exports.deleteSubject = async (req, res) => {
   }
 };
 
+exports.getAllSubjectForStudent = async (req,res) =>{
+  try{
+    const userId = req.params?.userId;
+
+    if (!userId) {
+      return res.status(404).json({
+        success: false,
+        message: "user not found.",
+      });
+    }
+
+    const [userRows] = await db.query(
+      `
+      SELECT 
+        u.id,
+        s.class_id,
+        s.rollnum
+      FROM users u
+      LEFT JOIN students s ON s.stu_id = u.id
+      WHERE u.id = ?
+      `,
+      [userId]
+    );
+    if (!userRows || userRows.length === 0) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const student = userRows[0];
+    const classId = student.class_id;
+
+     const sql = `SELECT 
+                cs.name,
+                cs.code,
+                cs.type,
+                cs.id,
+                cs.status
+              from class_syllabus csl
+              LEFT JOIN class_subject cs ON cs.id = csl.subject_id
+              WHERE csl.class_id=?`;
+    const [rows] = await db.query(sql, [classId]); 
+    return res.status(200).json({
+      message: "All subjects fetched successfully!",
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error in allSubject:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+}
+
 exports.allSubjectForClass = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -226,6 +279,53 @@ exports.allSubjectForClass = async (req, res) => {
       success: true,
       data: result,
     });
+  } catch (error) {
+    console.error("Error in allSubject:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
+
+exports.allClassSubject = async (req, res) => {
+  try {
+    const sql = `SELECT 
+                cs.name AS subject_name,
+                cs.code AS subject_code,
+                c.class_name,
+                c.id AS class_id
+              FROM class_syllabus csl
+              LEFT JOIN class_subject cs ON cs.id = csl.subject_id
+              LEFT JOIN classes c ON c.id = csl.class_id`;
+    
+    const [rows] = await db.query(sql);
+
+    const classSubjectsMap = {};
+
+    rows.forEach(row => {
+      if (!classSubjectsMap[row.class_name]) {
+        classSubjectsMap[row.class_name] = {
+          class_name: row.class_name,
+          class_id: row.class_id,
+          subjects: []
+        };
+      }
+
+      classSubjectsMap[row.class_name].subjects.push({
+        subject_name: row.subject_name,
+        code: row.subject_code
+      });
+    });
+
+    const result = Object.values(classSubjectsMap);
+
+    return res.status(200).json({
+      message: "All subjects fetched successfully!",
+      success: true,
+      data: result,
+    });
+
   } catch (error) {
     console.error("Error in allSubject:", error);
     return res.status(500).json({

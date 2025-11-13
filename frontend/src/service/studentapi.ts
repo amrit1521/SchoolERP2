@@ -9,3 +9,5 @@ export const getStudentLeaveData = (userId: number) => api.get(`/stu/studentleav
 export const getSpecStudentProfileDetails = (userId: number) => api.get(`/stu/specstudentdetails/${userId}`);
 export const getExamResultForStudent = (userId: number) => api.get(`/exam/getresultbyuser_id/${userId}`);
 export const getExamNameForStudent = (userId: number) => api.get(`/exam/examNameforastudentbyuser_id/${userId}`);
+export const getStudentAttendanceData = (userId:number) => api.get(`/attendance/getstuattendancesdata/${userId}`);
+export const getAllSubjectForStudent = (classId:number) => api.get(`/subject/allsubjectfostudent/${classId}`);

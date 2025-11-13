@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 // import ImageWithBasePath from "../core/common/imageWithBasePath";
 import {
   // classduration,
@@ -18,7 +18,7 @@ import { all_routes } from "../router/all_routes";
 import TooltipOption from "../core/common/tooltipOption";
 import {
   addTimeTable,
-  filterTimeTable,
+  // filterTimeTable,
   getAllRolePermissions,
   getAllSectionForAClass,
   Imageurl,
@@ -175,11 +175,11 @@ const StudentClassTimetable = () => {
     day: string;
     timefrom: string;
     timeto: string;
-    img_src:string;
+    img_src: string;
   }
 
   const [timeTable, setTimeTable] = useState<TimeTableData[]>([]);
-  const [timeTablefilter, setTimeTablefilter] = useState<TimeTableData[]>([]);
+  // const [timeTablefilter, setTimeTablefilter] = useState<TimeTableData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchTimeTable = async (userId: number) => {
@@ -189,7 +189,7 @@ const StudentClassTimetable = () => {
       // console.log(data)
       if (data.success) {
         setTimeTable(data.timetable);
-        setTimeTablefilter(data.timetable);
+        // setTimeTablefilter(data.timetable);
       }
     } catch (error: any) {
       console.log(error);
@@ -216,7 +216,7 @@ const StudentClassTimetable = () => {
       return acc;
     }, {});
   };
-  const groupedData = groupByDay(timeTablefilter);
+  const groupedData = groupByDay(timeTable);
 
   useEffect(() => {
     fetchTimeTable(userId);
@@ -225,46 +225,46 @@ const StudentClassTimetable = () => {
   // ------------------------------------------------filter
 
   // Filter
-  interface FilterData {
-    class: number | null;
-    section: number | null;
-  }
+  // interface FilterData {
+  //   class: number | null;
+  //   section: number | null;
+  // }
 
-  const [filterData, setFilterData] = useState<FilterData>({
-    class: null,
-    section: null,
-  });
+  // const [filterData, setFilterData] = useState<FilterData>({
+  //   class: null,
+  //   section: null,
+  // });
 
-  const handleFilterSelectChange = (
-    name: keyof FilterData,
-    value: string | number
-  ) => {
-    setFilterData((prev) => ({ ...prev, [name]: value }));
-  };
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  // const handleFilterSelectChange = (
+  //   name: keyof FilterData,
+  //   value: string | number
+  // ) => {
+  //   setFilterData((prev) => ({ ...prev, [name]: value }));
+  // };
+  // const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const handleApplyClick = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // console.log(filterData)
-    try {
-      const { data } = await filterTimeTable(filterData);
-      // console.log(data)
-      if (data.success) {
-        setTimeTablefilter(data.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // const handleApplyClick = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   // console.log(filterData)
+  //   try {
+  //     const { data } = await filterTimeTable(filterData);
+  //     // console.log(data)
+  //     if (data.success) {
+  //       setTimeTablefilter(data.data);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
-  const handleResetFilter = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    setFilterData({ class: null, section: null });
-    setTimeTablefilter(timeTable);
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
+  // const handleResetFilter = (e?: React.MouseEvent) => {
+  //   e?.preventDefault();
+  //   setFilterData({ class: null, section: null });
+  //   setTimeTablefilter(timeTable);
+  //   if (dropdownMenuRef.current) {
+  //     dropdownMenuRef.current.classList.remove("show");
+  //   }
+  // };
 
   // OPTIONS
 
@@ -379,7 +379,7 @@ const StudentClassTimetable = () => {
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
               <h4 className="mb-3">Time Table</h4>
               <div className="d-flex align-items-center flex-wrap">
-                <div className="dropdown mb-3 me-2">
+                {/* <div className="dropdown mb-3 me-2">
                   <Link
                     to="#"
                     className="btn btn-outline-light bg-white dropdown-toggle"
@@ -449,49 +449,8 @@ const StudentClassTimetable = () => {
                         </button>
                       </div>
                     </form>
-
-                    {/* <form>
-                      <div className="d-flex align-items-center border-bottom p-3">
-                        <h4>Filter</h4>
-                      </div>
-                      <div className="p-3 pb-0 border-bottom">
-                        <div className="row">
-                          <div className="col-md-12">
-                            <div className="mb-3">
-                              <label className="form-label">Class</label>
-
-                              <CommonSelect
-                                className="select"
-                                options={classSylabus}
-                              />
-                            </div>
-                          </div>
-                          <div className="col-md-12">
-                            <div className="mb-3">
-                              <label className="form-label">Section</label>
-                              <CommonSelect
-                                className="select"
-                                options={classSection}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 d-flex align-items-center justify-content-end">
-                        <Link to="#" className="btn btn-light me-3">
-                          Reset
-                        </Link>
-                        <Link
-                          to="#"
-                          className="btn btn-primary"
-                          onClick={handleApplyClick}
-                        >
-                          Apply
-                        </Link>
-                      </div>
-                    </form> */}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
             <div className="card-body pb-0">
@@ -538,7 +497,7 @@ const StudentClassTimetable = () => {
                           </p>
                           <div className="bg-white rounded p-1 mt-1">
                             <Link
-                              to='#'
+                              to="#"
                               className="text-muted d-flex align-items-center"
                             >
                               <span className="avatar avatar-sm me-2">

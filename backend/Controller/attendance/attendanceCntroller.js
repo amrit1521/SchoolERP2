@@ -846,3 +846,68 @@ exports.getStuAttendance = async (req, res) => {
     });
   }
 };
+
+
+exports.getStuAttendanceData = async (req,res) =>{
+  try{
+  const userId = req.params?.userId;
+
+  if(!userId){
+    return res.status(404).json({
+    success: false,
+    message:"user not found."
+  });
+  }
+
+  const [userRows] = await db.query(
+    `SELECT
+        users.id,
+        s.class_id,
+        s.section_id,
+        s.rollnum
+    FROM users
+    LEFT JOIN students as s ON s.stu_id = users.id
+    WHERE users.id = ?`,
+    [userId]
+  );
+  if (!userRows || userRows.length === 0) {
+    return res.status(404).json({ message: "Student not found" });
+  }
+  const student = userRows[0];
+  const rollnum = student.rollnum;
+
+  const summarySql = `
+      SELECT 
+        SUM(CASE WHEN attendance = 'Present' THEN 1 ELSE 0 END) AS Present,
+        SUM(CASE WHEN attendance = 'Absent' THEN 1 ELSE 0 END) AS Absent,
+        SUM(CASE WHEN attendance = 'Holiday' THEN 1 ELSE 0 END) AS Holiday,
+        SUM(CASE WHEN attendance = 'Halfday' THEN 1 ELSE 0 END) AS Halfday,
+        SUM(CASE WHEN attendance = 'Late' THEN 1 ELSE 0 END) AS Late
+      FROM attendance_info
+      WHERE student_rollnum = ?
+    `;
+
+    const [summary] = await db.query(summarySql, [rollnum]);
+
+    const detailSql = `
+      SELECT id, attendance, attendance_date_info
+      FROM attendance_info
+      WHERE student_rollnum = ?
+      ORDER BY attendance_date_info ASC
+    `;
+
+    const [details] = await db.query(detailSql, [rollnum]);
+
+    return res.status(200).json({
+      success: true,
+      summary: summary[0],
+      details: details,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
