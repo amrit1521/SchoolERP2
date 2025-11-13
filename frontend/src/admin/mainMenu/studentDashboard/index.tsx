@@ -27,6 +27,15 @@ import {
 import { toast } from "react-toastify";
 import CommonSelect from "../../../core/common/commonSelect";
 import { student_routes } from "../../router/student_routes";
+import { getAllSubjectForStudent } from "../../../service/studentapi";
+
+interface AllSubject {
+  id: number;
+  name: string;
+  code: string;
+  type: string;
+  status: string;
+}
 
 const StudentDasboard = () => {
   const routes = all_routes;
@@ -56,7 +65,7 @@ const StudentDasboard = () => {
       enabled: false,
     },
 
-    series: [0, 0, 0, 0],
+    series: [],
     labels: ["Present", "Late", "Half Day", "Absent"],
     colors: ["#1ABE17", "#1170E4", "#E9EDF4", "#E82646"],
     responsive: [
@@ -292,25 +301,31 @@ const StudentDasboard = () => {
   const [filteredExamResult, setFilteredExamResult] = useState<any>(null);
   const [feeReminder, setFeeReminder] = useState<any[]>([]);
   const [studentClassTeachers, setStudentClassTeachers] = useState<any[]>([]);
+  const [allSubject, setAllSubject] = useState<AllSubject[]>([]);
   const fetchStudentAttendance = async (rollNo: number) => {
     try {
       const { data } = await getSpecStudentAttendance(rollNo);
       if (data.success) {
         setStudentAttendance(data.data[0]);
-        setAttendanceChart((prevChart: any) => ({
-          ...prevChart,
-          series: [
-            data.data[0].p || 0,
-            data.data[0].l || 0,
-            data.data[0].h || 0,
-            data.data[0].a || 0,
-          ],
-        }));
       }
     } catch (error: any) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    if (studentAttendance) {
+      setAttendanceChart((prevChart: any) => ({
+        ...prevChart,
+        series: [
+          studentAttendance?.p || 0,
+          studentAttendance?.l || 0,
+          studentAttendance?.h || 0,
+          studentAttendance?.a || 0,
+        ],
+      }));
+    }
+  }, [studentAttendance]);
 
   const fetchStudent = async (userId: number) => {
     try {
@@ -507,6 +522,24 @@ const StudentDasboard = () => {
     }
   };
 
+  const fetchAllSubject = async (userId: any) => {
+    await new Promise((res) => setTimeout(res, 500));
+    try {
+      const { data } = await getAllSubjectForStudent(userId);
+      if (data.success) {
+        setAllSubject(
+          data.data.map((sub: any) => ({
+            code: sub.code,
+            name: sub.name,
+          }))
+        );
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Something went wrong");
+    }
+  };
+
   useEffect(() => {
     if (examOptions) {
       fetchExamResult(student?.rollnum);
@@ -556,6 +589,9 @@ const StudentDasboard = () => {
           student?.section_id
         );
       })();
+      if (student?.user_id) {
+        fetchAllSubject(student?.user_id);
+      }
     }
   }, [student]);
 
@@ -1175,7 +1211,10 @@ const StudentDasboard = () => {
                             to={routes.teacherDetails}
                             className="avatar avatar-lg rounded me-2"
                           >
-                            <img src="" alt="Teacher" />
+                            <img
+                              src="assets/img/teachers/teacher-01.jpg"
+                              alt="Teacher"
+                            />
                           </Link>
 
                           <div className="overflow-hidden">
@@ -1493,139 +1532,31 @@ const StudentDasboard = () => {
                     </div>
                   </div>
                   <ul className="list-group">
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Maths</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-primary rounded"
-                              role="progressbar"
-                              style={{ width: "20%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Physics</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-secondary rounded"
-                              role="progressbar"
-                              style={{ width: "30%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Chemistry</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-info rounded"
-                              role="progressbar"
-                              style={{ width: "40%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Botany</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-success rounded"
-                              role="progressbar"
-                              style={{ width: "50%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">English</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-warning rounded"
-                              role="progressbar"
-                              style={{ width: "70%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Spanish</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-danger rounded"
-                              role="progressbar"
-                              style={{ width: "80%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div className="row align-items-center">
-                        <div className="col-sm-4">
-                          <p className="text-dark">Japanese</p>
-                        </div>
-                        <div className="col-sm-8">
-                          <div className="progress progress-xs flex-grow-1">
-                            <div
-                              className="progress-bar bg-primary rounded"
-                              role="progressbar"
-                              style={{ width: "85%" }}
-                              aria-valuenow={30}
-                              aria-valuemin={0}
-                              aria-valuemax={100}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </li>
+                    {allSubject
+                      ? allSubject.map((sub: any, index: number) => (
+                          <li className="list-group-item" key={index}>
+                            <div className="row align-items-center">
+                              <div className="col-sm-4">
+                                <p className="text-dark">
+                                  {sub.name}({sub.code})
+                                </p>
+                              </div>
+                              <div className="col-sm-8">
+                                <div className="progress progress-xs flex-grow-1">
+                                  <div
+                                    className="progress-bar bg-primary rounded"
+                                    role="progressbar"
+                                    style={{ width: `${20 * (index + 1)}%` }}
+                                    aria-valuenow={30}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))
+                      : null}
                   </ul>
                 </div>
               </div>

@@ -135,7 +135,6 @@ const HomeWork = () => {
     if (userId) {
       try {
         const { data } = await getAllStudentHomeWork(userId);
-        console.log(data.data);
         if (data.success) {
           setHomeworks(data.data);
         }
@@ -184,7 +183,6 @@ const HomeWork = () => {
     }
   }, [permission]);
 
-  console.log("permission : ", permission);
   useEffect(() => {
     if (formData.className) {
       fetchSection();
