@@ -11,6 +11,7 @@ router.get('/spesubject/:id' , subjectController.getSubjectById)
 router.put('/editsubject/:id' , subjectController.updateSubject)
 router.get('/allsubjectforClass/:userId' , subjectController.allSubjectForClass)
 router.get('/allsubjectfostudent/:userId' , subjectController.getAllSubjectForStudent)
+router.get('/allclasssubject' , subjectController.allClassSubject)
 
 
 

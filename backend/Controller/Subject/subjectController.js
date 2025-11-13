@@ -287,3 +287,50 @@ exports.allSubjectForClass = async (req, res) => {
     });
   }
 };
+
+exports.allClassSubject = async (req, res) => {
+  try {
+    const sql = `SELECT 
+                cs.name AS subject_name,
+                cs.code AS subject_code,
+                c.class_name,
+                c.id AS class_id
+              FROM class_syllabus csl
+              LEFT JOIN class_subject cs ON cs.id = csl.subject_id
+              LEFT JOIN classes c ON c.id = csl.class_id`;
+    
+    const [rows] = await db.query(sql);
+
+    const classSubjectsMap = {};
+
+    rows.forEach(row => {
+      if (!classSubjectsMap[row.class_name]) {
+        classSubjectsMap[row.class_name] = {
+          class_name: row.class_name,
+          class_id: row.class_id,
+          subjects: []
+        };
+      }
+
+      classSubjectsMap[row.class_name].subjects.push({
+        subject_name: row.subject_name,
+        code: row.subject_code
+      });
+    });
+
+    const result = Object.values(classSubjectsMap);
+
+    return res.status(200).json({
+      message: "All subjects fetched successfully!",
+      success: true,
+      data: result,
+    });
+
+  } catch (error) {
+    console.error("Error in allSubject:", error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
+  }
+};
