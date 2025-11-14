@@ -23,17 +23,7 @@ import { CiPause1 } from "react-icons/ci";
 import { GrResume } from "react-icons/gr";
 import { FaStopCircle } from "react-icons/fa";
 import { Audiourl, Imageurl } from "../../service/api";
-// import { AudioRecorder } from 'react-audio-voice-recorder';
 
-// interface Message {
-//   id?: number;
-//   conversation_id: number;
-//   sender_id: number;
-//   message_text: string;
-//   firstname?: string;
-//   lastname?: string;
-//   created_at?: string;
-// }
 
 const Chat = () => {
 
@@ -165,9 +155,6 @@ const Chat = () => {
       newSocket.disconnect();
     };
   }, [currentUserId, conversationId]);
-
-
-
   // ✅ when conversation changes, join the room
   useEffect(() => {
     if (socket && conversationId) {
@@ -663,7 +650,7 @@ const Chat = () => {
                               {/* /Left Chat Title */}
 
                               {
-                                allConversationUser && allConversationUser.map((u: any) => (
+                               allConversationUser.length>0? allConversationUser && allConversationUser.map((u: any) => (
                                   <ul className="user-list">
 
                                     <li key={u.conversation_id} onClick={() => fetchSpeRoomConv(u.conversation_id, u.other_user_id)} className="user-list-item">
@@ -708,6 +695,44 @@ const Chat = () => {
 
                                   </ul>
                                 ))
+                                :
+                                  <ul className="user-list">
+
+                                <li  className="user-list-item">
+                                      <div
+
+                                        className="p-2 border rounded d-block mb-2"
+                                      >
+                                        <div className="d-flex align-items-center">
+                                          <div className={`avatar  avatar-lg me-2 flex-shrink-0`}>
+                                          <ImageWithBasePath
+                                                src="assets/img/profiles/avatar-04.jpg"
+                                                className="rounded-circle"
+                                                alt="image"
+                                              />
+
+                                          </div>
+                                          <div className="flex-grow-1 overflow-hidden me-2">
+                                            <h6 className="mb-1 text-truncate">
+                                             No User
+                                            </h6>
+                                            <p className="text-truncate">
+                                              <i className="bx  me-1" />
+                                              Please Select User
+                                            </p>
+                                          </div>
+                                          <div className="flex-shrink-0 align-self-start text-end">
+                                            <small className="text-muted">
+                                            
+                                            </small>
+                                            <div>
+                                              {/* <i className="bx bx-check-double" /> */}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </li>
+                                    </ul>
                               }
 
                             </>)

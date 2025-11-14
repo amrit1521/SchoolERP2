@@ -101,4 +101,6 @@ export const teacher_routes = {
   //   addStaff: "/hrm/add-staff",
   //   editStaff: "/hrm/edit-staff",
   //   staffsAttendance: "/hrm/staffs-attendance",
+  ttestimonials:"/teacher/testimonials",
+  tfaq:"/teacher/tfq",
 };

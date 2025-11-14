@@ -1,22 +1,22 @@
 
 import { Link } from "react-router-dom";
-import PredefinedDateRanges from "../../core/common/datePicker";
-import CommonSelect from "../../core/common/commonSelect";
-import { page, parent } from "../../core/common/selectoption/selectoption";
+import PredefinedDateRanges from "../core/common/datePicker";
+import CommonSelect from "../core/common/commonSelect";
+import { page, parent } from "../core/common/selectoption/selectoption";
 // import { testimonials_data } from "../../core/data/json/testimonials_data";
-import Table from "../../core/common/dataTable/index";
+import Table from "../core/common/dataTable/index";
 // import ImageWithBasePath from "../../core/common/imageWithBasePath";
 // import { DatePicker } from "antd";
-import type { TableData } from "../../core/data/interface";
+import type { TableData } from "../core/data/interface";
 import { all_routes } from "../router/all_routes";
-import TooltipOption from "../../core/common/tooltipOption";
+import TooltipOption from "../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../handlePopUpmodal";
-import { addTestiMonials, allTestimonials, deleteTestimonials, editTestimonials, speTestimonials } from "../../service/testimonials";
-import { Imageurl } from "../../service/api";
+import { handleModalPopUp } from "../handlePopUpmodal";
+import { addTestiMonials, allTestimonials, deleteTestimonials, editTestimonials} from "../service/testimonials";
+import { Imageurl } from "../service/api";
 import dayjs from 'dayjs'
-import { Spinner } from "../../spinner";
+import { Spinner } from "../spinner";
 export interface Testimonial {
   id: number;
   content: string;
@@ -26,7 +26,7 @@ export interface Testimonial {
   user_img: string | null;
 }
 
-const Testimonials = () => {
+const STestimonials = () => {
   // const data = testimonials_data;
   const routes = all_routes;
   const [testiMonials, setTestiMonials] = useState<Testimonial[]>([])
@@ -67,21 +67,22 @@ const Testimonials = () => {
   }, [])
 
 
-  const fetchByID = async (id: number) => {
-    if (!id) return
-    try {
+  // const fetchByID = async (id: number) => {
+  //   if (!id) return
+  //   try {
 
-      const { data } = await speTestimonials(id)
-      if (data.success) {
-        setContent(data.data.content)
-        setEditId(data.data.id)
-      }
+  //     const { data } = await speTestimonials(id)
+  //     if (data.success) {
+  //       setContent(data.data.content)
+  //       setEditId(data.data.id)
+  //     }
 
-    } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
-    }
-  }
+  //   } catch (error: any) {
+  //     console.log(error)
+  //     toast.error(error.response.data.message)
+  //   }
+  // }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!content.trim()) {
@@ -257,48 +258,48 @@ const Testimonials = () => {
       sorter: (a: TableData, b: TableData) =>
         a.dateAdded.length - b.dateAdded.length,
     },
-    {
-      title: "Action",
-      dataIndex: "action",
-      render: (_: string, record: any) => (
-        <div className="d-flex align-items-center">
-          <div className="dropdown">
-            <Link
-              to="#"
-              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="ti ti-dots-vertical fs-14" />
-            </Link>
-            <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => fetchByID(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_testimonials"
-                >
-                  <i className="ti ti-edit-circle me-2" />
-                  Edit
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   title: "Action",
+    //   dataIndex: "action",
+    //   render: (_: string, record: any) => (
+    //     <div className="d-flex align-items-center">
+    //       <div className="dropdown">
+    //         <Link
+    //           to="#"
+    //           className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+    //           data-bs-toggle="dropdown"
+    //           aria-expanded="false"
+    //         >
+    //           <i className="ti ti-dots-vertical fs-14" />
+    //         </Link>
+    //         <ul className="dropdown-menu dropdown-menu-right p-3">
+    //           <li>
+    //             <button
+    //               className="dropdown-item rounded-1"
+    //               onClick={() => fetchByID(record.id)}
+    //               data-bs-toggle="modal"
+    //               data-bs-target="#edit_testimonials"
+    //             >
+    //               <i className="ti ti-edit-circle me-2" />
+    //               Edit
+    //             </button>
+    //           </li>
+    //           <li>
+    //             <button
+    //               className="dropdown-item rounded-1"
+    //               onClick={() => setDeleteId(record.id)}
+    //               data-bs-toggle="modal"
+    //               data-bs-target="#delete-modal"
+    //             >
+    //               <i className="ti ti-trash-x me-2" />
+    //               Delete
+    //             </button>
+    //           </li>
+    //         </ul>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
   ];
 
   return (
@@ -645,4 +646,4 @@ const Testimonials = () => {
   );
 };
 
-export default Testimonials;
+export default STestimonials;

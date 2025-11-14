@@ -20,6 +20,8 @@ export const student_routes = {
   studentprofileDetail: "/student/student-details",
   examResult: "/student/exam-result",
   studentTimeTable: "/student/time-table",
+  stestimonials:"/student/stestimonials",
+  sfaq:"/student/sfq"
   //   // auth routes routes
   //   login: "/login",
   //   login2: "/login-2",
