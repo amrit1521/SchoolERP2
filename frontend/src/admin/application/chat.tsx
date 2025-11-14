@@ -23,17 +23,7 @@ import { CiPause1 } from "react-icons/ci";
 import { GrResume } from "react-icons/gr";
 import { FaStopCircle } from "react-icons/fa";
 import { Audiourl, Imageurl } from "../../service/api";
-// import { AudioRecorder } from 'react-audio-voice-recorder';
 
-// interface Message {
-//   id?: number;
-//   conversation_id: number;
-//   sender_id: number;
-//   message_text: string;
-//   firstname?: string;
-//   lastname?: string;
-//   created_at?: string;
-// }
 
 const Chat = () => {
 
@@ -165,9 +155,6 @@ const Chat = () => {
       newSocket.disconnect();
     };
   }, [currentUserId, conversationId]);
-
-
-
   // ✅ when conversation changes, join the room
   useEffect(() => {
     if (socket && conversationId) {
@@ -410,10 +397,12 @@ const Chat = () => {
     }
   }
   // formate time
-  function formatTimeAgo(dateString: any) {
-    const date = new Date(dateString);
+  function formatTimeAgo(dateInput: string | number | Date): string {
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return "Invalid date"; // safety check
+
     const now = new Date();
-    const seconds = Math.floor((Number(now) - Number(date)) / 1000);
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (seconds < 60) return "Just now";
     const minutes = Math.floor(seconds / 60);
@@ -424,13 +413,13 @@ const Chat = () => {
     if (days === 1) return "Yesterday";
     if (days < 7) return `${days} day${days > 1 ? "s" : ""} ago`;
 
-    // For old messages (more than a week)
     return date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
   }
+
   const formatMessageTimeInConversation = (dateString: any) => {
 
     const date = new Date(dateString);
@@ -449,12 +438,10 @@ const Chat = () => {
               {/* sidebar group */}
               <div className="sidebar-group left-sidebar chat_sidebar">
                 {/* Chats sidebar */}
-
                 <div
                   id="chats"
                   className="left-sidebar-wrap sidebar active slimscroll"
                 >
-
                   <div className="slimscroll-active-sidebar">
                     {/* Left Chat Title */}
                     <div className="left-chat-title all-chats d-flex justify-content-between align-items-center">
@@ -534,10 +521,7 @@ const Chat = () => {
                         <h5>Online Now</h5>
                         {/* <Link to="#">View All</Link> */}
                       </div>
-
-
                       {/* <Slider {...profile}> */}
-
                       <div className="d-flex gap-1">
                         {
                           onlineUsers && onlineUsers.length > 0 ? (
@@ -566,8 +550,6 @@ const Chat = () => {
                           )
                         }
                       </div>
-
-
                       {/* <div className="top-contacts-box  me-1">
                           <div className="avatar avatar-lg avatar-online">
                             <ImageWithBasePath
@@ -613,11 +595,7 @@ const Chat = () => {
                             />
                           </div>
                         </div> */}
-
-
                       {/* </Slider> */}
-
-
                     </div>
                     {/* /Top Online Contacts */}
                     <div className="sidebar-body chat-body" id="chatsidebar">
@@ -672,7 +650,7 @@ const Chat = () => {
                               {/* /Left Chat Title */}
 
                               {
-                                allConversationUser && allConversationUser.map((u: any) => (
+                               allConversationUser.length>0? allConversationUser && allConversationUser.map((u: any) => (
                                   <ul className="user-list">
 
                                     <li key={u.conversation_id} onClick={() => fetchSpeRoomConv(u.conversation_id, u.other_user_id)} className="user-list-item">
@@ -717,6 +695,44 @@ const Chat = () => {
 
                                   </ul>
                                 ))
+                                :
+                                  <ul className="user-list">
+
+                                <li  className="user-list-item">
+                                      <div
+
+                                        className="p-2 border rounded d-block mb-2"
+                                      >
+                                        <div className="d-flex align-items-center">
+                                          <div className={`avatar  avatar-lg me-2 flex-shrink-0`}>
+                                          <ImageWithBasePath
+                                                src="assets/img/profiles/avatar-04.jpg"
+                                                className="rounded-circle"
+                                                alt="image"
+                                              />
+
+                                          </div>
+                                          <div className="flex-grow-1 overflow-hidden me-2">
+                                            <h6 className="mb-1 text-truncate">
+                                             No User
+                                            </h6>
+                                            <p className="text-truncate">
+                                              <i className="bx  me-1" />
+                                              Please Select User
+                                            </p>
+                                          </div>
+                                          <div className="flex-shrink-0 align-self-start text-end">
+                                            <small className="text-muted">
+                                            
+                                            </small>
+                                            <div>
+                                              {/* <i className="bx bx-check-double" /> */}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </li>
+                                    </ul>
                               }
 
                             </>)
@@ -725,7 +741,6 @@ const Chat = () => {
                       }
                     </div>
                   </div>
-
                 </div>
 
                 {/* / Chats sidebar */}
@@ -768,8 +783,13 @@ const Chat = () => {
                         <div>
                           <h6>{otherUser ? otherUser.name : "Select User"}</h6>
                           <small className="last-seen">
-                            {otherUser.is_online == 1 ? 'Online' : `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`}
+                            {otherUser?.is_online === 1
+                              ? "Online"
+                              : otherUser?.last_seen
+                                ? `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`
+                                : "Last Seen: Just now"}
                           </small>
+
                         </div>
                       </div>
                       <div className="chat-options ">

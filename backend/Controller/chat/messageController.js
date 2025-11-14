@@ -111,7 +111,7 @@ exports.sendFileMessage = async (req, res) => {
       });
     }
 
-    // 🧩 Determine folder and message_type dynamically
+   
     let folder = "others";
     let message_type = "file"; // default
 
@@ -221,7 +221,7 @@ exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {
               CASE 
                 WHEN r.role_name = 'student' THEN s.stu_img
                 WHEN r.role_name = 'teacher' THEN t.img_src
-                WHEN r.role_name = 'staff' THEN st.img_src
+                WHEN u.remark = 'staff' THEN st.img_src
                 ELSE NULL
               END
             FROM users u

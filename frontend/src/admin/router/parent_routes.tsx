@@ -19,6 +19,8 @@ export const parent_routes = {
   childAttendance: "/parent/child/attendance",
   childSubject: "/parent/child/subjects",
   childsTimeTable: "/parent/child/child-timetable",
+  ptestimonials:"/parent/ptestimonials",
+  pfaq:"/parent/pfaq"
   //   blankPage: "/blank-page",
   //   calendar: "/calendar",
   //   dataTables: "/data-tables",

@@ -24,6 +24,7 @@ const FontawesomeIcons = () => {
                 <div className="card-body">
                   <div className="icons-items">
                     <ul className="icons-list">
+                     
                       <li><i className="fa fa-address-book" data-bs-toggle="tooltip" title="fa fa-address-book" /></li>
                       <li><i className="fa fa-address-card" data-bs-toggle="tooltip" title="fa fa-address-card" /></li>
                       <li><i className="fa fa-align-center" data-bs-toggle="tooltip" title="fa fa-align-center" /></li>

@@ -1,4 +1,5 @@
 
+const { success } = require('zod');
 const db = require('../../config/db')
 
 exports.allUsers = async (req, res) => {
@@ -97,4 +98,35 @@ exports.onlineUsers = async (req, res) => {
         });
     }
 };
+
+exports.offlineUsers =async(req,res)=>{
+
+
+    try {
+
+        const sql = `
+         SELECT 
+         u.id AS user_id,
+         CONCAT(u.firstname , "" , u.lastname) AS name,
+         CASE 
+         WHEN  r.role_name = 'student' THEN s.stu_img
+         WHEN r.role_name = "teacher" THEN t.img_src
+         WHEN u.remark = 'staff' THEN st.img_src
+         ELSE NULL
+         END AS user_img
+         FROM users u
+         JOIN roles r 
+        `
+
+
+        
+    } catch (error) {
+        console.error("Error fetchng offline users " , error) 
+        return res.status(500).json({
+            message:"Internal server error ",
+            success:false,
+            error:error.message
+        })
+    }
+}
 

@@ -1514,6 +1514,27 @@ export const TeacherSidebarData = [
       },
     ],
   },
+  {
+    label: "CONTENT",
+    icon: "ti ti-page-break",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+     
+      {
+        label: "Testimonials",
+        link: teacher_routes.ttestimonials,
+        showSubRoute: false,
+        icon: "ti ti-quote",
+      },
+      {
+        label: "FAQ",
+        link: teacher_routes.tfaq,
+        showSubRoute: false,
+        icon: "ti ti-question-mark",
+      },
+    ],
+  },
 ];
 
 export const StudentSidebarData = [
@@ -1670,6 +1691,27 @@ export const StudentSidebarData = [
         label: "File Manager",
         link: routes.fileManager,
         showSubRoute: false,
+      },
+    ],
+  },
+  {
+    label: "CONTENT",
+    icon: "ti ti-page-break",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+     
+      {
+        label: "Testimonials",
+        link: student_routes.stestimonials,
+        showSubRoute: false,
+        icon: "ti ti-quote",
+      },
+      {
+        label: "FAQ",
+        link: student_routes.sfaq,
+        showSubRoute: false,
+        icon: "ti ti-question-mark",
       },
     ],
   },
@@ -1840,6 +1882,27 @@ export const ParentSidebarData = [
         label: "File Manager",
         link: routes.fileManager,
         showSubRoute: false,
+      },
+    ],
+  },
+  {
+    label: "CONTENT",
+    icon: "ti ti-page-break",
+    submenu: true,
+    showSubRoute: false,
+    submenuItems: [
+     
+      {
+        label: "Testimonials",
+        link: parent_routes.ptestimonials,
+        showSubRoute: false,
+        icon: "ti ti-quote",
+      },
+      {
+        label: "FAQ",
+        link: parent_routes.pfaq,
+        showSubRoute: false,
+        icon: "ti ti-question-mark",
       },
     ],
   },

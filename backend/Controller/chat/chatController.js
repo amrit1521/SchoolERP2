@@ -1,6 +1,6 @@
 const db = require('../../config/db');
 
-// ✅ Create Private Conversation
+
 exports.createPrivateConversation = async (req, res) => {
   const { sender_id, receiver_id } = req.body;
   try {
@@ -72,6 +72,8 @@ exports.createGroupConversation = async (req, res) => {
       `SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
       [convId, created_by]
     );
+
+
     if (check.length === 0) {
       await db.query(
         `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES (?, ?, ?)`,
@@ -173,3 +175,95 @@ exports.getUserConversations = async (req, res) => {
     });
   }
 };
+
+exports.createGroupConversationViaPermission = async (req, res) => {
+  const { name, created_by, members = [] } = req.body;
+
+  try {
+    // Get role of creator
+    const [user] = await db.query(
+      `SELECT role_id FROM users WHERE id = ?`,
+      [created_by]
+    );
+
+    if (user.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const role = user[0].role_id;
+
+    // Student cannot create groups
+    if (role === 3) {
+      return res.status(403).json({
+        success: false,
+        message: "Students are not allowed to create groups"
+      });
+    }
+
+    // Teacher can only create student groups
+    if (role === 2) {
+      const [memberRoles] = await db.query(
+        `SELECT role_id FROM users WHERE id IN (?)`,
+        [members]
+      );
+      
+      const invalid = memberRoles.filter(m => m.role_id !== 3);
+
+      if (invalid.length > 0) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can create groups only with students"
+        });
+      }
+    }
+
+    // Create group
+    const [result] = await db.query(
+      `INSERT INTO conversations (name, type, created_by)
+       VALUES (?, 'group', ?)`,
+      [name, created_by]
+    );
+
+    const convId = result.insertId;
+
+    // Add members
+    const values = members.map(m => [convId, m, created_by]);
+    if (values.length) {
+      await db.query(
+        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES ?`,
+        [values]
+      );
+    }
+
+    // Add creator as member if not included
+    const [check] = await db.query(
+      `SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
+      [convId, created_by]
+    );
+
+    if (!check.length) {
+      await db.query(
+        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES (?, ?, ?)`,
+        [convId, created_by, created_by]
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: "Group conversation created successfully",
+      data: { conversation_id: convId },
+    });
+
+  } catch (err) {
+    console.error("createGroupConversation Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while creating group conversation",
+      error: err.message,
+    });
+  }
+};
+

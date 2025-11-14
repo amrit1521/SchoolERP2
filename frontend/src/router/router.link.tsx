@@ -259,6 +259,7 @@ import MyLeaves from "../student/myLeave.tsx";
 import FeesReminder from "../student/feeReminder.tsx";
 import StudentClassSubject from "../student/studentClassSubject.tsx";
 import StudentExamResult from "../student/studentExamResult.tsx";
+import STestimonials from "../student/testimonials.tsx";
 import { teacher_routes } from "../admin/router/teacher_routes.tsx";
 import TStudentGrid from "../teacher/peoples/students/student-grid/index.tsx";
 import TStudentList from "../teacher/peoples/students/student-list/index.tsx";
@@ -307,11 +308,18 @@ import PHomeWork from "../parent/homeWork.tsx";
 import PLeaves from "../parent/Leave.tsx";
 import PStudentClassSubject from "../parent/studentClassSubject.tsx";
 import PStudentClassTimetable from "../parent/studentTimeTable.tsx";
+import PTestimonials from "../parent/testimonials.tsx";
 import TTeacherDetails from "../teacher/teacher-details/teacherDetails.tsx";
 import TTeachersRoutine from "../teacher/teacher-details/teachersRoutine.tsx";
 import TTeacherLeave from "../teacher/teacher-details/teacherLeave.tsx";
 import TTeacherSalary from "../teacher/teacher-details/teacherSalary.tsx";
 import TTeacherLibrary from "../teacher/teacher-details/teacherLibrary.tsx";
+import TTestimonials from "../teacher/testimonials.tsx";
+import TFaq from "../teacher/faq.tsx";
+import SFaq from "../student/faq.tsx";
+import PFaq from "../parent/faq.tsx";
+
+
 
 const routes = all_routes;
 
@@ -402,6 +410,16 @@ export const publicRoutes = [
   {
     path: student_routes.homeWork,
     element: <HomeWork />,
+    route: Route,
+  },
+  {
+    path: student_routes.stestimonials,
+    element: <STestimonials />,
+    route: Route,
+  },
+   {
+    path: student_routes.sfaq,
+    element: <SFaq />,
     route: Route,
   },
   {
@@ -578,6 +596,16 @@ export const publicRoutes = [
     path: teacher_routes.holidays,
     element: <THoliday />,
     route: Route,
+  }, 
+   {
+    path: teacher_routes.ttestimonials,
+    element: <TTestimonials />,
+    route: Route,
+  },
+   {
+    path: teacher_routes.tfaq,
+    element: <TFaq />,
+    route: Route,
   },
   //parent dashboard routes:
   {
@@ -663,6 +691,16 @@ export const publicRoutes = [
   {
     path: `${parent_routes.holidays}`,
     element: <PHoliday />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.ptestimonials}`,
+    element: <PTestimonials />,
+    route: Route,
+  },
+  {
+    path: `${parent_routes.pfaq}`,
+    element: <PFaq />,
     route: Route,
   },
   {

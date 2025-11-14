@@ -1,22 +1,22 @@
 
 import { Link } from "react-router-dom";
-import PredefinedDateRanges from "../../core/common/datePicker";
-import CommonSelect from "../../core/common/commonSelect";
+import PredefinedDateRanges from "../core/common/datePicker";
+import CommonSelect from "../core/common/commonSelect";
 import {
   category3,
   questions,
   sections,
-} from "../../core/common/selectoption/selectoption";
+} from "../core/common/selectoption/selectoption";
 // import { faq_data } from "../../core/data/json/faq_data";
-import type { TableData } from "../../core/data/interface";
-import Table from "../../core/common/dataTable/index";
+import type { TableData } from "../core/data/interface";
+import Table from "../core/common/dataTable/index";
 import { all_routes } from "../router/all_routes";
-import TooltipOption from "../../core/common/tooltipOption";
+import TooltipOption from "../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
-import { handleModalPopUp } from "../../handlePopUpmodal";
-import { addFaq, allFaq, deleteFaq, editFaq, faqById, replyFaq } from "../../service/faq";
+import { handleModalPopUp } from "../handlePopUpmodal";
+import { addFaq, allFaq, deleteFaq, editFaq,replyFaq } from "../service/faq";
 import { toast } from "react-toastify";
-import { Spinner } from "../../spinner";
+import { Spinner } from "../spinner";
 
 
 
@@ -38,7 +38,7 @@ interface FAQFormErrors {
   answer?: string;
 }
 
-const Faq = () => {
+const SFaq = () => {
   // const data = faq_data;
   const routes = all_routes;
 
@@ -104,30 +104,30 @@ const Faq = () => {
     return newErrors;
   };
 
-  const fetchEditData = async (id: number) => {
+  // const fetchEditData = async (id: number) => {
 
-    if (!id) {
-      toast.warn('Id not provided !')
-      return
-    }
-    try {
+  //   if (!id) {
+  //     toast.warn('Id not provided !')
+  //     return
+  //   }
+  //   try {
 
-      const { data } = await faqById(Number(id))
+  //     const { data } = await faqById(Number(id))
 
-      if (data.success) {
-        setFormData({
-          question: data.data.question,
-          category: data.data.category,
+  //     if (data.success) {
+  //       setFormData({
+  //         question: data.data.question,
+  //         category: data.data.category,
 
-        })
-        setEditId(data.data.id)
-      }
+  //       })
+  //       setEditId(data.data.id)
+  //     }
 
-    } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
-    }
-  }
+  //   } catch (error: any) {
+  //     console.log(error)
+  //     toast.error(error.response.data.message)
+  //   }
+  // }
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -257,7 +257,7 @@ const Faq = () => {
       key: "answer",
       render: (text: string, record: any) => (
         text ? (<span>{text}</span>) : (<button data-bs-toggle="modal"
-          data-bs-target="#reply_faq" className="btn btn-sm btn-outline-primary" onClick={() => setReplyId(record.id)}>Reply</button>)
+          data-bs-target="#reply_faq" className="btn btn-sm btn-outline-primary" disabled={true} onClick={() => setReplyId(record.id)}>No Answere</button>)
 
       ),
       sorter: (a: any, b: any) =>
@@ -270,49 +270,49 @@ const Faq = () => {
       sorter: (a: FAQFormData, b: FAQFormData) =>
         a.category.length - b.category.length,
     },
-    {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
-      render: (_:string, record: any) => (
-        <div className="d-flex align-items-center">
-          <div className="dropdown">
-            <Link
-              to="#"
-              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="ti ti-dots-vertical fs-14" />
-            </Link>
-            <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => fetchEditData(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_faq"
-                >
-                  <i className="ti ti-edit-circle me-2" />
-                  Edit
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   title: "Action",
+    //   dataIndex: "action",
+    //   key: "action",
+    //   render: (_:string, record: any) => (
+    //     <div className="d-flex align-items-center">
+    //       <div className="dropdown">
+    //         <Link
+    //           to="#"
+    //           className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
+    //           data-bs-toggle="dropdown"
+    //           aria-expanded="false"
+    //         >
+    //           <i className="ti ti-dots-vertical fs-14" />
+    //         </Link>
+    //         <ul className="dropdown-menu dropdown-menu-right p-3">
+    //           <li>
+    //             <button
+    //               className="dropdown-item rounded-1"
+    //               onClick={() => fetchEditData(record.id)}
+    //               data-bs-toggle="modal"
+    //               data-bs-target="#edit_faq"
+    //             >
+    //               <i className="ti ti-edit-circle me-2" />
+    //               Edit
+    //             </button>
+    //           </li>
+    //           <li>
+    //             <button
+    //               className="dropdown-item rounded-1"
+    //               onClick={() => setDeleteId(record.id)}
+    //               data-bs-toggle="modal"
+    //               data-bs-target="#delete-modal"
+    //             >
+    //               <i className="ti ti-trash-x me-2" />
+    //               Delete
+    //             </button>
+    //           </li>
+    //         </ul>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
   ];
 
   return (
@@ -458,7 +458,7 @@ const Faq = () => {
             <div className="card-body p-0 py-3">
               {/* Faq List */}
               {
-                loading ? (<Spinner />) : (<Table dataSource={faqs} columns={columns} Selection={true} />)
+                loading ? (<Spinner />) : (<Table dataSource={faqs} columns={columns} Selection={false} />)
               }
               {/* /Faq List */}
             </div>
@@ -745,4 +745,4 @@ const Faq = () => {
   );
 };
 
-export default Faq;
+export default SFaq;
