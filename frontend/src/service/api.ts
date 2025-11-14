@@ -189,6 +189,7 @@ export const deleteBookImg = (id: number) => api.delete(`/library/deletefile/${i
 
 export const getStuIssueBookData = (rollnum: number) => api.get(`/library/stuissuebookdata/${rollnum}`);
 export const stuDataForIssueBook = () => api.get("/library/studataforissuebook");
+export const teacherDataForIssueBook = () => api.get("/library/techdataforissuebook");
 export const bookDataForIssueBook = () => api.get("/library/bookdataforissuebook");
 export const issuBookToStu = (data: object) => api.post("/library/issuebook", data);
 export const getAllStuIssueBook = () => api.get("/library/getallstuissuebook");

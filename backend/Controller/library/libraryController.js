@@ -369,7 +369,7 @@ exports.deleteBook = async (req, res) => {
 exports.stuDataForIssueBook = async (req, res) => {
   try {
     const sql1 = `SELECT 
-                 st.rollnum,
+                 st.stu_id,
                  u.firstname,
                  u.lastname
                  FROM students st
@@ -380,6 +380,31 @@ exports.stuDataForIssueBook = async (req, res) => {
       .status(200)
       .json({
         message: "Student data for isssue book fetched successfully ! ",
+        success: true,
+        data: rows,
+      });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error !", success: false });
+  }
+};
+
+exports.teacherDataForIssueBook = async (req, res) => {
+  try {
+    const sql1 = `SELECT 
+                 t.user_id,
+                 u.firstname,
+                 u.lastname
+                 FROM teachers t
+                 JOIN users u ON t.user_id=u.id              
+    `;
+    const [rows] = await db.query(sql1);
+    return res
+      .status(200)
+      .json({
+        message: "teacher data for isssue book fetched successfully ! ",
         success: true,
         data: rows,
       });
@@ -437,8 +462,34 @@ exports.getAllStuIssueBook = async (req, res) => {
       GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class_id, st.section_id
       ORDER BY st.rollnum ASC
     `;
-
-    const [rows] = await db.query(sql);
+    const sql2 = `SELECT 
+                  u.firstname,
+                  u.lastname,
+                  r.role_name,
+                  MAX(CASE 
+                      WHEN r.role_name = 'student' THEN s.stu_img
+                      WHEN r.role_name = 'teacher' THEN t.img_src
+                      ELSE NULL
+                  END) AS user_img,  -- Use MAX() to handle the image
+                  MAX(CASE 
+                      WHEN r.role_name = 'student' THEN s.rollnum
+                      WHEN r.role_name = 'teacher' THEN t.teacher_id
+                      ELSE NULL
+                  END) AS user_identifier,  -- Use MAX() for user identifier
+                  COUNT(ib.id) AS issuedBook,
+                  SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
+                  MAX(ib.takenOn) AS lastIssuedDate,   
+                  MAX(ib.last_date) AS lastReturnDate, 
+                  GROUP_CONCAT(ib.remark SEPARATOR '; ') AS remarks 
+              FROM libraryIssueBooks ib
+              LEFT JOIN users u ON ib.user_id = u.id
+              LEFT JOIN roles r ON r.id = u.roll_id
+              LEFT JOIN students s ON s.stu_id = u.id
+              LEFT JOIN teachers t ON t.user_id = u.id
+              GROUP BY u.firstname, u.lastname, r.role_name, ib.user_id
+              ORDER BY u.id ASC;`
+    // const [rows] = await db.query(sql);
+    const [rows] = await db.query(sql2);
 
     return res.status(200).json({
       message: "All issued book records fetched successfully!",
@@ -452,6 +503,47 @@ exports.getAllStuIssueBook = async (req, res) => {
       .json({ message: "Internal server error!", success: false });
   }
 };
+// exports.getAllStuIssueBook = async (req, res) => {
+//   try {
+//     const sql = `
+//       SELECT 
+//         st.stu_id,
+//         st.admissionnum,
+//         u.firstname,
+//         u.lastname,
+//         st.stu_img, 
+//         st.rollnum,
+//          c.class_name AS class,
+//         s.section_name AS section,
+//         COUNT(ib.id) AS issuedBook,
+//         SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
+        
+//         MAX(ib.takenOn) AS lastIssuedDate,   -- latest issue date
+//         MAX(ib.last_date) AS lastReturnDate, -- latest expected return
+//         GROUP_CONCAT(ib.remark SEPARATOR '; ') AS remarks -- combine remarks
+//       FROM libraryIssueBooks ib
+//       LEFT JOIN students st ON ib.rollnum = st.rollnum
+//       LEFT JOIN users u ON st.stu_id = u.id
+//       LEFT JOIN classes c ON st.class_id = c.id
+//       LEFT JOIN sections s ON st.section_id = s.id
+//       GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class_id, st.section_id
+//       ORDER BY st.rollnum ASC
+//     `;
+
+//     const [rows] = await db.query(sql);
+
+//     return res.status(200).json({
+//       message: "All issued book records fetched successfully!",
+//       success: true,
+//       data: rows,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ message: "Internal server error!", success: false });
+//   }
+// };
 
 exports.getAllIssueBookForSpecClass = async (req, res) => {
   try {
@@ -556,10 +648,9 @@ exports.getSpeStuIssueBookData = async (req, res) => {
 
 exports.issueBook = async (req, res) => {
   try {
-    const { studentRollNo, bookId, issueDate, lastDate, issuRemark, status } =
+    const { studentUserId,teacherUserId, bookId, issueDate, lastDate, issuRemark, status } =
       req.body;
-
-    if (!studentRollNo || !bookId || !issueDate || !lastDate) {
+    if (!bookId || !issueDate || !lastDate) {
       return res
         .status(400)
         .json({ message: "All fields are required", success: false });
@@ -587,7 +678,7 @@ exports.issueBook = async (req, res) => {
            AND bookid = ? 
            AND status = "Taken" 
          LIMIT 1`,
-        [studentRollNo, currentBookId]
+        [!!studentUserId ? studentUserId : teacherUserId, currentBookId]
       );
 
       if (existBook.length > 0) {
@@ -600,7 +691,7 @@ exports.issueBook = async (req, res) => {
       // Insert row for each book
       const sql = `
         INSERT INTO libraryIssueBooks 
-          (rollnum, bookid, takenOn, last_date, remark, status) 
+          (user_id, bookid, takenOn, last_date, remark, status) 
         VALUES (?, ?, ?, ?, ?, ?)
       `;
 
@@ -608,7 +699,7 @@ exports.issueBook = async (req, res) => {
       const FormatLastDate = dayjs(lastDate).format("YYYY-MM-DD");
 
       const [result] = await db.query(sql, [
-        studentRollNo,
+        !!studentUserId ? studentUserId : teacherUserId,
         currentBookId,
         FormatIssueDate,
         FormatLastDate,
@@ -620,7 +711,7 @@ exports.issueBook = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: `Books issued successfully to student rollNumber ${studentRollNo}`,
+      message: `Books issued successfully to student rollNumber ${!!studentUserId ? studentUserId : teacherUserId}`,
       success: true,
       issuedIds: insertedIds,
     });

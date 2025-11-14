@@ -14,7 +14,7 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import LibraryModal from "./libraryModal";
 import { toast } from "react-toastify";
 import { getAllStuIssueBook, Imageurl } from "../../../service/api";
-import dayjs from 'dayjs'
+import dayjs from "dayjs";
 
 const IssueBook = () => {
   const routes = all_routes;
@@ -26,68 +26,74 @@ const IssueBook = () => {
     }
   };
 
-
   interface StudentIssueBook {
-    admissionnum: string;
-    stu_id: number;
+    // admissionnum: string;
+    // stu_id: number;
+    user_identifier: number;
     firstname: string;
     lastname: string;
-    stu_img: string;
-    class: string;
-    section: string;
+    user_img: string;
+    // class: string;
+    // section: string;
     issuedBook: number;
     BookReturned: string;
     lastIssuedDate: string;
     lastReturnDate: string;
     remarks: string;
-    rollnum: string;
+    userId: string;
+    role_name: string;
+    // rollnum: string;
   }
 
   // ✅ useState with array of students
-  const [studentsIssueData, setStudentsIssueData] = useState<StudentIssueBook[]>([]);
-  const [loading, setLoading] = useState<boolean>(false)
+  const [studentsIssueData, setStudentsIssueData] = useState<
+    StudentIssueBook[]
+  >([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const fetchAllData = async () => {
-    setLoading(true)
-    await new Promise((res) => setTimeout(res, 500))
+    setLoading(true);
+    await new Promise((res) => setTimeout(res, 500));
     try {
-      const { data } = await getAllStuIssueBook()
+      const { data } = await getAllStuIssueBook();
       if (data.success) {
-        setStudentsIssueData(data.data)
+        console.log("library data: ", data.data);
+        setStudentsIssueData(data.data);
       }
     } catch (error: any) {
-      console.log(error)
-      toast.error(error.response.data.message)
+      console.log(error);
+      toast.error(error.response.data.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAllData()
-  }, [])
-
+    fetchAllData();
+  }, []);
 
   const tableData = studentsIssueData.map((item) => ({
-    key: item.admissionnum,
-    id: item.admissionnum,
+    // key: item.admissionnum,
+    // id: item.admissionnum,
+    // stu_id: item.stu_id,
+    // section: item.section,
+    // class: item.class,
+    // rollnum: item.rollnum,
+    img: item.user_img,
+    user_idf: item?.user_identifier,
+    id: item?.userId,
+    roleName: item?.role_name,
     dateofIssue: item.lastIssuedDate,
     dueDate: item.lastReturnDate,
-    stu_id: item.stu_id,
-    stu_img: item.stu_img,
-    class: item.class,
-    section: item.section,
     issueTo: `${item.firstname} ${item.lastname}`,
     booksIssued: item.issuedBook,
     bookReturned: item.BookReturned,
     issueRemarks: item.remarks,
-    rollnum: item.rollnum
-  }))
+  }));
 
   const onAdd = () => {
-    fetchAllData()
-  }
-
+    fetchAllData();
+  };
 
   const columns = [
     {
@@ -95,7 +101,7 @@ const IssueBook = () => {
       dataIndex: "id",
       render: (text: string) => (
         <Link to="#" className="link-primary">
-          {text}
+          USR{text}
         </Link>
       ),
       sorter: (a: TableData, b: TableData) => a.id.length - b.id.length,
@@ -103,18 +109,14 @@ const IssueBook = () => {
     {
       title: "Date of Issue",
       dataIndex: "dateofIssue",
-      render: (text: any) => (
-        <span>{dayjs(text).format('DD MMM YYYY')}</span>
-      ),
+      render: (text: any) => <span>{dayjs(text).format("DD MMM YYYY")}</span>,
       sorter: (a: TableData, b: TableData) =>
         a.dateofIssue.length - b.dateofIssue.length,
     },
     {
       title: "Due Date",
       dataIndex: "dueDate",
-      render: (text: any) => (
-        <span>{dayjs(text).format('DD MMM YYYY')}</span>
-      ),
+      render: (text: any) => <span>{dayjs(text).format("DD MMM YYYY")}</span>,
       sorter: (a: TableData, b: TableData) =>
         a.dueDate.length - b.dueDate.length,
     },
@@ -125,18 +127,23 @@ const IssueBook = () => {
       render: (text: string, record: any) => (
         <>
           <div className="d-flex align-items-center">
-            <Link to={`${routes.studentDetail}/${record.rollnum}`} className="avatar avatar-md">
+            <Link
+              to={`${routes.studentDetail}/${record.rollnum}`}
+              className="avatar avatar-md"
+            >
               <img
-                src={`${Imageurl}/${record.stu_img}`}
+                src={`${Imageurl}/${record.img}`}
                 className="img-fluid rounded-circle"
                 alt="img"
               />
             </Link>
             <div className="ms-2">
               <p className="text-dark mb-0">
-                <Link to={`${routes.studentDetail}/${record.rollnum}`}>{text}</Link>
+                <Link to={`${routes.studentDetail}/${record.rollnum}`}>
+                  {text}
+                </Link>
               </p>
-              <span className="fs-12 text-capitalize">{record.class}-{record.section}</span>
+              <span className="fs-12 text-capitalize">{record?.roleName}</span>
             </div>
           </div>
         </>
@@ -168,23 +175,24 @@ const IssueBook = () => {
     {
       title: "Action",
       dataIndex: "rollnum",
-      render: (id: number) => (
+      render: (_: any, record: any) => (
         <div className="d-flex align-items-center gap-1">
           <Link
-            to={`${routes.studentLibrary}/${id}`}
+            to={`${
+              record?.roleName == "student"
+                ? routes.studentLibrary
+                : routes.teacherLibrary
+            }/${record?.user_idf}`}
             className="btn btn-light add-fee"
-          // data-bs-toggle="modal"
-          // data-bs-target="#book_details"
+            // data-bs-toggle="modal"
+            // data-bs-target="#book_details"
           >
             View Details
           </Link>
-
         </div>
       ),
     },
   ];
-
-
 
   return (
     <>
@@ -223,7 +231,6 @@ const IssueBook = () => {
                   Issue Book
                 </Link>
               </div>
-
             </div>
           </div>
           {/* /Page Header */}
@@ -271,7 +278,7 @@ const IssueBook = () => {
                               <CommonSelect
                                 className="select"
                                 options={names}
-                              // defaultValue={names[0]}
+                                // defaultValue={names[0]}
                               />
                             </div>
                           </div>
@@ -281,7 +288,7 @@ const IssueBook = () => {
                               <CommonSelect
                                 className="select"
                                 options={moreFilterBookIssue}
-                              // defaultValue={moreFilterBookIssue[0]}
+                                // defaultValue={moreFilterBookIssue[0]}
                               />
                             </div>
                           </div>
@@ -338,23 +345,28 @@ const IssueBook = () => {
             </div>
             <div className="card-body p-0 py-3">
               {/* Student List */}
-              {
-                loading ? (
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
+              {loading ? (
+                <div
+                  className="d-flex justify-content-center align-items-center"
+                  style={{ height: "200px" }}
+                >
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
                   </div>
-                ) : (<Table dataSource={tableData} columns={columns} Selection={true} />)
-              }
+                </div>
+              ) : (
+                <Table
+                  dataSource={tableData}
+                  columns={columns}
+                  Selection={true}
+                />
+              )}
               {/* /Student List */}
             </div>
           </div>
           {/* /Students List */}
         </div>
       </div>
-
-
 
       {/* /Page Wrapper */}
       <LibraryModal onAdd={onAdd} deleteMemberId={null} />
