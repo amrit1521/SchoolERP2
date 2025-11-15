@@ -28,6 +28,7 @@ router.delete("/deletefile/:id", fileController.deleteFile);
 
 // issue book
 router.get("/studataforissuebook", libraryController.stuDataForIssueBook);
+router.get("/techdataforissuebook", libraryController.teacherDataForIssueBook);
 router.get("/bookdataforissuebook", libraryController.bookDataForIssueBook);
 router.post("/issuebook", libraryController.issueBook);
 router.get(

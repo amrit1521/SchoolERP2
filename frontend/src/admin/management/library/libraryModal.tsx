@@ -1,8 +1,12 @@
-
 import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import React, { useEffect, useState } from "react";
-import { bookDataForIssueBook, issuBookToStu, stuDataForIssueBook } from "../../../service/api";
+import {
+  bookDataForIssueBook,
+  issuBookToStu,
+  stuDataForIssueBook,
+  teacherDataForIssueBook,
+} from "../../../service/api";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
@@ -10,17 +14,20 @@ import { handleModalPopUp } from "../../../handlePopUpmodal";
 import CommonSelect from "../../../core/common/commonSelect";
 import MultiSelect from "../../../core/common/multiSelect";
 
-
 type Props = {
   onAdd?: Function;
   deleteMemberId?: number | null;
-}
+};
 
-const LibraryModal: React.FC<Props> = ({ onAdd}) => {
-
+const LibraryModal: React.FC<Props> = ({ onAdd }) => {
   // issue book ---------------------------------------------------------
   interface Student {
-    rollnum: string;
+    stu_id: string;
+    firstname: string;
+    lastname: string;
+  }
+  interface Teacher {
+    user_id: string;
     firstname: string;
     lastname: string;
   }
@@ -31,7 +38,8 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
   }
 
   interface IssueBookForm {
-    studentRollNo: string;
+    studentUserId?: string;
+    teacherUserId?: string;
     bookId: (string | number)[];
     issueDate: string | null;
     lastDate: string | null;
@@ -40,26 +48,36 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
   }
   const [students, setStudents] = useState<Student[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
-
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [selectedType, setSelectedType] = useState<any>(null);
   const [issueBookForm, setIssueBookForm] = useState<IssueBookForm>({
-    studentRollNo: "",
+    studentUserId: "",
+    teacherUserId: "",
     bookId: [],
     issueDate: null,
     lastDate: null,
     status: "Taken",
     issuRemark: "Book Issued",
   });
-
+  const typeOptions = [
+    {
+      value: "Student",
+      label: "Student",
+    },
+    { value: "Teacher", label: "Teacher" },
+  ];
   // -------------------- Fetch Data --------------------
   const fetchSelectOptionDataBookAndStu = async () => {
     try {
-      const [stuRes, bookRes] = await Promise.all([
+      const [stuRes, bookRes, teachRes] = await Promise.all([
         stuDataForIssueBook(),
         bookDataForIssueBook(),
+        teacherDataForIssueBook(),
       ]);
 
       if (stuRes.data.success) setStudents(stuRes.data.data);
       if (bookRes.data.success) setBooks(bookRes.data.data);
+      if (teachRes.data.success) setTeachers(teachRes.data.data);
     } catch (error) {
       console.error("Error fetching students and books", error);
     }
@@ -68,9 +86,9 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
   useEffect(() => {
     fetchSelectOptionDataBookAndStu();
   }, []);
-
+  // rollnum
   const stuOption = students.map((s) => ({
-    value: s.rollnum,
+    value: s.stu_id,
     label: `${s.firstname} ${s.lastname}`,
   }));
 
@@ -78,41 +96,57 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
     value: b.id,
     label: b.bookName,
   }));
+  const teacherOption = teachers.map((t) => ({
+    value: t.user_id,
+    label: `${t.firstname} ${t.lastname}`,
+  }));
 
   // -------------------- Handlers --------------------
   // Single select
-  const handleIssueBookSelect = (field: keyof IssueBookForm, value: string | number) => {
+  const handleIssueBookSelect = (
+    field: keyof IssueBookForm,
+    value: string | number
+  ) => {
     setIssueBookForm((prev) => ({ ...prev, [field]: value }));
   };
 
   // Multi select
-  const handleIssueBookMulti = (field: keyof IssueBookForm, value: (string | number)[]) => {
+  const handleIssueBookMulti = (
+    field: keyof IssueBookForm,
+    value: (string | number)[]
+  ) => {
     setIssueBookForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleIssueBookDateChange = (field: keyof IssueBookForm, value: string) => {
+  const handleIssueBookDateChange = (
+    field: keyof IssueBookForm,
+    value: string
+  ) => {
     setIssueBookForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleIssueBookStatusToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIssueBookStatusToggle = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setIssueBookForm((prev) => ({
       ...prev,
       status: e.target.checked ? "Taken" : "Returned",
     }));
   };
 
-
   const handleIssueBookSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!onAdd) return
+    if (!onAdd) return;
     try {
+      console.log("issue Book: ", issueBookForm);
       const { data } = await issuBookToStu(issueBookForm);
       if (data.success) {
         toast.success(data.message);
         onAdd();
         handleModalPopUp("issue_book");
         setIssueBookForm({
-          studentRollNo: "",
+          studentUserId: "",
+          teacherUserId: "",
           bookId: [],
           issueDate: null,
           lastDate: null,
@@ -125,7 +159,6 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
       toast.error(error.response.data.message);
     }
   };
-
 
   return (
     <>
@@ -217,24 +250,54 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
               <div className="modal-body">
                 <div className="row">
                   <div className="col-md-12">
-
                     {/* Student Roll No */}
                     <div className="mb-3">
-                      <label className="form-label">Student Roll No</label>
+                      <label className="form-label">Select Type</label>
                       <CommonSelect
                         className="select"
-                        options={stuOption}
-                        onChange={(option) =>
-                          handleIssueBookSelect("studentRollNo", option ? option.value : "")
-                        }
+                        options={typeOptions}
+                        onChange={(option) => setSelectedType(option)}
                       />
                     </div>
+                    {selectedType ? (
+                      selectedType?.value == "Teacher" ? (
+                        <div className="mb-3">
+                          <label className="form-label">Teacher</label>
+                          <CommonSelect
+                            className="select"
+                            options={teacherOption}
+                            onChange={(option) =>
+                              handleIssueBookSelect(
+                                "teacherUserId",
+                                option ? option.value : ""
+                              )
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <div className="mb-3">
+                          <label className="form-label">Student Roll No</label>
+                          <CommonSelect
+                            className="select"
+                            options={stuOption}
+                            onChange={(option) =>
+                              handleIssueBookSelect(
+                                "studentUserId",
+                                option ? option.value : ""
+                              )
+                            }
+                          />
+                        </div>
+                      )
+                    ) : null}
 
                     {/* Book Name (MultiSelect) */}
                     <div className="mb-3">
                       <label className="form-label">Book Name</label>
                       <MultiSelect
-                        value={bookOption.filter(b => issueBookForm.bookId.includes(b.value))}
+                        value={bookOption.filter((b) =>
+                          issueBookForm.bookId.includes(b.value)
+                        )}
                         className="select"
                         options={bookOption}
                         placeholder="Select Books"
@@ -252,12 +315,18 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
                           <DatePicker
                             className="form-control datetimepicker"
                             format="DD MMM YYYY"
-                            value={issueBookForm.issueDate ? dayjs(issueBookForm.issueDate, "DD MMM YYYY") : null}
+                            value={
+                              issueBookForm.issueDate
+                                ? dayjs(issueBookForm.issueDate, "DD MMM YYYY")
+                                : null
+                            }
                             placeholder="Select Date"
                             onChange={(dateString) =>
                               handleIssueBookDateChange(
                                 "issueDate",
-                                Array.isArray(dateString) ? dateString[0] : dateString
+                                Array.isArray(dateString)
+                                  ? dateString[0]
+                                  : dateString
                               )
                             }
                           />
@@ -273,12 +342,18 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
                           <DatePicker
                             className="form-control datetimepicker"
                             format="DD MMM YYYY"
-                            value={issueBookForm.lastDate ? dayjs(issueBookForm.lastDate, "DD MMM YYYY") : null}
+                            value={
+                              issueBookForm.lastDate
+                                ? dayjs(issueBookForm.lastDate, "DD MMM YYYY")
+                                : null
+                            }
                             placeholder="Select Date"
                             onChange={(dateString) =>
                               handleIssueBookDateChange(
                                 "lastDate",
-                                Array.isArray(dateString) ? dateString[0] : dateString
+                                Array.isArray(dateString)
+                                  ? dateString[0]
+                                  : dateString
                               )
                             }
                           />
@@ -305,7 +380,6 @@ const LibraryModal: React.FC<Props> = ({ onAdd}) => {
                         />
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
