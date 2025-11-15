@@ -335,6 +335,7 @@ const Chat = () => {
           return;
 
         }
+        
         const formData = new FormData();
         formData.append("sender_id", String(currentUserId))
         formData.append("conversation_id", String(conversationId))
