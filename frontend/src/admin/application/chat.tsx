@@ -335,7 +335,7 @@ const Chat = () => {
           return;
 
         }
-        
+
         const formData = new FormData();
         formData.append("sender_id", String(currentUserId))
         formData.append("conversation_id", String(conversationId))
@@ -343,9 +343,9 @@ const Chat = () => {
         const { data } = await sendFile(formData)
         if (data.success) {
           const newMessage = data.data;
-          // ✅ Emit via socket (this sends real-time message to backend)
+        
           socket?.emit("send_message", formData);
-          // ✅ Also show immediately on sender screen
+         
           setSpeRoomConv((prev: any) => [...prev, newMessage]);
         }
       };

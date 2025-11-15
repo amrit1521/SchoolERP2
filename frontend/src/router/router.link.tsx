@@ -318,6 +318,7 @@ import TTestimonials from "../teacher/testimonials.tsx";
 import TFaq from "../teacher/faq.tsx";
 import SFaq from "../student/faq.tsx";
 import PFaq from "../parent/faq.tsx";
+import SStudentLibrary from "../student/studentLibrary.tsx";
 
 
 
@@ -400,6 +401,11 @@ export const publicRoutes = [
   {
     path: student_routes.studentprofileDetail,
     element: <StudentProfileDetails />,
+    route: Route,
+  },
+   {
+    path: student_routes.studentLibrary,
+    element: <SStudentLibrary />,
     route: Route,
   },
   {

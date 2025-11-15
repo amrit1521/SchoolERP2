@@ -438,33 +438,11 @@ exports.bookDataForIssueBook = async (req, res) => {
 
 exports.getAllStuIssueBook = async (req, res) => {
   try {
-    const sql = `
-      SELECT 
-        st.stu_id,
-        st.admissionnum,
-        u.firstname,
-        u.lastname,
-        st.stu_img, 
-        st.rollnum,
-         c.class_name AS class,
-        s.section_name AS section,
-        COUNT(ib.id) AS issuedBook,
-        SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
-        
-        MAX(ib.takenOn) AS lastIssuedDate,   -- latest issue date
-        MAX(ib.last_date) AS lastReturnDate, -- latest expected return
-        GROUP_CONCAT(ib.remark SEPARATOR '; ') AS remarks -- combine remarks
-      FROM libraryIssueBooks ib
-      LEFT JOIN students st ON ib.rollnum = st.rollnum
-      LEFT JOIN users u ON st.stu_id = u.id
-      LEFT JOIN classes c ON st.class_id = c.id
-      LEFT JOIN sections s ON st.section_id = s.id
-      GROUP BY st.rollnum, u.firstname, u.lastname, st.stu_img, st.class_id, st.section_id
-      ORDER BY st.rollnum ASC
-    `;
+   
     const sql2 = `SELECT 
                   u.firstname,
                   u.lastname,
+                  u.id AS userId,
                   r.role_name,
                   MAX(CASE 
                       WHEN r.role_name = 'student' THEN s.stu_img
@@ -517,7 +495,7 @@ exports.getAllStuIssueBook = async (req, res) => {
 //         s.section_name AS section,
 //         COUNT(ib.id) AS issuedBook,
 //         SUM(CASE WHEN ib.status = 'Returned' THEN 1 ELSE 0 END) AS BookReturned,
-        
+
 //         MAX(ib.takenOn) AS lastIssuedDate,   -- latest issue date
 //         MAX(ib.last_date) AS lastReturnDate, -- latest expected return
 //         GROUP_CONCAT(ib.remark SEPARATOR '; ') AS remarks -- combine remarks
@@ -608,11 +586,14 @@ exports.getAllIssueBookForSpecClass = async (req, res) => {
 
 exports.getSpeStuIssueBookData = async (req, res) => {
   const { rollnum } = req.params;
+
   if (!rollnum) {
     return res
       .status(403)
       .json({ message: "please provide valid creditinal  !", success: true });
   }
+
+  const [student] = await db.query('SELECT stu_id FROM students WHERE rollnum=?', [rollnum])
 
   try {
     const sql = `SELECT 
@@ -626,11 +607,11 @@ exports.getSpeStuIssueBookData = async (req, res) => {
               b.bookName
               FROM libraryIssueBooks ib
               LEFT JOIN library_book_info b ON ib.bookid=b.id
-              WHERE ib.rollnum=?
+              WHERE ib.user_id=?
 
     `;
 
-    const [rows] = await db.query(sql, [rollnum]);
+    const [rows] = await db.query(sql, [student[0].stu_id]);
     return res
       .status(200)
       .json({
@@ -646,9 +627,52 @@ exports.getSpeStuIssueBookData = async (req, res) => {
   }
 };
 
+exports.getSpeTeacherIssueBookData = async (req, res) => {
+  const { teacherId} = req.params;
+
+  if (!teacherId) {
+    return res
+      .status(403)
+      .json({ message: "please provide valid creditinal  !", success: true });
+  }
+
+  const [teacher] = await db.query('SELECT user_id FROM teachers WHERE teacher_id=?', [teacherId])
+
+  try {
+    const sql = `SELECT 
+
+              ib.id,
+              ib.takenOn,
+              ib.last_date,
+              ib.bookId,
+              ib.status,  
+              b.bookImg,
+              b.bookName
+              FROM libraryIssueBooks ib
+              LEFT JOIN library_book_info b ON ib.bookid=b.id
+              WHERE ib.user_id=?
+
+    `;
+
+    const [rows] = await db.query(sql, [teacher[0].user_id]);
+    return res
+      .status(200)
+      .json({
+        message: "All book fetched successfully for teacher  !",
+        success: true,
+        data: rows,
+      });
+  } catch (error) {
+    console.error("Error fetching book:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
+
 exports.issueBook = async (req, res) => {
   try {
-    const { studentUserId,teacherUserId, bookId, issueDate, lastDate, issuRemark, status } =
+    const { studentUserId, teacherUserId, bookId, issueDate, lastDate, issuRemark, status } =
       req.body;
     if (!bookId || !issueDate || !lastDate) {
       return res
@@ -674,7 +698,7 @@ exports.issueBook = async (req, res) => {
       const [existBook] = await db.query(
         `SELECT id 
          FROM libraryIssueBooks 
-         WHERE rollnum = ? 
+         WHERE user_id = ? 
            AND bookid = ? 
            AND status = "Taken" 
          LIMIT 1`,
@@ -711,7 +735,7 @@ exports.issueBook = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: `Books issued successfully to student rollNumber ${!!studentUserId ? studentUserId : teacherUserId}`,
+      message: `Books issued successfully to ${!!studentUserId ? studentUserId : teacherUserId}`,
       success: true,
       issuedIds: insertedIds,
     });
@@ -723,12 +747,13 @@ exports.issueBook = async (req, res) => {
   }
 };
 
-exports.bookTakenByStuAndNotReturn = async (req, res) => {
-  const { rollnum } = req.params;
-  if (!rollnum) {
+exports.bookTakenByStuAndNotReturn = async (req, res) => {  
+  const { userId } = req.params;
+  
+  if (!userId) {
     return res
       .status(403)
-      .json({ message: "Please provide rollNumber", success: false });
+      .json({ message: "Please provide userId", success: false });
   }
 
   try {
@@ -739,27 +764,23 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
           MAX(lb.takenOn) AS lastIssuedDate
       FROM libraryIssueBooks lb
       LEFT JOIN library_book_info b ON lb.bookid = b.id
-      WHERE lb.rollnum = ? AND lb.status = "Taken"
+      WHERE lb.user_id = ? AND lb.status = "Taken"
       GROUP BY b.id, b.bookName
       ORDER BY lastIssuedDate DESC
     `;
 
     const sql2 = `
       SELECT 
-          MAX(ib.takenOn) AS lastIssuedDate,
-          MAX(ib.last_date) AS lastReturnDate,
-          st.rollnum,
           u.firstname,
           u.lastname
       FROM libraryIssueBooks ib
-      LEFT JOIN students st ON ib.rollnum = st.rollnum
-      LEFT JOIN users u ON st.stu_id = u.id
-      WHERE ib.rollnum = ?
-      GROUP BY st.rollnum
+      LEFT JOIN users u ON ib.user_id = u.id
+      WHERE ib.user_id = ?
+    
     `;
 
-    const [rows] = await db.query(sql, [rollnum]);
-    const [result] = await db.query(sql2, [rollnum]);
+    const [rows] = await db.query(sql, [userId]);
+    const [result] = await db.query(sql2, [userId]);
 
     return res.status(200).json({
       message: "Not returned books fetched successfully by Rollnum",
@@ -776,9 +797,9 @@ exports.bookTakenByStuAndNotReturn = async (req, res) => {
 };
 
 exports.returnBook = async (req, res) => {
-  const { studentRollNo, bookId } = req.body;
+  const { userId, bookId } = req.body;
 
-  if (!studentRollNo || !bookId || bookId.length === 0) {
+  if (!userId || !bookId || bookId.length === 0) {
     return res.status(403).json({ message: "Provide required fields" });
   }
 
@@ -789,13 +810,13 @@ exports.returnBook = async (req, res) => {
           remark = 'Book Returned',
           return_date = CURDATE(),
           updated_at = NOW()
-      WHERE rollnum = ?
+      WHERE user_id = ?
         AND bookid IN (?)
         AND status = 'Taken'
     `;
 
     // mysql2 promise query
-    const [result] = await db.query(sql, [studentRollNo, bookId]);
+    const [result] = await db.query(sql, [userId, bookId]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({

@@ -1441,17 +1441,17 @@ export const TeacherSidebarData = [
           { label: "Fees Assign", link: teacher_routes.feesAssign },
         ],
       },
-      {
-        label: "Library",
-        icon: "ti ti-notebook",
-        submenu: true,
-        showSubRoute: false,
+      // {
+      //   label: "Library",
+      //   icon: "ti ti-notebook",
+      //   submenu: true,
+      //   showSubRoute: false,
 
-        submenuItems: [
-          { label: "Issue Book", link: teacher_routes.libraryIssueBook },
-          { label: "Return", link: teacher_routes.libraryReturn },
-        ],
-      },
+      //   submenuItems: [
+      //     { label: "Issue Book", link: teacher_routes.libraryIssueBook },
+      //     { label: "Return", link: teacher_routes.libraryReturn },
+      //   ],
+      // },
       {
         label: "Sports",
         link: teacher_routes.sportsList,
@@ -1600,6 +1600,13 @@ export const StudentSidebarData = [
         label: "Leaves",
         link: student_routes.leaves,
         icon: "ti ti-calendar-stats",
+        showSubRoute: false,
+        submenu: false,
+      },
+       {
+        label: "Student Library",
+        link: student_routes.studentLibrary,
+        icon: "ti ti-notebook",
         showSubRoute: false,
         submenu: false,
       },

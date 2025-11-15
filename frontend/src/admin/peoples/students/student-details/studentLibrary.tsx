@@ -24,7 +24,6 @@ export interface IssuedBook {
 const StudentLibrary = () => {
 
   const { rollnum } = useParams<{ rollnum: string }>();
-
   const [student, setStudent] = useState<any>({})
   const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -183,6 +182,8 @@ const StudentLibrary = () => {
                         </ul>
                       </div>
                     </div>
+
+                    
                     <div className="card-body pb-1">
                       <div className="row">
 
@@ -267,6 +268,8 @@ const StudentLibrary = () => {
                         }
                       </div>
                     </div>
+
+
                   </div>
                 </div>
               </div>

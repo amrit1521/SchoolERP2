@@ -5,6 +5,7 @@ const transporter = require('../../utils/sendEmail')
 const dayjs = require('dayjs');
 const { sendWhatsApp, sendRegisterMessage } = require('../../utils/sendOtpViaMobile');
 const { generateRandomPassword } = require('../../utils/generatePassword');
+const { success } = require('zod');
 
 async function getUserId(rollnum) {
   const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
@@ -123,7 +124,7 @@ exports.addStudent = async (req, res) => {
       ]
     );
 
-  
+
     const imageFiles = [
       data.stuimg,
       data.fatimg,
@@ -194,7 +195,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-  
+
     if (data.hostel || data.room_num) {
       await connection.query(
         `INSERT INTO hostel_info (user_id, hostel, room_num) VALUES (?, ?, ?)`,
@@ -202,7 +203,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    
+
     if (data.route || data.vehicle_num || data.picup_point) {
       await connection.query(
         `INSERT INTO transport_info (user_id, route, vehicle_num, pickup_point)
@@ -211,7 +212,7 @@ exports.addStudent = async (req, res) => {
       );
     }
 
- 
+
     if (data.bank_name || data.ifsc_num || data.other_det) {
       await connection.query(
         `INSERT INTO other_info (user_id, bank_name, branch, ifsc_num, other_det)
@@ -220,10 +221,10 @@ exports.addStudent = async (req, res) => {
       );
     }
 
-    
+
     await connection.commit();
 
-  
+
     transporter
       .sendMail({
         from: process.env.SMTP_USER,
@@ -877,7 +878,7 @@ exports.getTimeTable = async (req, res) => {
     const student = studentRows[0];
 
     const [timetableRows] = await db.query(
-                `SELECT 
+      `SELECT 
                  tt.id,
                  tt.day,
                  UPPER(c.class_name) as class,
@@ -1488,7 +1489,7 @@ exports.getSpecStudentDetails = async (req, res) => {
   }
 
   try {
-    
+
     const [userRows] = await db.query(
       `
       SELECT 
@@ -1776,3 +1777,6 @@ exports.allStudentsForClass = async (req, res) => {
       .json({ message: "Internal server error!", success: false });
   }
 };
+
+
+

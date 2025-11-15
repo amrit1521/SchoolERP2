@@ -19,4 +19,9 @@ router.get(
   studentDashboardController.getTeacherListOfStudentClass
 );
 
+router.get(
+  "/student-library-data/:userId",
+  studentDashboardController.getSpeStuIssueBookData
+);
+
 module.exports = router;

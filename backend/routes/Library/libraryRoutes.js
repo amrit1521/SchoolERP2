@@ -43,9 +43,12 @@ router.get(
 
 // return book
 router.get(
-  "/spestunotretubookdata/:rollnum",
+  "/spestunotretubookdata/:userId",
   libraryController.bookTakenByStuAndNotReturn
 );
 router.put("/returnbook", libraryController.returnBook);
+
+// teacher
+router.get('/speteacherlibrarydata/:teacherId' , libraryController.getSpeTeacherIssueBookData)
 
 module.exports = router;

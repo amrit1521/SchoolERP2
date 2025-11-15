@@ -128,15 +128,15 @@ const StudentProfileDetails = () => {
                         Exam &amp; Results
                       </Link>
                     </li>
-                    {/* <li>
+                    <li>
                       <Link
-                        to={`${routes.studentLibrary}/${rollnum}`}
+                        to={`${student_routes.studentLibrary}`}
                         className="nav-link"
                       >
                         <i className="ti ti-books me-2" />
                         Library
                       </Link>
-                    </li> */}
+                    </li>
                   </ul>
                   {/* /List */}
                   {/* Parents Information */}

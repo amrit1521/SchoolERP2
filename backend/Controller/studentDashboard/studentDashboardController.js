@@ -136,15 +136,15 @@ exports.getStudentFeeReminder = async (req, res) => {
 };
 
 
-exports.getTeacherListOfStudentClass = async (req,res) =>{
-  try{
-    const {classId,sectionId} = req.query;
+exports.getTeacherListOfStudentClass = async (req, res) => {
+  try {
+    const { classId, sectionId } = req.query;
     const sql = `SELECT t.teacher_id,t.subject,u.firstname,u.lastname,t.img_src
                   from teachers t
                   LEFT JOIN users u ON u.id = t.user_id
                   WHERE class = ? and section = ?
     ;`
-    const [rows] = await db.execute(sql, [classId,sectionId]);
+    const [rows] = await db.execute(sql, [classId, sectionId]);
     if (rows.length <= 0) {
       return res.status(200).json({
         success: false,
@@ -155,10 +155,53 @@ exports.getTeacherListOfStudentClass = async (req,res) =>{
       success: true,
       data: rows,
     });
-  }catch(error){
+  } catch (error) {
     console.error("Error fetching teachers of student class:", error);
     return res
       .status(500)
       .json({ message: "Error while fetching teachers of student class!", success: false });
   }
 }
+
+exports.getSpeStuIssueBookData = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res
+      .status(403)
+      .json({ message: "please provide valid creditinal  !", success: true });
+  }
+
+
+  try {
+    const sql = `SELECT 
+
+              ib.id,
+              ib.takenOn,
+              ib.last_date,
+              ib.bookId,
+              ib.status,
+              b.bookImg,
+              b.bookName
+              FROM libraryIssueBooks ib
+              LEFT JOIN library_book_info b ON ib.bookid=b.id
+              WHERE ib.user_id=?
+
+    `;
+
+    const [rows] = await db.query(sql, [userId]);
+    return res
+      .status(200)
+      .json({
+        message: "All book fetched by student rollnumber !",
+        success: true,
+        data: rows,
+      });
+  } catch (error) {
+    console.error("Error issuing book:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error!", success: false });
+  }
+};
+

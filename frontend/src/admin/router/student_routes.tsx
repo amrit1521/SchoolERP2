@@ -19,6 +19,7 @@ export const student_routes = {
   mySubject: "/student/subjects",
   studentprofileDetail: "/student/student-details",
   examResult: "/student/exam-result",
+  studentLibrary: "/student/student-library",
   studentTimeTable: "/student/time-table",
   stestimonials:"/student/stestimonials",
   sfaq:"/student/sfq"

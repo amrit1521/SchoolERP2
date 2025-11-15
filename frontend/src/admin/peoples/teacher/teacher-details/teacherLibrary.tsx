@@ -2,20 +2,35 @@
 import { Link, useParams } from "react-router-dom";
 import { all_routes } from "../../../router/all_routes";
 
-import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
+// import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import TeacherModal from "../teacherModal";
 import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import { useEffect, useState } from "react";
-import { sepTeacher } from "../../../../service/api";
+import { getspeteacherissuebookdata, Imageurl, sepTeacher } from "../../../../service/api";
+import { Skeleton } from "antd";
+import dayjs from 'dayjs'
+
+export interface IssuedBook {
+  id: number;
+  takenOn: string;
+  last_date: string;
+  bookId: string;
+  bookImg: string;
+  bookName: string;
+  status: string;
+}
 
 const TeacherLibrary = () => {
   const routes = all_routes;
-    const { teacher_id } = useParams()
+  const { teacher_id } = useParams()
   // console.log(typeof userId)
 
   const [teacher, setTeacher] = useState<any>({})
   const [loading, setLoading] = useState<boolean>(false)
+
+  const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([])
+  const [loading2, setLoading2] = useState<boolean>(false)
 
   const fetchTeacher = async (id: string) => {
     setLoading(true)
@@ -33,9 +48,33 @@ const TeacherLibrary = () => {
     }
   }
 
+
+  const fetchIsuueBook = async (teacherId: number) => {
+    setLoading2(true)
+    try {
+      const { data } = await getspeteacherissuebookdata(teacherId);
+       console.log(data)
+      if (data.success) {
+        setIssuedBookInfo(data.data);
+
+      } else {
+        console.warn("Failed to fetch Issue book  data");
+        setIssuedBookInfo([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching issue book data:", error);
+      setIssuedBookInfo([]);
+    } finally {
+      setLoading2(false)
+    }
+  };
+
+
+
   useEffect(() => {
     if (teacher_id) {
       fetchTeacher(teacher_id)
+      fetchIsuueBook(Number(teacher_id))
     }
   }, [teacher_id])
 
@@ -46,7 +85,7 @@ const TeacherLibrary = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-              {teacher_id&&( <TeacherBreadcrumb teacher_id={teacher_id} />)}
+            {teacher_id && (<TeacherBreadcrumb teacher_id={teacher_id} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -121,214 +160,92 @@ const TeacherLibrary = () => {
                         </ul>
                       </div>
                     </div>
+
                     <div className="card-body pb-1">
                       <div className="row">
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-01.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">The Small-Town Library</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
+
+                        {
+                          loading2 ? (
+                            [...Array(3)].map((_, index) => (
+                              <div className="col-xxl-4 col-md-6 d-flex" key={index}>
+                                <div className="card mb-3 flex-fill">
+                                  <div className="card-body pb-1">
+                                    {/* Image placeholder (same size as real image) */}
+                                    <span className="avatar avatar-xl mb-3 d-flex align-items-center justify-content-center">
+                                      <Skeleton.Avatar active size={80} shape="square" />
                                     </span>
-                                    <p className="text-dark">25 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Jan 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-02.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Apex Time</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">22 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Jan 2024</p>
+
+                                    {/* Book title placeholder */}
+                                    <div className="mb-3">
+                                      <Skeleton.Input active style={{ width: "70%", height: 20 }} />
+                                    </div>
+
+                                    {/* Row placeholders */}
+                                    <div className="row">
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
+                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
+                                        </div>
+                                      </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
+                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-03.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">The Cobalt Guitar</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
+                            ))
+                          ) : issuedBookInfo.length > 0 ? (
+                            issuedBookInfo.map((book) => (
+                              <div className="col-xxl-4 col-md-6 d-flex" key={book.id}>
+                                <div className="card mb-3 flex-fill">
+
+                                  <div className="card-body pb-1">
+
+                                    <span className="avatar avatar-xl mb-3">
+                                      <img
+                                        src={`${Imageurl}/${book.bookImg}`}
+                                        className="img-fluid rounded"
+                                        alt={book.bookName}
+                                      />
                                     </span>
-                                    <p className="text-dark">30 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">10 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-04.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Shard and the Tomb</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">10 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">20 Feb 2024</p>
+                                    <div className="d-flex align-item-center justify-content-between">
+                                      <h6 className="mb-3">{book.bookName}</h6>
+                                      <p className={`badge ${book.status === "Taken" ? "text-danger" : "text-success"}`}>
+                                        {book.status}
+                                      </p>
+
+
+                                    </div>
+                                    <div className="row">
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <span className="fs-12 mb-1">Book taken on</span>
+                                          <p className="text-dark" >{dayjs(book.takenOn).format('DD MMM YYYY')}</p>
+                                        </div>
+                                      </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <span className="fs-12 mb-1">Last Date</span>
+                                          <p className="text-dark">{dayjs(book.last_date).format('DD MMM YYYY')}</p>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-05.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Shard and the Tomb 2</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">12 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">22 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-06.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Plague of Fear</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">15 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
+                            ))
+                          ) : (
+                            <>No issued book</>
+                          )
+                        }
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -337,7 +254,7 @@ const TeacherLibrary = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {teacher_id&&( <TeacherModal onAdd={()=>{}}  teacherId={teacher_id} />)}
+      {teacher_id && (<TeacherModal onAdd={() => { }} teacherId={teacher_id} />)}
     </>
   );
 };

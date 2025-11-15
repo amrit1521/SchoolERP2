@@ -1,23 +1,37 @@
-import { Link, useParams } from "react-router-dom";
-// import { all_routes } from "../../router/all_routes";
 
-import ImageWithBasePath from "../../core/common/imageWithBasePath";
+import { Link, useParams } from "react-router-dom";
+import { all_routes } from "../../router/all_routes";
+
+// import ImageWithBasePath from "../../../../core/common/imageWithBasePath";
 import TeacherModal from "../teacherModal";
 import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import { useEffect, useState } from "react";
+import { getspeteacherissuebookdata, Imageurl} from "../../service/api";
+import { Skeleton } from "antd";
+import dayjs from 'dayjs'
 import { getSpecTeacherProfileDetails } from "../../service/teacherDashboardApi";
-import { teacher_routes } from "../../admin/router/teacher_routes";
 
-const TTeacherLibrary = () => {
-  // const routes = all_routes;
+export interface IssuedBook {
+  id: number;
+  takenOn: string;
+  last_date: string;
+  bookId: string;
+  bookImg: string;
+  bookName: string;
+  status: string;
+}
+
+const TeacherLibrary = () => {
+  const routes = all_routes;
   const { teacher_id } = useParams();
-  // console.log(typeof userId)
-
   const [teacher, setTeacher] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(false);
   const token = localStorage.getItem("token");
   const userId = token ? JSON.parse(token).id : null;
+  const [issuedBookInfo, setIssuedBookInfo] = useState<IssuedBook[]>([])
+
+
   const fetchTeacher = async (userId: number) => {
     setLoading(true);
     await new Promise((res) => setTimeout(res, 500));
@@ -25,6 +39,7 @@ const TTeacherLibrary = () => {
       const { data } = await getSpecTeacherProfileDetails(userId);
       if (data.success) {
         setTeacher(data.data);
+        fetchIsuueBook(data.data.teacher_id)
       }
     } catch (error) {
       console.log(error);
@@ -39,6 +54,29 @@ const TTeacherLibrary = () => {
     }
   }, [userId]);
 
+
+
+
+  const fetchIsuueBook = async (teacherId: number) => {
+    
+    try {
+      const { data } = await getspeteacherissuebookdata(teacherId);
+      console.log(data)
+      if (data.success) {
+        setIssuedBookInfo(data.data);
+
+      } else {
+        console.warn("Failed to fetch Issue book  data");
+        setIssuedBookInfo([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching issue book data:", error);
+      setIssuedBookInfo([]);
+    }
+  };
+
+
+
   return (
     <>
       {/* Page Wrapper */}
@@ -46,7 +84,7 @@ const TTeacherLibrary = () => {
         <div className="content">
           <div className="row">
             {/* Page Header */}
-            {teacher_id && <TeacherBreadcrumb teacher_id={teacher_id} />}
+            {teacher_id && (<TeacherBreadcrumb teacher_id={teacher_id} />)}
             {/* /Page Header */}
           </div>
           <div className="row">
@@ -59,46 +97,31 @@ const TTeacherLibrary = () => {
                   {/* List */}
                   <ul className="nav nav-tabs nav-tabs-bottom mb-4">
                     <li>
-                      <Link
-                        to={`${teacher_routes.teacherDetails}`}
-                        className="nav-link "
-                      >
+                      <Link to={`${routes.teacherDetails}/${teacher.teacher_id}`} className="nav-link ">
                         <i className="ti ti-school me-2" />
                         Teacher Details
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        to={`${teacher_routes.teachersRoutine}`}
-                        className="nav-link"
-                      >
+                      <Link to={`${routes.teachersRoutine}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-table-options me-2" />
                         Routine
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        to={`${teacher_routes.teacherLeaves}`}
-                        className="nav-link"
-                      >
+                      <Link to={`${routes.teacherLeaves}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-calendar-due me-2" />
                         Leave &amp; Attendance
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        to={`${teacher_routes.teacherSalary}`}
-                        className="nav-link"
-                      >
+                      <Link to={`${routes.teacherSalary}/${teacher.teacher_id}`} className="nav-link">
                         <i className="ti ti-report-money me-2" />
                         Salary
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        to={`${teacher_routes.teacherLibrary}`}
-                        className="nav-link active"
-                      >
+                      <Link to={`${routes.teacherLibrary}/${teacher.teacher_id}`} className="nav-link active">
                         <i className="ti ti-bookmark-edit me-2" />
                         Library
                       </Link>
@@ -136,214 +159,92 @@ const TTeacherLibrary = () => {
                         </ul>
                       </div>
                     </div>
+
                     <div className="card-body pb-1">
                       <div className="row">
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-01.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">The Small-Town Library</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
+
+                        {
+                          loading ? (
+                            [...Array(3)].map((_, index) => (
+                              <div className="col-xxl-4 col-md-6 d-flex" key={index}>
+                                <div className="card mb-3 flex-fill">
+                                  <div className="card-body pb-1">
+                                    {/* Image placeholder (same size as real image) */}
+                                    <span className="avatar avatar-xl mb-3 d-flex align-items-center justify-content-center">
+                                      <Skeleton.Avatar active size={80} shape="square" />
                                     </span>
-                                    <p className="text-dark">25 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Jan 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-02.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Apex Time</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">22 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Jan 2024</p>
+
+                                    {/* Book title placeholder */}
+                                    <div className="mb-3">
+                                      <Skeleton.Input active style={{ width: "70%", height: 20 }} />
+                                    </div>
+
+                                    {/* Row placeholders */}
+                                    <div className="row">
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
+                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
+                                        </div>
+                                      </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
+                                          <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-03.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">The Cobalt Guitar</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
+                            ))
+                          ) : issuedBookInfo.length > 0 ? (
+                            issuedBookInfo.map((book) => (
+                              <div className="col-xxl-4 col-md-6 d-flex" key={book.id}>
+                                <div className="card mb-3 flex-fill">
+
+                                  <div className="card-body pb-1">
+
+                                    <span className="avatar avatar-xl mb-3">
+                                      <img
+                                        src={`${Imageurl}/${book.bookImg}`}
+                                        className="img-fluid rounded"
+                                        alt={book.bookName}
+                                      />
                                     </span>
-                                    <p className="text-dark">30 Jan 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">10 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-04.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Shard and the Tomb</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">10 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">20 Feb 2024</p>
+                                    <div className="d-flex align-item-center justify-content-between">
+                                      <h6 className="mb-3">{book.bookName}</h6>
+                                      <p className={`badge ${book.status === "Taken" ? "text-danger" : "text-success"}`}>
+                                        {book.status}
+                                      </p>
+
+
+                                    </div>
+                                    <div className="row">
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <span className="fs-12 mb-1">Book taken on</span>
+                                          <p className="text-dark" >{dayjs(book.takenOn).format('DD MMM YYYY')}</p>
+                                        </div>
+                                      </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <span className="fs-12 mb-1">Last Date</span>
+                                          <p className="text-dark">{dayjs(book.last_date).format('DD MMM YYYY')}</p>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-05.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Shard and the Tomb 2</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">12 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">22 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
-                        {/* Book List */}
-                        <div className="col-xxl-4 col-md-6 d-flex">
-                          <div className="card mb-3 flex-fill">
-                            <div className="card-body pb-1">
-                              <span className="avatar avatar-xl mb-3">
-                                <ImageWithBasePath
-                                  src="assets/img/books/book-06.jpg"
-                                  className="img-fluid rounded"
-                                  alt="img"
-                                />
-                              </span>
-                              <h6 className="mb-3">Plague of Fear</h6>
-                              <div className="row">
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Book taken on{" "}
-                                    </span>
-                                    <p className="text-dark">15 Feb 2024</p>
-                                  </div>
-                                </div>
-                                <div className="col-sm-6">
-                                  <div className="mb-3">
-                                    <span className="fs-12 mb-1">
-                                      Last Date
-                                    </span>
-                                    <p className="text-dark">25 Feb 2024</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* /Book List */}
+                            ))
+                          ) : (
+                            <>No issued book</>
+                          )
+                        }
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
@@ -352,9 +253,9 @@ const TTeacherLibrary = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {teacher_id && <TeacherModal onAdd={() => {}} teacherId={teacher_id} />}
+      {teacher_id && (<TeacherModal onAdd={() => { }} teacherId={teacher_id} />)}
     </>
   );
 };
 
-export default TTeacherLibrary;
+export default TeacherLibrary;

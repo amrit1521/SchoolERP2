@@ -50,7 +50,7 @@ export const getStudentFeeReminder = (rollNum: number) =>
   api.get(`/studentdashboard/getstudentfeereminder/${rollNum}`);
 export const getStudentClassTeachersList = (classId: number, sectionId: number) =>
   api.get(`/studentdashboard/student-class-teachers?classId=${classId}&sectionId=${sectionId}`);
-
+export const getStudentLibraryData = (userId: number) => api.get(`/studentdashboard/student-library-data/${userId}`)
 //user apis-------------------
 export const allUsers = () => api.get("/user/all-users");
 export const deleteUsersById = (id: number) =>
@@ -132,6 +132,7 @@ export const deleteFile = (id: number) => api.delete(`/stu/deletefile/${id}`);
 export const getLeaveData = (rollnum: number) =>
   api.get(`/stu/leavedata/${rollnum}`);
 
+
 // leave----------------------------------
 export const getAllLeaveTypeData = () => api.get("/leave/allleavetype");
 export const addLeaveType = (data: object) =>
@@ -193,8 +194,9 @@ export const teacherDataForIssueBook = () => api.get("/library/techdataforissueb
 export const bookDataForIssueBook = () => api.get("/library/bookdataforissuebook");
 export const issuBookToStu = (data: object) => api.post("/library/issuebook", data);
 export const getAllStuIssueBook = () => api.get("/library/getallstuissuebook");
-export const speStuNotReturnBookData = (rollnum: number) => api.get(`/library/spestunotretubookdata/${rollnum}`);
+export const speStuNotReturnBookData = (userId: number) => api.get(`/library/spestunotretubookdata/${userId}`);
 export const returnBook = (data: object) => api.put("/library/returnbook", data);
+export const getspeteacherissuebookdata = (teacherId: number) => api.get(`/library/speteacherlibrarydata/${teacherId}`)
 
 // attendance routes----------------------------
 export const markAttendance = (data: object) =>
