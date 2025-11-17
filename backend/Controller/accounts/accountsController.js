@@ -1760,7 +1760,7 @@ exports.generateInvoicePDF = async (req, res) => {
         res.send(pdfBuffer);
     } catch (error) {
         console.error("Invoice PDF generation error:", error);
-        res.status(500).send("Internal Server Error");
+        return res.status(500).send("Internal Server Error");
     }
 };
 

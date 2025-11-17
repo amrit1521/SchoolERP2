@@ -93,14 +93,10 @@ module.exports = (io) => {
         console.error('Error in send_message socket handler', err);
       }
     });
-
-    // 🧨 NEW: Delete message (real-time for all in conversation)
     socket.on('delete_message', async (data) => {
       try {
         const { messageId, userId } = data;
         if (!messageId || !userId) return;
-
-        // 1️⃣ Check if message exists
         const [msg] = await pool.query(`SELECT * FROM messages WHERE id = ?`, [messageId]);
         if (msg.length === 0) return;
 

@@ -20,8 +20,8 @@ import usePreviousRoute from "./usePreviousRoute";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
-import { all_routes } from "../../../school_module/router/all_routes";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { all_routes } from "../../../admin/router/all_routes"
+// import { parent_routes } from "../../../admin/router/parent_routes";
 const routes = all_routes;
 
 const Sidebar = () => {
@@ -35,16 +35,16 @@ const Sidebar = () => {
     
       if (token.role == "1") {
         setCustomSide([...SidebarData]);
-        navigate(`${routes.adminDashboard}`);
+        // navigate(`${routes.adminDashboard}`);
       } else if (token.role == "2") {
         setCustomSide([...TeacherSidebarData]);
-        navigate(`${routes.teacherDashboard}`);
+        // navigate(`${routes.teacherDashboard}`);
       } else if (token.role == "3") {
         setCustomSide([...StudentSidebarData]);
-        navigate(`${routes.studentDashboard}`);
+        // navigate(`${routes.studentDashboard}`);
       } else if (token.role == "6") {
         setCustomSide([...ParentSidebarData]);
-        navigate(`${parent_routes.parentDashboard}`);
+        // navigate(`${parent_routes.parentDashboard}`);
       } else {
         navigate(`${routes.login}`);
       }
@@ -116,9 +116,7 @@ const Sidebar = () => {
     const isCurrentLayoutPage = layoutPages.some((path) =>
       location.pathname.includes(path)
     );
-    const isPreviousLayoutPage =
-      previousLocation &&
-      layoutPages.some((path) => previousLocation.pathname.includes(path));
+    const isPreviousLayoutPage = previousLocation &&layoutPages.some((path) => previousLocation.pathname.includes(path));
 
     if (isPreviousLayoutPage && !isCurrentLayoutPage) {
       dispatch(resetAllMode());
@@ -180,7 +178,7 @@ const Sidebar = () => {
                       alt="Profile"
                     />
                     <span className="text-dark ms-2 fw-normal">
-                      Global International
+                      Whizlancer School
                     </span>
                   </Link>
                 </li>

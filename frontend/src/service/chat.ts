@@ -10,6 +10,9 @@ export const speConversationForARoom = (conversationId: number, userId: number) 
 export const sendMessage = (data: object) => api.post(`/message/send`, data)
 export const sendFile = (data: object) => api2.post(`/message/send-file`, data)
 export const deleteMessage = (messageId: number) => api.delete(`/message/delmessage/${messageId}`)
+export const msgStarUpdate = (data:object , messageId:number )=>api.put(`/message/star/${messageId}` , data)
+export const msgReportUpdate = (data:object , messageId:number )=>api.put(`/message/report/${messageId}` , data)
+export const msgReactionsUpdate = (data:object , messageId:number )=>api.post(`/message/react/${messageId}` , data)
 
 // chats
 export const createPrivateRoom = (data: object) => api.post('chat/create-private', data)

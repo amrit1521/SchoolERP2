@@ -13,7 +13,7 @@ import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, OnlineChatUsers, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
@@ -238,6 +238,8 @@ const Chat = () => {
       toast.error(error.response.data.message);
     }
   };
+
+
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
     if (tokenStr) {
@@ -343,9 +345,9 @@ const Chat = () => {
         const { data } = await sendFile(formData)
         if (data.success) {
           const newMessage = data.data;
-        
+
           socket?.emit("send_message", formData);
-         
+
           setSpeRoomConv((prev: any) => [...prev, newMessage]);
         }
       };
@@ -397,6 +399,106 @@ const Chat = () => {
       toast.error(error.response.data.message)
     }
   }
+
+  // star message
+  const toggleStar = async (id: number, isStar: number) => {
+    const newValue = isStar ? 0 : 1;
+
+    try {
+      const { data } = await msgStarUpdate({ isStar: newValue }, id);
+
+      if (!data.success) return;
+
+      setSpeRoomConv((prev: any[]) =>
+        prev.map((msg) =>
+          msg.id === id ? { ...msg, isStar: newValue } : msg
+        )
+      );
+    } catch (err) {
+      console.error("Star update failed:", err);
+    }
+  };
+
+  const toggleReport = async (messageId: number, currentReport: number) => {
+    try {
+      const newReportValue = currentReport === 1 ? 0 : 1;
+
+      const { data } = await msgReportUpdate({ isReported: newReportValue }, messageId);
+
+      if (data.success) {
+        setSpeRoomConv((prev: any) =>
+          prev.map((m: any) =>
+            m.id === messageId ? { ...m, isReported: newReportValue } : m
+          )
+        );
+      }
+
+    } catch (error) {
+      console.log("Report toggle failed:", error);
+    }
+  };
+
+  const toggleReaction = async (
+    messageId: number,
+    currentReactions: any[],
+    newEmoji: string
+  ) => {
+    try {
+      // Check if current user already reacted
+      const existingReaction = currentReactions?.find(
+        (r: any) => r.userId === currentUserId
+      );
+
+      // If clicked same emoji → remove reaction
+      const finalEmoji =
+        existingReaction && existingReaction.emoji === newEmoji
+          ? null
+          : newEmoji;
+
+      const { data } = await msgReactionsUpdate(
+        { emoji: finalEmoji, userId: currentUserId },
+        messageId
+      );
+
+      if (data.success) {
+        setSpeRoomConv((prev: any) =>
+          prev.map((msg: any) => {
+            if (msg.id !== messageId) return msg;
+
+            let updatedReactions = [...msg.reaction];
+
+            // If user already reacted → update or remove
+            if (existingReaction) {
+              if (finalEmoji === null) {
+                // REMOVE REACTION
+                updatedReactions = updatedReactions.filter(
+                  (r: any) => r.userId !== currentUserId
+                );
+              } else {
+                // UPDATE REACTION
+                updatedReactions = updatedReactions.map((r: any) =>
+                  r.userId === currentUserId ? { ...r, emoji: finalEmoji } : r
+                );
+              }
+            } else {
+              // ADD NEW REACTION
+              if (finalEmoji !== null) {
+                updatedReactions.push({
+                  userId: currentUserId,
+                  emoji: finalEmoji,
+                });
+              }
+            }
+
+            return { ...msg, reaction: updatedReactions };
+          })
+        );
+      }
+    } catch (error) {
+      console.log("Reaction toggle failed:", error);
+    }
+  };
+
   // formate time
   function formatTimeAgo(dateInput: string | number | Date): string {
     const date = new Date(dateInput);
@@ -428,7 +530,7 @@ const Chat = () => {
     if (isYesterday(date)) return `Yesterday, ${format(date, 'hh:mm a')}`;
     return format(date, 'dd MMM, hh:mm a');
   };
-
+  // console.log(speRoomConv)
 
   return (
     <>
@@ -651,7 +753,7 @@ const Chat = () => {
                               {/* /Left Chat Title */}
 
                               {
-                               allConversationUser.length>0? allConversationUser && allConversationUser.map((u: any) => (
+                                allConversationUser.length > 0 ? allConversationUser && allConversationUser.map((u: any) => (
                                   <ul className="user-list">
 
                                     <li key={u.conversation_id} onClick={() => fetchSpeRoomConv(u.conversation_id, u.other_user_id)} className="user-list-item">
@@ -696,26 +798,26 @@ const Chat = () => {
 
                                   </ul>
                                 ))
-                                :
+                                  :
                                   <ul className="user-list">
 
-                                <li  className="user-list-item">
+                                    <li className="user-list-item">
                                       <div
 
                                         className="p-2 border rounded d-block mb-2"
                                       >
                                         <div className="d-flex align-items-center">
                                           <div className={`avatar  avatar-lg me-2 flex-shrink-0`}>
-                                          <ImageWithBasePath
-                                                src="assets/img/profiles/avatar-04.jpg"
-                                                className="rounded-circle"
-                                                alt="image"
-                                              />
+                                            <ImageWithBasePath
+                                              src="assets/img/profiles/avatar-04.jpg"
+                                              className="rounded-circle"
+                                              alt="image"
+                                            />
 
                                           </div>
                                           <div className="flex-grow-1 overflow-hidden me-2">
                                             <h6 className="mb-1 text-truncate">
-                                             No User
+                                              No User
                                             </h6>
                                             <p className="text-truncate">
                                               <i className="bx  me-1" />
@@ -724,7 +826,7 @@ const Chat = () => {
                                           </div>
                                           <div className="flex-shrink-0 align-self-start text-end">
                                             <small className="text-muted">
-                                            
+
                                             </small>
                                             <div>
                                               {/* <i className="bx bx-check-double" /> */}
@@ -733,7 +835,7 @@ const Chat = () => {
                                         </div>
                                       </div>
                                     </li>
-                                    </ul>
+                                  </ul>
                               }
 
                             </>)
@@ -946,9 +1048,16 @@ const Chat = () => {
                               m.sender_id === currentUserId ? <> <div className="chats chats-right">
                                 <div className="chat-content">
                                   <div className="chat-profile-name text-end">
+
                                     <h6>
                                       {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
                                     </h6>
+                                    {m.isStar === 1 && (
+                                      <span className="reported-label text-danger">⭐</span>
+                                    )}
+                                    {m.isReported === 1 && (
+                                      <span className="reported-label text-danger">⚠</span>
+                                    )}
                                     <div className="chat-action-btns ms-3">
                                       <div className="chat-action-col">
                                         <Link
@@ -974,12 +1083,7 @@ const Chat = () => {
                                             </span>
                                             Reply
                                           </Link>
-                                          <Link to="#" className="dropdown-item">
-                                            <span>
-                                              <i className="bx bx-smile" />
-                                            </span>
-                                            React
-                                          </Link>
+
                                           <Link
                                             to="#"
                                             className="dropdown-item"
@@ -991,13 +1095,15 @@ const Chat = () => {
                                             </span>
                                             Forward
                                           </Link>
-                                          <Link to="#" className="dropdown-item">
+                                          {/* <button
+                                            onClick={() => toggleStar(m.id, m.isStar)}
+                                            className="dropdown-item">
                                             <span>
                                               <i className="bx bx-star" />
                                             </span>
-                                            Star Message
-                                          </Link>
-                                          <Link
+                                            {m.isStar === 1 ? 'UnStar Message' : 'Star Message'}
+                                          </button> */}
+                                          {/* <Link
                                             to="#"
                                             className="dropdown-item"
                                             data-bs-toggle="modal"
@@ -1007,7 +1113,7 @@ const Chat = () => {
                                               <i className="bx bx-dislike" />
                                             </span>
                                             Report
-                                          </Link>
+                                          </Link> */}
                                           <button
 
                                             onClick={() => deleteUserMessage(m.id)}
@@ -1025,12 +1131,14 @@ const Chat = () => {
                                     </div>
                                   </div>
                                   <div className="message-content ">
+
                                     {m.message_type == 'text' && (<span>  {m.message_text}</span>)}
                                     {m.message_type === 'audio' && (
                                       <audio controls preload="auto" src={`${Audiourl}/${m.file_url}`}>
                                         Your browser does not support the audio element.
                                       </audio>
                                     )}
+
 
                                     <div className="emoj-group rig-emoji-group">
                                       <ul>
@@ -1046,53 +1154,35 @@ const Chat = () => {
                                             className={`${showEmoji ? "d-block" : ""
                                               } emoj-group-list`}
                                           >
-                                            <ul>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-01.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-02.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-03.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-04.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-05.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li className="add-emoj">
-                                                <Link to="#">
-                                                  <i className="bx bx-plus" />
-                                                </Link>
-                                              </li>
-                                            </ul>
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                gap: "6px",
+                                                padding: "6px 10px",
+                                                background: "white",
+                                                borderRadius: "50px",
+                                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                alignItems: "center",
+                                              }}
+                                            >
+                                              {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
+                                                <span
+                                                  key={em}
+                                                  onClick={() => toggleReaction(m.id, m.reaction, em)}
+                                                  style={{
+                                                    fontSize: "17px",
+                                                    cursor: "pointer",
+                                                    transition: "transform 0.2s",
+                                                    padding: "5px",
+                                                    borderRadius: "50%",
+                                                  }}
+                                                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.4)")}
+                                                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                                >
+                                                  {em}
+                                                </span>
+                                              ))}
+                                            </div>
                                           </div>
                                         </li>
                                         <li>
@@ -1101,6 +1191,7 @@ const Chat = () => {
                                           </Link>
                                         </li>
                                       </ul>
+
                                     </div>
                                     {/* <div className="chat-voice-group">
                                       <ul>
@@ -1124,7 +1215,30 @@ const Chat = () => {
                                       </ul>
                                     </div> */}
                                   </div>
+                                  {Array.isArray(m.reaction) && m.reaction.length > 0 && (
+                                    <div className="d-flex align-items-center" style={{ gap: "4px" }}>
+                                      {m.reaction.map((reaction: any, index: any) => (
+                                        <span
+                                          key={`${reaction.userId}-${index}`}
+                                          style={{
+                                            fontSize: "18px",
+                                            padding: "2px 4px",
+                                            borderRadius: "6px",
+                                            transition: "transform 0.15s ease",
+                                            cursor: "default"
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+                                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                        >
+                                          {reaction.emoji}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+
                                 </div>
+
                                 <div className="chat-avatar">
                                   {
                                     m.user_img ? (<img
@@ -1139,6 +1253,7 @@ const Chat = () => {
                                       />)
                                   }
                                 </div>
+
                               </div></> : <><div className="chats">
                                 <div className="chat-avatar">
 
@@ -1159,9 +1274,17 @@ const Chat = () => {
                                 </div>
                                 <div className="chat-content">
                                   <div className="chat-profile-name">
+
                                     <h6>
                                       {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
                                     </h6>
+                                    {m.isStar === 1 && (
+                                      <span className="reported-label text-danger">⭐</span>
+                                    )}
+
+                                    {m.isReported === 1 && (
+                                      <span className="reported-label text-danger">⚠</span>
+                                    )}
                                     <div className="chat-action-btns ms-3">
                                       <div className="chat-action-col">
                                         <Link
@@ -1187,12 +1310,7 @@ const Chat = () => {
                                             </span>
                                             Reply
                                           </Link>
-                                          <Link to="#" className="dropdown-item">
-                                            <span>
-                                              <i className="bx bx-smile" />
-                                            </span>
-                                            React
-                                          </Link>
+
                                           <Link
                                             to="#"
                                             className="dropdown-item"
@@ -1204,14 +1322,16 @@ const Chat = () => {
                                             </span>
                                             Forward
                                           </Link>
-                                          <Link to="#" className="dropdown-item">
+                                          <button
+                                            onClick={() => toggleStar(m.id, m.isStar)}
+                                            className="dropdown-item">
                                             <span>
                                               <i className="bx bx-star" />
                                             </span>
-                                            Star Message
-                                          </Link>
-                                          <Link
-                                            to="#"
+                                            {m.isStar === 1 ? 'UnStar Message' : 'Star Message'}
+                                          </button>
+                                          <button
+                                            onClick={() => toggleReport(m.id, m.isReported)}
                                             className="dropdown-item"
                                             data-bs-toggle="modal"
                                             data-bs-target="#report-user"
@@ -1219,8 +1339,8 @@ const Chat = () => {
                                             <span>
                                               <i className="bx bx-dislike" />
                                             </span>
-                                            Report
-                                          </Link>
+                                            {m.isReported ? "Unreport" : "Report"}
+                                          </button>
                                           {/* <Link
                                             to="#"
                                             className="dropdown-item"
@@ -1260,53 +1380,37 @@ const Chat = () => {
                                             className={`${showEmoji ? "d-block" : ""
                                               } emoj-group-list`}
                                           >
-                                            <ul>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-01.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-02.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-03.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-04.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li>
-                                                <Link to="#">
-                                                  <ImageWithBasePath
-                                                    src="assets/img/icons/emoj-icon-05.svg"
-                                                    alt="Icon"
-                                                  />
-                                                </Link>
-                                              </li>
-                                              <li className="add-emoj">
-                                                <Link to="#">
-                                                  <i className="bx bx-plus" />
-                                                </Link>
-                                              </li>
-                                            </ul>
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                gap: "6px",
+                                                padding: "6px 10px",
+                                                background: "white",
+                                                borderRadius: "50px",
+                                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                alignItems: "center",
+                                              }}
+                                            >
+                                              {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
+                                                <span
+                                                  key={em}
+                                                  onClick={() => toggleReaction(m.id, m.reaction, em)}
+                                                  style={{
+                                                    fontSize: "17px",
+                                                    cursor: "pointer",
+                                                    transition: "transform 0.2s",
+                                                    padding: "5px",
+                                                    borderRadius: "50%",
+                                                  }}
+                                                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.4)")}
+                                                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                                >
+                                                  {em}
+                                                </span>
+                                              ))}
+                                            </div>
+
+
                                           </div>
                                         </li>
                                         <li>
@@ -1316,7 +1420,31 @@ const Chat = () => {
                                         </li>
                                       </ul>
                                     </div>
+
                                   </div>
+                                  {Array.isArray(m.reaction) && m.reaction.length > 0 && (
+                                    <div className="d-flex align-items-center" style={{ gap: "4px" }}>
+                                      {m.reaction.map((reaction: any, index: any) => (
+                                        <span
+                                          key={`${reaction.userId}-${index}`}
+                                          style={{
+                                            fontSize: "18px",
+                                            padding: "2px 4px",
+                                            borderRadius: "6px",
+                                            transition: "transform 0.15s ease",
+                                            cursor: "default"
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+                                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                        >
+                                          {reaction.emoji}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+
+
                                 </div>
                               </div>
                               </>
@@ -2685,7 +2813,7 @@ const Chat = () => {
                     />
                     <div className="form-buttons">
                       <button className="btn send-btn" type="submit">
-                        {loading3 ? <>sending...</> : (<i className="bx bx-paper-plane" />)}
+                        {loading3 ? (<i className="bx-loader-alt bx-spin" />) : (<i className="bx bx-paper-plane" />)}
                       </button>
                     </div>
                   </form>

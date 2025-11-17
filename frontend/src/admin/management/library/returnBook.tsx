@@ -1014,7 +1014,7 @@ const ReturnBook = () => {
                 <Table
                   dataSource={tableData}
                   columns={columns}
-                  Selection={true}
+                  Selection={false}
                 />
               )}
               {/* /Student List */}

@@ -11,5 +11,11 @@ router.get('/allcoversation/:userId', messageController.getLastMessageAllConvera
 router.post('/send', messageController.sendMessage);
 router.post('/send-file', upload.single('chatfile'), messageController.sendFileMessage);
 router.delete('/delmessage/:messageId', messageController.deleteMessage)
+router.put("/star/:messageId", messageController.toggleStarMessage);
+router.put("/report/:messageId", messageController.toggleReportMessage);
+router.post("/react/:messageId",messageController.toggleOneToOneReaction);
+
+
+
 
 module.exports = router;

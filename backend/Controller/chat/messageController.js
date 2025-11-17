@@ -8,17 +8,42 @@ exports.getMessages = async (req, res) => {
     const [rows] = await db.query(
       `
       SELECT 
-        m.*, 
+        m.*,
+        COALESCE(r.reaction, '[]') AS reaction,
         CONCAT(u.firstname, " ", u.lastname) AS name,
         CASE 
-          WHEN r.role_name = 'student' THEN s.stu_img
-          WHEN r.role_name = 'teacher' THEN t.img_src
+          WHEN rl.role_name = 'student' THEN s.stu_img
+          WHEN rl.role_name = 'teacher' THEN t.img_src
           WHEN u.remark = 'staff' THEN st.img_src
           ELSE NULL
         END AS user_img
       FROM messages m
+      LEFT JOIN (
+        SELECT 
+          mr.message_id,
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'userId', mr.user_id,
+              'emoji', mr.emoji,   
+              'img',
+              CASE 
+                WHEN rl.role_name = 'student' THEN s.stu_img
+                WHEN rl.role_name = 'teacher' THEN t.img_src
+                WHEN u.remark = 'staff' THEN st.img_src
+                ELSE NULL
+              END
+            )
+          ) AS reaction
+        FROM message_reactions mr
+        LEFT JOIN users u ON mr.user_id = u.id
+        LEFT JOIN roles rl ON u.roll_id = rl.id
+        LEFT JOIN students s ON s.stu_id = u.id
+        LEFT JOIN teachers t ON t.user_id = u.id
+        LEFT JOIN staffs st ON st.user_id = u.id
+        GROUP BY mr.message_id
+      ) r ON r.message_id = m.id
       LEFT JOIN users u ON m.sender_id = u.id
-      LEFT JOIN roles r ON u.roll_id = r.id
+      LEFT JOIN roles rl ON u.roll_id = rl.id
       LEFT JOIN students s ON s.stu_id = u.id
       LEFT JOIN teachers t ON t.user_id = u.id
       LEFT JOIN staffs st ON st.user_id = u.id
@@ -27,6 +52,13 @@ exports.getMessages = async (req, res) => {
       `,
       [conversationId]
     );
+    const finalMessages = rows.map(msg => ({
+      ...msg,
+      reaction:
+        typeof msg.reaction === "string"
+          ? JSON.parse(msg.reaction)
+          : (msg.reaction || [])
+    }));
 
     const [userData] = await db.query(
       `
@@ -35,13 +67,13 @@ exports.getMessages = async (req, res) => {
         last_seen,
         is_online,
         CASE 
-          WHEN r.role_name = 'student' THEN s.stu_img
-          WHEN r.role_name = 'teacher' THEN t.img_src
+          WHEN rl.role_name = 'student' THEN s.stu_img
+          WHEN rl.role_name = 'teacher' THEN t.img_src
           WHEN u.remark = 'staff' THEN st.img_src
           ELSE NULL
         END AS user_img
       FROM users u
-      LEFT JOIN roles r ON u.roll_id = r.id
+      LEFT JOIN roles rl ON u.roll_id = rl.id
       LEFT JOIN students s ON s.stu_id = u.id
       LEFT JOIN teachers t ON t.user_id = u.id
       LEFT JOIN staffs st ON st.user_id = u.id
@@ -52,19 +84,22 @@ exports.getMessages = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Messages fetched successfully.',
-      data: rows,
+      message: "Messages fetched successfully.",
+      data: finalMessages,
       userData: userData[0],
     });
+
   } catch (err) {
-    console.error('getMessages Error:', err);
+    console.error("getMessages Error:", err);
     return res.status(500).json({
       success: false,
-      message: 'Server error while fetching messages.',
+      message: "Server error while fetching messages.",
       error: err.message,
     });
   }
 };
+
+
 
 // ✅ Send a text / image / voice message
 exports.sendMessage = async (req, res) => {
@@ -111,7 +146,7 @@ exports.sendFileMessage = async (req, res) => {
       });
     }
 
-   
+
     let folder = "others";
     let message_type = "file"; // default
 
@@ -336,6 +371,126 @@ exports.deleteMessage = async (req, res) => {
     });
   }
 };
+
+// toggle star message
+exports.toggleStarMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const { isStar } = req.body;
+
+  try {
+    const [result] = await db.query(
+      "UPDATE messages SET isStar = ? WHERE id = ?",
+      [isStar, messageId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Message not found!"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: isStar == 1 ? "Message Starred!" : "Message Unstarred!",
+
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!"
+    });
+  }
+};
+
+// report message
+exports.toggleReportMessage = async (req, res) => {
+  const { messageId } = req.params;
+  const { isReported } = req.body;   // 0 or 1
+
+  try {
+    await db.query(
+      `UPDATE messages SET isReported = ? WHERE id = ?`,
+      [isReported, messageId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: isReported ? "Message reported" : "Message unreported",
+
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Operation failed"
+    });
+  }
+};
+
+exports.toggleOneToOneReaction = async (req, res) => {
+  const { messageId } = req.params;
+  const { userId, emoji } = req.body;
+
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM message_reactions WHERE message_id = ? AND user_id = ?",
+      [messageId, userId]
+    );
+
+    let userReaction = null;
+
+    if (rows.length > 0) {
+      const current = rows[0];
+
+      // Same emoji → DELETE
+      if (current.emoji === emoji) {
+        await db.query("DELETE FROM message_reactions WHERE id = ?", [
+          current.id,
+        ]);
+      } else {
+        // Reaction exists → UPDATE
+        await db.query(
+          "UPDATE message_reactions SET emoji = ? WHERE id = ?",
+          [emoji, current.id]
+        );
+        userReaction = emoji;
+      }
+    } else {
+      // First time reaction → INSERT
+      await db.query(
+        "INSERT INTO message_reactions (message_id, user_id, emoji) VALUES (?, ?, ?)",
+        [messageId, userId, emoji]
+      );
+      userReaction = emoji;
+    }
+
+    // Fetch ALL updated reactions for this message
+    const [allReactions] = await db.query(
+      "SELECT user_id, emoji FROM message_reactions WHERE message_id = ?",
+      [messageId]
+    );
+
+    return res.json({
+      success: true,
+      message: "Reaction updated",
+      reactionList: allReactions,
+      userReaction: userReaction,
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+
+
+
+
 
 
 
