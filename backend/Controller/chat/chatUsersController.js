@@ -130,3 +130,34 @@ exports.offlineUsers =async(req,res)=>{
     }
 }
 
+exports.reportUser = async (req, res) => {
+  const { reportedUserId, reportedBy, reason, conversationId } = req.body;
+
+  if (!reportedUserId || !reportedBy) {
+    return res.status(400).json({ success: false, message: "Missing data" });
+  }
+
+  try {
+    // Check if already reported
+    const [existing] = await db.query(
+      "SELECT * FROM user_reports WHERE reported_user_id = ? AND reported_by = ?",
+      [reportedUserId, reportedBy]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: "You have already reported this user" });
+    }
+
+    await db.query(
+      "INSERT INTO user_reports (reported_user_id, reported_by, reason, conversation_id) VALUES (?, ?, ?, ?)",
+      [reportedUserId, reportedBy, reason || null, conversationId || null]
+    );
+
+    return res.json({ success: true, message: "User reported successfully" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+

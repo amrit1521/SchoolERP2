@@ -19,7 +19,7 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/api/chat/uploads/audio', express.static(path.join(__dirname, 'uploads/audio')));
+app.use('/api/stu/uploads/audio', express.static(path.join(__dirname, 'uploads/audio')));
 // for image
 app.use('/api/stu/uploads/image', express.static(path.join(__dirname, 'uploads/image')))
 

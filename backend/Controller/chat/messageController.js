@@ -2,14 +2,34 @@ const db = require('../../config/db');
 
 // ✅ Get all messages in a conversation
 exports.getMessages = async (req, res) => {
-  const { conversationId, userId } = req.params;
 
+  const { conversationId, userId } = req.params;
+  console.log(userId)
   try {
     const [rows] = await db.query(
       `
       SELECT 
-        m.*,
+        m.id,
+        m.conversation_id,
+        m.sender_id,
+        m.message_text,
+        m.file_url,
+        m.message_type,
+        m.created_at,
+        m.isStar,
+        m.isReported,
+        m.reply_to,
+
+        -- Reply Details
+        reply.id AS reply_id,
+        reply.message_text AS reply_message_text,
+        reply.file_url AS reply_file_url,
+        reply.message_type AS reply_message_type,
+
+        -- Reactions
         COALESCE(r.reaction, '[]') AS reaction,
+
+        -- Sender Info
         CONCAT(u.firstname, " ", u.lastname) AS name,
         CASE 
           WHEN rl.role_name = 'student' THEN s.stu_img
@@ -17,7 +37,10 @@ exports.getMessages = async (req, res) => {
           WHEN u.remark = 'staff' THEN st.img_src
           ELSE NULL
         END AS user_img
+
       FROM messages m
+      LEFT JOIN messages reply ON reply.id = m.reply_to
+
       LEFT JOIN (
         SELECT 
           mr.message_id,
@@ -42,30 +65,61 @@ exports.getMessages = async (req, res) => {
         LEFT JOIN staffs st ON st.user_id = u.id
         GROUP BY mr.message_id
       ) r ON r.message_id = m.id
+
       LEFT JOIN users u ON m.sender_id = u.id
       LEFT JOIN roles rl ON u.roll_id = rl.id
       LEFT JOIN students s ON s.stu_id = u.id
       LEFT JOIN teachers t ON t.user_id = u.id
       LEFT JOIN staffs st ON st.user_id = u.id
+
       WHERE m.conversation_id = ?
       ORDER BY m.created_at ASC
       `,
       [conversationId]
     );
-    const finalMessages = rows.map(msg => ({
-      ...msg,
+
+    // Map clean JSON
+    const finalMessages = rows.map((msg) => ({
+      id: msg.id,
+      conversation_id: msg.conversation_id,
+      sender_id: msg.sender_id,
+      message_text: msg.message_text,
+      message_type: msg.message_type,
+      file_url: msg.file_url,
+      created_at: msg.created_at,
+      isStar: msg.isStar,
+      isReported: msg.isReported,
+
+      // ⭐ CLEAN REPLY BLOCK
+      reply: msg.reply_id
+        ? {
+          id: msg.reply_id,
+          message_text: msg.reply_message_text,
+          message_type: msg.reply_message_type,
+          file_url: msg.reply_file_url,
+        }
+        : null,
+
+      // ⭐ Clean reaction array
       reaction:
         typeof msg.reaction === "string"
           ? JSON.parse(msg.reaction)
-          : (msg.reaction || [])
+          : msg.reaction,
+
+      // user info
+      name: msg.name,
+      user_img: msg.user_img,
     }));
 
+    // User info
     const [userData] = await db.query(
       `
       SELECT 
         CONCAT(firstname, " ", lastname) AS name,
         last_seen,
         is_online,
+        mobile,
+        email,
         CASE 
           WHEN rl.role_name = 'student' THEN s.stu_img
           WHEN rl.role_name = 'teacher' THEN t.img_src
@@ -104,14 +158,14 @@ exports.getMessages = async (req, res) => {
 // ✅ Send a text / image / voice message
 exports.sendMessage = async (req, res) => {
   try {
-    const { conversation_id, sender_id, message_text, message_type = 'text', file_url = null } = req.body;
+    const { conversation_id, sender_id, message_text, message_type = 'text', file_url = null, reply_to } = req.body;
     if (!conversation_id || !sender_id)
       return res.status(400).json({ success: false, message: 'conversation_id and sender_id required' });
 
     const [result] = await db.query(
-      `INSERT INTO messages (conversation_id, sender_id, message_text, message_type, file_url)
-       VALUES (?, ?, ?, ?, ?)`,
-      [conversation_id, sender_id, message_text, message_type, file_url]
+      `INSERT INTO messages (conversation_id, sender_id, message_text, message_type, file_url , reply_to)
+       VALUES (?, ?, ?, ?, ? , ?)`,
+      [conversation_id, sender_id, message_text, message_type, file_url, reply_to ?? null]
     );
 
     const [rows] = await db.query(

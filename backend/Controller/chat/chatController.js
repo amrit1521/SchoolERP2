@@ -151,7 +151,7 @@ exports.getConversationMembers = async (req, res) => {
 // ✅ Get All Conversations for a User
 exports.getUserConversations = async (req, res) => {
   const { userId } = req.params;
-  
+
   try {
     const [rows] = await db.query(
       `SELECT c.* FROM conversations c
@@ -209,7 +209,7 @@ exports.createGroupConversationViaPermission = async (req, res) => {
         `SELECT role_id FROM users WHERE id IN (?)`,
         [members]
       );
-      
+
       const invalid = memberRoles.filter(m => m.role_id !== 3);
 
       if (invalid.length > 0) {
@@ -266,4 +266,92 @@ exports.createGroupConversationViaPermission = async (req, res) => {
     });
   }
 };
+
+exports.deleteRoom = async (req, res) => {
+  const { conversationId } = req.params;
+
+  if (!conversationId) {
+    return res.status(400).json({
+      success: false,
+      message: "Room ID is required!",
+    });
+  }
+
+  try {
+    // Delete conversation
+    const [row] = await db.query(
+      `DELETE FROM conversation WHERE id = ?`,
+      [conversationId]
+    );
+
+    if (row.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Room chat not found!",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat deleted successfully!",
+    });
+
+  } catch (error) {
+    console.log("deleteRoom Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.clearRoomChat = async (req, res) => {
+  const { conversationId } = req.params;
+
+  if (!conversationId) {
+    return res.status(400).json({
+      success: false,
+      message: "Conversation ID is required!"
+    });
+  }
+
+  try {
+    // Start Transaction
+    await db.query("START TRANSACTION");
+
+    // 🔥 Delete reactions first (else FK error)
+    await db.query(
+      `DELETE FROM message_reactions 
+       WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)`,
+      [conversationId]
+    );
+
+    // 🔥 Delete messages
+    const [delMsg] = await db.query(
+      `DELETE FROM messages WHERE conversation_id = ?`,
+      [conversationId]
+    );
+
+    await db.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat cleared successfully!",
+      deletedMessages: delMsg.affectedRows
+    });
+
+  } catch (error) {
+    await db.query("ROLLBACK");
+    console.log("clearRoomChat Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while clearing chat!",
+      error: error.message
+    });
+  }
+};
+
 

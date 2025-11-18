@@ -8,5 +8,7 @@ router.post('/create-group', chatControllers.createGroupConversation);
 router.post('/:conversationId/add-member', chatControllers.addMemberToConversation);
 router.get('/:conversationId/members', chatControllers.getConversationMembers);
 // router.get('/:userId', chatControllers.getUserConversations); 
+router.delete('/delroom/:conversationId' , chatControllers.deleteRoom)
+router.delete('/clearroom/:conversationId' , chatControllers.clearRoomChat)
 
 module.exports = router;
