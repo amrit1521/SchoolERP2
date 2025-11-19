@@ -13,7 +13,7 @@ import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, reportUser, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
@@ -22,7 +22,9 @@ import { CiMicrophoneOn } from "react-icons/ci";
 import { CiPause1 } from "react-icons/ci";
 import { GrResume } from "react-icons/gr";
 import { FaStopCircle } from "react-icons/fa";
-import { Audiourl, Imageurl } from "../../service/api";
+import { Audiourl, Documenturl, Imageurl, Videourl } from "../../service/api";
+import { MdOutlineAttachFile } from "react-icons/md";
+import EmojiPicker from "emoji-picker-react";
 
 
 const Chat = () => {
@@ -48,7 +50,7 @@ const Chat = () => {
   const [open2, setOpen2] = React.useState(false);
   const [isShow, setShow] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showEmoji2, setShowEmoji2] = useState(false);
+  // const [showEmoji2, setShowEmoji2] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
 
@@ -79,7 +81,8 @@ const Chat = () => {
   const [speRoomConv, setSpeRoomConv] = useState<any>([]);
   const [loading2, setLoading2] = useState<boolean>(false);
   const [message, setMessage] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  // const [previewFile , setPreviewFile] = useState<string>("")
   const [loading3, setLoading3] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -96,7 +99,7 @@ const Chat = () => {
     id: null,
     text: "",
   });
-
+  const [showPicker, setShowPicker] = useState(false);
   const chatAreaRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
@@ -108,59 +111,83 @@ const Chat = () => {
     }
   };
   // ====================== SOCKET INIT =========================
+
   useEffect(() => {
-    const newSocket = io(BASE_URL, {
+    const s = io(BASE_URL, {
       transports: ["websocket"],
       withCredentials: true,
     });
-
-    setSocket(newSocket);
-
+    setSocket(s);
     if (currentUserId) {
-      newSocket.emit("user_connected", currentUserId);
+      s.emit("user_connected", currentUserId);
     }
-
-    newSocket.on("new_message", (msg: any) => {
-      if (msg.conversation_id === conversationId) {
-
-        // 🟩 Check if this message is a reply
-        if (msg.reply_to) {
-          const parentMsg = speRoomConv.find(
-            (m: any) => m.id === msg.reply_to
-          );
-          if (parentMsg) {
-            msg.reply = {
-              id: parentMsg.id,
-              message_text: parentMsg.message_text,
-              message_type: parentMsg.message_type,
-              file_url: parentMsg.file_url,
-            };
-          }
+    s.on("new_message", (msg: any) => {
+      if (msg.conversation_id !== conversationId) return;
+      if (msg.reply_to) {
+        const parentMsg = speRoomConv.find((m: any) => m.id === msg.reply_to);
+        if (parentMsg) {
+          msg.reply = {
+            id: parentMsg.id,
+            message_text: parentMsg.message_text,
+            message_type: parentMsg.message_type,
+            file_url: parentMsg.file_url,
+          };
         }
-
-        // Add new message in chat
-        setSpeRoomConv((prev: any) => [...prev, msg]);
-
-        scrollToBottom();
       }
+      setSpeRoomConv((prev: any) => [...prev, msg]);
+      scrollToBottom();
     });
-
-
-    newSocket.on("message_deleted", ({ messageId }) => {
-      setSpeRoomConv((prev: any) => prev.filter((msg: any) => msg.id !== messageId));
-    });
-
-    newSocket.on("message_updated", (updated: any) => {
+    s.on("message_deleted", ({ messageId }) => {
       setSpeRoomConv((prev: any) =>
-        prev.map((msg: any) => (msg.id === updated.id ? { ...msg, ...updated } : msg))
+        prev.filter((msg: any) => msg.id !== messageId)
+      );
+    });
+    s.on("message_updated", (updated: any) => {
+      setSpeRoomConv((prev: any) =>
+        prev.map((msg: any) =>
+          msg.id === updated.id ? { ...msg, ...updated } : msg
+        )
+      );
+    });
+    s.on("star_updated", ({ messageId, isStar }) => {
+      setSpeRoomConv((prev: any) =>
+        prev.map((msg: any) =>
+          msg.id === messageId ? { ...msg, isStar } : msg
+        )
       );
     });
 
-    // FIXED CLEANUP
+
+    s.on("report_updated", ({ messageId, isReported }) => {
+      setSpeRoomConv((prev: any) =>
+        prev.map((msg: any) =>
+          msg.id === messageId ? { ...msg, isReported } : msg
+        )
+      );
+    });
+
+    s.on("reaction_updated", ({ messageId, reactions }) => {
+      setSpeRoomConv((prev: any) =>
+        prev.map((msg: any) =>
+          msg.id === messageId ? { ...msg, reaction: reactions } : msg
+        )
+      );
+    });
+
+    // -------------------------
+    // CLEANUP
+    // -------------------------
     return () => {
-      newSocket.disconnect();
+      s.off("new_message");
+      s.off("message_deleted");
+      s.off("message_updated");
+      s.off("star_updated");
+      s.off("report_updated");
+      s.off("reaction_updated");
+      s.disconnect();
     };
   }, [currentUserId, conversationId]);
+
 
 
   // =============== JOIN / LEAVE ROOM =====================
@@ -260,8 +287,6 @@ const Chat = () => {
     }
   };
 
-
-
   // ===================== ON MOUNT =====================
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
@@ -276,56 +301,83 @@ const Chat = () => {
     fetchOnlineUsers();
   }, []);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    const selectedFiles: File[] = Array.from(fileList);
+
+
+    if (selectedFiles.length > 5) {
+      alert("You can upload maximum 5 files at once.");
+      e.target.value = ""; // reset input
+      return;
+    }
+
+    setFiles(selectedFiles);
+
+    e.target.value = "";
+  };
+
 
 
   // ===================== SEND MESSAGE ======================
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!message.trim() && !file) return;
+
+
+    if (!message.trim() && files.length === 0) return;
     if (!conversationId || !currentUserId) return;
 
     setLoading3(true);
-    let payload: any = {};
 
     try {
-      if (file) {
-        // file logic not changed
-      } else {
-        if (replyData.id) {
-          payload = {
-            conversation_id: conversationId,
-            sender_id: currentUserId,
-            message_text: message,
-            message_type: "text",
-            reply_to: replyData.id,
-          };
-        } else {
-          payload = {
-            conversation_id: conversationId,
-            sender_id: currentUserId,
-            message_text: message,
-            message_type: "text",
-            replyData: null,
-          };
-        }
-
-        const { data } = await sendMessage(payload);
+      if (files.length > 0) {
+        const formData = new FormData();
+        formData.append("conversation_id", String(conversationId));
+        formData.append("sender_id", String(currentUserId));
+        formData.append("reply_to", String(replyData.id || null));
+        files.forEach((file) => {
+          formData.append("chatfile", file);
+        });
+        const { data } = await sendFile(formData);
 
         if (data.success) {
-          setReplyData({ id: null, text: "" });
+          console.log("Files sent:", data.data);
         }
+        setFiles([]);
+        setMessage("");
+        setReplyData({ id: null, text: "" });
+
+        setLoading3(false);
+        return; // important
+      }
+      let payload: any = {
+        conversation_id: conversationId,
+        sender_id: currentUserId,
+        message_text: message,
+        message_type: "text",
+        reply_to: replyData.id || null
+      };
+
+      // if (replyData.id) {
+      //   payload.reply_to = replyData.id;
+      // }
+
+      const { data } = await sendMessage(payload);
+
+      if (data.success) {
+        setReplyData({ id: null, text: "" });
       }
 
       setMessage("");
-      setFile(null);
+
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Error sending:", error);
     } finally {
       setLoading3(false);
     }
   };
-
-
 
   // ================== AUDIO RECORDING ===================
   useEffect(() => {
@@ -379,11 +431,11 @@ const Chat = () => {
 
         const { data } = await sendFile(formData);
         if (data.success) {
-          const newMessage = data.data;
+          // const newMessage = data.data;
 
-          socket?.emit("send_message", formData);
+          // socket?.emit("send_message", formData);
 
-          setSpeRoomConv((prev: any) => [...prev, newMessage]);
+          // setSpeRoomConv((prev: any) => [...prev, newMessage]);
         }
       };
 
@@ -393,7 +445,7 @@ const Chat = () => {
       setRecordTime(0);
     } catch (err: any) {
       console.error("Error accessing microphone:", err);
-      toast.error(err.response?.data?.message || "Mic error");
+      toast.error(err.response?.data?.message || "Mic error ! mic not supported !");
     }
   };
 
@@ -425,7 +477,6 @@ const Chat = () => {
       toast.error("Id Not Provided or This message already deleted !");
       return;
     }
-
     try {
       const { data } = await deleteMessage(id);
       if (data.success) {
@@ -440,12 +491,9 @@ const Chat = () => {
   // =============== STAR MESSAGE ===================
   const toggleStar = async (id: number, isStar: number) => {
     const newValue = isStar ? 0 : 1;
-
     try {
       const { data } = await msgStarUpdate({ isStar: newValue }, id);
-
       if (!data.success) return;
-
       setSpeRoomConv((prev: any[]) =>
         prev.map((msg) => (msg.id === id ? { ...msg, isStar: newValue } : msg))
       );
@@ -499,9 +547,7 @@ const Chat = () => {
         setSpeRoomConv((prev: any) =>
           prev.map((msg: any) => {
             if (msg.id !== messageId) return msg;
-
             let updatedReactions = [...msg.reaction];
-
             if (existingReaction) {
               if (finalEmoji === null) {
                 updatedReactions = updatedReactions.filter(
@@ -533,10 +579,8 @@ const Chat = () => {
   function formatTimeAgo(dateInput: string | number | Date): string {
     const date = new Date(dateInput);
     if (isNaN(date.getTime())) return "Invalid date";
-
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
     if (seconds < 60) return "Just now";
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
@@ -554,6 +598,7 @@ const Chat = () => {
   }
 
   const formatMessageTimeInConversation = (dateString: any) => {
+
     const date = new Date(dateString);
     if (isToday(date)) return format(date, "hh:mm a");
     if (isYesterday(date)) return `Yesterday, ${format(date, "hh:mm a")}`;
@@ -561,32 +606,40 @@ const Chat = () => {
   };
 
   // report user
-//   const handleReportUser = async (userId: number) => {
-//   if (!currentUserId) return toast.error("Login first");
+  const handleReportUser = async (userId: number) => {
+    if (!currentUserId) return toast.error("Login first");
 
-//   try {
-//     const reason = prompt("Why are you reporting this user?");
-//     const { data } = await axios.post(`${BASE_URL}/users/report`, {
-//       reportedUserId: userId,
-//       reportedBy: currentUserId,
-//       reason,
-//       conversationId
-//     });
+    try {
+      const reason = prompt("Why are you reporting this user?");
+      if (!reason || !reason.trim()) {
+        toast.error('Reason is required !')
+        return
+      } else if (reason.length < 10) {
+        toast.error('Reason should be at least 10 chracters !')
+        return
+      }
+      const payload = {
+        reportedUserId: userId,
+        reportedBy: currentUserId,
+        reason,
+        conversationId
+      }
+      const { data } = await reportUser(payload)
 
-//     if (data.success) {
-//       toast.success("User reported successfully");
-//     } else {
-//       toast.error(data.message);
-//     }
-//   } catch (err) {
-//     console.log(err);
-//     toast.error("Failed to report user");
-//   }
-// };
+      if (data.success) {
+        toast.success("User reported successfully");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to report user");
+    }
+  };
 
-
-
-
+  const onEmojiClick = (emoji:any) => {
+    setMessage((prev) => prev + emoji.emoji);
+  };
 
 
   return (
@@ -947,7 +1000,7 @@ const Chat = () => {
                             {otherUser?.is_online === 1
                               ? "Online"
                               : otherUser?.last_seen
-                                ? `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`
+                                ? `Last Seen ${formatMessageTimeInConversation(otherUser.last_seen)}`
                                 : "Last Seen: Just now"}
                           </small>
 
@@ -1049,12 +1102,18 @@ const Chat = () => {
                                 </span>
                                 Delete Chat
                               </Link>
-                              <Link to="#" className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-dislike" />
-                                </span>
-                                Report
-                              </Link>
+                              <button disabled={otherUser.is_reported} onClick={() => handleReportUser(otherUser.id)} className="dropdown-item">
+
+                                {
+                                  otherUser.is_reported ? (<span className="text-danger">
+                                    <i className="bx bx-dislike" />
+                                  </span>) : (<span>
+                                    <i className="bx bx-like" />
+                                  </span>)
+                                }
+                                {otherUser.is_reported ? "reported" : "report"}
+
+                              </button>
                               <Link to="#" className="dropdown-item">
                                 <span>
                                   <i className="bx bx-block" />
@@ -1193,6 +1252,8 @@ const Chat = () => {
                                       </div>
                                     </div>
                                   </div>
+
+
                                   <div className="message-content">
 
                                     {/* 🟦 Reply Box */}
@@ -1207,18 +1268,27 @@ const Chat = () => {
                                           boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
                                         }}
                                       >
+
                                         {/* Reply TEXT */}
                                         {m.reply.message_type === "text" && (
-                                          <div
-                                            style={{
-                                              fontSize: "13px",
-                                              marginTop: "3px",
-                                              color: "#333",
-                                              lineHeight: "1.3",
-                                            }}
-                                          >
+                                          <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
                                             {m.reply.message_text}
                                           </div>
+                                        )}
+
+                                        {/* Reply IMAGE */}
+                                        {m.reply.message_type === "image" && m.reply.file_url && (
+                                          <img
+                                            src={`${Imageurl}/${m.reply.file_url}`}
+                                            alt="reply-img"
+                                            style={{
+                                              width: "120px",
+                                              height: "120px",
+                                              borderRadius: "8px",
+                                              marginTop: "5px",
+                                              objectFit: "cover",
+                                            }}
+                                          />
                                         )}
 
                                         {/* Reply AUDIO */}
@@ -1226,11 +1296,7 @@ const Chat = () => {
                                           <audio
                                             controls
                                             preload="auto"
-                                            style={{
-                                              width: "170px",
-                                              height: "28px",
-                                              marginTop: "5px",
-                                            }}
+                                            style={{ width: "180px", height: "28px", marginTop: "5px" }}
                                           >
                                             <source
                                               src={`${Audiourl}/${m.reply.file_url}`}
@@ -1238,43 +1304,112 @@ const Chat = () => {
                                             />
                                           </audio>
                                         )}
+
+                                        {/* {replay video} */}
+                                        {m.reply.message_type === "video" && m.reply.file_url && (
+                                          <video
+                                            controls
+                                            style={{ width: "200px", borderRadius: "10px" }}
+                                          >
+                                            <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
+                                          </video>
+                                        )}
+
+                                        {/* Reply DOCUMENT */}
+                                        {m.reply.message_type === "document" && m.reply.file_url && (
+                                          <a
+                                            href={`${Documenturl}/${m.reply.file_url}`}
+                                            download={m.reply.file_original_name}
+                                            target="_blank"
+                                            style={{
+                                              display: "inline-block",
+                                              marginTop: "4px",
+                                              padding: "6px 10px",
+                                              background: "#ececec",
+                                              borderRadius: "4px",
+                                              fontSize: "13px",
+                                              border: "1px solid #ddd",
+                                            }}
+                                          >
+                                            📄 {m.reply.file_original_name || "Document"}
+                                          </a>
+                                        )}
+
+
+
                                       </div>
                                     )}
 
-                                    {/* 🟩 Main Message */}
+                                    {/* 🟩 MAIN MESSAGE */}
+
+                                    {/* Main TEXT */}
                                     {m.message_type === "text" && (
-                                      <span
-                                        style={{
-                                          fontSize: "14px",
-                                          // color: "#222",
-                                          lineHeight: "1.4",
-                                          display: "inline-block",
-                                        }}
-                                      >
+                                      <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
                                         {m.message_text}
                                       </span>
                                     )}
 
+                                    {/* Main IMAGE */}
+                                    {m.message_type === "image" && m.file_url && (
+                                      <img
+                                        src={`${Imageurl}/${m.file_url}`}
+                                        alt="msg-img"
+                                        style={{
+                                          width: "220px",
+                                          borderRadius: "10px",
+                                          marginTop: "3px",
+                                          objectFit: "cover",
+                                        }}
+                                      />
+                                    )}
+
+                                    {/* Main AUDIO */}
                                     {m.message_type === "audio" && m.file_url && (
                                       <audio
                                         controls
                                         preload="auto"
                                         style={{
-                                          width: "200px",
+                                          width: "220px",
                                           height: "32px",
-                                          marginTop: "2px",
+                                          marginTop: "3px",
                                           display: "block",
                                         }}
                                       >
-                                        <source
-                                          src={`${Audiourl}/${m.file_url}`}
-                                          type="audio/webm"
-                                        />
+                                        <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
                                       </audio>
                                     )}
 
-                                    {/* Reaction UI */}
+                                    {/* Main DOCUMENT */}
+                                    {m.message_type === "document" && m.file_url && (
+                                      <a
+                                        href={`${Documenturl}/${m.file_url}`}
+                                        download={m.file_original_name}
+                                        target="_blank"
+                                        style={{
+                                          display: "inline-block",
+                                          padding: "7px 10px",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "6px",
+                                          background: "#f2f2f2",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        📄 {m.file_original_name}
+                                      </a>
+                                    )}
+
+                                    {m.message_type === "video" && m.file_url && (
+                                      <video
+                                        controls
+                                        style={{ width: "250px", borderRadius: "10px" }}
+                                      >
+                                        <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
+                                      </video>
+                                    )}
+
+                                    {/* 🟨 Reaction UI */}
                                     <div className="emoj-group rig-emoji-group me-3 sm:me-5">
+
                                       <ul>
                                         <li className="emoj-action">
                                           <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
@@ -1284,7 +1419,6 @@ const Chat = () => {
                                           {showEmoji && (
                                             <div
                                               className="emoj-group-list d-block"
-                                              onClick={() => setShowEmoji(false)}
                                               style={{ marginTop: "5px" }}
                                             >
                                               <div
@@ -1295,7 +1429,6 @@ const Chat = () => {
                                                   background: "white",
                                                   borderRadius: "50px",
                                                   boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                  alignItems: "center",
                                                 }}
                                               >
                                                 {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
@@ -1305,9 +1438,9 @@ const Chat = () => {
                                                     style={{
                                                       fontSize: "18px",
                                                       cursor: "pointer",
-                                                      transition: "transform 0.2s",
                                                       padding: "5px",
                                                       borderRadius: "50%",
+                                                      transition: "transform 0.2s",
                                                     }}
                                                     onMouseEnter={(e) =>
                                                       (e.currentTarget.style.transform = "scale(1.4)")
@@ -1325,16 +1458,24 @@ const Chat = () => {
                                         </li>
 
                                         <li>
-                                          <Link to="#" onClick={() => setReplyData({
-                                            id: m.id,
-                                            text: m.message_text
-                                          })}>
+                                          <Link
+                                            to="#"
+                                            onClick={() =>
+                                              setReplyData({
+                                                id: m.id,
+                                                text: m.message_text,
+
+                                              })
+                                            }
+                                          >
                                             <i className="bx bx-share" />
                                           </Link>
                                         </li>
                                       </ul>
+
                                     </div>
                                   </div>
+
 
 
 
@@ -1486,6 +1627,7 @@ const Chat = () => {
                                   </div>
                                   <div className="message-content">
 
+                                    {/* 🟦 Reply Box */}
                                     {m.reply && (
                                       <div
                                         style={{
@@ -1497,18 +1639,27 @@ const Chat = () => {
                                           boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
                                         }}
                                       >
+
                                         {/* Reply TEXT */}
                                         {m.reply.message_type === "text" && (
-                                          <div
-                                            style={{
-                                              fontSize: "13px",
-                                              marginTop: "3px",
-                                              color: "#333",
-                                              lineHeight: "1.3",
-                                            }}
-                                          >
+                                          <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
                                             {m.reply.message_text}
                                           </div>
+                                        )}
+
+                                        {/* Reply IMAGE */}
+                                        {m.reply.message_type === "image" && m.reply.file_url && (
+                                          <img
+                                            src={`${Imageurl}/${m.reply.file_url}`}
+                                            alt="reply-img"
+                                            style={{
+                                              width: "120px",
+                                              height: "120px",
+                                              borderRadius: "8px",
+                                              marginTop: "5px",
+                                              objectFit: "cover",
+                                            }}
+                                          />
                                         )}
 
                                         {/* Reply AUDIO */}
@@ -1516,11 +1667,7 @@ const Chat = () => {
                                           <audio
                                             controls
                                             preload="auto"
-                                            style={{
-                                              width: "170px",
-                                              height: "28px",
-                                              marginTop: "5px",
-                                            }}
+                                            style={{ width: "180px", height: "28px", marginTop: "5px" }}
                                           >
                                             <source
                                               src={`${Audiourl}/${m.reply.file_url}`}
@@ -1528,102 +1675,176 @@ const Chat = () => {
                                             />
                                           </audio>
                                         )}
+
+                                        {/* {replay video} */}
+                                        {m.reply.message_type === "video" && m.reply.file_url && (
+                                          <video
+                                            controls
+                                            style={{ width: "200px", borderRadius: "10px" }}
+                                          >
+                                            <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
+                                          </video>
+                                        )}
+
+                                        {/* Reply DOCUMENT */}
+                                        {m.reply.message_type === "document" && m.reply.file_url && (
+                                          <a
+                                            href={`${Documenturl}/${m.reply.file_url}`}
+                                            download={m.reply.file_original_name}
+                                            target="_blank"
+                                            style={{
+                                              display: "inline-block",
+                                              marginTop: "4px",
+                                              padding: "6px 10px",
+                                              background: "#ececec",
+                                              borderRadius: "4px",
+                                              fontSize: "13px",
+                                              border: "1px solid #ddd",
+                                            }}
+                                          >
+                                            📄 {m.reply.file_original_name || "Document"}
+                                          </a>
+                                        )}
+
+
                                       </div>
                                     )}
 
-                                    {/* 🟩 Main Message */}
+                                    {/* 🟩 MAIN MESSAGE */}
+
+                                    {/* Main TEXT */}
                                     {m.message_type === "text" && (
-                                      <span
-                                        style={{
-                                          fontSize: "14px",
-                                          // color: "#222",
-                                          lineHeight: "1.4",
-                                          display: "inline-block",
-                                        }}
-                                      >
+                                      <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
                                         {m.message_text}
                                       </span>
                                     )}
 
+                                    {/* Main IMAGE */}
+                                    {m.message_type === "image" && m.file_url && (
+                                      <img
+                                        src={`${Imageurl}/${m.file_url}`}
+                                        alt="msg-img"
+                                        style={{
+                                          width: "220px",
+                                          borderRadius: "10px",
+                                          marginTop: "3px",
+                                          objectFit: "cover",
+                                        }}
+                                      />
+                                    )}
+
+                                    {/* Main AUDIO */}
                                     {m.message_type === "audio" && m.file_url && (
                                       <audio
                                         controls
                                         preload="auto"
                                         style={{
-                                          width: "200px",
+                                          width: "220px",
                                           height: "32px",
-                                          marginTop: "2px",
+                                          marginTop: "3px",
                                           display: "block",
                                         }}
                                       >
-                                        <source
-                                          src={`${Audiourl}/${m.file_url}`}
-                                          type="audio/webm"
-                                        />
+                                        <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
                                       </audio>
                                     )}
 
-                                    <div className="emoj-group">
+                                    {/* Main DOCUMENT */}
+                                    {m.message_type === "document" && m.file_url && (
+                                      <a
+                                        href={`${Documenturl}/${m.file_url}`}
+                                        download={m.file_original_name}
+                                        target="_blank"
+                                        style={{
+                                          display: "inline-block",
+                                          padding: "7px 10px",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "6px",
+                                          background: "#f2f2f2",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        📄 {m.file_original_name}
+                                      </a>
+                                    )}
+
+                                    {m.message_type === "video" && m.file_url && (
+                                      <video
+                                        controls
+                                        style={{ width: "250px", borderRadius: "10px" }}
+                                      >
+                                        <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
+                                      </video>
+                                    )}
+
+
+                                    {/* 🟨 Reaction UI */}
+                                    <div className="emoj-group ">
+
                                       <ul>
                                         <li className="emoj-action">
-                                          <Link
-                                            to="#"
-                                            onClick={() => setShowEmoji(!showEmoji)}
-                                          >
+                                          <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
                                             <i className="bx bx-smile" />
                                           </Link>
-                                          <div
-                                            onClick={() => setShowEmoji(false)}
-                                            className={`${showEmoji ? "d-block" : ""
-                                              } emoj-group-list`}
-                                          >
+
+                                          {showEmoji && (
                                             <div
-                                              style={{
-                                                display: "flex",
-                                                gap: "6px",
-                                                padding: "6px 10px",
-                                                background: "white",
-                                                borderRadius: "50px",
-                                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                alignItems: "center",
-                                              }}
+                                              className="emoj-group-list d-block"
+                                              style={{ marginTop: "5px" }}
                                             >
-                                              {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
-                                                <span
-                                                  key={em}
-                                                  onClick={() => toggleReaction(m.id, m.reaction, em)}
-                                                  style={{
-                                                    fontSize: "17px",
-                                                    cursor: "pointer",
-                                                    transition: "transform 0.2s",
-                                                    padding: "5px",
-                                                    borderRadius: "50%",
-                                                  }}
-                                                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.4)")}
-                                                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                                                >
-                                                  {em}
-                                                </span>
-                                              ))}
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  gap: "6px",
+                                                  padding: "6px 10px",
+                                                  background: "white",
+                                                  borderRadius: "50px",
+                                                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                }}
+                                              >
+                                                {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
+                                                  <span
+                                                    key={em}
+                                                    onClick={() => toggleReaction(m.id, m.reaction, em)}
+                                                    style={{
+                                                      fontSize: "18px",
+                                                      cursor: "pointer",
+                                                      padding: "5px",
+                                                      borderRadius: "50%",
+                                                      transition: "transform 0.2s",
+                                                    }}
+                                                    onMouseEnter={(e) =>
+                                                      (e.currentTarget.style.transform = "scale(1.4)")
+                                                    }
+                                                    onMouseLeave={(e) =>
+                                                      (e.currentTarget.style.transform = "scale(1)")
+                                                    }
+                                                  >
+                                                    {em}
+                                                  </span>
+                                                ))}
+                                              </div>
                                             </div>
-
-
-                                          </div>
+                                          )}
                                         </li>
-                                        <li>
-                                          <Link to="#"
-                                            onClick={() => setReplyData({
-                                              id: m.id,
-                                              text: m.message_text
-                                            })}
 
+                                        <li>
+                                          <Link
+                                            to="#"
+                                            onClick={() =>
+                                              setReplyData({
+                                                id: m.id,
+                                                text: m.message_text,
+
+                                              })
+                                            }
                                           >
                                             <i className="bx bx-share" />
                                           </Link>
                                         </li>
                                       </ul>
-                                    </div>
 
+                                    </div>
                                   </div>
                                   {Array.isArray(m.reaction) && m.reaction.length > 0 && (
                                     <div className="d-flex align-items-center" style={{ gap: "4px" }}>
@@ -2992,7 +3213,7 @@ const Chat = () => {
                           color: "#333",
                         }}
                       >
-                        <i className="bx bx-dots-vertical-rounded" />
+                        <MdOutlineAttachFile />
                       </Link>
 
                       <div
@@ -3019,42 +3240,22 @@ const Chat = () => {
                             borderRadius: "6px",
                           }}
                         >
-                          <i className="bx bx-file" style={{ fontSize: "18px" }} />
-                          <label htmlFor="doc" style={{ cursor: "pointer", margin: 0 }}>
-                            Document
-                          </label>
-                          <input
-                            type="file"
-                            name="doc"
-                            id="doc"
-                            accept="application/pdf"
-                            className="d-none"
-                          />
-                        </div>
-
-                        <div
-                          className="dropdown-item"
-                          style={{
-                            padding: "6px 10px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            cursor: "pointer",
-                            borderRadius: "6px",
-                          }}
-                        >
                           <i className="bx bx-image" style={{ fontSize: "18px" }} />
                           <label htmlFor="img" style={{ cursor: "pointer", margin: 0 }}>
-                            Image
+                            Send File
                           </label>
                           <input
                             type="file"
                             name="img"
                             id="img"
-                            accept="image/*"
+                            multiple
+                            accept="image/*,video/*,.pdf,.doc,.docx,.zip,.txt"
+                            onChange={handleFileChange}
                             className="d-none"
                           />
                         </div>
+
+
                       </div>
                     </div>
 
@@ -3063,7 +3264,8 @@ const Chat = () => {
                       <Link
                         to="#"
                         className="action-circle"
-                        onClick={() => setShowEmoji2(!showEmoji2)}
+                        // onClick={() => setShowEmoji2(!showEmoji2)}
+                        onClick={() => setShowPicker(!showPicker)}
                         style={{
                           width: "36px",
                           height: "36px",
@@ -3078,7 +3280,7 @@ const Chat = () => {
                         <i className="bx bx-smile" />
                       </Link>
 
-                      {showEmoji2 && (
+                      {/* {showEmoji2 && (
                         <div
                           className="emoj-group-list-foot down-emoji-circle"
                           onClick={() => setShowEmoji2(false)}
@@ -3117,6 +3319,11 @@ const Chat = () => {
                               <ImageWithBasePath src="assets/img/icons/emoj-icon-05.svg" />
                             </li>
                           </ul>
+                        </div>
+                      )} */}
+                      {showPicker && (
+                        <div style={{ position: "absolute", bottom: "100px", right: "100px" }}>
+                          <EmojiPicker onEmojiClick={onEmojiClick} />
                         </div>
                       )}
                     </div>
@@ -3255,7 +3462,7 @@ const Chat = () => {
                               <span>{otherUser?.is_online === 1
                                 ? "Online"
                                 : otherUser?.last_seen
-                                  ? `Last Seen at ${formatTimeAgo(otherUser.last_seen)}`
+                                  ? `Last Seen ${formatMessageTimeInConversation(otherUser.last_seen)}`
                                   : "Last Seen: Just now"}</span>
                             </div>
                             <div className="chat-options chat-option-profile">
@@ -3653,7 +3860,7 @@ const Chat = () => {
                                 <h6>Starred Messages</h6>
                               </div>
                               <div className="count-group">
-                                <span>10</span>
+                                <span>{otherUser.starCount}</span>
                                 <i className="bx bx-chevron-right" />
                               </div>
                             </Link>
@@ -3687,18 +3894,36 @@ const Chat = () => {
                             </Link>
                           </li>
                           <li>
-                            <Link to="#">
+                            <Link
+                              to="#"
+                              onClick={(e) => {
+                                if (otherUser.is_reported) {
+                                  e.preventDefault();
+                                  return;
+                                }
+                                handleReportUser(otherUser.id);
+                              }}
+                              style={{
+                                pointerEvents: otherUser.is_reported ? "none" : "auto",
+                                opacity: otherUser.is_reported ? 0.6 : 1,
+                                cursor: otherUser.is_reported ? "not-allowed" : "pointer",
+                              }}
+                            >
                               <div className="stared-group">
-                                <span className="report-message">
-                                  {" "}
+                                <span
+                                  className={`report-message ${otherUser.is_reported ? "text-danger" : ""
+                                    }`}
+                                >
                                   <i className="bx bx-user-x" />
                                 </span>
-                                <h6>Report User</h6>
+                                <h6>{otherUser.is_reported ? "Reported" : "Report User"}</h6>
                               </div>
+
                               <div className="count-group">
                                 <i className="bx bx-chevron-right" />
                               </div>
                             </Link>
+
                           </li>
                           <li>
                             <Link to="#">

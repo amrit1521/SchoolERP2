@@ -138,7 +138,7 @@ exports.reportUser = async (req, res) => {
   }
 
   try {
-    // Check if already reported
+  
     const [existing] = await db.query(
       "SELECT * FROM user_reports WHERE reported_user_id = ? AND reported_by = ?",
       [reportedUserId, reportedBy]
@@ -159,5 +159,43 @@ exports.reportUser = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getUserReports = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `
+      SELECT 
+        ur.id AS report_id,
+        CONCAT(reporter.firstname, ' ', reporter.lastname) AS reporter_name,
+        rr.role_name AS reporter_role,
+        CONCAT(reported.firstname, ' ', reported.lastname) AS reported_name,
+        rrp.role_name AS reported_role,
+        ur.reason,
+        ur.conversation_id,
+        ur.created_at
+      FROM user_reports ur
+      JOIN users reporter ON ur.reported_by = reporter.id
+      JOIN roles rr ON reporter.roll_id = rr.id
+      JOIN users reported ON ur.reported_user_id = reported.id
+      JOIN roles rrp ON reported.roll_id = rrp.id
+      ORDER BY ur.created_at DESC
+      `
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "User reports fetched successfully",
+      data: rows,
+    });
+  } catch (error) {
+    console.error("Error fetching user reports:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 
 

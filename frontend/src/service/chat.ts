@@ -3,6 +3,7 @@ import { api, api2 } from "./api";
 
 export const allChatUsers = () => api.get('/chatusers/allusers')
 export const OnlineChatUsers = () => api.get('/chatusers/onlineusers')
+export const reportUser = (data:object)=>api.post('/chatusers/reportuser' , data)
 
 // message
 export const allConversationforSpecficUser = (userId: number) => api.get(`/message/allcoversation/${userId}`)

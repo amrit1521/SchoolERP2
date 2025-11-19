@@ -9,11 +9,12 @@ const upload = require('../../multer/multerForChat');
 router.get('/specoversation/:conversationId/:userId', messageController.getMessages);
 router.get('/allcoversation/:userId', messageController.getLastMessageAllConverationForSpecficUser);
 router.post('/send', messageController.sendMessage);
-router.post('/send-file', upload.single('chatfile'), messageController.sendFileMessage);
+// router.post('/send-file', upload.single('chatfile'), messageController.sendFileMessage);
+router.post('/send-file', upload.array('chatfile', 5), messageController.sendFileMessage);
 router.delete('/delmessage/:messageId', messageController.deleteMessage)
 router.put("/star/:messageId", messageController.toggleStarMessage);
 router.put("/report/:messageId", messageController.toggleReportMessage);
-router.post("/react/:messageId",messageController.toggleOneToOneReaction);
+router.post("/react/:messageId", messageController.toggleOneToOneReaction);
 
 
 

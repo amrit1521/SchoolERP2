@@ -6,6 +6,7 @@ export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image`;
 export const Audiourl = `${API_URL}/stu/uploads/audio`;
 export const Documenturl = `${API_URL}/stu/uploads/document`;
+export const Videourl = `${API_URL}/stu/uploads/video`;
 // export const Audiourl = `${API_URL}/stu/uploads/audio`;
 
 export const api = axios.create({

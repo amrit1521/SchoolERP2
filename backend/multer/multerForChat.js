@@ -1,4 +1,3 @@
-// middlewares/upload.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -21,7 +20,6 @@ const storage = multer.diskStorage({
       folder = "uploads/document";
     }
 
-    // Create folder if missing
     if (!fs.existsSync(folder)) {
       fs.mkdirSync(folder, { recursive: true });
     }
@@ -30,22 +28,22 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const suffix = Date.now() + path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + suffix);
+    const ext = path.extname(file.originalname);
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + unique + ext);
   }
 });
 
-const fileFilter = (req, file, cb) => {
-  // console.log(file.mimetype)
-  const allowedTypes = [
-    "image/jpeg", "image/png", "image/jpg",
-    "video/mp4", "video/mkv", "video/webm",
-    "audio/mpeg", "audio/wav", "audio/ogg","audio/webm",
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ];
+const allowedTypes = [
+  "image/jpeg", "image/png", "image/jpg",
+  "video/mp4", "video/mkv", "video/webm",
+  "audio/mpeg", "audio/wav", "audio/ogg", "audio/webm",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+];
 
+const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -56,7 +54,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: 1*1024 * 1024 * 1024, files: 5 }
 });
 
 module.exports = upload;
