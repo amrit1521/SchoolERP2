@@ -637,7 +637,22 @@ const Chat = () => {
     }
   };
 
-  const onEmojiClick = (emoji:any) => {
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    }
+    if (showPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPicker]);
+  
+  const onEmojiClick = (emoji: any) => {
     setMessage((prev) => prev + emoji.emoji);
   };
 
@@ -1331,7 +1346,7 @@ const Chat = () => {
                                               border: "1px solid #ddd",
                                             }}
                                           >
-                                            📄 {m.reply.file_original_name || "Document"}
+                                            📄 {m.reply.message_text || "Document"}
                                           </a>
                                         )}
 
@@ -1702,7 +1717,7 @@ const Chat = () => {
                                               border: "1px solid #ddd",
                                             }}
                                           >
-                                            📄 {m.reply.file_original_name || "Document"}
+                                            📄 {m.reply.message_text || "Document"}
                                           </a>
                                         )}
 
@@ -3264,7 +3279,6 @@ const Chat = () => {
                       <Link
                         to="#"
                         className="action-circle"
-                        // onClick={() => setShowEmoji2(!showEmoji2)}
                         onClick={() => setShowPicker(!showPicker)}
                         style={{
                           width: "36px",
@@ -3279,55 +3293,12 @@ const Chat = () => {
                       >
                         <i className="bx bx-smile" />
                       </Link>
-
-                      {/* {showEmoji2 && (
-                        <div
-                          className="emoj-group-list-foot down-emoji-circle"
-                          onClick={() => setShowEmoji2(false)}
-                          style={{
-                            position: "absolute",
-                            bottom: "50px",
-                            background: "#fff",
-                            padding: "10px",
-                            borderRadius: "12px",
-                            boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
-                            zIndex: 10,
-                          }}
-                        >
-                          <ul
-                            style={{
-                              display: "flex",
-                              gap: "10px",
-                              margin: 0,
-                              padding: 0,
-                              listStyle: "none",
-                            }}
-                          >
-                            <li>
-                              <ImageWithBasePath src="assets/img/icons/emoj-icon-01.svg" />
-                            </li>
-                            <li>
-                              <ImageWithBasePath src="assets/img/icons/emoj-icon-02.svg" />
-                            </li>
-                            <li>
-                              <ImageWithBasePath src="assets/img/icons/emoj-icon-03.svg" />
-                            </li>
-                            <li>
-                              <ImageWithBasePath src="assets/img/icons/emoj-icon-04.svg" />
-                            </li>
-                            <li>
-                              <ImageWithBasePath src="assets/img/icons/emoj-icon-05.svg" />
-                            </li>
-                          </ul>
-                        </div>
-                      )} */}
                       {showPicker && (
-                        <div style={{ position: "absolute", bottom: "100px", right: "100px" }}>
+                        <div ref={pickerRef} style={{ position: "absolute", bottom: "100px", right: "100px" }}>
                           <EmojiPicker onEmojiClick={onEmojiClick} />
                         </div>
                       )}
                     </div>
-
                     {/* Voice recorder */}
                     <div
                       style={{

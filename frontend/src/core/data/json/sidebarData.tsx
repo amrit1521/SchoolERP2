@@ -13,7 +13,7 @@ export const SidebarData = [
     submenuItems: [
       {
         label: "Admin Dashboard",
-        link: routes.studentDashboard,
+        link: routes.adminDashboard,
         icon: "ti ti-layout-dashboard",
         submenu: false,
         showSubRoute: false,

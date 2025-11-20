@@ -167,6 +167,7 @@ exports.getTodayStaffAttendanceCount = async (req, res) => {
   }
 };
 
+
 exports.getLeaveRequest = async (req, res) => {
   try {
     const sql = `
@@ -181,62 +182,89 @@ exports.getLeaveRequest = async (req, res) => {
         lt.name AS leave_type,
         la.status,
         r.role_name,
-        -- Conditional joins for both teacher and student
+
+        -- Name (teacher / student / staff)
         CASE 
-          WHEN la.role_id = 2 THEN CONCAT(u1.firstname, ' ', u1.lastname)
-          WHEN la.role_id = 3 THEN CONCAT(u2.firstname, ' ', u2.lastname)
+          WHEN r.role_name = 'teacher' 
+            THEN CONCAT(u1.firstname, ' ', u1.lastname)
+
+          WHEN r.role_name = 'student' 
+            THEN CONCAT(u2.firstname, ' ', u2.lastname)
+
+          WHEN u3.remark = 'staff'
+            THEN CONCAT(u3.firstname, ' ', u3.lastname)
+
           ELSE NULL
         END AS user_name,
+
+        -- Image (teacher / student / staff)
         CASE 
-          WHEN la.role_id = 2 THEN t.img_src
-          WHEN la.role_id = 3 THEN s.stu_img
+          WHEN r.role_name = 'teacher' 
+            THEN t.img_src
+
+          WHEN r.role_name = 'student' 
+            THEN s.stu_img
+
+          WHEN u3.remark = 'staff'
+            THEN st.img_src
+
           ELSE NULL
         END AS img
+
       FROM leave_application la
-      LEFT JOIN leaves_type lt ON lt.id = la.leave_type_id
-      LEFT JOIN teachers t ON t.teacher_id = la.id_or_rollnum
-      LEFT JOIN users u1 ON u1.id = t.user_id
-      LEFT JOIN students s ON s.rollnum = la.id_or_rollnum
-      LEFT JOIN users u2 ON u2.id = s.stu_id
-      LEFT JOIN roles r ON r.id = la.role_id
-      where la.status = '0'
-      ORDER BY la.applied_on DESC
+
+      LEFT JOIN leaves_type lt 
+        ON lt.id = la.leave_type_id
+
+      LEFT JOIN roles r 
+        ON r.id = la.role_id
+
+
+      -- ★ Teacher
+      LEFT JOIN teachers t 
+        ON t.teacher_id = la.id_or_rollnum
+      LEFT JOIN users u1 
+        ON u1.id = t.user_id
+
+
+      -- ★ Student
+      LEFT JOIN students s 
+        ON s.rollnum = la.id_or_rollnum
+      LEFT JOIN users u2 
+        ON u2.id = s.stu_id
+
+
+      -- ★ Staff (remark = staff)
+      LEFT JOIN staffs st 
+        ON st.id = la.id_or_rollnum
+      LEFT JOIN users u3 
+        ON u3.id = st.user_id
+
+      WHERE la.status = '0'
+      ORDER BY la.id DESC
     `;
 
     const [results] = await db.execute(sql);
-
-    if (results.length === 0) {
-      return res.status(200).json({
-        message: "No leave requests found.",
-        success: false,
-        result: [],
-      });
-    }
 
     return res.status(200).json({
       message: "Leave requests fetched successfully.",
       success: true,
       result: results,
     });
+
   } catch (error) {
     console.error("Error fetching leave requests:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
+
+
 exports.ActionOnLeaveRequest = async (req, res) => {
   try {
     const { id } = req.params;
     const status = req.body.status;
 
-    // if (!status) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Status is required.",
-    //   });
-    // }
-
-    console.log('status: ', status, typeof status, id);
 
     if (!id) {
       return res.status(400).json({

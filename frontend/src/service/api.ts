@@ -146,6 +146,10 @@ export const speLeaveType = (id: number) =>
 export const editLeaveType = (data: object, id: number) =>
   api.put(`/leave/editleavetype/${id}`, data);
 export const addLeave = (data: object) => api.post("/leave/addleave", data);
+export const getAllLeaveData = () => api.get('/leave/getallleave')
+export const getSpeLeaveData = (id: number) => api.get(`/leave/speleavedata/${id}`)
+export const deleteLeave = (id: number) => api.delete(`/leave/delleave/${id}`)
+export const updateLeaveStatus = (data: object, id: number) => api.put(`/leave/updatestatus/${id}`, data)
 
 // class section---------------------------
 export const getAllSection = () => api.get("/section");

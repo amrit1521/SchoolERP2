@@ -26,6 +26,7 @@ export interface ApplyLeave {
   no_of_days: number | null;
   reason: string;
   leave_date: string;
+  role_id:number|null,
 }
 
 
@@ -45,6 +46,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
     no_of_days: null,
     reason: "",
     leave_date: "",
+    role_id:2
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -158,6 +160,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
           no_of_days: null,
           reason: "",
           leave_date: "",
+          role_id:null
         });
 
         handleModalPopUp("apply_leave");
@@ -180,6 +183,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
       no_of_days: null,
       reason: "",
       leave_date: "",
+      role_id:null
 
     })
   }

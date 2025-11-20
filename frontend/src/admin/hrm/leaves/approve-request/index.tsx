@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../../router/all_routes";
-import { approveRequest } from "../../../../core/data/json/approve_request";
+// import { approveRequest } from "../../../../core/data/json/approve_request";
 import { Link } from "react-router-dom";
 import type { TableData } from "../../../../core/data/interface";
 import Table from "../../../../core/common/dataTable/index";
@@ -8,14 +8,142 @@ import PredefinedDateRanges from "../../../../core/common/datePicker";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { activeList, leaveType, MonthDate, Role } from "../../../../core/common/selectoption/selectoption";
 import TooltipOption from "../../../../core/common/tooltipOption";
+import { deleteLeave, getAllLeaveData, getSpeLeaveData, Imageurl, updateLeaveStatus } from "../../../../service/api";
+import dayjs from 'dayjs'
+import { Spinner } from "../../../../spinner";
+import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import { toast } from "react-toastify";
 
 const ApproveRequest = () => {
   const routes = all_routes;
-  const data = approveRequest;
+  // const data = approveRequest;
+  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
+  const handleApplyClick = () => {
+    if (dropdownMenuRef.current) {
+      dropdownMenuRef.current.classList.remove("show");
+    }
+  };
+
+
+  const [leaveData, setLeaveData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const [speLeaveData, setSpeLeaveData] = useState<any>({})
+  const [updateId, setUpdateId] = useState<number | null>(null)
+  const [status, setStatus] = useState<number>(0)
+  const [note, setNote] = useState<string>("")
+
+  const fetchLeaveData = async () => {
+    setLoading(true)
+    try {
+
+      const { data } = await getAllLeaveData()
+      if (data.success) {
+        setLeaveData(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchLeaveData()
+  }, [])
+
+  const fetchSpeLeave = async (id: number) => {
+    if (!id) return
+    try {
+
+      const { data } = await getSpeLeaveData(id)
+      if (data.success) {
+        setSpeLeaveData(data.data)
+        setStatus(Number(data.data.status));
+        setNote(data.data.note || "");
+        setUpdateId(Number(id))
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleSubmitStatus = async () => {
+    if (!speLeaveData) return;
+    if (![0, 1, 2].includes(status) || !updateId) {
+      toast.warn('Leave staus and Id  required !')
+      return
+    }
+    if (note && note.length < 10) {
+      toast.warn('Note is required and should be 10 Chracters')
+      return
+    }
+    try {
+      const { data } = await updateLeaveStatus({ note, status }, updateId)
+
+      if (data.success) {
+        toast.success(data.message)
+        setStatus(0)
+        setNote("")
+        setSpeLeaveData({})
+        setUpdateId(null)
+        handleModalPopUp('leave_request')
+        fetchLeaveData();
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error updating leave");
+    }
+  }
+
+  const handleCancelSatusUpdate = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setStatus(0)
+    setNote("")
+    setSpeLeaveData({})
+    setUpdateId(null)
+  }
+
+
+
+
+
+  const tableData = leaveData.map((l: any) => ({
+    key: l.id,
+    id: l.id,
+    submittedBy: l.user_name,
+    leaveType: l.leave_type,
+    role: l.role_name || 'Staff',
+    leaveDate: `${dayjs(l.from_date).format('DD MMM YYYY')} - ${dayjs(l.to_date).format('DD MMM YYYY')}`,
+    noofDays: l.no_of_days,
+    appliedOn: dayjs(l.applied_on).format('DD MMM YYYY'),
+    status: l.status,
+    img: l.img,
+  }))
+
   const columns = [
     {
       title: "Submitted By",
       dataIndex: "submittedBy",
+      render: (text: string, record: any) => (
+        <div className="d-flex align-items-center">
+          <Link to={'#'} className="avatar avatar-md">
+            <img
+              src={`${Imageurl}/${record.img}`}
+              className="img-fluid rounded-circle"
+              alt="img"
+            />
+          </Link>
+          <div className="ms-2">
+            <p className="text-dark mb-0 text-capitalize">
+              <Link to={`#`}>{text}</Link>
+            </p>
+          </div>
+        </div>
+      ),
       sorter: (a: TableData, b: TableData) =>
         a.submittedBy.length - b.submittedBy.length,
     },
@@ -28,6 +156,9 @@ const ApproveRequest = () => {
     {
       title: "Role",
       dataIndex: "role",
+      render: (text: string) => (
+        <span className="text-capitalize">{text}</span>
+      ),
       sorter: (a: TableData, b: TableData) => a.role.length - b.role.length,
     },
     {
@@ -48,32 +179,32 @@ const ApproveRequest = () => {
       sorter: (a: TableData, b: TableData) =>
         a.appliedOn.length - b.appliedOn.length,
     },
-    {
-      title: "Authority",
-      dataIndex: "authority",
-      sorter: (a: TableData, b: TableData) =>
-        a.authority.length - b.authority.length,
-    },
+    // {
+    //   title: "Authority",
+    //   dataIndex: "authority",
+    //   sorter: (a: TableData, b: TableData) =>
+    //     a.authority.length - b.authority.length,
+    // },
 
     {
       title: "Status",
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Approved" ? (
+          {text == "1" ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Approved
             </span>
-          ) : text === "Pending" ? (
+          ) : text == "0" ? (
             <span className="badge badge-soft-pending d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Pending
             </span>
           ) : (
             <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Disapproved
             </span>
           )}
         </>
@@ -83,7 +214,7 @@ const ApproveRequest = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: () => (
+      render: (_: any, record: any) => (
         <>
           <div className="dropdown">
             <Link
@@ -96,26 +227,26 @@ const ApproveRequest = () => {
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => fetchSpeLeave(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#leave_request"
                 >
                   <i className="ti ti-menu me-2" />
                   Leave Request
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
+                <button
                   className="dropdown-item rounded-1"
-                  to="#"
+                  onClick={() => setDeleteId(record.id)}
                   data-bs-toggle="modal"
                   data-bs-target="#delete-modal"
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
@@ -123,12 +254,32 @@ const ApproveRequest = () => {
       ),
     },
   ];
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-  const handleApplyClick = () => {
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
+
+
+
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    try {
+      const { data } = await deleteLeave(id)
+      if (data.success) {
+        setDeleteId(null)
+        toast.success(data.message)
+        fetchLeaveData()
+        handleModalPopUp('delete-modal')
+
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
     }
-  };
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+  }
   return (
     <div>
       <>
@@ -154,7 +305,7 @@ const ApproveRequest = () => {
                 </nav>
               </div>
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
-              <TooltipOption />
+                <TooltipOption />
               </div>
             </div>
             {/* Page Header*/}
@@ -164,7 +315,7 @@ const ApproveRequest = () => {
                 <h4 className="mb-3">Approved Leave Request List</h4>
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                    <PredefinedDateRanges />
                   </div>
                   <div className="dropdown mb-3 me-2">
                     <Link
@@ -186,7 +337,7 @@ const ApproveRequest = () => {
                             <div className="col-md-6">
                               <div className="mb-3">
                                 <label className="form-label">Leave Type</label>
-                               
+
                                 <CommonSelect
                                   className="select"
                                   options={leaveType}
@@ -287,7 +438,9 @@ const ApproveRequest = () => {
               </div>
               <div className="card-body p-0 py-3">
                 {/* Approve List */}
-                  <Table dataSource={data} columns={columns} Selection={true} />
+                {
+                  loading ? (<Spinner />) : (<Table dataSource={tableData} columns={columns} Selection={false} />)
+                }
                 {/* /Approve List */}
               </div>
             </div>
@@ -300,100 +453,92 @@ const ApproveRequest = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h4 className="modal-title">Leave Request</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
+                <button type="button" className="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
                   <i className="ti ti-x" />
                 </button>
               </div>
-              <form >
+
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmitStatus(); }}>
                 <div className="modal-body">
                   <div className="student-leave-info">
                     <ul>
                       <li>
                         <span>Submitted By</span>
-                        <h6>James Deckar</h6>
+                        <h6>{speLeaveData ? speLeaveData.user_name : "—"}</h6>
                       </li>
                       <li>
                         <span>ID / Roll No</span>
-                        <h6>9004</h6>
+                        <h6>{speLeaveData ? speLeaveData.user_id : "—"}</h6>
                       </li>
                       <li>
                         <span>Role</span>
-                        <h6>Student</h6>
+                        <h6 className="text-capitalize">{speLeaveData ? speLeaveData.role_name : "—"}</h6>
                       </li>
                       <li>
                         <span>Leave Type</span>
-                        <h6>Medical Leave</h6>
+                        <h6>{speLeaveData ? speLeaveData.leave_type : "—"}</h6>
                       </li>
                       <li>
                         <span>No of Days</span>
-                        <h6>2</h6>
+                        <h6>{speLeaveData ? speLeaveData.no_of_days : "—"}</h6>
                       </li>
                       <li>
                         <span>Applied On</span>
-                        <h6>04 May 2024</h6>
-                      </li>
-                      <li>
-                        <span>Authoity</span>
-                        <h6>Jacquelin</h6>
+                        <h6>{speLeaveData ? dayjs(speLeaveData.applied_on).format("DD MMM YYYY") : "—"}</h6>
                       </li>
                       <li>
                         <span>Leave</span>
-                        <h6>05 May 2024 - 07 may 2024</h6>
+                        <h6>
+                          {speLeaveData ? `${dayjs(speLeaveData.from_date).format('DD MMM YYYY')} - ${dayjs(speLeaveData.to_date).format('DD MMM YYYY')}` : "—"}
+                        </h6>
                       </li>
                     </ul>
                   </div>
+
                   <div className="mb-3 leave-reason">
                     <h6 className="mb-1">Reason</h6>
-                    <span>Headache &amp; fever</span>
+                    <span className="text-capitalize">{speLeaveData ? speLeaveData.reason || "-" : "-"}</span>
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label">Approval Status</label>
                     <div className="d-flex align-items-center check-radio-group">
                       <label className="custom-radio">
-                        <input type="radio" name="radio" checked />
+                        <input type="radio" name="radio" checked={status == 0} onChange={() => setStatus(0)} />
                         <span className="checkmark" />
                         Pending
                       </label>
                       <label className="custom-radio">
-                        <input type="radio" name="radio" />
+                        <input type="radio" name="radio" checked={status == 1} onChange={() => setStatus(1)} />
                         <span className="checkmark" />
                         Approved
                       </label>
                       <label className="custom-radio">
-                        <input type="radio" name="radio" />
+                        <input type="radio" name="radio" checked={status == 2} onChange={() => setStatus(2)} />
                         <span className="checkmark" />
                         Disapproved
                       </label>
                     </div>
                   </div>
+
                   <div className="mb-0">
                     <label className="form-label">Note</label>
                     <textarea
                       className="form-control"
                       placeholder="Add Comment"
                       rows={4}
-                      defaultValue={""}
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
                     />
                   </div>
                 </div>
+
                 <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <Link to="#" className="btn btn-primary" data-bs-dismiss="modal">
-                    Submit
-                  </Link>
+                  <button onClick={(e) => handleCancelSatusUpdate(e)} className="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" className="btn btn-primary">Submit</button>
                 </div>
               </form>
+
             </div>
           </div>
         </div>
@@ -402,28 +547,32 @@ const ApproveRequest = () => {
         <div className="modal fade" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <form >
+              <form>
                 <div className="modal-body text-center">
                   <span className="delete-icon">
                     <i className="ti ti-trash-x" />
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
+                    You want to delete this items, this cant be undone once
+                    you delete.
                   </p>
-                  <div className="d-flex justify-content-center">
-                    <Link
-                      to="#"
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </Link>
-                    <Link to="#" className="btn btn-danger" data-bs-dismiss="modal">
-                      Yes, Delete
-                    </Link>
-                  </div>
+                  {
+                    deleteId && (
+                      <div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          data-bs-dismiss="modal"
+                        >
+                          Cancel
+                        </button>
+                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                          Yes, Delete
+                        </button>
+
+                      </div>
+                    )}
                 </div>
               </form>
             </div>

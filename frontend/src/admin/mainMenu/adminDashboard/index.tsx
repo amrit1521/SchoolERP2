@@ -885,7 +885,7 @@ const AdminDashboard = () => {
 
   const handleApplyApproveRequest = async (id: number) => {
     try {
-      const { data } = await ActionOnLeaveRequest({ status: true }, id);
+      const { data } = await ActionOnLeaveRequest({ status: "1" }, id);
       if (data.success) {
         console.log("leave Request approved: ", data);
         fetchAllLeaveRequest();
@@ -897,7 +897,7 @@ const AdminDashboard = () => {
   };
   const handleApplyRejectRequest = async (id: number) => {
     try {
-      const { data } = await ActionOnLeaveRequest({ status: false }, id);
+      const { data } = await ActionOnLeaveRequest({ status: "2" }, id);
       if (data.success) {
         console.log("leave Request rejected: ", data);
         toast.success("leave Request rejected.");

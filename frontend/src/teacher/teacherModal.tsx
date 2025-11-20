@@ -24,6 +24,7 @@ export interface ApplyLeave {
   no_of_days: number | null;
   reason: string;
   leave_date: string;
+  role_id: number | null
 }
 
 const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
@@ -41,8 +42,16 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
     no_of_days: null,
     reason: "",
     leave_date: "",
+    role_id: null
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [roleId, setRoleId] = useState<number | null>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setRoleId(token ? JSON.parse(token)?.role : null)
+  }, [])
+
 
   // fetch leave type options
 
@@ -132,7 +141,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
   const handleLeaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!teacherId || !onAdd) return;
-    const updatedForm = { ...applayLeaveForm, idOrRollNum: teacherId };
+    const updatedForm = { ...applayLeaveForm, idOrRollNum: teacherId, role_id: roleId };
     const errors = validateLeaveForm(updatedForm);
 
     if (Object.keys(errors).length > 0) {
@@ -156,6 +165,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
           no_of_days: null,
           reason: "",
           leave_date: "",
+          role_id: null,
         });
 
         handleModalPopUp("apply_leave");
@@ -177,6 +187,7 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
       no_of_days: null,
       reason: "",
       leave_date: "",
+      role_id: null
     });
   };
 

@@ -600,7 +600,7 @@ const Classes = () => {
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone once
+                    You want to delete this items, this cant be undone once
                     you delete.
                   </p>
                   {

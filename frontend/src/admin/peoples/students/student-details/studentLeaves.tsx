@@ -113,7 +113,7 @@ useEffect(() => {
     ).format("DD MMM YYYY")}`,
     noOfDays: String(item.no_of_days),
     appliedOn: dayjs(item.applied_on).format("DD MMM YYYY"),
-    status: item.status == "1" ? "Approved" : "Pending",
+    status: item.status 
   }));
 
 
@@ -147,16 +147,21 @@ useEffect(() => {
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Approved" ? (
+          {text == "1" ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Approved
             </span>
           ) : (
-            <span className="badge badge-soft-danger d-inline-flex align-items-center">
+               text=='2'?(
+                 <span className="badge badge-soft-danger d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Disapproved
             </span>
+               ):( <span className="badge badge-soft-warning d-inline-flex align-items-center">
+              <i className="ti ti-circle-filled fs-5 me-1"></i>
+              Pending
+            </span>)
           )}
         </>
       ),

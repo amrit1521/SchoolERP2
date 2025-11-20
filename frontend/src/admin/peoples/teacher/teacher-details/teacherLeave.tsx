@@ -100,7 +100,7 @@ const TeacherLeave = () => {
     ).format("DD MMM YYYY")}`,
     noOfDays: String(item.no_of_days),
     appliedOn: dayjs(item.applied_on).format("DD MMM YYYY"),
-    status: item.status == "1" ? "Approved" : "Pending",
+    status: item.status
   }));
 
 
@@ -134,16 +134,21 @@ const TeacherLeave = () => {
       dataIndex: "status",
       render: (text: string) => (
         <>
-          {text === "Approved" ? (
+          {text == "1" ? (
             <span className="badge badge-soft-success d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
+              Approved
             </span>
           ) : (
-            <span className="badge badge-soft-danger d-inline-flex align-items-center">
+            text == '2' ? (
+              <span className="badge badge-soft-danger d-inline-flex align-items-center">
+                <i className="ti ti-circle-filled fs-5 me-1"></i>
+                Disapproved
+              </span>
+            ) : (<span className="badge badge-soft-warning d-inline-flex align-items-center">
               <i className="ti ti-circle-filled fs-5 me-1"></i>
-              {text}
-            </span>
+              Pending
+            </span>)
           )}
         </>
       ),
@@ -156,33 +161,85 @@ const TeacherLeave = () => {
 
 
 
-interface AttendanceData {
-  id: number;
-  attendance: string;
-  attendance_date_info: string;
-}
-
-const [attendanceSummary, setAttendanceSummary] = useState<any>({});
-const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
-
-const fetchTeacherAttendance = async (teacher_id: string) => {
-  try {
-    const { data } = await getTeacherAttendance(teacher_id);
-    setAttendanceSummary(data.summary);
-    setAttendanceData(data.details);
-  } catch (error: any) {
-    console.log(error);
-    toast.error(error.response?.data?.message || "Failed to fetch attendance");
+  interface AttendanceData {
+    id: number;
+    attendance: string;
+    attendance_date_info: string;
   }
-};
+
+  const [attendanceSummary, setAttendanceSummary] = useState<any>({});
+  const [attendanceData, setAttendanceData] = useState<AttendanceData[]>([]);
+
+  const fetchTeacherAttendance = async (teacher_id: string) => {
+    try {
+      const { data } = await getTeacherAttendance(teacher_id);
+      setAttendanceSummary(data.summary);
+      setAttendanceData(data.details);
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Failed to fetch attendance");
+    }
+  };
 
 
-function getDaysInMonth(year: number, monthIndex: number): number {
-  return new Date(year, monthIndex + 1, 0).getDate();
-}
+  function getDaysInMonth(year: number, monthIndex: number): number {
+    return new Date(year, monthIndex + 1, 0).getDate();
+  }
 
 
-function generateAttendanceTable(attendanceData: AttendanceData[]) {
+  function generateAttendanceTable(attendanceData: AttendanceData[]) {
+    const monthNames = [
+      "jan",
+      "feb",
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct",
+      "nov",
+      "dec",
+    ];
+
+
+    const attendanceMap: Record<string, string> = {};
+    attendanceData.forEach((item) => {
+      const date = new Date(item.attendance_date_info);
+      const day = date.getDate();
+      const month = monthNames[date.getMonth()];
+      attendanceMap[`${month}-${day}`] = item.attendance;
+    });
+
+
+    const sampleYear =
+      attendanceData.length > 0
+        ? new Date(attendanceData[0].attendance_date_info).getFullYear()
+        : new Date().getFullYear();
+
+    const rows: any[] = [];
+
+    for (let d = 1; d <= 31; d++) {
+      const dayStr = d.toString().padStart(2, "0");
+      let row: any = { key: dayStr, date: dayStr };
+
+      monthNames.forEach((month, mIndex) => {
+        const totalDays = getDaysInMonth(sampleYear, mIndex);
+        if (d <= totalDays) {
+          row[month] = attendanceMap[`${month}-${d}`] || "";
+        } else {
+          row[month] = "";
+        }
+      });
+
+      rows.push(row);
+    }
+
+    return rows;
+  }
+
+  const tabledata2 = generateAttendanceTable(attendanceData);
   const monthNames = [
     "jan",
     "feb",
@@ -198,86 +255,34 @@ function generateAttendanceTable(attendanceData: AttendanceData[]) {
     "dec",
   ];
 
-
-  const attendanceMap: Record<string, string> = {};
-  attendanceData.forEach((item) => {
-    const date = new Date(item.attendance_date_info);
-    const day = date.getDate();
-    const month = monthNames[date.getMonth()];
-    attendanceMap[`${month}-${day}`] = item.attendance;
-  });
-
-
-  const sampleYear =
-    attendanceData.length > 0
-      ? new Date(attendanceData[0].attendance_date_info).getFullYear()
-      : new Date().getFullYear();
-
-  const rows: any[] = [];
-
-  for (let d = 1; d <= 31; d++) {
-    const dayStr = d.toString().padStart(2, "0");
-    let row: any = { key: dayStr, date: dayStr };
-
-    monthNames.forEach((month, mIndex) => {
-      const totalDays = getDaysInMonth(sampleYear, mIndex);
-      if (d <= totalDays) {
-        row[month] = attendanceMap[`${month}-${d}`] || "";
-      } else {
-        row[month] = ""; 
-      }
-    });
-
-    rows.push(row);
-  }
-
-  return rows;
-}
-
-const tabledata2 = generateAttendanceTable(attendanceData);
-const monthNames = [
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
-];
-
-const columns2 = [
-  {
-    title: "Date | Month",
-    dataIndex: "date",
-    sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
-  },
-  ...monthNames.map((month) => ({
-    title: month.toUpperCase(),
-    dataIndex: month,
-    render: (text: string) => {
-      if (!text) return <span className="attendance-range bg-light"></span>;
-      const colorMap: Record<string, string> = {
-        Present: "bg-success",
-        Holiday: "bg-pending",
-        Halfday: "bg-dark",
-        Late: "bg-info",
-        Absent: "bg-danger",
-      };
-      return (
-        <span
-          className={`attendance-range ${colorMap[text] || "bg-secondary"}`}
-          title={text}
-        ></span>
-      );
+  const columns2 = [
+    {
+      title: "Date | Month",
+      dataIndex: "date",
+      sorter: (a: any, b: any) => parseInt(a.date) - parseInt(b.date),
     },
-    sorter: (a: any, b: any) => (a[month] || "").localeCompare(b[month] || ""),
-  })),
-];
+    ...monthNames.map((month) => ({
+      title: month.toUpperCase(),
+      dataIndex: month,
+      render: (text: string) => {
+        if (!text) return <span className="attendance-range bg-light"></span>;
+        const colorMap: Record<string, string> = {
+          Present: "bg-success",
+          Holiday: "bg-pending",
+          Halfday: "bg-dark",
+          Late: "bg-info",
+          Absent: "bg-danger",
+        };
+        return (
+          <span
+            className={`attendance-range ${colorMap[text] || "bg-secondary"}`}
+            title={text}
+          ></span>
+        );
+      },
+      sorter: (a: any, b: any) => (a[month] || "").localeCompare(b[month] || ""),
+    })),
+  ];
 
 
   return (

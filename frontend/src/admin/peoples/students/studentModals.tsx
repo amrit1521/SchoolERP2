@@ -30,6 +30,7 @@ export interface ApplyLeave {
   no_of_days: number | null;
   reason: string;
   leave_date: string;
+  role_id: number | null
 }
 
 export interface FeesFormData {
@@ -53,10 +54,11 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     no_of_days: null,
     reason: "",
     leave_date: "",
+    role_id: 3
   });
 
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setApplayLeaveForm((prev) => ({ ...prev, [name]: value }));
@@ -121,6 +123,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     const updatedForm = {
       ...applayLeaveForm,
       idOrRollNum: Number(rollnum),
+
     };
 
     const errors = validateLeaveForm(updatedForm);
@@ -145,11 +148,14 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
           no_of_days: null,
           reason: "",
           leave_date: "",
+          role_id: null,
         });
         handleModalPopUp("apply_leave");
       }
-    } catch (error) {
+    } catch (error:any) {
       console.log(error);
+       toast.error(error.response.data.message);
+      
     }
   };
 
@@ -164,6 +170,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       no_of_days: null,
       reason: "",
       leave_date: "",
+      role_id: null
     });
   };
 

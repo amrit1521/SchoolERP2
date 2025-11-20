@@ -54,7 +54,7 @@ const TTeacherLeave = () => {
   };
 
   const handleAdd = () => {
-    fetchLeave(teacher_id);
+    fetchLeave(teacher?.teacher_id);
   };
 
   // ✅ Leave API function
@@ -372,50 +372,50 @@ const TTeacherLeave = () => {
                       <div className="row gx-3">
                         {loading2
                           ? Array.from({ length: 4 }).map((_, index) => (
-                              <div
-                                key={index}
-                                className="col-lg-6 col-xxl-3 d-flex"
-                              >
-                                <div className="card flex-fill">
-                                  <div className="card-body">
-                                    <h5 className="mb-2">
-                                      <Skeleton height={18} width={150} />
-                                    </h5>
-                                    <div className="d-flex align-items-center flex-wrap">
-                                      <span className="pe-2 me-2 mb-0 d-inline-block">
-                                        <Skeleton height={16} width={80} />
-                                      </span>
-                                      <span className="mb-0 d-inline-block">
-                                        <Skeleton height={16} width={100} />
-                                      </span>
-                                    </div>
+                            <div
+                              key={index}
+                              className="col-lg-6 col-xxl-3 d-flex"
+                            >
+                              <div className="card flex-fill">
+                                <div className="card-body">
+                                  <h5 className="mb-2">
+                                    <Skeleton height={18} width={150} />
+                                  </h5>
+                                  <div className="d-flex align-items-center flex-wrap">
+                                    <span className="pe-2 me-2 mb-0 d-inline-block">
+                                      <Skeleton height={16} width={80} />
+                                    </span>
+                                    <span className="mb-0 d-inline-block">
+                                      <Skeleton height={16} width={100} />
+                                    </span>
                                   </div>
                                 </div>
                               </div>
-                            ))
+                            </div>
+                          ))
                           : leaveInform &&
-                            leaveInform.map((item) => (
-                              <div
-                                key={item.id}
-                                className="col-lg-6 col-xxl-3 d-flex"
-                              >
-                                <div className="card flex-fill">
-                                  <div className="card-body">
-                                    <h5 className="mb-2 text-capitalize">
-                                      {`${item.name} (${item.total_allowed})`}
-                                    </h5>
-                                    <div className="d-flex align-items-center flex-wrap">
-                                      <p className="border-end pe-2 me-2 mb-0">
-                                        Used : {item.used}
-                                      </p>
-                                      <p className="mb-0">
-                                        Available : {item.avilable}
-                                      </p>
-                                    </div>
+                          leaveInform.map((item) => (
+                            <div
+                              key={item.id}
+                              className="col-lg-6 col-xxl-3 d-flex"
+                            >
+                              <div className="card flex-fill">
+                                <div className="card-body">
+                                  <h5 className="mb-2 text-capitalize">
+                                    {`${item.name} (${item.total_allowed})`}
+                                  </h5>
+                                  <div className="d-flex align-items-center flex-wrap">
+                                    <p className="border-end pe-2 me-2 mb-0">
+                                      Used : {item.used}
+                                    </p>
+                                    <p className="mb-0">
+                                      Available : {item.avilable}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          ))}
                       </div>
                       <div className="card">
                         <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
@@ -686,7 +686,7 @@ const TTeacherLeave = () => {
         </div>
       </div>
       {/* /Page Wrapper */}
-      {teacher_id && <TeacherModal onAdd={handleAdd} teacherId={teacher_id} />}
+      {teacher.teacher_id && <TeacherModal onAdd={handleAdd} teacherId={teacher.teacher_id} />}
     </>
   );
 };
