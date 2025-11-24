@@ -1,13 +1,49 @@
-import  { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import NotesContent from "./notesContent";
 import NotesModal from "./notesModal";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
+import { allNotes } from "../../service/note";
 
 const Notes = () => {
   const [isOpen, setOpen] = useState(false);
   const routes = all_routes;
+
+  const [notes, setNotes] = useState<any>([])
+  const [impNote, setImpNote] = useState<any>([])
+  const [trashNotes, setTrashNotes] = useState<any>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [viewNoteId, setViewNoteId] = useState<number | null>(null)
+  const [deleteId , setDeleteId] = useState<number|null>(null)
+
+  const fetchNotes = async () => {
+    setLoading(true);
+    try {
+      const { data } = await allNotes();
+
+      if (data.success) {
+        setNotes(data.data);
+
+        // Only important notes
+        const importantNotes = data.data.filter((n: any) => n.is_important === 1);
+        const trashedNotes = data.data.filter((n: any) => n.is_trashed === 1)
+        setImpNote(importantNotes);
+        setTrashNotes(trashedNotes)
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchNotes()
+  }, [])
+
   return (
     <>
       <div className="page-wrapper">
@@ -52,9 +88,8 @@ const Notes = () => {
           </div>
           <div className="row">
             <div
-              className={`col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget  ${
-                isOpen && "section-notes-dashboard"
-              }`}
+              className={`col-xl-3 col-md-12 sidebars-right theiaStickySidebar section-bulk-widget  ${isOpen && "section-notes-dashboard"
+                }`}
             >
               <div className="stickybar">
                 <div className="border rounded-3 mt-4 bg-white p-3">
@@ -82,7 +117,8 @@ const Notes = () => {
                         aria-selected="true"
                       >
                         <i className="ti ti-inbox me-2" />
-                        All Notes<span className="ms-2">1</span>
+                        All Notes
+                        {/* <span className="ms-2">1</span> */}
                       </button>
                       <button
                         className="d-flex text-start align-items-center fw-semibold fs-15 nav-link mb-1"
@@ -170,16 +206,15 @@ const Notes = () => {
               </div>
             </div>
             <div
-              className={`col-xl-9 budget-role-notes  ${
-                isOpen && "budgeted-role-notes"
-              }`}
+              className={`col-xl-9 budget-role-notes  ${isOpen && "budgeted-role-notes"
+                }`}
             >
-              <NotesContent />
+              <NotesContent notes={notes} loading={loading} impNote={impNote} setEditId={setEditId} trashNotes={trashNotes} setViewNoteId={setViewNoteId} setDeleteId={setDeleteId} />
             </div>
           </div>
         </div>
       </div>
-      <NotesModal />
+      <NotesModal editId={editId} viewNoteId={viewNoteId} deleteId={deleteId}/>
     </>
   );
 };
