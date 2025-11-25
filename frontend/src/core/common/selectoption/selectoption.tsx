@@ -1298,3 +1298,29 @@ export const studentsnumber = [
   { value: "35", label: "35" },
   { value: "40", label: "40" },
 ];
+
+ export const Tagsoptions = [
+    { value: "Important", label: "Important" },
+    { value: "Academic", label: "Academic" },
+    { value: "OfficeWork", label: "OfficeWork" },
+    { value: "HomeWork", label: "HomeWork" },
+  ];
+
+ export const appStatus = [
+    { value: "Pending", label: "Pending" },
+    { value: "Onhold", label: "Onhold" },
+    { value: "InProgress", label: "Inprogress" },
+    { value: "Done", label: "Done" },
+  ];
+
+export  const optionsPriority = [
+    { value: "High", label: "High" },
+    { value: "Medium", label: "Medium" },
+    { value: "Low", label: "Low" },
+  ];
+
+export  const assigneeOptions = [
+    { value: "", label: "Select" },
+    { value: "all_teachers", label: "All Teachers" },
+    { value: "all_staff", label: "All Staff" }
+  ]

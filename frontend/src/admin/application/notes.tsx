@@ -16,7 +16,9 @@ const Notes = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const [editId, setEditId] = useState<number | null>(null)
   const [viewNoteId, setViewNoteId] = useState<number | null>(null)
-  const [deleteId , setDeleteId] = useState<number|null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [softDeleteId, setSoftDeleteId] = useState<number | null>(null)
+  const [restoreId, setRestoreId] = useState<number | null>(null)
 
   const fetchNotes = async () => {
     setLoading(true);
@@ -24,11 +26,13 @@ const Notes = () => {
       const { data } = await allNotes();
 
       if (data.success) {
-        setNotes(data.data);
+        // setNotes(data.data);
 
         // Only important notes
-        const importantNotes = data.data.filter((n: any) => n.is_important === 1);
+        const allNotes = data.data.filter((n: any) => n.is_trashed !== 1)
+        const importantNotes = data.data.filter((n: any) => n.is_important === 1 && n.is_trashed !== 1);
         const trashedNotes = data.data.filter((n: any) => n.is_trashed === 1)
+        setNotes(allNotes)
         setImpNote(importantNotes);
         setTrashNotes(trashedNotes)
       }
@@ -43,6 +47,10 @@ const Notes = () => {
   useEffect(() => {
     fetchNotes()
   }, [])
+
+  const onAction = ()=>{
+    fetchNotes()
+  }
 
   return (
     <>
@@ -209,12 +217,12 @@ const Notes = () => {
               className={`col-xl-9 budget-role-notes  ${isOpen && "budgeted-role-notes"
                 }`}
             >
-              <NotesContent notes={notes} loading={loading} impNote={impNote} setEditId={setEditId} trashNotes={trashNotes} setViewNoteId={setViewNoteId} setDeleteId={setDeleteId} />
+              <NotesContent onAction={onAction} notes={notes} loading={loading} impNote={impNote} setEditId={setEditId} trashNotes={trashNotes} setViewNoteId={setViewNoteId} setDeleteId={setDeleteId} setSoftDeleteId={setSoftDeleteId} setRestoreId={setRestoreId} />
             </div>
           </div>
         </div>
       </div>
-      <NotesModal editId={editId} viewNoteId={viewNoteId} deleteId={deleteId}/>
+      <NotesModal onAction={onAction} editId={editId} viewNoteId={viewNoteId} deleteId={deleteId} restoreId={restoreId} setSoftDeleteId={setSoftDeleteId} softDeleteId={softDeleteId} setRestoreId={setRestoreId} />
     </>
   );
 };

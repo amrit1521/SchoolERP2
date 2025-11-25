@@ -3,49 +3,29 @@ import { Link } from "react-router-dom";
 import DefaultEditor from "react-simple-wysiwyg";
 import { DatePicker } from "antd";
 import React, { useEffect, useState } from "react";
-import { addNote, deleteNote, speNote, updateNote } from "../../service/note";
+import { addNote, deleteNote, restoreTrashNote, softDeleteNote, speNote, updateNote } from "../../service/note";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import CommonSelect from "../../core/common/commonSelect";
 import { handleModalPopUp } from "../../handlePopUpmodal";
 import DOMPurify from "dompurify";
+import { appStatus, assigneeOptions, optionsPriority, Tagsoptions } from "../../core/common/selectoption/selectoption";
 
 
 
 type props = {
+  onAction: () => void
   editId?: number | null
   viewNoteId?: number | null
   deleteId?: number | null
+  softDeleteId?: number | null
+  restoreId?: number | null
+  setSoftDeleteId: React.Dispatch<React.SetStateAction<number | null>>
+  setRestoreId: React.Dispatch<React.SetStateAction<number | null>>
 }
 
-const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
-  const Tagsoptions = [
-    { value: "Important", label: "Important" },
-    { value: "Academic", label: "Academic" },
-    { value: "OfficeWork", label: "OfficeWork" },
-    { value: "HomeWork", label: "HomeWork" },
-  ];
-
-  const status = [
-    { value: "Pending", label: "Pending" },
-    { value: "Onhold", label: "Onhold" },
-    { value: "InProgress", label: "Inprogress" },
-    { value: "Done", label: "Done" },
-  ];
-
-  const optionsPriority = [
-    { value: "High", label: "High" },
-    { value: "Medium", label: "Medium" },
-    { value: "Low", label: "Low" },
-  ];
-
-  const assigneeOptions = [
-    { value: "", label: "Select" },
-    { value: "all_teachers", label: "All Teachers" },
-    { value: "all_staff", label: "All Staff" }
-  ];
-
-
+const NotesModal: React.FC<props> = ({ onAction, editId, viewNoteId, deleteId, softDeleteId, restoreId, setSoftDeleteId, setRestoreId }) => {
+  
   // add note
   interface INoteForm {
     title: string;
@@ -72,14 +52,12 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
   const [errors, setErrors] = useState<any>({});
   const [viewNote, setViewNote] = useState<any>({})
   useEffect(() => {
-
     const token = localStorage.getItem('token')
     if (token) {
       setuserId(JSON.parse(token).id ?? null)
     }
 
   }, [])
-
 
 
   const handleChange = (name: string, value: any) => {
@@ -200,7 +178,7 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
     }
   }, [viewNoteId])
 
-  const permanentDeleteNote = async (e:React.MouseEvent<HTMLButtonElement>) => {
+  const permanentDeleteNote = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     if (!deleteId) {
       toast.warn("Note Id is required !")
@@ -220,6 +198,50 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
       toast.error(error.response.data.message)
     }
   }
+
+
+  const softDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    if (!softDeleteId) return
+
+    try {
+
+      const { data } = await softDeleteNote(softDeleteId)
+      if (data.success) {
+        toast.success(data.message)
+        setSoftDeleteId(null)
+        handleModalPopUp('trash-modal')
+        onAction()
+
+      }
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const restoreNote = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    if (!restoreId) return
+    try {
+
+      const { data } = await restoreTrashNote(restoreId)
+      if (data.success) {
+        toast.success(data.message)
+
+        setRestoreId(null)
+        onAction()
+        handleModalPopUp('restore-modal')
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
+
 
   return (
     <>
@@ -327,7 +349,7 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
                     <div className="mb-3">
                       <label className="form-label">Status</label>
                       <CommonSelect
-                        options={status}
+                        options={appStatus}
                         className="select"
                         value={formData.status}
                         onChange={(e: any) => handleChange("status", e.value)}
@@ -474,7 +496,7 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
                     <div className="mb-3">
                       <label className="form-label">Status</label>
                       <CommonSelect
-                        options={status}
+                        options={appStatus}
                         className="select"
                         value={formData.status}
                         onChange={(e: any) => handleChange("status", e.value)}
@@ -549,6 +571,69 @@ const NotesModal: React.FC<props> = ({ editId, viewNoteId, deleteId }) => {
         </div>
       </div>
       {/* /Delete Modal */}
+      {/*Soft Delete Modal */}
+      <div className="modal fade" id="trash-modal">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <form>
+              <div className="modal-body text-center">
+                <span className="delete-icon">
+                  <i className="ti ti-trash-x" />
+                </span>
+                <h4>Move to Trash</h4>
+                <p>
+                  You want to move to trash this item.
+                </p>
+                <div className="d-flex justify-content-center">
+                  <Link
+                    to="#"
+                    className="btn btn-light me-3"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </Link>
+                  <button onClick={(e) => softDelete(e)} type="submit" className="btn btn-danger">
+                    Yes, Trash
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Soft Delete Modal */}
+      {/*Soft Delete Modal */}
+      <div className="modal fade" id="restore-modal">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <form>
+              <div className="modal-body text-center">
+                <span className="delete-icon">
+                  <i className="ti ti-restore" />
+
+                </span>
+                <h4>Restore Note</h4>
+                <p>
+                  You want to restore this item.
+                </p>
+                <div className="d-flex justify-content-center">
+                  <Link
+                    to="#"
+                    className="btn btn-light me-3"
+                    data-bs-dismiss="modal"
+                  >
+                    Cancel
+                  </Link>
+                  <button onClick={(e) => restoreNote(e)} type="submit" className="btn btn-success">
+                    Yes,Restore
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {/* /Soft Delete Modal */}
       {/* View Note */}
       <div className="modal fade" id="view-note-units">
         <div className="modal-dialog modal-dialog-centered">

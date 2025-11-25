@@ -9,8 +9,12 @@ import type React from "react";
 import Skeleton from "react-loading-skeleton";
 import dayjs from 'dayjs'
 import DOMPurify from "dompurify";
+import { toast } from "react-toastify";
+import { toogleImportantNote } from "../../service/note";
+
 
 type props = {
+  onAction: () => void,
   notes: [],
   loading: boolean,
   impNote: [],
@@ -18,9 +22,11 @@ type props = {
   setEditId: React.Dispatch<React.SetStateAction<number | null>>,
   setViewNoteId: React.Dispatch<React.SetStateAction<number | null>>,
   setDeleteId: React.Dispatch<React.SetStateAction<number | null>>,
+  setSoftDeleteId: React.Dispatch<React.SetStateAction<number | null>>,
+  setRestoreId: React.Dispatch<React.SetStateAction<number | null>>,
 }
 
-const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, trashNotes, setViewNoteId ,setDeleteId}) => {
+const NotesContent: React.FC<props> = ({ onAction, notes, loading, impNote, setEditId, trashNotes, setViewNoteId, setDeleteId, setSoftDeleteId, setRestoreId }) => {
   const optionsBulk = [
     { value: "bulkActions", label: "Bulk Actions" },
     { value: "deleteMarked", label: "Delete Marked" },
@@ -67,6 +73,33 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
       },
     ],
   };
+
+
+
+
+  const ToggleImportant = async (id: number, currImportant: any) => {
+
+    if (!id) return
+    const newCurrImportant = currImportant === 1 ? 0 : 1
+    try {
+
+      const { data } = await toogleImportantNote(
+        { isImportant: newCurrImportant }, id
+      )
+
+      if (data.success) {
+        toast.success(data.message)
+        onAction()
+
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
 
 
 
@@ -191,9 +224,10 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                                   </Link>
                                   <Link
                                     to="#"
+                                    onClick={() => setSoftDeleteId(note.id)}
                                     className="dropdown-item"
                                     data-bs-toggle="modal"
-                                    data-bs-target="#delete-modal"
+                                    data-bs-target="#trash-modal"
                                   >
                                     <span>
                                       <i data-feather="trash-2" />
@@ -202,12 +236,14 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                                   </Link>
                                   <Link
                                     to="#"
+                                    onClick={() => ToggleImportant(note.id, note.is_important)}
                                     className="dropdown-item"
                                   >
                                     <span>
                                       <i data-feather="star" />
                                     </span>
-                                    Not Important
+                                    {note.is_important ? ' Not Important' : 'Important'}
+
                                   </Link>
                                   <Link
                                     to="#"
@@ -263,7 +299,11 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                                     <i className="fas fa-star text-warning" />
                                   </span>
                                 </Link>
-                                <Link to="#">
+                                <Link
+                                  to="#"
+                                  onClick={() => setSoftDeleteId(note.id)}
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#trash-modal">
                                   <span>
                                     <i className="ti ti-trash text-danger" />
                                   </span>
@@ -783,9 +823,10 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
 
                               <Link
                                 to="#"
+                                onClick={() => setSoftDeleteId(note.id)}
                                 className="dropdown-item"
                                 data-bs-toggle="modal"
-                                data-bs-target="#delete-modal"
+                                data-bs-target="#trash-modal"
                               >
                                 <span>
                                   <i data-feather="trash-2" />
@@ -793,7 +834,7 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                                 Delete
                               </Link>
 
-                              <Link to="#" className="dropdown-item">
+                              <Link to="#" onClick={() => ToggleImportant(note.id, note.is_important)} className="dropdown-item">
                                 <span>
                                   <i data-feather="star" />
                                 </span>
@@ -858,7 +899,12 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                               }
                             </Link>
 
-                            <Link to="#">
+                            <Link
+                              to="#"
+                              onClick={() => setSoftDeleteId(note.id)}
+                              data-bs-toggle="modal"
+                              data-bs-target="#trash-modal"
+                            >
                               <span>
                                 <i className="ti ti-trash text-danger" />
                               </span>
@@ -1501,9 +1547,10 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                               </Link>
                               <Link
                                 to="#"
+                                onClick={() => setSoftDeleteId(note.id)}
                                 className="dropdown-item"
                                 data-bs-toggle="modal"
-                                data-bs-target="#delete-modal"
+                                data-bs-target="#trash-modal"
                               >
                                 <span>
                                   <i data-feather="trash-2" />
@@ -1512,12 +1559,14 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                               </Link>
                               <Link
                                 to="#"
+                                onClick={() => ToggleImportant(note.id, note.is_important)}
                                 className="dropdown-item"
                               >
                                 <span>
                                   <i data-feather="star" />
                                 </span>
-                                Not Important
+                                {note.is_important ? 'Not Important' : 'Important'}
+
                               </Link>
                               <Link
                                 to="#"
@@ -1572,7 +1621,13 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                                 <i className="fas fa-star text-warning" />
                               </span>
                             </Link>
-                            <Link to="#">
+                            <Link
+                              to="#"
+                              onClick={() => setSoftDeleteId(note.id)}
+
+                              data-bs-toggle="modal"
+                              data-bs-target="#trash-modal"
+                            >
                               <span>
                                 <i className="ti ti-trash text-danger" />
                               </span>
@@ -2226,7 +2281,7 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                               </Link> */}
                               <Link
                                 to="#"
-                                onClick={()=>setDeleteId(note.id)}
+                                onClick={() => setDeleteId(note.id)}
                                 className="dropdown-item"
                                 data-bs-toggle="modal"
                                 data-bs-target="#delete-modal"
@@ -2238,16 +2293,19 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                               </Link>
                               <Link
                                 to="#"
+                                onClick={() => setRestoreId(note.id)}
                                 className="dropdown-item"
+                                data-bs-toggle="modal"
+                                data-bs-target="#restore-modal"
                               >
                                 <span>
-                                  <i data-feather="star" />
+                                  <i className="ti ti-restore" />
                                 </span>
                                 Restore
                               </Link>
                               <Link
                                 to="#"
-                                onClick={()=>setViewNoteId(note.id)}
+                                onClick={() => setViewNoteId(note.id)}
                                 className="dropdown-item"
                                 data-bs-toggle="modal"
                                 data-bs-target="#view-note-units"
@@ -2293,14 +2351,22 @@ const NotesContent: React.FC<props> = ({ notes, loading, impNote, setEditId, tra
                             </span>
                           </div>
                           <div className="d-flex align-items-center">
-                            <Link to="#" className="me-2">
-                              <span>
-                                <i className="fas fa-star text-warning" />
-                              </span>
-                            </Link>
-                            <Link to="#">
-                              <span>
-                                <i className="ti ti-trash text-danger" />
+                            {
+                              note.is_important === 1 && (<Link to="#" className="me-2">
+                                <span>
+                                  <i className="fas fa-star text-warning" />
+                                </span>
+                              </Link>)
+                            }
+                            <Link
+                              to="#"
+                              onClick={() => setRestoreId(note.id)}
+                              data-bs-toggle="modal"
+                              data-bs-target="#restore-modal"
+                            >
+                              <span className="text-success">
+                                <i className="ti ti-arrow-back-up" />
+
                               </span>
                             </Link>
                           </div>

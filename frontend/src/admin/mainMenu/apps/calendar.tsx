@@ -16,6 +16,8 @@ const Calendar = () => {
     [, setisnewevent] = useState(false),
     [, setevent_title] = useState(""),
     [weekendsVisible] = useState(true),
+
+    
     defaultEvents = [
       {
         title: "Event Name 4",
@@ -26,7 +28,7 @@ const Calendar = () => {
         title: "Test Event 1",
         start: Date.now(),
         end: Date.now(),
-        className: "bg-success",
+        className: "bg-danger",
       },
       {
         title: "Test Event 2",
@@ -39,6 +41,7 @@ const Calendar = () => {
         className: "bg-primary",
       },
     ];
+
   useEffect(() => {
     let elements = Array.from(
       document.getElementsByClassName("react-datepicker-wrapper")

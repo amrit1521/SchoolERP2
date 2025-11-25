@@ -6,6 +6,25 @@ import TodoModal from "../../core/modals/todoModal";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { lastModified } from "../../core/common/selectoption/selectoption";
+import { useEffect, useState } from "react";
+import { allTodos } from "../../service/todo";
+import Skeleton from "react-loading-skeleton";
+import DOMPurify from "dompurify";
+
+export interface ITodo {
+  id: number;
+  title: string;
+  assignee: string;
+  tag: string;
+  priority: string;
+  due_date: string;
+  status: string;
+  description: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
 
 const Todo = () => {
   const options = [
@@ -15,6 +34,34 @@ const Todo = () => {
     { value: "mark-all", label: "Mark All" },
   ];
   const routes = all_routes;
+
+
+  const [todos, setTodos] = useState([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [viewTodoId ,setViewTodoId] = useState<number|null>(null)
+  const fetchAllTodos = async () => {
+    setLoading(true)
+    try {
+
+      const { data } = await allTodos()
+      if (data.success) {
+        setTodos(data.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAllTodos()
+
+  }, [])
+
+
   return (
     <>
       <div className="page-wrapper notes-page-wrapper">
@@ -84,7 +131,8 @@ const Todo = () => {
                         aria-selected="true"
                       >
                         <i className="ti ti-inbox me-2" />
-                        Inbox <span className="ms-2">1</span>
+                        Inbox
+                        {/* <span className="ms-2">1</span> */}
                       </button>
                       <button
                         className="d-flex text-start align-items-center fw-semibold fs-15 nav-link mb-1"
@@ -208,7 +256,9 @@ const Todo = () => {
                   />
                 </div>
               </div>
+
               <div className="tab-content" id="v-pills-tabContent">
+
                 <div
                   className="tab-pane fade active show"
                   id="v-pills-profile"
@@ -217,142 +267,168 @@ const Todo = () => {
                 >
                   <div className="row">
                     <div className="col-lg-12">
-                      <div
-                        className="accordion todo-accordion"
-                        id="accordionExample"
-                      >
-                        <div className="accordion-item">
-                          <div className="accordion-header" id="headingOne">
-                            <div
-                              className="accordion-button"
-                              data-bs-toggle="collapse"
-                              data-bs-target="#collapseOne"
-                              aria-controls="collapseOne"
-                            >
-                              <div className="d-flex align-items-center justify-content-between w-100 mb-3">
+                      {loading ? (
+                        <>
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="card mb-3 p-3">
+                              <div className="d-flex align-items-center justify-content-between">
                                 <div className="d-flex align-items-center">
-                                  <span>
-                                    <i className="ti ti-calendar-due me-2" />
-                                  </span>
-                                  <h5 className="fw-semibold">Today</h5>
-                                  <span className="avatar avatar-xs bg-primary rounded-circle p-1 ms-2">
-                                    1
-                                  </span>
+                                  {/* <Skeleton circle width={40} height={40} className="me-3" /> */}
+                                  <div>
+                                    <Skeleton width={180} height={18} />
+                                    <Skeleton width={120} height={14} className="mt-1" />
+                                  </div>
                                 </div>
-                                <div>
-                                  <Link to="#">
-                                    <span>
-                                      <i className="fas fa-chevron-down" />
-                                    </span>
-                                  </Link>
-                                </div>
+
+                                <Skeleton width={30} height={30} />
+                              </div>
+
+                              <div className="mt-3">
+                                <Skeleton height={20} width={100} className="me-2" />
+                                <Skeleton height={20} width={60} />
                               </div>
                             </div>
-                          </div>
-                          <div
-                            id="collapseOne"
-                            className="accordion-collapse collapse show"
-                            aria-labelledby="headingOne"
-                            data-bs-parent="#accordionExample"
-                          >
-                            <div className="accordion-body">
-                              <div className="card">
-                                <div className="card-body p-3 pb-0">
-                                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                    <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                                      <div className="form-check form-check-md me-2">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                        />
-                                      </div>
-                                      <div className="strike-info">
-                                        <h4 className="mb-1">
-                                          Meeting with Shaun Park at 4:50pm
-                                        </h4>
-                                        <p>Discuss about new project</p>
-                                      </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="accordion todo-accordion" id="accordionExample">
+                          {todos && todos.length > 0 ? (
+                            <div className="accordion-item">
+                              <div className="accordion-header" id="headingOne">
+                                <div
+                                  className="accordion-button"
+                                  data-bs-toggle="collapse"
+                                  data-bs-target="#collapseOne"
+                                  aria-controls="collapseOne"
+                                >
+                                  <div className="d-flex align-items-center justify-content-between w-100 mb-3">
+                                    <div className="d-flex align-items-center">
+                                      <span>
+                                        <i className="ti ti-calendar-due me-2" />
+                                      </span>
+                                      <h5 className="fw-semibold">Todo's</h5>
                                     </div>
-                                    <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                                      <div className="notes-card-body d-flex align-items-center">
-                                        <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                          <i className="fas fa-circle fs-6 me-1" />{" "}
-                                          High
-                                        </p>
-                                        <p className="badge bg-outline-secondary mb-0">
-                                          {" "}
-                                          New
-                                        </p>
-                                      </div>
-                                      <div className="d-flex align-items-center">
-                                        <span className="avatar avatar-md me-2">
-                                          <ImageWithBasePath
-                                            src="assets/img/users/user-24.jpg"
-                                            alt="Img"
-                                            className="img-fluid rounded-circle"
-                                          />
+                                    <div>
+                                      <Link to="#">
+                                        <span>
+                                          <i className="fas fa-chevron-down" />
                                         </span>
-                                        <Link
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                          aria-expanded="false"
-                                        >
-                                          <i className="fas fa-ellipsis-v" />
-                                        </Link>
-                                        <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#edit-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="edit" />
-                                            </span>
-                                            Edit
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete-modal"
-                                          >
-                                            <span>
-                                              <i data-feather="trash-2" />
-                                            </span>
-                                            Delete
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                          >
-                                            <span>
-                                              <i data-feather="star" />
-                                            </span>
-                                            Not Important
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#view-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="eye" />
-                                            </span>
-                                            View
-                                          </Link>
-                                        </div>
-                                      </div>
+                                      </Link>
                                     </div>
                                   </div>
                                 </div>
                               </div>
+
+                              <div
+                                id="collapseOne"
+                                className="accordion-collapse collapse show"
+                                aria-labelledby="headingOne"
+                                data-bs-parent="#accordionExample"
+                              >
+                                <div className="accordion-body">
+                                  {todos.map((todo:any) => (
+                                    <div className="card mb-3" key={todo.id}>
+                                      <div className="card-body p-3 pb-0">
+                                        <div className="d-flex align-items-center justify-content-between flex-wrap">
+
+                                          {/* LEFT SECTION */}
+                                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
+                                            {/* <div className="form-check form-check-md me-2">
+                                              <input className="form-check-input" type="checkbox" />
+                                            </div> */}
+
+                                            <div className="strike-info">
+                                              <h4 className="mb-1">{todo.title}</h4>
+                                              <p  
+                                                dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(todo.description)}}
+                                              ></p>
+                                            </div>
+                                          </div>
+
+                                          {/* RIGHT SECTION */}
+                                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                            <div className="notes-card-body d-flex align-items-center">
+                                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
+                                                <i className="fas fa-circle fs-6 me-1" /> {todo.priority}
+                                              </p>
+                                              <p className="badge bg-outline-secondary mb-0">{todo.status}</p>
+                                            </div>
+
+                                            <div className="d-flex align-items-center">
+                                              <span className="avatar avatar-md me-2">
+                                                <ImageWithBasePath
+                                                  src="assets/img/users/user-24.jpg"
+                                                  alt="Img"
+                                                  className="img-fluid rounded-circle"
+                                                />
+                                              </span>
+
+                                              <Link to="#" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i className="fas fa-ellipsis-v" />
+                                              </Link>
+
+                                              <div className="dropdown-menu notes-menu dropdown-menu-end">
+                                                <Link
+                                                  to="#"
+                                                  className="dropdown-item"
+                                                  data-bs-toggle="modal"
+                                                  data-bs-target="#edit-note-units"
+                                                >
+                                                  <span>
+                                                    <i data-feather="edit" />
+                                                  </span>
+                                                  Edit
+                                                </Link>
+
+                                                <Link
+                                                  to="#"
+                                                  className="dropdown-item"
+                                                  data-bs-toggle="modal"
+                                                  data-bs-target="#delete-modal"
+                                                >
+                                                  <span>
+                                                    <i data-feather="trash-2" />
+                                                  </span>
+                                                  Delete
+                                                </Link>
+
+                                                <Link to="#" className="dropdown-item">
+                                                  <span>
+                                                    <i data-feather="star" />
+                                                  </span>
+                                                  Not Important
+                                                </Link>
+
+                                                <Link
+                                                  to="#"
+                                                  onClick={()=>setViewTodoId(todo.id)}
+                                                  className="dropdown-item"
+                                                  data-bs-toggle="modal"
+                                                  data-bs-target="#view-note-units"
+                                                >
+                                                  <span>
+                                                    <i data-feather="eye" />
+                                                  </span>
+                                                  View
+                                                </Link>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <>No Todos Found</>
+                          )}
                         </div>
-                      </div>
-                      <div
+                      )}
+                      {/* <div
                         className="accordion todo-accordion"
                         id="accordionExample2"
                       >
@@ -716,10 +792,11 @@ const Todo = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </div>
+
                 <div
                   className="tab-pane fade "
                   id="v-pills-home"
@@ -995,6 +1072,7 @@ const Todo = () => {
                     </div>
                   </div>
                 </div>
+
                 <div
                   className="tab-pane fade"
                   id="v-pills-messages"
@@ -1273,6 +1351,7 @@ const Todo = () => {
                     </div>
                   </div>
                 </div>
+
                 <div
                   className="tab-pane fade"
                   id="v-pills-settings"
@@ -1464,7 +1543,9 @@ const Todo = () => {
                   </div>
                 </div>
               </div>
-              <div className="row custom-pagination">
+
+
+              {/* <div className="row custom-pagination">
                 <div className="col-md-12">
                   <div className="paginations d-flex justify-content-end">
                     <span>
@@ -1491,12 +1572,12 @@ const Todo = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
       </div>
-      <TodoModal />
+      <TodoModal viewTodoId={viewTodoId}/>
     </>
   );
 };

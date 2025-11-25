@@ -34,8 +34,6 @@ exports.addNote = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
-
 // GET ALL NOTES (not deleted)
 exports.getNotes = async (req, res) => {
     try {
@@ -49,8 +47,6 @@ exports.getNotes = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
-
 // GET SINGLE NOTE BY ID
 exports.getNoteById = async (req, res) => {
     const { id } = req.params;
@@ -68,8 +64,6 @@ exports.getNoteById = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
-
 // UPDATE NOTE
 exports.updateNote = async (req, res) => {
     const { id } = req.params;
@@ -116,8 +110,8 @@ exports.updateNote = async (req, res) => {
                 success: false
             });
         }
-         
-        due_date =dayjs(due_date).format('YYYY-MM-DD')
+
+        due_date = dayjs(due_date).format('YYYY-MM-DD')
         await db.query(
             `UPDATE notes SET 
                 title=?, 
@@ -145,9 +139,30 @@ exports.updateNote = async (req, res) => {
     }
 };
 
+exports.toggleImportantNote = async (req, res) => {
 
+    const { id } = req.params
+    const { isImportant } = req.body
+    try {
+        const [note] = await db.query(`SELECT id FROM notes WHERE id = ?`, [id]);
+        if (note.length === 0) {
+            return res.status(404).json({ success: false, message: "Note not found" });
+        }
 
+        await db.query(
+            "UPDATE notes SET is_important = ? WHERE id = ?",
+            [isImportant, id]
+        );
+        return res.json({
+            success: true,
+            message: isImportant ? "Note Important" : "Note Not Important"
+        });
 
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Something went wrong" });
+    }
+}
 
 exports.softDeleteNote = async (req, res) => {
     const { id } = req.params;
@@ -167,25 +182,6 @@ exports.softDeleteNote = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
-
-
-exports.getTrashNotes = async (req, res) => {
-    try {
-        const [rows] = await db.query(
-            "SELECT * FROM notes WHERE is_trashed = 1 ORDER BY id DESC"
-        );
-
-        return res.status(200).json({ success: true, data: rows });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error", success: false });
-    }
-};
-
-
-
 exports.restoreNote = async (req, res) => {
     const { id } = req.params;
     try {
@@ -201,9 +197,6 @@ exports.restoreNote = async (req, res) => {
         return res.status(500).json({ message: "Internal server error", success: false });
     }
 };
-
-
-
 exports.permanentDeleteNote = async (req, res) => {
     const { id } = req.params;
 

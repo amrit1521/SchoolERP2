@@ -71,7 +71,7 @@ const Events = () => {
   };
 
   const handleEventClick = (info: any) => {
-    console.log("info: ", info.event?._def.extendedProps?.item);
+   
     setSelectedEvent(info.event?._def.extendedProps?.item);
     setShowEventDetailsModal(true);
   };
@@ -92,7 +92,7 @@ const Events = () => {
     try {
       const { data } = await getAllRoles();
       if (data.success) {
-        console.log("roles data: ", data.result);
+       
         setAllRoles(
           data.result.map((item: any) => ({
             id: item.id,
@@ -182,13 +182,13 @@ const Events = () => {
         docsId: fileId,
       };
 
-      console.log("Event Data Payload:", payload);
+    
 
       const { data } = await CreateEvent(payload);
 
       if (data.success) {
         toast.success(data.message || "Event Created Successfully.");
-        console.log(data);
+      
         fetchEvents();
       } else {
         toast.error(data.message || "Event creation failed.");
@@ -204,7 +204,7 @@ const Events = () => {
       const { data } = await getAllEvent();
 
       if (data.success) {
-        console.log("event data:", data.result);
+       
 
         setFormData(
           data.result.map((item: any) => ({
@@ -244,11 +244,11 @@ const Events = () => {
     try {
       ids = ids;
       if (ids) {
-        console.log("slectedEvent: ", ids);
+
         const { data } = await deleteEvent(ids);
-        console.log(data);
+      
         if (data.success) {
-          console.log(data);
+       
           toast.success(data.message || "Event deleted Successfully.");
           fetchEvents();
           setSelectedEvent(null);
@@ -562,7 +562,7 @@ const Events = () => {
                   ))}
                 </div>
               </div>
-              ;{/* Event Title */}
+              {/* Event Title */}
               <div className="mb-3">
                 <label className="form-label">Event Title</label>
                 <input

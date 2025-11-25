@@ -72,7 +72,7 @@ const NoticeBoard = () => {
     try {
       const { data } = await getAllNotice();
       if (data.success) {
-        console.log("notice data: ", data.result);
+      
         setAllNotice(
           data.result.map((item: any) => ({
             id: item.id,
@@ -142,10 +142,10 @@ const NoticeBoard = () => {
         messageTo: messageTo,
         docsId: id,
       };
-      console.log("notice Data: ", payload);
+    
       const { data } = await CreateNotice(payload);
       if (data.success) {
-        console.log(data);
+      
         toast.success(data.message || "Notice Created Successfully.");
         formReset();
         fetchNotice();
@@ -169,11 +169,11 @@ const NoticeBoard = () => {
   const handleDeleteNotice = async () => {
     try {
       if (selectedNotice) {
-        console.log("slectedNotice: ", selectedNotice);
+      
         const { data } = await deleteNotice(selectedNotice.id);
-        console.log(data);
+     
         if (data.success) {
-          console.log(data);
+         
           toast.success(data.message || "Notice deleted Successfully.");
           fetchNotice();
           setSelectedNotice(null);
@@ -227,7 +227,7 @@ const NoticeBoard = () => {
         docsId: id,
         noticeId: selectedNotice?.id,
       };
-      console.log("payload: ", payload);
+    
       const { data } = await updateNotice(payload);
 
       if (data.success) {
@@ -303,7 +303,7 @@ const NoticeBoard = () => {
     }
   }, [allRoles]);
 
-  console.log("aallNotice : ", allNotice);
+
   useEffect(() => {
     fetchRoles();
     fetchNotice();
