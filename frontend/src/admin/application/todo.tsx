@@ -7,9 +7,12 @@ import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { lastModified } from "../../core/common/selectoption/selectoption";
 import { useEffect, useState } from "react";
-import { allTodos } from "../../service/todo";
+import { allTodos, toggleImportantTodo } from "../../service/todo";
 import Skeleton from "react-loading-skeleton";
 import DOMPurify from "dompurify";
+import { toast } from "react-toastify";
+
+
 
 export interface ITodo {
   id: number;
@@ -36,30 +39,87 @@ const Todo = () => {
   const routes = all_routes;
 
 
-  const [todos, setTodos] = useState([])
+  const [todos, setTodos] = useState<ITodo[]>([])
+  const [impTodos, setImpTodos] = useState<ITodo[]>([])
+  const [trashTodos, setTrashTodo] = useState<ITodo[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-  const [viewTodoId ,setViewTodoId] = useState<number|null>(null)
-  const fetchAllTodos = async () => {
-    setLoading(true)
-    try {
+  const [viewTodoId, setViewTodoId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [softDeleteId, setSoftDeleteId] = useState<number | null>(null)
+  const [restoreId, setRestoreId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [doneTodos, setDoneTodods] = useState<ITodo[]>([])
 
-      const { data } = await allTodos()
+
+  const fetchAllTodos = async () => {
+    setLoading(true);
+
+    try {
+      const { data } = await allTodos();
+
       if (data.success) {
-        setTodos(data.data)
+        const todos = data.data;
+        const all: ITodo[] = [];
+        const important: ITodo[] = [];
+        const trashed: ITodo[] = [];
+        const done: ITodo[] = [];
+
+        todos.forEach((n: any) => {
+          const isTrashed = n.is_trashed === 1;
+          const status = n.status?.toLowerCase();
+
+          if (isTrashed) {
+            trashed.push(n);
+            return; 
+          }
+
+          all.push(n);
+
+          if (n.is_important === 1) important.push(n);
+          if (status === "done") done.push(n);
+        });
+
+        setTodos(all);
+        setImpTodos(important);
+        setTrashTodo(trashed);
+        setDoneTodods(done);
       }
 
     } catch (error) {
-      console.log(error)
-
+      console.error("Fetch Todos Error:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
 
   useEffect(() => {
     fetchAllTodos()
 
   }, [])
+
+  const onAction = () => {
+    fetchAllTodos()
+  }
+
+  const toggleImportant = async (id: number, isImportant: number) => {
+    if (!id) return
+    const newIsImportant = isImportant === 1 ? 0 : 1
+    try {
+
+      const { data } = await toggleImportantTodo({ isImportant: newIsImportant }, id)
+      if (data.success) {
+        toast.success(data.message)
+        onAction()
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
+
+
 
 
   return (
@@ -266,11 +326,13 @@ const Todo = () => {
                   aria-labelledby="v-pills-profile-tab"
                 >
                   <div className="row">
+
                     <div className="col-lg-12">
+
                       {loading ? (
                         <>
                           {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="card mb-3 p-3">
+                            <div key={i} className="card mb-3 p-1">
                               <div className="d-flex align-items-center justify-content-between">
                                 <div className="d-flex align-items-center">
                                   {/* <Skeleton circle width={40} height={40} className="me-3" /> */}
@@ -326,7 +388,7 @@ const Todo = () => {
                                 data-bs-parent="#accordionExample"
                               >
                                 <div className="accordion-body">
-                                  {todos.map((todo:any) => (
+                                  {todos.map((todo: any) => (
                                     <div className="card mb-3" key={todo.id}>
                                       <div className="card-body p-3 pb-0">
                                         <div className="d-flex align-items-center justify-content-between flex-wrap">
@@ -338,9 +400,9 @@ const Todo = () => {
                                             </div> */}
 
                                             <div className="strike-info">
-                                              <h4 className="mb-1">{todo.title}</h4>
-                                              <p  
-                                                dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(todo.description)}}
+                                              <h4 className="mb-1 text-capitalize">{todo.title}</h4>
+                                              <p
+                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(todo.description) }}
                                               ></p>
                                             </div>
                                           </div>
@@ -348,13 +410,27 @@ const Todo = () => {
                                           {/* RIGHT SECTION */}
                                           <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
                                             <div className="notes-card-body d-flex align-items-center">
-                                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
+                                              <p className={`badge 
+
+                                   
+                                     ${todo.priority === "High"
+                                                  ? "bg-outline-danger"
+                                                  : todo.priority === "Medium"
+                                                    ? " bg-outline-warning"
+                                                    : " bg-outline-success"
+                                                }
+                                      d-inline-flex align-items-center me-2 mb-0`}>
                                                 <i className="fas fa-circle fs-6 me-1" /> {todo.priority}
                                               </p>
                                               <p className="badge bg-outline-secondary mb-0">{todo.status}</p>
                                             </div>
 
                                             <div className="d-flex align-items-center">
+                                              {
+                                                todo.is_important === 1 && (<span>
+                                                  <i className="ti ti-star me-2" />
+                                                </span>)
+                                              }
                                               <span className="avatar avatar-md me-2">
                                                 <ImageWithBasePath
                                                   src="assets/img/users/user-24.jpg"
@@ -370,6 +446,7 @@ const Todo = () => {
                                               <div className="dropdown-menu notes-menu dropdown-menu-end">
                                                 <Link
                                                   to="#"
+                                                  onClick={() => setEditId(todo.id)}
                                                   className="dropdown-item"
                                                   data-bs-toggle="modal"
                                                   data-bs-target="#edit-note-units"
@@ -382,9 +459,10 @@ const Todo = () => {
 
                                                 <Link
                                                   to="#"
+                                                  onClick={() => setSoftDeleteId(todo.id)}
                                                   className="dropdown-item"
                                                   data-bs-toggle="modal"
-                                                  data-bs-target="#delete-modal"
+                                                  data-bs-target="#trash-modal"
                                                 >
                                                   <span>
                                                     <i data-feather="trash-2" />
@@ -392,16 +470,19 @@ const Todo = () => {
                                                   Delete
                                                 </Link>
 
-                                                <Link to="#" className="dropdown-item">
+                                                <Link
+                                                  to="#"
+                                                  onClick={() => toggleImportant(todo.id, todo.is_important)}
+                                                  className="dropdown-item">
                                                   <span>
                                                     <i data-feather="star" />
                                                   </span>
-                                                  Not Important
+                                                  {todo.is_important ? 'Not Important' : 'Important'}
                                                 </Link>
 
                                                 <Link
                                                   to="#"
-                                                  onClick={()=>setViewTodoId(todo.id)}
+                                                  onClick={() => setViewTodoId(todo.id)}
                                                   className="dropdown-item"
                                                   data-bs-toggle="modal"
                                                   data-bs-target="#view-note-units"
@@ -428,371 +509,6 @@ const Todo = () => {
                           )}
                         </div>
                       )}
-                      {/* <div
-                        className="accordion todo-accordion"
-                        id="accordionExample2"
-                      >
-                        <div className="accordion-item">
-                          <div className="accordion-header" id="headingTwo">
-                            <div
-                              className="accordion-button"
-                              data-bs-toggle="collapse"
-                              data-bs-target="#collapseTwo"
-                              aria-controls="collapseTwo"
-                            >
-                              <div className="d-flex align-items-center justify-content-between w-100 mb-3">
-                                <div className="d-flex align-items-center">
-                                  <span>
-                                    <i className="ti ti-calendar-due me-2" />
-                                  </span>
-                                  <h5 className="fw-semibold">Yesterday</h5>
-                                </div>
-                                <div>
-                                  <Link to="#">
-                                    <span>
-                                      <i className="fas fa-chevron-down" />
-                                    </span>
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            id="collapseTwo"
-                            className="accordion-collapse collapse show"
-                            aria-labelledby="headingTwo"
-                            data-bs-parent="#accordionExample2"
-                          >
-                            <div className="accordion-body">
-                              <div className="card">
-                                <div className="card-body p-3 pb-0">
-                                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                    <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                                      <div className="form-check form-check-md me-2">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                        />
-                                      </div>
-                                      <div className="strike-info">
-                                        <h4 className="mb-1">
-                                          Team meet at Starbucks
-                                        </h4>
-                                        <p>Discuss about new project</p>
-                                      </div>
-                                    </div>
-                                    <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                                      <div className="notes-card-body d-flex align-items-center">
-                                        <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                          <i className="fas fa-circle fs-6 me-1" />
-                                          High
-                                        </p>
-                                        <p className="badge bg-outline-info mb-0">
-                                          Pending
-                                        </p>
-                                      </div>
-                                      <div className="d-flex align-items-center">
-                                        <span>
-                                          <i className="ti ti-star me-2" />
-                                        </span>
-                                        <span className="avatar avatar-md me-2">
-                                          <ImageWithBasePath
-                                            src="assets/img/profiles/avatar-02.jpg"
-                                            alt="Img"
-                                            className="img-fluid rounded-circle"
-                                          />
-                                        </span>
-                                        <Link
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                          aria-expanded="false"
-                                        >
-                                          <i className="fas fa-ellipsis-v" />
-                                        </Link>
-                                        <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#edit-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="edit" />
-                                            </span>
-                                            Edit
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete-modal"
-                                          >
-                                            <span>
-                                              <i data-feather="trash-2" />
-                                            </span>
-                                            Delete
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                          >
-                                            <span>
-                                              <i data-feather="star" />
-                                            </span>
-                                            Not Important
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#view-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="eye" />
-                                            </span>
-                                            View
-                                          </Link>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="accordion todo-accordion"
-                        id="accordionExample4"
-                      >
-                        <div className="accordion-item">
-                          <div className="accordion-header" id="headingFour">
-                            <div
-                              className="accordion-button"
-                              data-bs-toggle="collapse"
-                              data-bs-target="#collapseFour"
-                              aria-controls="collapseFour"
-                            >
-                              <div className="d-flex align-items-center justify-content-between w-100 mb-3">
-                                <div className="d-flex align-items-center">
-                                  <span>
-                                    <i className="ti ti-calendar-due me-2" />
-                                  </span>
-                                  <h5 className="fw-semibold">25/07/2023</h5>
-                                </div>
-                                <div>
-                                  <Link to="#">
-                                    <span>
-                                      <i className="fas fa-chevron-down" />
-                                    </span>
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            id="collapseFour"
-                            className="accordion-collapse collapse show"
-                            aria-labelledby="headingFour"
-                            data-bs-parent="#accordionExample4"
-                          >
-                            <div className="accordion-body">
-                              <div className="card mb-3">
-                                <div className="card-body p-3 pb-0">
-                                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                    <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                                      <div className="form-check form-check-md me-2">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                        />
-                                      </div>
-                                      <div className="strike-info">
-                                        <h4 className="mb-1">
-                                          New User Registered
-                                        </h4>
-                                        <p>Add new user</p>
-                                      </div>
-                                    </div>
-                                    <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                                      <div className="notes-card-body d-flex align-items-center">
-                                        <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                          <i className="fas fa-circle fs-6 me-1" />
-                                          High
-                                        </p>
-                                        <p className="badge bg-outline-info mb-0">
-                                          Pending
-                                        </p>
-                                      </div>
-                                      <div className="d-flex align-items-center">
-                                        <span>
-                                          <i className="ti ti-star me-2" />
-                                        </span>
-                                        <span className="avatar avatar-md me-2">
-                                          <ImageWithBasePath
-                                            src="assets/img/profiles/avatar-03.jpg"
-                                            alt="Img"
-                                            className="img-fluid rounded-circle"
-                                          />
-                                        </span>
-                                        <Link
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                          aria-expanded="false"
-                                        >
-                                          <i className="fas fa-ellipsis-v" />
-                                        </Link>
-                                        <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#edit-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="edit" />
-                                            </span>
-                                            Edit
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete-modal"
-                                          >
-                                            <span>
-                                              <i data-feather="trash-2" />
-                                            </span>
-                                            Delete
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                          >
-                                            <span>
-                                              <i data-feather="star" />
-                                            </span>
-                                            Not Important
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#view-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="eye" />
-                                            </span>
-                                            View
-                                          </Link>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="card">
-                                <div className="card-body p-3 pb-0">
-                                  <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                    <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3 todo-strike-content">
-                                      <div className="form-check form-check-md me-2">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                        />
-                                      </div>
-                                      <div className="strike-info">
-                                        <h4 className="mb-1">
-                                          Download Complete
-                                        </h4>
-                                        <p>
-                                          Install console machines and
-                                          prerequiste softwares
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                                      <div className="notes-card-body d-flex align-items-center">
-                                        <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                          <i className="fas fa-circle fs-6 me-1" />
-                                          High
-                                        </p>
-                                        <p className="badge bg-outline-warning mb-0">
-                                          InProgress
-                                        </p>
-                                      </div>
-                                      <div className="d-flex align-items-center">
-                                        <span>
-                                          <i className="ti ti-star me-2" />
-                                        </span>
-                                        <span className="avatar avatar-md me-2">
-                                          <ImageWithBasePath
-                                            src="assets/img/profiles/avatar-04.jpg"
-                                            alt="Img"
-                                            className="img-fluid rounded-circle"
-                                          />
-                                        </span>
-                                        <Link
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                          aria-expanded="false"
-                                        >
-                                          <i className="fas fa-ellipsis-v" />
-                                        </Link>
-                                        <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#edit-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="edit" />
-                                            </span>
-                                            Edit
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete-modal"
-                                          >
-                                            <span>
-                                              <i data-feather="trash-2" />
-                                            </span>
-                                            Delete
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                          >
-                                            <span>
-                                              <i data-feather="star" />
-                                            </span>
-                                            Not Important
-                                          </Link>
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#view-note-units"
-                                          >
-                                            <span>
-                                              <i data-feather="eye" />
-                                            </span>
-                                            View
-                                          </Link>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div> */}
                     </div>
                   </div>
                 </div>
@@ -804,272 +520,151 @@ const Todo = () => {
                   aria-labelledby="v-pills-home-tab"
                 >
                   <div className="d-block">
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">Team meet at Starbucks</h4>
-                              <p>Discuss about new project</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-02.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+
+                    {
+                      loading ? (
+                        Array.from({ length: 3 }).map((_, index) => (
+                          <div className="card mb-3" key={index}>
+                            <div className="card-body p-3 pb-0">
+
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+
+                                {/* LEFT SIDE */}
+                                <div className="input-block d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="me-2">
+                                    <Skeleton circle width={20} height={20} />
+                                  </div> */}
+                                  <div className="strike-info w-100">
+                                    <Skeleton height={20} width="70%" className="mb-2" />
+                                    <Skeleton height={14} width="50%" />
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton height={25} width={80} className="me-2" />
+                                    <Skeleton height={25} width={80} />
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton width={20} height={20} className="me-3" />
+                                    <Skeleton circle width={40} height={40} className="me-3" />
+                                    <Skeleton width={20} height={20} />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">
-                                Meeting with Shaun Park at 4:50pm
-                              </h4>
-                              <p>Discuss about new project</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" /> High
-                              </p>
-                              <p className="badge bg-outline-secondary mb-0">
-                                {" "}
-                                New
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/users/user-24.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+                        ))
+                      ) : (
+                        doneTodos && doneTodos.length > 0 ? (
+                          doneTodos.map((todo: any) => (<div className="card">
+                            <div className="card-body p-3 pb-0">
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+                                <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="form-check form-check-md me-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                  />
+                                </div> */}
+                                  <div className="strike-info">
+                                    <h4 className="mb-1 text-capitalize">{todo.title}</h4>
+                                    <p
+                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(todo.description) }}
+                                    ></p>
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="notes-card-body d-flex align-items-center">
+                                    <p className={`badge 
+                                     ${todo.priority === "High"
+                                        ? "bg-outline-danger"
+                                        : todo.priority === "Medium"
+                                          ? " bg-outline-warning"
+                                          : " bg-outline-success"
+                                      }
+                                      d-inline-flex align-items-center me-2 mb-0`}>
+                                      <i className="fas fa-circle fs-6 me-1" />
+                                      {todo.priority}
+                                    </p>
+                                    <p className="badge bg-outline-info mb-0">
+                                      {todo.status}
+                                    </p>
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                     {
+                                      todo.is_important===1&&(<span>
+                                      <i className="ti ti-star me-2" />
+                                    </span>)
+                                     }
+                                    <span className="avatar avatar-md me-2">
+                                      <ImageWithBasePath
+                                        src="assets/img/profiles/avatar-05.jpg"
+                                        alt="Img"
+                                        className="img-fluid rounded-circle"
+                                      />
+                                    </span>
+                                    <Link
+                                      to="#"
+                                      data-bs-toggle="dropdown"
+                                      aria-expanded="false"
+                                    >
+                                      <i className="fas fa-ellipsis-v" />
+                                    </Link>
+                                    <div className="dropdown-menu notes-menu dropdown-menu-end">
+                                      <Link
+                                        to="#"
+                                        onClick={() => setEditId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#edit-note-units"
+                                      >
+                                        <span>
+                                          <i data-feather="edit" />
+                                        </span>
+                                        Edit
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        onClick={() => setSoftDeleteId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#trash-modal"
+                                      >
+                                        <span>
+                                          <i data-feather="trash-2" />
+                                        </span>
+                                        Delete
+                                      </Link>
+                                      <Link to="#" onClick={() => toggleImportant(todo.id, todo.is_important)} className="dropdown-item">
+                                        <span>
+                                          <i data-feather="star" />
+                                        </span>
+                                        {todo.is_important ? 'Not Important' : 'Important'}
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        onClick={() => setViewTodoId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#view-note-units"
+                                      >
+                                        <span>
+                                          <i data-feather="eye" />
+                                        </span>
+                                        View
+                                      </Link>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card mb-3">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">New User Registered</h4>
-                              <p>Add new user</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-03.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </div>))
+                        ) : (<div>Not any important todo !</div>)
+
+                      )
+                    }
+
+
                   </div>
                 </div>
 
@@ -1080,275 +675,148 @@ const Todo = () => {
                   aria-labelledby="v-pills-messages-tab"
                 >
                   <div className="d-block">
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">Team meet at Starbucks</h4>
-                              <p>Identify the implementation team</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-05.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+
+                    {
+                      loading ? (
+                        Array.from({ length: 3 }).map((_, index) => (
+                          <div className="card mb-3" key={index}>
+                            <div className="card-body p-3 pb-0">
+
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+
+                                {/* LEFT SIDE */}
+                                <div className="input-block d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="me-2">
+                                    <Skeleton circle width={20} height={20} />
+                                  </div> */}
+                                  <div className="strike-info w-100">
+                                    <Skeleton height={20} width="70%" className="mb-2" />
+                                    <Skeleton height={14} width="50%" />
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton height={25} width={80} className="me-2" />
+                                    <Skeleton height={25} width={80} />
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton width={20} height={20} className="me-3" />
+                                    <Skeleton circle width={40} height={40} className="me-3" />
+                                    <Skeleton width={20} height={20} />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">
-                                Meet Lisa to discuss project details
-                              </h4>
-                              <p>Discuss about additional features</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" /> High
-                              </p>
-                              <p className="badge bg-outline-secondary mb-0">
-                                {" "}
-                                New
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/users/user-30.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+                        ))
+                      ) : (
+                        impTodos && impTodos.length > 0 ? (
+                          impTodos.map((todo: any) => (<div className="card">
+                            <div className="card-body p-3 pb-0">
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+                                <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="form-check form-check-md me-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                  />
+                                </div> */}
+                                  <div className="strike-info">
+                                    <h4 className="mb-1 text-capitalize">{todo.title}</h4>
+                                    <p
+                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(todo.description) }}
+                                    ></p>
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="notes-card-body d-flex align-items-center">
+                                    <p className={`badge 
+                                     ${todo.priority === "High"
+                                        ? "bg-outline-danger"
+                                        : todo.priority === "Medium"
+                                          ? " bg-outline-warning"
+                                          : " bg-outline-success"
+                                      }
+                                      d-inline-flex align-items-center me-2 mb-0`}>
+                                      <i className="fas fa-circle fs-6 me-1" />
+                                      {todo.priority}
+                                    </p>
+                                    <p className="badge bg-outline-info mb-0">
+                                      {todo.status}
+                                    </p>
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    <span>
+                                      <i className="ti ti-star me-2" />
+                                    </span>
+                                    <span className="avatar avatar-md me-2">
+                                      <ImageWithBasePath
+                                        src="assets/img/profiles/avatar-05.jpg"
+                                        alt="Img"
+                                        className="img-fluid rounded-circle"
+                                      />
+                                    </span>
+                                    <Link
+                                      to="#"
+                                      data-bs-toggle="dropdown"
+                                      aria-expanded="false"
+                                    >
+                                      <i className="fas fa-ellipsis-v" />
+                                    </Link>
+                                    <div className="dropdown-menu notes-menu dropdown-menu-end">
+                                      <Link
+                                        to="#"
+                                        onClick={() => setEditId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#edit-note-units"
+                                      >
+                                        <span>
+                                          <i data-feather="edit" />
+                                        </span>
+                                        Edit
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        onClick={() => setSoftDeleteId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#trash-modal"
+                                      >
+                                        <span>
+                                          <i data-feather="trash-2" />
+                                        </span>
+                                        Delete
+                                      </Link>
+                                      <Link to="#" onClick={() => toggleImportant(todo.id, todo.is_important)} className="dropdown-item">
+                                        <span>
+                                          <i data-feather="star" />
+                                        </span>
+                                        {todo.is_important ? 'Not Important' : 'Important'}
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        onClick={() => setViewTodoId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#view-note-units"
+                                      >
+                                        <span>
+                                          <i data-feather="eye" />
+                                        </span>
+                                        View
+                                      </Link>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">Download Complete</h4>
-                              <p>
-                                Install console machines and prerequiste
-                                softwares
-                              </p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-03.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </div>))
+                        ) : (<div>Not any important todo !</div>)
+
+                      )
+                    }
+
                   </div>
                 </div>
 
@@ -1359,225 +827,153 @@ const Todo = () => {
                   aria-labelledby="v-pills-settings-tab"
                 >
                   <div className="d-block">
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">Team meet at Starbucks</h4>
-                              <p>Discuss about new project</p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-07.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+
+                    {
+                      loading ? (
+                        Array.from({ length: 3 }).map((_, index) => (
+                          <div className="card mb-3" key={index}>
+                            <div className="card-body p-3 pb-0">
+
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+
+                                {/* LEFT SIDE */}
+                                <div className="input-block d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="me-2">
+                                    <Skeleton circle width={20} height={20} />
+                                  </div> */}
+                                  <div className="strike-info w-100">
+                                    <Skeleton height={20} width="70%" className="mb-2" />
+                                    <Skeleton height={14} width="50%" />
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton height={25} width={80} className="me-2" />
+                                    <Skeleton height={25} width={80} />
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    <Skeleton width={20} height={20} className="me-3" />
+                                    <Skeleton circle width={40} height={40} className="me-3" />
+                                    <Skeleton width={20} height={20} />
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card">
-                      <div className="card-body p-3 pb-0">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap">
-                          <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="strike-info">
-                              <h4 className="mb-1">Download Complete</h4>
-                              <p>
-                                Install console machines and prerequiste
-                                softwares
-                              </p>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
-                            <div className="notes-card-body d-flex align-items-center">
-                              <p className="badge bg-outline-danger d-inline-flex align-items-center me-2 mb-0">
-                                <i className="fas fa-circle fs-6 me-1" />
-                                High
-                              </p>
-                              <p className="badge bg-outline-info mb-0">
-                                Pending
-                              </p>
-                            </div>
-                            <div className="d-flex align-items-center">
-                              <span>
-                                <i className="ti ti-star me-2" />
-                              </span>
-                              <span className="avatar avatar-md me-2">
-                                <ImageWithBasePath
-                                  src="assets/img/profiles/avatar-08.jpg"
-                                  alt="Img"
-                                  className="img-fluid rounded-circle"
-                                />
-                              </span>
-                              <Link
-                                to="#"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                              >
-                                <i className="fas fa-ellipsis-v" />
-                              </Link>
-                              <div className="dropdown-menu notes-menu dropdown-menu-end">
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#edit-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="edit" />
-                                  </span>
-                                  Edit
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#delete-modal"
-                                >
-                                  <span>
-                                    <i data-feather="trash-2" />
-                                  </span>
-                                  Delete
-                                </Link>
-                                <Link to="#" className="dropdown-item">
-                                  <span>
-                                    <i data-feather="star" />
-                                  </span>
-                                  Not Important
-                                </Link>
-                                <Link
-                                  to="#"
-                                  className="dropdown-item"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#view-note-units"
-                                >
-                                  <span>
-                                    <i data-feather="eye" />
-                                  </span>
-                                  View
-                                </Link>
+                        ))
+                      ) : (
+                        trashTodos && trashTodos.length > 0 ? (
+                          trashTodos.map((todo: any) => (<div className="card">
+                            <div className="card-body p-3 pb-0">
+                              <div className="d-flex align-items-center justify-content-between flex-wrap">
+                                <div className="input-block todo-inbox-check d-flex align-items-center w-50 mb-3">
+                                  {/* <div className="form-check form-check-md me-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                  />
+                                </div> */}
+                                  <div className="strike-info">
+                                    <h4 className="mb-1 text-capitalize">{todo.title}</h4>
+                                    <p
+                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(todo.description) }}
+                                    ></p>
+                                  </div>
+                                </div>
+                                <div className="d-flex align-items-center flex-fill justify-content-between ms-4 mb-3">
+                                  <div className="notes-card-body d-flex align-items-center">
+                                    <p className={`badge 
+                                     ${todo.priority === "High"
+                                        ? "bg-outline-danger"
+                                        : todo.priority === "Medium"
+                                          ? " bg-outline-warning"
+                                          : " bg-outline-success"
+                                      }
+                                      d-inline-flex align-items-center me-2 mb-0`}>
+                                      <i className="fas fa-circle fs-6 me-1" />
+                                      {todo.priority}
+                                    </p>
+                                    <p className="badge bg-outline-info mb-0">
+                                      {todo.status}
+                                    </p>
+                                  </div>
+                                  <div className="d-flex align-items-center">
+                                    {
+                                      todo.is_important === 1 && (<span>
+                                        <i className="ti ti-star me-2" />
+                                      </span>)
+                                    }
+                                    <span className="avatar avatar-md me-2">
+                                      <ImageWithBasePath
+                                        src="assets/img/profiles/avatar-05.jpg"
+                                        alt="Img"
+                                        className="img-fluid rounded-circle"
+                                      />
+                                    </span>
+                                    <Link
+                                      to="#"
+                                      data-bs-toggle="dropdown"
+                                      aria-expanded="false"
+                                    >
+                                      <i className="fas fa-ellipsis-v" />
+                                    </Link>
+                                    <div className="dropdown-menu notes-menu dropdown-menu-end">
+                                      <Link
+                                        to="#"
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#restore-modal"
+                                        onClick={() => setRestoreId(todo.id)}
+
+                                      >
+                                        <span>
+                                          <i data-feather="edit" />
+                                        </span>
+                                        Restore
+                                      </Link>
+                                      <Link
+                                        to="#"
+                                        onClick={() => setDeleteId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#delete-modal"
+                                      >
+                                        <span>
+                                          <i data-feather="trash-2" />
+                                        </span>
+                                        Permanent Delete
+                                      </Link>
+
+                                      <Link
+                                        to="#"
+                                        onClick={() => setViewTodoId(todo.id)}
+                                        className="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#view-note-units"
+                                      >
+                                        <span>
+                                          <i data-feather="eye" />
+                                        </span>
+                                        View
+                                      </Link>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </div>))
+                        ) : (<div>Not any important todo !</div>)
+
+                      )
+                    }
                   </div>
                 </div>
               </div>
-
-
-              {/* <div className="row custom-pagination">
-                <div className="col-md-12">
-                  <div className="paginations d-flex justify-content-end">
-                    <span>
-                      <i className="fas fa-chevron-left" />
-                    </span>
-                    <ul className="d-flex align-items-center page-wrap">
-                      <li>
-                        <Link to="#" className="active">
-                          1
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="#">2</Link>
-                      </li>
-                      <li>
-                        <Link to="#">3</Link>
-                      </li>
-                      <li>
-                        <Link to="#">4</Link>
-                      </li>
-                    </ul>
-                    <span>
-                      <i className="fas fa-chevron-right" />
-                    </span>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>
       </div>
-      <TodoModal viewTodoId={viewTodoId}/>
+      <TodoModal onAction={onAction} viewTodoId={viewTodoId} setDeleteId={setDeleteId} deleteId={deleteId} softDeleteId={softDeleteId} setSoftDeleteId={setSoftDeleteId} setRestoreId={setRestoreId} restoreId={restoreId} setEditId={setEditId} editId={editId} />
     </>
   );
 };

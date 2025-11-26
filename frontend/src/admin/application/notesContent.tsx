@@ -2299,7 +2299,7 @@ const NotesContent: React.FC<props> = ({ onAction, notes, loading, impNote, setE
                                 data-bs-target="#restore-modal"
                               >
                                 <span>
-                                  <i className="ti ti-restore" />
+                                  <i className="ti ti-restor" />
                                 </span>
                                 Restore
                               </Link>

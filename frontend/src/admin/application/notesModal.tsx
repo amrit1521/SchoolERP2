@@ -602,7 +602,7 @@ const NotesModal: React.FC<props> = ({ onAction, editId, viewNoteId, deleteId, s
         </div>
       </div>
       {/* /Soft Delete Modal */}
-      {/*Soft Delete Modal */}
+      {/*restore Modal */}
       <div className="modal fade" id="restore-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
@@ -633,7 +633,7 @@ const NotesModal: React.FC<props> = ({ onAction, editId, viewNoteId, deleteId, s
           </div>
         </div>
       </div>
-      {/* /Soft Delete Modal */}
+      {/* /restore Modal */}
       {/* View Note */}
       <div className="modal fade" id="view-note-units">
         <div className="modal-dialog modal-dialog-centered">

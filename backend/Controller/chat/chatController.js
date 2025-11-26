@@ -48,7 +48,6 @@ exports.createPrivateConversation = async (req, res) => {
   }
 };
 
-// ✅ Create Group Conversation
 exports.createGroupConversation = async (req, res) => {
   const { name, created_by, members = [] } = req.body;
   try {
@@ -96,7 +95,6 @@ exports.createGroupConversation = async (req, res) => {
   }
 };
 
-// ✅ Add Member to Existing Conversation
 exports.addMemberToConversation = async (req, res) => {
   const { conversationId } = req.params;
   const { user_id, added_by } = req.body;
@@ -121,7 +119,6 @@ exports.addMemberToConversation = async (req, res) => {
   }
 };
 
-// ✅ Get Conversation Members
 exports.getConversationMembers = async (req, res) => {
   const { conversationId } = req.params;
   try {
@@ -148,7 +145,6 @@ exports.getConversationMembers = async (req, res) => {
   }
 };
 
-// ✅ Get All Conversations for a User
 exports.getUserConversations = async (req, res) => {
   const { userId } = req.params;
 
@@ -305,7 +301,6 @@ exports.deleteRoom = async (req, res) => {
     });
   }
 };
-
 
 exports.clearRoomChat = async (req, res) => {
   const { conversationId } = req.params;
