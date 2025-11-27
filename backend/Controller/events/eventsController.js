@@ -1,259 +1,227 @@
+const { success } = require("zod");
 const db = require("../../config/db");
+const dayjs = require("dayjs");
 
-// --------------------------------------
-// Add Event
-// --------------------------------------
+
+// ADD EVENT
 exports.addEvent = async (req, res) => {
   try {
-    let {
-      title,
-      description,
-      start,
-      end,
-      all_day = 0,
-      category_id = null,
-      meta = null,
-    } = req.body;
-
-    if (!title || !start) {
+    let { title, start, end, className } = req.body;
+    if (!title || !start || !end || !className) {
       return res.status(400).json({
         success: false,
-        message: "Title and start date are required!",
+        message: "All fields are required!"
       });
     }
 
-    const [result] = await db.query(
-      `INSERT INTO events (title, description, start, end, all_day, category_id, meta) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        title,
-        description || null,
-        start,
-        end || null,
-        all_day ? 1 : 0,
-        category_id || null,
-        meta ? JSON.stringify(meta) : null,
-      ]
-    );
-
-    const [[newEvent]] = await db.query(
-      `SELECT * FROM events WHERE id = ?`,
-      [result.insertId]
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: "Event created successfully",
-      data: newEvent,
-    });
-  } catch (error) {
-    console.error("Error in addEvent:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-// --------------------------------------
-// Get All Events
-// --------------------------------------
-exports.getEvents = async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      `SELECT e.*, c.name AS category_name, c.color, c.class_name
-       FROM events e
-       LEFT JOIN categories c ON e.category_id = c.id
-       ORDER BY e.start ASC`
-    );
-
-    return res.status(200).json({
-      success: true,
-      data: rows,
-    });
-  } catch (error) {
-    console.error("Error in getEvents:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-// --------------------------------------
-// Get Single Event
-// --------------------------------------
-exports.getEventById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const [[eventRow]] = await db.query(
-      `SELECT * FROM events WHERE id = ?`,
-      [id]
-    );
-
-    if (!eventRow) {
-      return res.status(404).json({
+    if (title.trim().length < 5) {
+      return res.status(400).json({
         success: false,
-        message: "Event not found",
+        message: "Title must be at least 5 characters!"
+      });
+    }
+    const startDate = dayjs(start).format("YYYY-MM-DD");
+    const endDate = dayjs(end).format("YYYY-MM-DD");
+
+
+    if (dayjs(endDate).isBefore(startDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "End date should be after start date!"
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      data: eventRow,
-    });
-  } catch (error) {
-    console.error("Error in getEventById:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+    const [exist] = await db.query(
+      `SELECT id FROM events 
+             WHERE LOWER(title) = LOWER(?) 
+             AND start = ?`,
+      [title, startDate]
+    );
 
-// --------------------------------------
-// Update Event
-// --------------------------------------
-exports.updateEvent = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const {
-      title,
-      description,
-      start,
-      end,
-      all_day = 0,
-      category_id = null,
-      meta = null,
-    } = req.body;
-
-    if (!title || !start) {
-      return res.status(400).json({
+    if (exist.length > 0) {
+      return res.status(409).json({
         success: false,
-        message: "Title and start date are required!",
+        message: "Event with same title already exists on same date!"
       });
     }
 
     await db.query(
-      `UPDATE events 
-       SET title=?, description=?, start=?, end=?, all_day=?, category_id=?, meta=? 
-       WHERE id=?`,
-      [
-        title,
-        description || null,
-        start,
-        end,
-        all_day ? 1 : 0,
-        category_id || null,
-        meta ? JSON.stringify(meta) : null,
-        id,
-      ]
+      `INSERT INTO events (title, start, end, className) 
+             VALUES (?, ?, ?, ?)`,
+      [title, startDate, endDate, className]
     );
 
-    const [[updated]] = await db.query(
-      `SELECT * FROM events WHERE id = ?`,
-      [id]
-    );
-
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Event updated successfully",
-      data: updated,
+      message: "Event added successfully!"
     });
+
   } catch (error) {
-    console.error("Error in updateEvent:", error);
+    console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error"
     });
   }
 };
 
-// --------------------------------------
-// Delete Event
-// --------------------------------------
-exports.deleteEvent = async (req, res) => {
+
+exports.getEvents = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const [result] = await db.query(
-      `DELETE FROM events WHERE id = ?`,
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Event not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Event deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error in deleteEvent:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-// --------------------------------------
-// Get All Categories
-// --------------------------------------
-exports.getCategories = async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      `SELECT * FROM categories ORDER BY name ASC`
-    );
+    const [rows] = await db.query("SELECT id ,title,start,end,className FROM events ORDER BY id DESC");
 
     return res.status(200).json({
       success: true,
       data: rows,
     });
-  } catch (error) {
-    console.error("Error in getCategories:", error);
+
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error"
     });
   }
 };
 
-// --------------------------------------
-// Add Category
-// --------------------------------------
-exports.addCategory = async (req, res) => {
-  try {
-    const { name, color, class_name } = req.body;
 
-    if (!name) {
-      return res.status(400).json({
+exports.getEventById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query("SELECT * FROM events WHERE id = ?", [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: "Category name is required!",
+        message: "Event not found"
       });
     }
 
-    const [result] = await db.query(
-      `INSERT INTO categories (name, color, class_name) VALUES (?, ?, ?)`,
-      [name, color || null, class_name || null]
-    );
-
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Category added successfully",
-      id: result.insertId,
+      data: rows[0]
     });
-  } catch (error) {
-    console.error("Error in addCategory:", error);
+
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal server error"
+    });
+  }
+};
+
+
+exports.updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { title, start, end, className } = req.body;
+
+    // ---------- Required Fields Check ----------
+    if (!title || !start || !end || !className) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required!"
+      });
+    }
+
+    if (title.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Title must be at least 5 characters!"
+      });
+    }
+
+    const startDate = dayjs(start).format("YYYY-MM-DD");
+    const endDate = dayjs(end).format("YYYY-MM-DD");
+
+    if (dayjs(endDate).isBefore(startDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "End date should be after start date!"
+      });
+    }
+
+
+    const [eventCheck] = await db.query(`SELECT id FROM events WHERE id = ?`, [id]);
+
+    if (eventCheck.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found!"
+      });
+    }
+
+
+    const [duplicate] = await db.query(
+      `SELECT id FROM events 
+             WHERE LOWER(title) = LOWER(?) 
+             AND start = ?
+             AND id != ?`,
+      [title, startDate, id]
+    );
+
+    if (duplicate.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Another event with same title & date already exists!"
+      });
+    }
+
+    // ---------- Update ----------
+    await db.query(
+      `UPDATE events SET title=?, start=?, end=?, className=? WHERE id=?`,
+      [title, startDate, endDate, className, id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Event updated successfully!"
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+
+exports.deleteEvent = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      message: "Event Id is not provided!",
+      success: false,
+    });
+  }
+
+  try {
+    const [row] = await db.query("DELETE FROM events WHERE id=?", [id]);
+
+    if (row.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Event not found!",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Event deleted successfully!",
+      success: true,
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+      error: error.message,
     });
   }
 };
