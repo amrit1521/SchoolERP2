@@ -48,7 +48,7 @@ exports.addEvent = async (req, res) => {
     await db.query(
       `INSERT INTO events (title, start, end, className) 
              VALUES (?, ?, ?, ?)`,
-      [title, startDate, endDate, className]
+      [title, startDate, endDate, className]         
     );
 
     return res.status(201).json({

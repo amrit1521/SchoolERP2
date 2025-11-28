@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import Select from "react-select";
 
-import TodoModal from "../../core/modals/todoModal";
+// import TodoModal from "../../core/modals/todoModal";
 import { all_routes } from "../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { lastModified } from "../../core/common/selectoption/selectoption";
@@ -1496,7 +1496,7 @@ const Todo = () => {
           </div>
         </div>
       </div>
-      <TodoModal />
+      {/* <TodoModal /> */}
     </>
   );
 };

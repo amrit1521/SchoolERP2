@@ -1673,7 +1673,7 @@ const TransportModal: React.FC<TransportModalProps> = ({
                 </span>
                 <h4>Confirm Deletion</h4>
                 <p>
-                  You want to delete all the marked items, this cant be undone
+                  You want to delete this item, this cannot be undone
                   once you delete.
                 </p>
                 <div className="d-flex justify-content-center">
