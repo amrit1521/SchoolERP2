@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import dayjs from 'dayjs'
 
 export const addRotutes = async (req, res) => {
   const { keyId, routeName, status, addedOn } = req.body;
@@ -219,7 +220,7 @@ export const getAllPickupPoints = async (req, res) => {
 
 export const getAllPickupPointsForARoute = async (req, res) => {
   const { id } = req.params;
-  if(!id){
+  if (!id) {
     return res.status(200).json({
       message: "route Id not passed.",
       success: false,
@@ -228,7 +229,7 @@ export const getAllPickupPointsForARoute = async (req, res) => {
   try {
     const sql = `SELECT * FROM transport_pickupPoints where route_id=? ORDER BY id DESC`;
     const [rows] = await db.query(
-      sql,[id]
+      sql, [id]
     );
     return res.status(200).json({
       message: "Pickup points fetched successfully",
@@ -381,13 +382,15 @@ export const addVehicle = async (req, res) => {
     status,
   } = req.body;
 
+
+
   try {
     const sql =
       "INSERT INTO vehicle_info (vehicle_no, vehicle_model, made_of_year, registration_no, chassis_no, seat_capacity, gps_tracking_id, driver_id,  status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const [rows] = await db.query(sql, [
       vehicleNo,
       vehicleModel,
-      madeOfYear,
+      dayjs(madeOfYear).format('YYYY-MM-DD'),
       registrationNo,
       chassisNo,
       seatCapacity,
@@ -524,7 +527,7 @@ export const updateVehicle = async (req, res) => {
     const [rows] = await db.query(sql, [
       vehicleNo,
       vehicleModel,
-      madeOfYear,
+      dayjs(madeOfYear).format('YYYY-MM-DD'),
       registrationNo,
       chassisNo,
       seatCapacity,
@@ -653,8 +656,8 @@ export const getAllAssignedVehicles = async (req, res) => {
 };
 
 export const getAssignedVehiclesForARoute = async (req, res) => {
-  const {id} = req.params;
-   if(!id){
+  const { id } = req.params;
+  if (!id) {
     return res.status(200).json({
       message: "route Id not passed.",
       success: false,
@@ -669,7 +672,7 @@ export const getAssignedVehiclesForARoute = async (req, res) => {
       where tva.route_id = ?
       ORDER BY tva.id ASC;
     `;
-    const [rows] = await db.query(sql,[id]);
+    const [rows] = await db.query(sql, [id]);
     if (rows.length < 0) {
       return res.status(200).json({
         message: "No Assigned vehicles for this route found.",
