@@ -99,7 +99,7 @@
     "serve": "^14.2.5",
     "slick-carousel": "^1.8.1",
     "start": "^5.1.0",
-    "sweetalert2": "^11.22.2",
+    "sweetalert2": "^11.26.3",
     "sweetalert2-react-content": "^5.1.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",

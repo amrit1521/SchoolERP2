@@ -17,3 +17,5 @@ export const msgReactionsUpdate = (data:object , messageId:number )=>api.post(`/
 
 // chats
 export const createPrivateRoom = (data: object) => api.post('chat/create-private', data)
+export const clearRoomChat = (conversationId:number)=>api.delete(`/chat/clearroom/${conversationId}`)
+export const deleteRoom = (conversationId:number)=>api.delete(`/chat/delroom/${conversationId}`)

@@ -398,6 +398,7 @@ export const resetPassword = (data: object) =>
 export const createUserAccount = (data: object) => api.post('/auth/create', data)
 export const deleteUserAccount = (id: number) => api.delete(`/auth//deleteacc/${id}`)
 export const deleteUserAccount2 = (id: number) => api.delete(`/auth//deleteacc2/${id}`)
+export const aboutMe = (id:number)=>api.get(`/auth/aboutme/${id}`)
 
 // transport =================================================================
 export const addRoutes = (data: object) =>

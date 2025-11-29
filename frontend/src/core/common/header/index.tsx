@@ -9,9 +9,19 @@ import {
   setExpandMenu,
   setMobileSidebar,
 } from "../../data/redux/sidebarSlice";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { all_routes } from "../../../school_module/router/all_routes";
 import { toast } from "react-toastify";
+import { aboutMe, Imageurl } from "../../../service/api";
+import Skeleton from "react-loading-skeleton";
+
+interface User {
+  id: number | null,
+  name: string,
+  role: string;
+  img: string
+}
+
 const Header = () => {
   const routes = all_routes;
   const dispatch = useDispatch();
@@ -75,11 +85,47 @@ const Header = () => {
       }
     }
   };
-const navigate = useNavigate()
-  const handleLogout = ()=>{
-     localStorage.removeItem('token')
-     toast.success('logout successgully !')
-     navigate(`${routes.login}`)
+
+  // code
+  const navigate = useNavigate()
+  const [user, setUser] = useState<User>({
+    id: null,
+    name: '',
+    role: '',
+    img: '',
+  })
+  const [loading, setLoading] = useState<boolean>(false)
+  const fetchUser = async (id: number) => {
+    if (!id) return
+    setLoading(true)
+    try {
+
+      const { data } = await aboutMe(id)
+      if (data.success) {
+        setUser(data.data)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const parsed = JSON.parse(token);
+      fetchUser(parsed.id);
+    }
+  }, []);
+
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    toast.success('logout successgully !')
+    navigate(`${routes.login}`)
   }
 
   return (
@@ -333,9 +379,8 @@ const navigate = useNavigate()
                 )}
               </div>
               <div
-                className={`pe-1 ${
-                  notificationVisible ? "notification-item-show" : ""
-                }`}
+                className={`pe-1 ${notificationVisible ? "notification-item-show" : ""
+                  }`}
                 id="notification_item"
               >
                 <Link
@@ -528,27 +573,46 @@ const navigate = useNavigate()
                   data-bs-toggle="dropdown"
                 >
                   <span className="avatar avatar-md rounded">
-                    <ImageWithBasePath
-                      src="assets/img/profiles/avatar-27.jpg"
-                      alt="Img"
-                      className="img-fluid"
-                    />
+                    {
+                      !user.img ? (<ImageWithBasePath
+                        src="assets/img/profiles/avatar-27.jpg"
+                        alt="Img"
+                        className="img-fluid"
+                      />) : (<img
+                        src={user?.img ? `${Imageurl}/${user.img}` : 'assets/img/profiles/avatar-27.jpg'}
+                        alt="Img"
+                        className="img-fluid"
+                      />)
+                    }
+
                   </span>
                 </Link>
                 <div className="dropdown-menu">
                   <div className="d-block">
-                    <div className="d-flex align-items-center p-2">
-                      <span className="avatar avatar-md me-2 online avatar-rounded">
-                        <ImageWithBasePath
-                          src="assets/img/profiles/avatar-27.jpg"
-                          alt="img"
-                        />
-                      </span>
-                      <div>
-                        <h6>Kevin Larry</h6>
-                        <p className="text-primary mb-0">Administrator</p>
+                    {loading ? (
+                      <div className="d-flex align-items-center p-2">
+                        <Skeleton circle={true} height={40} width={40} className="me-2" />
+                        <div style={{ width: "100%" }}>
+                          <Skeleton height={12} width={120} />
+                          <Skeleton height={10} width={80} className="mt-1" />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="d-flex align-items-center p-2">
+                        <span className="avatar avatar-md me-2 online avatar-rounded">
+                          <img
+                            src={user?.img ? `${Imageurl}/${user.img}` : "assets/img/profiles/avatar-27.jpg"}
+                            alt="User"
+                          />
+                        </span>
+                        <div>
+                          <h6 className="text-capitalize">{user.name}</h6>
+                          <p className="text-primary mb-0 text-capitalize">{user.role}</p>
+                        </div>
+                      </div>
+                    )}
+
+
                     <hr className="m-0" />
                     <Link
                       className="dropdown-item d-inline-flex align-items-center p-2"
@@ -566,9 +630,9 @@ const navigate = useNavigate()
                     </Link>
                     <hr className="m-0" />
                     <button
-                    onClick={handleLogout}
+                      onClick={handleLogout}
                       className="dropdown-item d-inline-flex align-items-center p-2"
-                     
+
                     >
                       <i className="ti ti-login me-2" />
                       Logout

@@ -13,7 +13,7 @@ import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, createPrivateRoom, deleteMessage, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, reportUser, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, clearRoomChat, createPrivateRoom, deleteMessage, deleteRoom, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, reportUser, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
@@ -25,6 +25,8 @@ import { FaStopCircle } from "react-icons/fa";
 import { Audiourl, Documenturl, Imageurl, Videourl } from "../../service/api";
 import { MdOutlineAttachFile } from "react-icons/md";
 import EmojiPicker from "emoji-picker-react";
+import Swal from "sweetalert2";
+
 
 
 const Chat = () => {
@@ -287,7 +289,97 @@ const Chat = () => {
     }
   };
 
-  // ===================== ON MOUNT =====================
+  // clear chat
+  const clearChat = async (conversationId: number | null) => {
+    if (!conversationId) return;
+
+    const confirmation = await Swal.fire({
+      title: "Are you sure?",
+      text: "This will permanently delete the entire chat history!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, clear chat",
+      cancelButtonText: "Cancel",
+      customClass: {
+        popup: "rounded-4 shadow-lg",
+        confirmButton: "px-4 py-2 rounded-3",
+        cancelButton: "px-4 py-2 rounded-3"
+      }
+    });
+
+
+    if (!confirmation.isConfirmed) return;
+    try {
+      const { data } = await clearRoomChat(conversationId);
+
+      if (data.success) {
+        Swal.fire({
+          title: "Cleared!",
+          text: "Chat cleared successfully.",
+          icon: "success",
+          timer: 1000,
+          showConfirmButton: false,
+        });
+
+        setSpeRoomConv([]);
+      }
+
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const deleteChat = async (conversationId: number | null) => {
+    if (!conversationId) return;
+
+    const confirmation = await Swal.fire({
+      title: "Delete Chat?",
+      text: "This will permanently delete this chat room and all messages!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it",
+      cancelButtonText: "Cancel",
+      customClass: {
+        popup: "rounded-4 shadow-lg",
+        confirmButton: "px-4 py-2 rounded-3",
+        cancelButton: "px-4 py-2 rounded-3",
+      },
+    });
+
+    if (!confirmation.isConfirmed) return;
+    try {
+      const { data } = await deleteRoom(conversationId);
+      if (data.success) {  
+        setConversationId(null);
+        setOtherUser({});
+        setSpeRoomConv([]);
+
+        if (currentUserId) {
+          fetchAllConverationWithUser(currentUserId);
+        }
+
+        
+        Swal.fire({
+          title: "Deleted!",
+          text: "Chat room and messages deleted successfully.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
+  };
+
+
+  // ON MOUNT 
   useEffect(() => {
     const tokenStr = localStorage.getItem("token");
     if (tokenStr) {
@@ -319,9 +411,7 @@ const Chat = () => {
     e.target.value = "";
   };
 
-
-
-  // ===================== SEND MESSAGE ======================
+  // SEND MESSAGE 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -379,7 +469,7 @@ const Chat = () => {
     }
   };
 
-  // ================== AUDIO RECORDING ===================
+  // AUDIO RECORDING
   useEffect(() => {
     if (isRecording && !isPaused) {
       timerRef.current = setInterval(() => {
@@ -637,6 +727,8 @@ const Chat = () => {
     }
   };
 
+  // emoji
+
   const pickerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -651,10 +743,11 @@ const Chat = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showPicker]);
-  
+
   const onEmojiClick = (emoji: any) => {
     setMessage((prev) => prev + emoji.emoji);
   };
+
 
 
   return (
@@ -1105,13 +1198,13 @@ const Chat = () => {
                                 </span>
                                 Disappearing Message
                               </Link>
-                              <Link to="#" className="dropdown-item">
+                              <Link to="#" onClick={() => clearChat(conversationId)} className="dropdown-item">
                                 <span>
                                   <i className="bx bx-brush-alt" />
                                 </span>
                                 Clear Message
                               </Link>
-                              <Link to="#" className="dropdown-item">
+                              <Link to="#" onClick={() => deleteChat(conversationId)} className="dropdown-item">
                                 <span>
                                   <i className="bx bx-trash-alt" />
                                 </span>
@@ -3897,7 +3990,7 @@ const Chat = () => {
 
                           </li>
                           <li>
-                            <Link to="#">
+                            <Link to="#" onClick={() => deleteChat(conversationId)}>
                               <div className="stared-group">
                                 <span className="delete-message">
                                   {" "}

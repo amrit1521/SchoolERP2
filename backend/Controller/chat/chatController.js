@@ -276,7 +276,7 @@ exports.deleteRoom = async (req, res) => {
   try {
     // Delete conversation
     const [row] = await db.query(
-      `DELETE FROM conversation WHERE id = ?`,
+      `DELETE FROM conversations WHERE id = ?`,
       [conversationId]
     );
 

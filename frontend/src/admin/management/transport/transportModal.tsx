@@ -48,9 +48,6 @@ const TransportModal: React.FC<TransportModalProps> = ({
   // const day = String(today.getDate()).padStart(2, "0");
   // const formattedDate = `${month}-${day}-${year}`;
   // const defaultValue = dayjs(formattedDate);
-
-
-
   // routes modules:
   const [routeName, setRouteName] = useState("");
   const [isActive, setIsActive] = useState(false);

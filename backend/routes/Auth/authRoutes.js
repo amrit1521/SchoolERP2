@@ -14,4 +14,7 @@ router.delete('/deleteacc2/:id' , authController.deleteAccount2)
 // only for trial
 router.post("/send-otp-mobile", authController.sendOtpMobile);
 
+// about me
+router.get('/aboutme/:id' , authController.aboutMe)
+
 module.exports = router;

@@ -378,6 +378,57 @@ exports.deleteAccount2 = async (req, res) => {
   }
 };
 
+exports.aboutMe = async (req, res) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "Id not provided !", success: false });
+  }
+
+  try {
+    const sql = `
+      SELECT 
+      u.id ,
+        CONCAT(u.firstname, " ", u.lastname) AS name,
+        rl.role_name AS role,
+        CASE 
+          WHEN rl.role_name = 'student' THEN s.stu_img
+          WHEN rl.role_name = 'teacher' THEN t.img_src
+          WHEN rl.role_name = 'parent' THEN p.img_src
+          WHEN u.remark = 'staff' THEN st.img_src
+          ELSE NULL
+        END AS img
+      FROM users u
+      JOIN roles rl ON rl.id = u.roll_id
+      LEFT JOIN students s ON s.stu_id = u.id
+      LEFT JOIN teachers t ON t.user_id = u.id
+      LEFT JOIN staffs st ON st.user_id = u.id
+      LEFT JOIN parents_info p ON p.parent_user_id = u.id
+      WHERE u.id = ?
+    `;
+
+    const [row] = await db.query(sql, [id]);
+
+    if (row.length === 0) {
+      return res.status(400).json({ message: 'User not found !', success: false });
+    }
+
+    return res.status(200).json({
+      message: "User found successfully !",
+      success: true,
+      data: row[0]
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error !",
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+
 
 
 
