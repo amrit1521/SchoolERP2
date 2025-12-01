@@ -79,8 +79,8 @@ const TodoModal: React.FC<props> = ({ onAction, viewTodoId, setDeleteId, deleteI
     } else if (formData.description.length < 20) {
       errors.description = "Description must be at least 20 characters";
     }
-    else if (formData.description.length > 60) {
-      errors.description = "Description must be under 60 characters";
+    else if (formData.description.length > 150) {
+      errors.description = "Description must be under 150 characters";
     }
 
     return errors;
@@ -441,7 +441,7 @@ const TodoModal: React.FC<props> = ({ onAction, viewTodoId, setDeleteId, deleteI
                             </p>
                           )}
 
-                          <p>Maximum 60 Characters</p>
+                          <p>Maximum 150 Characters</p>
                         </div>
                       </div>
                     </div>
@@ -642,7 +642,7 @@ const TodoModal: React.FC<props> = ({ onAction, viewTodoId, setDeleteId, deleteI
                             </p>
                           )}
 
-                          <p>Maximum 60 Characters</p>
+                          <p>Maximum 150 Characters</p>
                         </div>
                       </div>
                     </div>

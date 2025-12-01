@@ -17,6 +17,7 @@ import {
   getAllClassSubject,
   getAllLeaveRequest,
   getAllNotice,
+  getAllTodosForDashboard,
   getAllUserCountForRole,
   getPerforamanceCountPerClass,
   getTodayStaffAttendanceCounts,
@@ -34,6 +35,8 @@ import { allExpense, allIncome } from "../../../service/accounts";
 import { allClassRoutine } from "../../../service/classApi";
 import Table from "../../../core/common/dataTable/index";
 import { DatePicker } from "antd";
+import { format, isToday, isYesterday } from 'date-fns';
+
 
 interface UserRoleCount {
   imagePath: string;
@@ -481,11 +484,13 @@ const AdminDashboard = () => {
   const [filterType, setFilterType] = useState("today");
   const [allClassSubject, setAllClassSubject] = useState<any[]>([]);
   const [classSubject, setClassSubject] = useState<any[]>([]);
-  const [classOption, setClassOption] = useState<any[]>([]); // Store class options for dropdown
+  const [classOption, setClassOption] = useState<any[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<{
     value: number | null;
     label: string | null;
   }>({ value: null, label: null });
+  const [todos, setTodos] = useState<any[]>([])
+
   const fetchStudent = async (id: number) => {
     try {
       const { data } = await getUsersById(id);
@@ -513,7 +518,7 @@ const AdminDashboard = () => {
         filter.date ? filter?.date : new Date()
       );
       if (data.success) {
-        console.log("today attendance: ", data.result);
+
         setSudentAttendanceCount(data?.result);
         setStudentDonutChart((prevChart: any) => ({
           ...prevChart,
@@ -531,7 +536,7 @@ const AdminDashboard = () => {
         filter.date ? filter?.date : new Date()
       );
       if (data.success) {
-        console.log("teacher attendance: ", data.result);
+
         setTeacherAttendanceCount(data?.result);
         SetTeacherDonutChart((prevChart: any) => ({
           ...prevChart,
@@ -548,7 +553,7 @@ const AdminDashboard = () => {
         filter.date ? filter?.date : new Date()
       );
       if (data.success) {
-        console.log("staff attendance: ", data.result);
+
         setStaffAttendanceCount(data?.result);
         SetStaffDonutChart((prevChart: any) => ({
           ...prevChart,
@@ -734,7 +739,7 @@ const AdminDashboard = () => {
     try {
       const { data } = await getPerforamanceCountPerClass();
       if (data.success) {
-        console.log("performance Category Count: ", data.data);
+
         setPerformanceCategoryCount(data.data);
       }
     } catch (error) {
@@ -755,7 +760,7 @@ const AdminDashboard = () => {
     try {
       const { data } = await getAllLeaveRequest();
       if (data.success) {
-        console.log("leave Request: ", data.result);
+
         setLeaveRequest(data.result);
       }
     } catch (error) {
@@ -799,7 +804,7 @@ const AdminDashboard = () => {
     const cls = performanceCategoryCount.find(
       (c) => c.class_name === selectedClass
     );
-    console.log("cls : ", cls);
+
     if (cls) {
       setClassDonutChart((prev: any) => ({
         ...prev,
@@ -816,6 +821,47 @@ const AdminDashboard = () => {
   const handleClassSelect = (className: any) => {
     setSelectedClass(className);
   };
+
+
+
+  const handleApplyApproveRequest = async (id: number) => {
+    try {
+      const { data } = await ActionOnLeaveRequest({ status: "1" }, id);
+      if (data.success) {
+
+        fetchAllLeaveRequest();
+        toast.success("leave Request Approved Successfully.");
+      }
+    } catch (error) {
+      console.error("Error in approving leave request:", error);
+    }
+  };
+  const handleApplyRejectRequest = async (id: number) => {
+    try {
+      const { data } = await ActionOnLeaveRequest({ status: "2" }, id);
+      if (data.success) {
+
+        toast.success("leave Request rejected.");
+        fetchAllLeaveRequest();
+      }
+    } catch (error) {
+      console.error("Error in rejecting leave request:", error);
+    }
+  };
+
+  // todos
+  const fetchTodos = async () => {
+    try {
+
+      const { data } = await getAllTodosForDashboard()
+      if (data.success) {
+        setTodos(data.data)
+      }
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   useEffect(() => {
     if (filter?.date) {
@@ -881,32 +927,8 @@ const AdminDashboard = () => {
     fetchRoutines();
     fetchAllLeaveRequest();
     fetchAllClassSubjects();
-  }, []);
-
-  const handleApplyApproveRequest = async (id: number) => {
-    try {
-      const { data } = await ActionOnLeaveRequest({ status: "1" }, id);
-      if (data.success) {
-        console.log("leave Request approved: ", data);
-        fetchAllLeaveRequest();
-        toast.success("leave Request Approved Successfully.");
-      }
-    } catch (error) {
-      console.error("Error in approving leave request:", error);
-    }
-  };
-  const handleApplyRejectRequest = async (id: number) => {
-    try {
-      const { data } = await ActionOnLeaveRequest({ status: "2" }, id);
-      if (data.success) {
-        console.log("leave Request rejected: ", data);
-        toast.success("leave Request rejected.");
-        fetchAllLeaveRequest();
-      }
-    } catch (error) {
-      console.error("Error in rejecting leave request:", error);
-    }
-  };
+    fetchTodos()
+  }, [admin]);
 
   const columns = [
     {
@@ -943,7 +965,26 @@ const AdminDashboard = () => {
     //   dataIndex: "room_no",
     // },
   ];
-  console.log("filtered Leaves : ", filteredLeaves);
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(date.getTime() + istOffset);
+
+    if (isToday(istTime)) return format(istTime, "hh:mm a");
+    if (isYesterday(istTime)) return `Yesterday, ${format(istTime, "hh:mm a")}`;
+    return format(istTime, "dd MMM, hh:mm a");
+  };
+
+  type StatusType = "Pending" | "Onhold" | "InProgress" | "Done";
+
+  const statusColors: Record<StatusType, string> = {
+    Pending: "badge-soft-warning",
+    Onhold: "badge-soft-secondary",
+    InProgress: "badge-soft-info",
+    Done: "badge-soft-success",
+  };
+
 
   return (
     <>
@@ -1245,8 +1286,8 @@ const AdminDashboard = () => {
                     <Link
                       to={routes.events}
                       className="link-primary fw-medium me-2"
-                      // data-bs-toggle="modal"
-                      // data-bs-target="#add_event"
+                    // data-bs-toggle="modal"
+                    // data-bs-target="#add_event"
                     >
                       <i className="ti ti-square-plus me-1" />
                       Add New
@@ -1265,70 +1306,69 @@ const AdminDashboard = () => {
                       {/* Event Item */}
                       {upCommingEvents
                         ? upCommingEvents.map((event: any, index: number) => {
-                            return (
-                              <div
-                                className="border-start border-skyblue border-3 shadow-sm p-3 mb-3"
-                                key={index}
-                              >
-                                <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
-                                  <span className="avatar p-1 me-2 bg-teal-transparent flex-shrink-0">
-                                    <i className="ti ti-user-edit text-info fs-20" />
-                                  </span>
-                                  <div className="flex-fill">
-                                    <h6 className="mb-1">{event?.title}</h6>
-                                    <p className="d-flex align-items-center">
-                                      <i className="ti ti-calendar me-1" />
-                                      {new Date(
-                                        event?.event_date?.split("|")[0]
-                                      ).toDateString()}{" "}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="d-flex align-items-center justify-content-between">
-                                  <p className="mb-0">
-                                    <i className="ti ti-clock me-1" />
-
-                                    {event?.event_time
-                                      ?.split("|")
-                                      .map((t: any) => {
-                                        const [h, m] = t.split(":").map(Number);
-                                        return `${(h % 12 || 12)
-                                          .toString()
-                                          .padStart(2, "0")}:${m
-                                          .toString()
-                                          .padStart(2, "0")}${
-                                          h >= 12 ? "PM" : "AM"
-                                        }`;
-                                      })
-                                      .join(" - ")}
+                          return (
+                            <div
+                              className="border-start border-skyblue border-3 shadow-sm p-3 mb-3"
+                              key={index}
+                            >
+                              <div className="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                <span className="avatar p-1 me-2 bg-teal-transparent flex-shrink-0">
+                                  <i className="ti ti-user-edit text-info fs-20" />
+                                </span>
+                                <div className="flex-fill">
+                                  <h6 className="mb-1">{event?.title}</h6>
+                                  <p className="d-flex align-items-center">
+                                    <i className="ti ti-calendar me-1" />
+                                    {new Date(
+                                      event?.event_date?.split("|")[0]
+                                    ).toDateString()}{" "}
                                   </p>
-                                  <div className="avatar-list-stacked avatar-group-sm">
-                                    <span className="avatar border-0">
-                                      <ImageWithBasePath
-                                        src="assets/img/parents/parent-01.jpg"
-                                        className="rounded-circle"
-                                        alt="img"
-                                      />
-                                    </span>
-                                    <span className="avatar border-0">
-                                      <ImageWithBasePath
-                                        src="assets/img/parents/parent-07.jpg"
-                                        className="rounded-circle"
-                                        alt="img"
-                                      />
-                                    </span>
-                                    <span className="avatar border-0">
-                                      <ImageWithBasePath
-                                        src="assets/img/parents/parent-02.jpg"
-                                        className="rounded-circle"
-                                        alt="img"
-                                      />
-                                    </span>
-                                  </div>
                                 </div>
                               </div>
-                            );
-                          })
+                              <div className="d-flex align-items-center justify-content-between">
+                                <p className="mb-0">
+                                  <i className="ti ti-clock me-1" />
+
+                                  {event?.event_time
+                                    ?.split("|")
+                                    .map((t: any) => {
+                                      const [h, m] = t.split(":").map(Number);
+                                      return `${(h % 12 || 12)
+                                        .toString()
+                                        .padStart(2, "0")}:${m
+                                          .toString()
+                                          .padStart(2, "0")}${h >= 12 ? "PM" : "AM"
+                                        }`;
+                                    })
+                                    .join(" - ")}
+                                </p>
+                                <div className="avatar-list-stacked avatar-group-sm">
+                                  <span className="avatar border-0">
+                                    <ImageWithBasePath
+                                      src="assets/img/parents/parent-01.jpg"
+                                      className="rounded-circle"
+                                      alt="img"
+                                    />
+                                  </span>
+                                  <span className="avatar border-0">
+                                    <ImageWithBasePath
+                                      src="assets/img/parents/parent-07.jpg"
+                                      className="rounded-circle"
+                                      alt="img"
+                                    />
+                                  </span>
+                                  <span className="avatar border-0">
+                                    <ImageWithBasePath
+                                      src="assets/img/parents/parent-02.jpg"
+                                      className="rounded-circle"
+                                      alt="img"
+                                    />
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
                         : ""}
                       {/* /Event Item */}
                       {/* Event Item */}
@@ -1711,32 +1751,32 @@ const AdminDashboard = () => {
                         </div> */}
                         {topperStudentList
                           ? topperStudentList.map(
-                              (topper: any, index: number) => {
-                                return (
-                                  <div className="item h-100" key={index}>
-                                    <div className="d-flex justify-content-between flex-column h-100">
-                                      <div>
-                                        <h5 className="mb-3 text-white">
-                                          Topper Students
-                                        </h5>
-                                        <h4 className="mb-1 text-white">
-                                          {topper?.studentName}
-                                        </h4>
-                                        <p className="text-light">
-                                          {topper?.class_name}
-                                          {", "}
-                                          {topper?.section_name?.toUpperCase()}
-                                        </p>
-                                      </div>
-                                      <img
-                                        src={`${Imageurl}/${topper?.image}`}
-                                        alt="img"
-                                      />
+                            (topper: any, index: number) => {
+                              return (
+                                <div className="item h-100" key={index}>
+                                  <div className="d-flex justify-content-between flex-column h-100">
+                                    <div>
+                                      <h5 className="mb-3 text-white">
+                                        Topper Students
+                                      </h5>
+                                      <h4 className="mb-1 text-white">
+                                        {topper?.studentName}
+                                      </h4>
+                                      <p className="text-light">
+                                        {topper?.class_name}
+                                        {", "}
+                                        {topper?.section_name?.toUpperCase()}
+                                      </p>
                                     </div>
+                                    <img
+                                      src={`${Imageurl}/${topper?.image}`}
+                                      alt="img"
+                                    />
                                   </div>
-                                );
-                              }
-                            )
+                                </div>
+                              );
+                            }
+                          )
                           : ""}
                         <div className="item h-100">
                           <div className="d-flex justify-content-between flex-column h-100">
@@ -1849,8 +1889,8 @@ const AdminDashboard = () => {
                     <Link
                       to={routes?.classRoutine}
                       className="link-primary fw-medium"
-                      // data-bs-toggle="modal"
-                      // data-bs-target="#add_class_routine"
+                    // data-bs-toggle="modal"
+                    // data-bs-target="#add_class_routine"
                     >
                       <i className="ti ti-square-plus me-1" />
                       Add New
@@ -2065,8 +2105,8 @@ const AdminDashboard = () => {
                         {filterType === "today"
                           ? "Today"
                           : filterType === "thisWeek"
-                          ? "This Week"
-                          : "Last Week"}
+                            ? "This Week"
+                            : "Last Week"}
                       </button>
                       <ul
                         className="dropdown-menu mt-2 p-2"
@@ -2109,80 +2149,80 @@ const AdminDashboard = () => {
                     <div className="card mb-2">
                       {filteredLeaves
                         ? filteredLeaves
-                            .filter((item) => item.role_id != 0)
-                            .map((leave: any) => {
-                              return (
-                                <div className="card-body p-3">
-                                  <div className="d-flex align-items-center justify-content-between mb-3">
-                                    <div className="d-flex align-items-center overflow-hidden me-2">
-                                      <Link
-                                        to="#"
-                                        className="avatar avatar-lg flex-shrink-0 me-2"
-                                      >
-                                        <img
-                                          src={`${Imageurl}/${leave?.img}`}
-                                          alt="student"
-                                        />
-                                      </Link>
-                                      <div className="overflow-hidden">
-                                        <h6 className="mb-1 text-truncate">
-                                          <Link to="#">{leave?.user_name}</Link>
-                                          <span className="badge badge-soft-danger ms-1">
-                                            {leave?.leave_type}
-                                          </span>
-                                        </h6>
-                                        <p className="text-truncate">
-                                          {leave?.role_name}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="d-flex align-items-center">
-                                      <Link
-                                        to="#"
-                                        className="avatar avatar-xs p-0 btn btn-success me-1"
-                                        onClick={() =>
-                                          handleApplyApproveRequest(leave?.id)
-                                        }
-                                      >
-                                        <i className="ti ti-checks" />
-                                      </Link>
-                                      <Link
-                                        to="#"
-                                        className="avatar avatar-xs p-0 btn btn-danger"
-                                        onClick={() =>
-                                          handleApplyRejectRequest(leave?.id)
-                                        }
-                                      >
-                                        <i className="ti ti-x" />
-                                      </Link>
+                          .filter((item) => item.role_id != 0)
+                          .map((leave: any) => {
+                            return (
+                              <div className="card-body p-3">
+                                <div className="d-flex align-items-center justify-content-between mb-3">
+                                  <div className="d-flex align-items-center overflow-hidden me-2">
+                                    <Link
+                                      to="#"
+                                      className="avatar avatar-lg flex-shrink-0 me-2"
+                                    >
+                                      <img
+                                        src={`${Imageurl}/${leave?.img}`}
+                                        alt="student"
+                                      />
+                                    </Link>
+                                    <div className="overflow-hidden">
+                                      <h6 className="mb-1 text-truncate">
+                                        <Link to="#">{leave?.user_name}</Link>
+                                        <span className="badge badge-soft-danger ms-1">
+                                          {leave?.leave_type}
+                                        </span>
+                                      </h6>
+                                      <p className="text-truncate">
+                                        {leave?.role_name}
+                                      </p>
                                     </div>
                                   </div>
-                                  <div className="d-flex align-items-center justify-content-between border-top pt-3">
-                                    <p className="mb-0">
-                                      Leave :{" "}
-                                      <span className="fw-semibold">
-                                        {[
-                                          dayjs(leave?.from_date),
-                                          dayjs(leave?.to_date),
-                                        ]
-                                          .sort((a: any, b: any) => a - b)
-                                          .map((d) => d.format("D MMM"))
-                                          .join("–")}
-                                      </span>
-                                    </p>
-                                    <p>
-                                      Apply on :{" "}
-                                      <span className="fw-semibold">
-                                        {" "}
-                                        {dayjs(leave?.applied_on).format(
-                                          "D MMM"
-                                        )}
-                                      </span>
-                                    </p>
+                                  <div className="d-flex align-items-center">
+                                    <Link
+                                      to="#"
+                                      className="avatar avatar-xs p-0 btn btn-success me-1"
+                                      onClick={() =>
+                                        handleApplyApproveRequest(leave?.id)
+                                      }
+                                    >
+                                      <i className="ti ti-checks" />
+                                    </Link>
+                                    <Link
+                                      to="#"
+                                      className="avatar avatar-xs p-0 btn btn-danger"
+                                      onClick={() =>
+                                        handleApplyRejectRequest(leave?.id)
+                                      }
+                                    >
+                                      <i className="ti ti-x" />
+                                    </Link>
                                   </div>
                                 </div>
-                              );
-                            })
+                                <div className="d-flex align-items-center justify-content-between border-top pt-3">
+                                  <p className="mb-0">
+                                    Leave :{" "}
+                                    <span className="fw-semibold">
+                                      {[
+                                        dayjs(leave?.from_date),
+                                        dayjs(leave?.to_date),
+                                      ]
+                                        .sort((a: any, b: any) => a - b)
+                                        .map((d) => d.format("D MMM"))
+                                        .join("–")}
+                                    </span>
+                                  </p>
+                                  <p>
+                                    Apply on :{" "}
+                                    <span className="fw-semibold">
+                                      {" "}
+                                      {dayjs(leave?.applied_on).format(
+                                        "D MMM"
+                                      )}
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })
                         : ""}
                     </div>
                     {/* <div className="card mb-0">
@@ -2408,35 +2448,35 @@ const AdminDashboard = () => {
                     <div className="notice-widget">
                       {allNotice
                         ? allNotice.map((notice: any) => {
-                            return (
-                              <div className="d-sm-flex align-items-center justify-content-between mb-4">
-                                <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
-                                  {/* <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
+                          return (
+                            <div className="d-sm-flex align-items-center justify-content-between mb-4">
+                              <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
+                                {/* <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
                                     <i className="ti ti-books fs-16" />
                                   </span> */}
-                                  <span className="bg-danger-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
-                                    <i className="ti ti-bell-check fs-16" />
-                                  </span>
-                                  <div className="overflow-hidden">
-                                    <h6 className="text-truncate mb-1">
-                                      {notice.title}
-                                    </h6>
-                                    <p>
-                                      <i className="ti ti-calendar me-2" />
-                                      Added on:{" "}
-                                      {new Date(
-                                        notice.addedOn
-                                      ).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="badge bg-light text-dark">
-                                  <i className="ti ti-clck me-1" />
-                                  {notice?.days}
+                                <span className="bg-danger-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
+                                  <i className="ti ti-bell-check fs-16" />
                                 </span>
+                                <div className="overflow-hidden">
+                                  <h6 className="text-truncate mb-1">
+                                    {notice.title}
+                                  </h6>
+                                  <p>
+                                    <i className="ti ti-calendar me-2" />
+                                    Added on:{" "}
+                                    {new Date(
+                                      notice.addedOn
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
-                            );
-                          })
+                              <span className="badge bg-light text-dark">
+                                <i className="ti ti-clck me-1" />
+                                {notice?.days}
+                              </span>
+                            </div>
+                          );
+                        })
                         : ""}
                       {/* <div className="d-sm-flex align-items-center justify-content-between mb-4">
                         <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
@@ -2685,24 +2725,24 @@ const AdminDashboard = () => {
                   <div className="card-body">
                     {players
                       ? players?.map((player: any) => {
-                          return (
-                            <div className="d-flex align-items-center overflow-hidden p-3 mb-3 border rounded">
-                              <span className="avatar avatar-lg flex-shrink-0 rounded me-2">
-                                <img
-                                  src={`${Imageurl}/${player?.stu_img}`}
-                                  alt="student"
-                                />
-                              </span>
-                              <div className="overflow-hidden">
-                                <h6 className="mb-1 text-truncate">
-                                  {player?.name} Participated in{" "}
-                                  {player?.sports}
-                                </h6>
-                                <p>This event took place in Our School</p>
-                              </div>
+                        return (
+                          <div className="d-flex align-items-center overflow-hidden p-3 mb-3 border rounded">
+                            <span className="avatar avatar-lg flex-shrink-0 rounded me-2">
+                              <img
+                                src={`${Imageurl}/${player?.stu_img}`}
+                                alt="student"
+                              />
+                            </span>
+                            <div className="overflow-hidden">
+                              <h6 className="mb-1 text-truncate">
+                                {player?.name} Participated in{" "}
+                                {player?.sports}
+                              </h6>
+                              <p>This event took place in Our School</p>
                             </div>
-                          );
-                        })
+                          </div>
+                        );
+                      })
                       : ""}
                     {/* <div className="d-flex align-items-center overflow-hidden p-3 mb-3 border rounded">
                       <span className="avatar avatar-lg flex-shrink-0 rounded me-2">
@@ -2787,112 +2827,48 @@ const AdminDashboard = () => {
                   </div>
                   <div className="card-body">
                     <ul className="list-group list-group-flush todo-list">
-                      <li className="list-group-item py-3 px-0 pt-0">
-                        <div className="d-sm-flex align-items-center justify-content-between">
-                          <div className="d-flex align-items-center overflow-hidden me-2 todo-strike-content">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                defaultChecked
-                              />
+                      {
+                        todos && todos.length > 0 ? (todos.map((t) => (
+                          <li className="list-group-item py-3 px-0 pt-0">
+                            <div className="d-sm-flex align-items-center justify-content-between">
+                              <div className="d-flex align-items-center overflow-hidden me-2 ">
+                                {/* <div className="form-check form-check-md me-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    defaultChecked
+                                  />
+                                </div> */}
+                                <div className="overflow-hidden">
+                                  <h6 className="mb-1 text-truncate">
+                                    {t.title}
+                                  </h6>
+                                  {
+                                    t.is_important === 1 && (<span>
+                                      <i className="fas fa-star text-warning" />
+                                    </span>)
+                                  }
+
+
+
+                                  <p>{formatTime(t.created_at)}</p>
+                                </div>
+                              </div>
+                              <div className="d-flex flex-column gap-1">
+                                <div className={`badge ${t.assignee === 'all_teachers'?"badge-soft-warning":"badge-soft-danger"}`}>
+                                  {t.assignee === 'all_teachers' ? 'Teachers' : 'Staffs'}
+                                </div>
+                                <div
+                                  className={`badge ${statusColors[t.status as keyof typeof statusColors]} mt-2 mt-sm-0`}
+                                >
+                                  {t.status}
+                                </div>
+
+                              </div>
+
                             </div>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                Send Reminder to Students
-                              </h6>
-                              <p>01:00 PM</p>
-                            </div>
-                          </div>
-                          <span className="badge badge-soft-success mt-2 mt-sm-0">
-                            Compeleted
-                          </span>
-                        </div>
-                      </li>
-                      <li className="list-group-item py-3 px-0">
-                        <div className="d-sm-flex align-items-center justify-content-between">
-                          <div className="d-flex align-items-center overflow-hidden me-2">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                Create Routine to new staff
-                              </h6>
-                              <p>04:50 PM</p>
-                            </div>
-                          </div>
-                          <span className="badge badge-soft-skyblue mt-2 mt-sm-0">
-                            Inprogress
-                          </span>
-                        </div>
-                      </li>
-                      <li className="list-group-item py-3 px-0">
-                        <div className="d-sm-flex align-items-center justify-content-between">
-                          <div className="d-flex align-items-center overflow-hidden me-2">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                Extra Class Info to Students
-                              </h6>
-                              <p>04:55 PM</p>
-                            </div>
-                          </div>
-                          <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                            Yet to Start
-                          </span>
-                        </div>
-                      </li>
-                      <li className="list-group-item py-3 px-0">
-                        <div className="d-sm-flex align-items-center justify-content-between">
-                          <div className="d-flex align-items-center overflow-hidden me-2">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                Fees for Upcoming Academics
-                              </h6>
-                              <p>04:55 PM</p>
-                            </div>
-                          </div>
-                          <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                            Yet to Start
-                          </span>
-                        </div>
-                      </li>
-                      <li className="list-group-item py-3 px-0 pb-0">
-                        <div className="d-sm-flex align-items-center justify-content-between">
-                          <div className="d-flex align-items-center overflow-hidden me-2">
-                            <div className="form-check form-check-md me-2">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                              />
-                            </div>
-                            <div className="overflow-hidden">
-                              <h6 className="mb-1 text-truncate">
-                                English - Essay on Visit
-                              </h6>
-                              <p>05:55 PM</p>
-                            </div>
-                          </div>
-                          <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                            Yet to Start
-                          </span>
-                        </div>
-                      </li>
+                          </li>))) : (<>No todos</>)
+                      }
                     </ul>
                   </div>
                 </div>

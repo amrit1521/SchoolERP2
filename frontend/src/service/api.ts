@@ -36,6 +36,7 @@ export const getAllLeaveRequest = () =>
   api.get("/admindashboard/getleaverequest");
 export const ActionOnLeaveRequest = (data: any, id: number) =>
   api.patch(`/admindashboard/actionleaverequest/${id}`, data);
+export const getAllTodosForDashboard = ()=>api.get('/todo/alltodosfordash')
 
 // teacher dashboard apis:
 export const getSpecTeacherAttendance = (id: number) =>

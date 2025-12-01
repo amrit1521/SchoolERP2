@@ -33,18 +33,14 @@ const Sidebar = () => {
     if (tokenStr) {
       const token = JSON.parse(tokenStr);
     
-      if (token.role == "1") {
+      if (token.rolename.toLowerCase() == "admin") {
         setCustomSide([...SidebarData]);
-        // navigate(`${routes.adminDashboard}`);
-      } else if (token.role == "2") {
+      } else if (token.rolename.toLowerCase() == "teacher") {
         setCustomSide([...TeacherSidebarData]);
-        // navigate(`${routes.teacherDashboard}`);
-      } else if (token.role == "3") {
+      } else if (token.rolename.toLowerCase()== "student") {
         setCustomSide([...StudentSidebarData]);
-        // navigate(`${routes.studentDashboard}`);
-      } else if (token.role == "6") {
+      } else if (token.rolename.toLowerCase() == "parent") {
         setCustomSide([...ParentSidebarData]);
-        // navigate(`${parent_routes.parentDashboard}`);
       } else {
         navigate(`${routes.login}`);
       }

@@ -88,6 +88,25 @@ exports.getTodos = async (req, res) => {
     }
 };
 
+exports.getTodosForDashoard = async (req, res) => {
+    try {
+        const [rows] = await db.query("SELECT id,title,status,is_important,assignee, created_at FROM todos WHERE is_trashed=0 ORDER BY id DESC");
+
+        return res.status(200).json({
+            success: true,
+            data: rows,
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
+    }
+};
+
+
 exports.getTodoById = async (req, res) => {
     try {
         const { id } = req.params;

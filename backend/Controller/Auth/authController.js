@@ -22,9 +22,19 @@ exports.login = async (req, res) => {
     }
 
     // === Find user ===
-    const [users] = await db.query(
-      "SELECT id, email, password ,roll_id FROM users WHERE email = ? LIMIT 1",
-      [email]
+    const sql = `
+    SELECT 
+      u.id, 
+      u.email, 
+      u.password ,
+      u.roll_id,
+      r.role_name AS rolename
+       FROM users u
+      JOIN roles r ON r.id = u.roll_id
+       WHERE email = ? LIMIT 1
+       `
+
+    const [users] = await db.query(sql,[email]
     );
 
 
@@ -46,7 +56,7 @@ exports.login = async (req, res) => {
 
     // === Generate JWT ===
     const token = jwt.sign(
-      { id: user.id, role: user.roll_id },
+      { id: user.id, role: user.roll_id ,rolename:user.rolename},
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );

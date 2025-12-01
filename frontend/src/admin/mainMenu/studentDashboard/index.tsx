@@ -14,6 +14,7 @@ import { DatePicker } from "antd";
 import {
   examNameForOption,
   getAllNotice,
+  getAllTodosForDashboard,
   getExamResult,
   getLeaveData,
   getSpecStudentAttendance,
@@ -28,6 +29,7 @@ import { toast } from "react-toastify";
 import CommonSelect from "../../../core/common/commonSelect";
 import { student_routes } from "../../router/student_routes";
 import { getAllSubjectForStudent } from "../../../service/studentapi";
+import { format, isToday, isYesterday } from "date-fns";
 
 interface AllSubject {
   id: number;
@@ -302,6 +304,7 @@ const StudentDasboard = () => {
   const [feeReminder, setFeeReminder] = useState<any[]>([]);
   const [studentClassTeachers, setStudentClassTeachers] = useState<any[]>([]);
   const [allSubject, setAllSubject] = useState<AllSubject[]>([]);
+  const [todos, setTodos] = useState<any[]>([])
   const fetchStudentAttendance = async (rollNo: number) => {
     try {
       const { data } = await getSpecStudentAttendance(rollNo);
@@ -540,6 +543,19 @@ const StudentDasboard = () => {
     }
   };
 
+  const fetchTodos = async () => {
+    try {
+
+      const { data } = await getAllTodosForDashboard()
+      if (data.success) {
+        setTodos(data.data)
+      }
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   useEffect(() => {
     if (examOptions) {
       fetchExamResult(student?.rollnum);
@@ -603,7 +619,27 @@ const StudentDasboard = () => {
       fetchUpCommingEvents(parsetoken?.role);
     }
     fetchNotice();
+    fetchTodos()
   }, []);
+
+  const formatTime = (dateString: any) => {
+    const date = new Date(dateString);
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(date.getTime() + istOffset);
+
+    if (isToday(istTime)) return format(istTime, "hh:mm a");
+    if (isYesterday(istTime)) return `Yesterday, ${format(istTime, "hh:mm a")}`;
+    return format(istTime, "dd MMM, hh:mm a");
+  };
+
+  type StatusType = "Pending" | "Onhold" | "InProgress" | "Done";
+
+  const statusColors: Record<StatusType, string> = {
+    Pending: "badge-soft-warning",
+    Onhold: "badge-soft-secondary",
+    InProgress: "badge-soft-info",
+    Done: "badge-soft-success",
+  };
 
   return (
     <>
@@ -967,53 +1003,52 @@ const StudentDasboard = () => {
                   >
                     {upCommingEvents
                       ? upCommingEvents.map((event: any, index: number) => {
-                          return (
-                            <div
-                              className="p-3 pb-0 mb-3 border rounded"
-                              key={index}
-                            >
-                              <div className="d-flex align-items-center justify-content-between">
-                                <h5 className="mb-3">{event?.title}</h5>
-                                <span className="badge badge-soft-danger d-inline-flex align-items-center mb-3">
+                        return (
+                          <div
+                            className="p-3 pb-0 mb-3 border rounded"
+                            key={index}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <h5 className="mb-3">{event?.title}</h5>
+                              <span className="badge badge-soft-danger d-inline-flex align-items-center mb-3">
+                                <i className="ti ti-clock me-1" />
+                                {event?.days}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div className="mb-3">
+                                <h6 className="mb-1">
+                                  {event?.event_category}
+                                </h6>
+                                <p>
                                   <i className="ti ti-clock me-1" />
-                                  {event?.days}
-                                </span>
-                              </div>
-                              <div className="d-flex justify-content-between align-items-center">
-                                <div className="mb-3">
-                                  <h6 className="mb-1">
-                                    {event?.event_category}
-                                  </h6>
-                                  <p>
-                                    <i className="ti ti-clock me-1" />
-                                    {event?.event_time
-                                      ?.split("|")
-                                      .map((t: any) => {
-                                        const [h, m] = t.split(":").map(Number);
-                                        return `${(h % 12 || 12)
+                                  {event?.event_time
+                                    ?.split("|")
+                                    .map((t: any) => {
+                                      const [h, m] = t.split(":").map(Number);
+                                      return `${(h % 12 || 12)
+                                        .toString()
+                                        .padStart(2, "0")}:${m
                                           .toString()
-                                          .padStart(2, "0")}:${m
-                                          .toString()
-                                          .padStart(2, "0")}${
-                                          h >= 12 ? "PM" : "AM"
+                                          .padStart(2, "0")}${h >= 12 ? "PM" : "AM"
                                         }`;
-                                      })
-                                      .join(" - ")}
-                                  </p>
-                                </div>
-                                <div className="mb-3 text-end">
-                                  <p className="mb-1">
-                                    <i className="ti ti-calendar-bolt me-1" />
-                                    {new Date(
-                                      event?.event_date?.split("|")[0]
-                                    ).toDateString()}{" "}
-                                  </p>
-                                  {/* <p className="text-primary">Room No : 15</p> */}
-                                </div>
+                                    })
+                                    .join(" - ")}
+                                </p>
+                              </div>
+                              <div className="mb-3 text-end">
+                                <p className="mb-1">
+                                  <i className="ti ti-calendar-bolt me-1" />
+                                  {new Date(
+                                    event?.event_date?.split("|")[0]
+                                  ).toDateString()}{" "}
+                                </p>
+                                {/* <p className="text-primary">Room No : 15</p> */}
                               </div>
                             </div>
-                          );
-                        })
+                          </div>
+                        );
+                      })
                       : ""}
                   </div>
                   {/* <div className="p-3 pb-0 mb-3 border rounded">
@@ -1130,63 +1165,63 @@ const StudentDasboard = () => {
                   <ul className="list-group list-group-flush">
                     {studentHomeWork
                       ? studentHomeWork.map((homework: any, index: number) => {
-                          return (
-                            <li
-                              className="list-group-item py-3 px-0 pb-0"
-                              key={index}
-                            >
-                              <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                <div className="d-flex align-items-center overflow-hidden mb-3">
-                                  <Link
-                                    to="#"
-                                    className="avatar avatar-xl flex-shrink-0 me-2"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/home-work/home-work-01.jpg"
-                                      alt="img"
-                                    />
-                                  </Link>
-                                  <div className="overflow-hidden">
-                                    <p className="d-flex align-items-center text-info mb-1">
-                                      <i className="ti ti-tag me-2" />
-                                      {homework?.subject}
-                                    </p>
-                                    <h6 className="text-truncate mb-1">
-                                      <Link to={routes.classHomeWork}>
-                                        {homework?.description}
+                        return (
+                          <li
+                            className="list-group-item py-3 px-0 pb-0"
+                            key={index}
+                          >
+                            <div className="d-flex align-items-center justify-content-between flex-wrap">
+                              <div className="d-flex align-items-center overflow-hidden mb-3">
+                                <Link
+                                  to="#"
+                                  className="avatar avatar-xl flex-shrink-0 me-2"
+                                >
+                                  <ImageWithBasePath
+                                    src="assets/img/home-work/home-work-01.jpg"
+                                    alt="img"
+                                  />
+                                </Link>
+                                <div className="overflow-hidden">
+                                  <p className="d-flex align-items-center text-info mb-1">
+                                    <i className="ti ti-tag me-2" />
+                                    {homework?.subject}
+                                  </p>
+                                  <h6 className="text-truncate mb-1">
+                                    <Link to={routes.classHomeWork}>
+                                      {homework?.description}
+                                    </Link>
+                                  </h6>
+                                  <div className="d-flex align-items-center flex-wrap">
+                                    <div className="d-flex align-items-center border-end me-1 pe-1">
+                                      <Link
+                                        to={routes.teacherDetails}
+                                        className="avatar avatar-xs flex-shrink-0 me-2"
+                                      >
+                                        <img
+                                          src={`${Imageurl}/${homework?.img_src}`}
+                                          className="rounded-circle"
+                                          alt="teacher"
+                                        />
                                       </Link>
-                                    </h6>
-                                    <div className="d-flex align-items-center flex-wrap">
-                                      <div className="d-flex align-items-center border-end me-1 pe-1">
-                                        <Link
-                                          to={routes.teacherDetails}
-                                          className="avatar avatar-xs flex-shrink-0 me-2"
-                                        >
-                                          <img
-                                            src={`${Imageurl}/${homework?.img_src}`}
-                                            className="rounded-circle"
-                                            alt="teacher"
-                                          />
-                                        </Link>
-                                        <p className="text-dark">
-                                          {homework?.firstname}
-                                          {homework?.lastname}
-                                        </p>
-                                      </div>
-                                      <p>
-                                        Due by :{" "}
-                                        {dayjs(homework?.submissionDate).format(
-                                          "D MMM YYYY"
-                                        )}
+                                      <p className="text-dark">
+                                        {homework?.firstname}
+                                        {homework?.lastname}
                                       </p>
                                     </div>
+                                    <p>
+                                      Due by :{" "}
+                                      {dayjs(homework?.submissionDate).format(
+                                        "D MMM YYYY"
+                                      )}
+                                    </p>
                                   </div>
                                 </div>
-                                <CircleProgress value={80} />
                               </div>
-                            </li>
-                          );
-                        })
+                              <CircleProgress value={80} />
+                            </div>
+                          </li>
+                        );
+                      })
                       : ""}
                   </ul>
                 </div>
@@ -1330,39 +1365,39 @@ const StudentDasboard = () => {
                 >
                   {leaveData
                     ? leaveData?.map((leave: any, index: number) => {
-                        return (
-                          <div
-                            className="bg-light-300 d-sm-flex align-items-center justify-content-between p-3 mb-3"
-                            key={index}
-                          >
-                            <div className="d-flex align-items-center mb-2 mb-sm-0">
-                              <div className="avatar avatar-lg bg-danger-transparent flex-shrink-0 me-2">
-                                <i className="ti ti-medical-cross" />
-                              </div>
-                              <div>
-                                <h6 className="mb-1">{leave?.leave_type}</h6>
-                                <p>
-                                  Date :{" "}
-                                  {dayjs(leave?.applied_on).format(
-                                    "D MMM YYYY"
-                                  )}
-                                </p>
-                              </div>
+                      return (
+                        <div
+                          className="bg-light-300 d-sm-flex align-items-center justify-content-between p-3 mb-3"
+                          key={index}
+                        >
+                          <div className="d-flex align-items-center mb-2 mb-sm-0">
+                            <div className="avatar avatar-lg bg-danger-transparent flex-shrink-0 me-2">
+                              <i className="ti ti-medical-cross" />
                             </div>
-                            {leave?.status ? (
-                              <span className="badge bg-skyblue d-inline-flex align-items-center">
-                                <i className="ti ti-circle-filled fs-5 me-1" />{" "}
-                                Approved
-                              </span>
-                            ) : (
-                              <span className="badge bg-danger d-inline-flex align-items-center">
-                                <i className="ti ti-circle-filled fs-5 me-1" />
-                                Declined
-                              </span>
-                            )}
+                            <div>
+                              <h6 className="mb-1">{leave?.leave_type}</h6>
+                              <p>
+                                Date :{" "}
+                                {dayjs(leave?.applied_on).format(
+                                  "D MMM YYYY"
+                                )}
+                              </p>
+                            </div>
                           </div>
-                        );
-                      })
+                          {leave?.status ? (
+                            <span className="badge bg-skyblue d-inline-flex align-items-center">
+                              <i className="ti ti-circle-filled fs-5 me-1" />{" "}
+                              Approved
+                            </span>
+                          ) : (
+                            <span className="badge bg-danger d-inline-flex align-items-center">
+                              <i className="ti ti-circle-filled fs-5 me-1" />
+                              Declined
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
                     : []}
                 </div>
               </div>
@@ -1387,17 +1422,17 @@ const StudentDasboard = () => {
                   <div className="d-flex align-items-center flex-wrap">
                     {filteredExamResult
                       ? filteredExamResult?.subjects?.map(
-                          (sub: any, i: number) => {
-                            return (
-                              <span
-                                className="badge badge-soft-primary badge-md me-1 mb-3"
-                                key={i}
-                              >
-                                {sub?.subject_name} : {sub?.mark_obtained}{" "}
-                              </span>
-                            );
-                          }
-                        )
+                        (sub: any, i: number) => {
+                          return (
+                            <span
+                              className="badge badge-soft-primary badge-md me-1 mb-3"
+                              key={i}
+                            >
+                              {sub?.subject_name} : {sub?.mark_obtained}{" "}
+                            </span>
+                          );
+                        }
+                      )
                       : ""}
                   </div>
                   <ReactApexChart
@@ -1429,33 +1464,33 @@ const StudentDasboard = () => {
                 >
                   {feeReminder
                     ? feeReminder.map((reminder: any, index: number) => {
-                        return (
-                          <div
-                            className="d-flex align-items-center justify-content-between py-3"
-                            key={index}
-                          >
-                            <div className="d-flex align-items-center overflow-hidden me-2">
-                              <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
-                                <i className="ti ti-bus-stop fs-16" />
-                              </span>
-                              <div className="overflow-hidden">
-                                <h6 className="text-truncate mb-1">
-                                  {reminder?.fee_type}
-                                </h6>
-                                <p>{reminder?.AmountPay}</p>
-                              </div>
-                            </div>
-                            <div className="text-end">
-                              <h6 className="mb-1">Last Date</h6>
-                              <p>
-                                {dayjs(reminder?.collectionDate).format(
-                                  "D MMM YYYY"
-                                )}
-                              </p>
+                      return (
+                        <div
+                          className="d-flex align-items-center justify-content-between py-3"
+                          key={index}
+                        >
+                          <div className="d-flex align-items-center overflow-hidden me-2">
+                            <span className="bg-info-transparent avatar avatar-lg me-2 rounded-circle flex-shrink-0">
+                              <i className="ti ti-bus-stop fs-16" />
+                            </span>
+                            <div className="overflow-hidden">
+                              <h6 className="text-truncate mb-1">
+                                {reminder?.fee_type}
+                              </h6>
+                              <p>{reminder?.AmountPay}</p>
                             </div>
                           </div>
-                        );
-                      })
+                          <div className="text-end">
+                            <h6 className="mb-1">Last Date</h6>
+                            <p>
+                              {dayjs(reminder?.collectionDate).format(
+                                "D MMM YYYY"
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
                     : ""}
                 </div>
               </div>
@@ -1476,38 +1511,38 @@ const StudentDasboard = () => {
                   <div className="notice-widget">
                     {allNotice
                       ? allNotice.map((notice: any, i: number) => {
-                          return (
-                            <div
-                              className="d-sm-flex align-items-center justify-content-between mb-4"
-                              key={i}
-                            >
-                              <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
-                                {/* <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
+                        return (
+                          <div
+                            className="d-sm-flex align-items-center justify-content-between mb-4"
+                            key={i}
+                          >
+                            <div className="d-flex align-items-center overflow-hidden me-2 mb-2 mb-sm-0">
+                              {/* <span className="bg-primary-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
                                     <i className="ti ti-books fs-16" />
                                   </span> */}
-                                <span className="bg-danger-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
-                                  <i className="ti ti-bell-check fs-16" />
-                                </span>
-                                <div className="overflow-hidden">
-                                  <h6 className="text-truncate mb-1">
-                                    {notice.title}
-                                  </h6>
-                                  <p>
-                                    <i className="ti ti-calendar me-2" />
-                                    Added on:{" "}
-                                    {new Date(
-                                      notice.addedOn
-                                    ).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="badge bg-light text-dark">
-                                <i className="ti ti-clck me-1" />
-                                {notice?.days}
+                              <span className="bg-danger-transparent avatar avatar-md me-2 rounded-circle flex-shrink-0">
+                                <i className="ti ti-bell-check fs-16" />
                               </span>
+                              <div className="overflow-hidden">
+                                <h6 className="text-truncate mb-1">
+                                  {notice.title}
+                                </h6>
+                                <p>
+                                  <i className="ti ti-calendar me-2" />
+                                  Added on:{" "}
+                                  {new Date(
+                                    notice.addedOn
+                                  ).toLocaleDateString()}
+                                </p>
+                              </div>
                             </div>
-                          );
-                        })
+                            <span className="badge bg-light text-dark">
+                              <i className="ti ti-clck me-1" />
+                              {notice?.days}
+                            </span>
+                          </div>
+                        );
+                      })
                       : ""}
                   </div>
                 </div>
@@ -1534,28 +1569,28 @@ const StudentDasboard = () => {
                   <ul className="list-group">
                     {allSubject
                       ? allSubject.map((sub: any, index: number) => (
-                          <li className="list-group-item" key={index}>
-                            <div className="row align-items-center">
-                              <div className="col-sm-4">
-                                <p className="text-dark">
-                                  {sub.name}({sub.code})
-                                </p>
-                              </div>
-                              <div className="col-sm-8">
-                                <div className="progress progress-xs flex-grow-1">
-                                  <div
-                                    className="progress-bar bg-primary rounded"
-                                    role="progressbar"
-                                    style={{ width: `${20 * (index + 1)}%` }}
-                                    aria-valuenow={30}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                  />
-                                </div>
+                        <li className="list-group-item" key={index}>
+                          <div className="row align-items-center">
+                            <div className="col-sm-4">
+                              <p className="text-dark">
+                                {sub.name}({sub.code})
+                              </p>
+                            </div>
+                            <div className="col-sm-8">
+                              <div className="progress progress-xs flex-grow-1">
+                                <div
+                                  className="progress-bar bg-primary rounded"
+                                  role="progressbar"
+                                  style={{ width: `${20 * (index + 1)}%` }}
+                                  aria-valuenow={30}
+                                  aria-valuemin={0}
+                                  aria-valuemax={100}
+                                />
                               </div>
                             </div>
-                          </li>
-                        ))
+                          </div>
+                        </li>
+                      ))
                       : null}
                   </ul>
                 </div>
@@ -1597,112 +1632,48 @@ const StudentDasboard = () => {
                 </div>
                 <div className="card-body">
                   <ul className="list-group list-group-flush todo-list">
-                    <li className="list-group-item py-3 px-0 pt-0">
-                      <div className="d-sm-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center overflow-hidden me-2 todo-strike-content">
-                          <div className="form-check form-check-md me-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              defaultChecked
-                            />
+                    {
+                      todos && todos.length > 0 ? (todos.map((t) => (
+                        <li className="list-group-item py-3 px-0 pt-0">
+                          <div className="d-sm-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center overflow-hidden me-2 ">
+                              {/* <div className="form-check form-check-md me-2">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    defaultChecked
+                                  />
+                                </div> */}
+                              <div className="overflow-hidden">
+                                <h6 className="mb-1 text-truncate">
+                                  {t.title}
+                                </h6>
+                                {
+                                  t.is_important === 1 && (<span>
+                                    <i className="fas fa-star text-warning" />
+                                  </span>)
+                                }
+
+
+
+                                <p>{formatTime(t.created_at)}</p>
+                              </div>
+                            </div>
+                            <div className="d-flex flex-column gap-1">
+                              <div className={`badge ${t.assignee === 'all_teachers' ? "badge-soft-warning" : "badge-soft-danger"}`}>
+                                {t.assignee === 'all_teachers' ? 'Teachers' : 'Staffs'}
+                              </div>
+                              <div
+                                className={`badge ${statusColors[t.status as keyof typeof statusColors]} mt-2 mt-sm-0`}
+                              >
+                                {t.status}
+                              </div>
+
+                            </div>
+
                           </div>
-                          <div className="overflow-hidden">
-                            <h6 className="mb-1 text-truncate">
-                              Send Reminder to Students
-                            </h6>
-                            <p>01:00 PM</p>
-                          </div>
-                        </div>
-                        <span className="badge badge-soft-success mt-2 mt-sm-0">
-                          Compeleted
-                        </span>
-                      </div>
-                    </li>
-                    <li className="list-group-item py-3 px-0">
-                      <div className="d-sm-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center overflow-hidden me-2">
-                          <div className="form-check form-check-md me-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                          </div>
-                          <div className="overflow-hidden">
-                            <h6 className="mb-1 text-truncate">
-                              Create Routine to new staff
-                            </h6>
-                            <p>04:50 PM</p>
-                          </div>
-                        </div>
-                        <span className="badge badge-soft-skyblue mt-2 mt-sm-0">
-                          Inprogress
-                        </span>
-                      </div>
-                    </li>
-                    <li className="list-group-item py-3 px-0">
-                      <div className="d-sm-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center overflow-hidden me-2">
-                          <div className="form-check form-check-md me-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                          </div>
-                          <div className="overflow-hidden">
-                            <h6 className="mb-1 text-truncate">
-                              Extra Class Info to Students
-                            </h6>
-                            <p>04:55 PM</p>
-                          </div>
-                        </div>
-                        <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                          Yet to Start
-                        </span>
-                      </div>
-                    </li>
-                    <li className="list-group-item py-3 px-0">
-                      <div className="d-sm-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center overflow-hidden me-2">
-                          <div className="form-check form-check-md me-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                          </div>
-                          <div className="overflow-hidden">
-                            <h6 className="mb-1 text-truncate">
-                              Fees for Upcoming Academics
-                            </h6>
-                            <p>04:55 PM</p>
-                          </div>
-                        </div>
-                        <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                          Yet to Start
-                        </span>
-                      </div>
-                    </li>
-                    <li className="list-group-item py-3 px-0 pb-0">
-                      <div className="d-sm-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center overflow-hidden me-2">
-                          <div className="form-check form-check-md me-2">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                          </div>
-                          <div className="overflow-hidden">
-                            <h6 className="mb-1 text-truncate">
-                              English - Essay on Visit
-                            </h6>
-                            <p>05:55 PM</p>
-                          </div>
-                        </div>
-                        <span className="badge badge-soft-warning mt-2 mt-sm-0">
-                          Yet to Start
-                        </span>
-                      </div>
-                    </li>
+                        </li>))) : (<>No todos</>)
+                    }
                   </ul>
                 </div>
               </div>

@@ -5,6 +5,7 @@ const router = express.Router()
 
 router.post('/addtodo', todoController.addTodo)
 router.get('/alltodos', todoController.getTodos)
+router.get('/alltodosfordash', todoController.getTodosForDashoard)
 router.get('/spetodo/:id', todoController.getTodoById)
 router.patch('/softdeltodo/:id' , todoController.softDeleteTodo)
 router.patch('/restore/:id' ,todoController.restoreTodo)

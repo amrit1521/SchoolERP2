@@ -354,7 +354,7 @@ const Chat = () => {
     if (!confirmation.isConfirmed) return;
     try {
       const { data } = await deleteRoom(conversationId);
-      if (data.success) {  
+      if (data.success) {
         setConversationId(null);
         setOtherUser({});
         setSpeRoomConv([]);
@@ -363,7 +363,7 @@ const Chat = () => {
           fetchAllConverationWithUser(currentUserId);
         }
 
-        
+
         Swal.fire({
           title: "Deleted!",
           text: "Chat room and messages deleted successfully.",
@@ -690,9 +690,12 @@ const Chat = () => {
   const formatMessageTimeInConversation = (dateString: any) => {
 
     const date = new Date(dateString);
-    if (isToday(date)) return format(date, "hh:mm a");
-    if (isYesterday(date)) return `Yesterday, ${format(date, "hh:mm a")}`;
-    return format(date, "dd MMM, hh:mm a");
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(date.getTime() + istOffset);
+
+    if (isToday(istTime)) return format(istTime, "hh:mm a");
+    if (isYesterday(istTime)) return `Yesterday, ${format(istTime, "hh:mm a")}`;
+    return format(istTime, "dd MMM, hh:mm a");
   };
 
   // report user
