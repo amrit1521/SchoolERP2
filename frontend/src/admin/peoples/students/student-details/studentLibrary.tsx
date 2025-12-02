@@ -18,6 +18,7 @@ export interface IssuedBook {
   bookImg: string;
   bookName: string;
   status: string;
+  return_date:string|null
 }
 
 
@@ -217,6 +218,12 @@ const StudentLibrary = () => {
                                           <Skeleton.Input active style={{ width: "60%", height: 16, marginTop: 6 }} />
                                         </div>
                                       </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <Skeleton.Input active style={{ width: "80%", height: 16 }} />
+                                          
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -255,6 +262,12 @@ const StudentLibrary = () => {
                                         <div className="mb-3">
                                           <span className="fs-12 mb-1">Last Date</span>
                                           <p className="text-dark">{dayjs(book.last_date).format('DD MMM YYYY')}</p>
+                                        </div>
+                                      </div>
+                                      <div className="col-sm-6">
+                                        <div className="mb-3">
+                                          <span className="fs-12 mb-1">Return Date</span>
+                                          <p className="text-dark">{book.return_date?dayjs(book.return_date).format('DD MMM YYYY'):'--'}</p>
                                         </div>
                                       </div>
                                     </div>

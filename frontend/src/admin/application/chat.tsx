@@ -49,7 +49,7 @@ const Chat = () => {
 
   const routes = all_routes;
   // const [open1, setOpen1] = React.useState(false);
-  const [open2, setOpen2] = React.useState(false);
+  const [open2, setOpen2] = useState(false);
   const [isShow, setShow] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   // const [showEmoji2, setShowEmoji2] = useState(false);
@@ -102,7 +102,12 @@ const Chat = () => {
     text: "",
   });
   const [showPicker, setShowPicker] = useState(false);
+  const [currImg, setCurrImg] = useState<string | null>(null)
   const chatAreaRef = useRef<HTMLDivElement | null>(null);
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|\b[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(\/[^\s]*)?/;
+
+
+
 
   const scrollToBottom = () => {
     if (chatAreaRef.current) {
@@ -1094,8 +1099,13 @@ const Chat = () => {
                         <div className="avatar avatar-lg me-2">
                           {
                             otherUser.user_img ? (<img
+                              onClick={() => {
+                                setOpen2(true)
+                                setCurrImg(otherUser.user_img)
+                              }}
                               src={`${Imageurl}/${otherUser.user_img}`}
                               className="rounded-circle dreams_chat"
+                              style={{ cursor: 'pointer' }}
                               alt="image"
                             />) : (
                               <ImageWithBasePath
@@ -1268,67 +1278,68 @@ const Chat = () => {
                     <div className="chat-body">
                       <div className="messages">
                         {
-                          loading2 ? <Spinner /> : (
+                          loading2 ? <div className="mx-auto"><Spinner /> </div> : (
 
-                            speRoomConv.length == 0 ? <div className="d-flex align-items-center">
-                              start chat
-                            </div> : (speRoomConv && speRoomConv.map((m: any) => (
-                              m.sender_id === currentUserId ? <> <div className="chats chats-right">
-                                <div className="chat-content">
-                                  <div className="chat-profile-name text-end">
+                            speRoomConv.length == 0 ? <div className="text-center mx-auto mt-5 text-muted" style={{ fontSize: '14PX' }}>
+                              Select a User to begin the conversation !
+                            </div>
+                              : (speRoomConv && speRoomConv.map((m: any) => (
+                                m.sender_id === currentUserId ? <> <div className="chats chats-right">
+                                  <div className="chat-content">
+                                    <div className="chat-profile-name text-end">
 
-                                    <h6>
-                                      {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
-                                    </h6>
-                                    {m.isStar === 1 && (
-                                      <span className="reported-label text-danger">⭐</span>
-                                    )}
-                                    {m.isReported === 1 && (
-                                      <span className="reported-label text-danger">⚠</span>
-                                    )}
-                                    <div className="chat-action-btns ms-3">
-                                      <div className="chat-action-col">
-                                        <Link
-                                          className="#"
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                        >
-                                          <i className="bx bx-dots-horizontal-rounded" />
-                                        </Link>
-                                        <div className="dropdown-menu chat-drop-menu dropdown-menu-end">
+                                      <h6>
+                                        {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
+                                      </h6>
+                                      {m.isStar === 1 && (
+                                        <span className="reported-label text-danger">⭐</span>
+                                      )}
+                                      {m.isReported === 1 && (
+                                        <span className="reported-label text-danger">⚠</span>
+                                      )}
+                                      <div className="chat-action-btns ms-3">
+                                        <div className="chat-action-col">
                                           <Link
+                                            className="#"
                                             to="#"
-                                            className="dropdown-item message-info-left"
+                                            data-bs-toggle="dropdown"
                                           >
-                                            <span>
-                                              <i className="bx bx-info-circle" />
-                                            </span>
-                                            Message Info{" "}
+                                            <i className="bx bx-dots-horizontal-rounded" />
                                           </Link>
-                                          <button
-                                            onClick={() => setReplyData({
-                                              id: m.id,
-                                              text: m.message_text
-                                            })}
-                                            className="dropdown-item">
-                                            <span>
-                                              <i className="bx bx-share" />
-                                            </span>
-                                            Reply
-                                          </button>
+                                          <div className="dropdown-menu chat-drop-menu dropdown-menu-end">
+                                            <Link
+                                              to="#"
+                                              className="dropdown-item message-info-left"
+                                            >
+                                              <span>
+                                                <i className="bx bx-info-circle" />
+                                              </span>
+                                              Message Info{" "}
+                                            </Link>
+                                            <button
+                                              onClick={() => setReplyData({
+                                                id: m.id,
+                                                text: m.message_text
+                                              })}
+                                              className="dropdown-item">
+                                              <span>
+                                                <i className="bx bx-share" />
+                                              </span>
+                                              Reply
+                                            </button>
 
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#forward-message"
-                                          >
-                                            <span>
-                                              <i className="bx bx-reply" />
-                                            </span>
-                                            Forward
-                                          </Link>
-                                          {/* <button
+                                            <Link
+                                              to="#"
+                                              className="dropdown-item"
+                                              data-bs-toggle="modal"
+                                              data-bs-target="#forward-message"
+                                            >
+                                              <span>
+                                                <i className="bx bx-reply" />
+                                              </span>
+                                              Forward
+                                            </Link>
+                                            {/* <button
                                             onClick={() => toggleStar(m.id, m.isStar)}
                                             className="dropdown-item">
                                             <span>
@@ -1336,7 +1347,7 @@ const Chat = () => {
                                             </span>
                                             {m.isStar === 1 ? 'UnStar Message' : 'Star Message'}
                                           </button> */}
-                                          {/* <Link
+                                            {/* <Link
                                             to="#"
                                             className="dropdown-item"
                                             data-bs-toggle="modal"
@@ -1347,381 +1358,400 @@ const Chat = () => {
                                             </span>
                                             Report
                                           </Link> */}
-                                          <button
+                                            <button
 
-                                            onClick={() => deleteUserMessage(m.id)}
-                                            className="dropdown-item"
-                                          // data-bs-toggle="modal"
-                                          // data-bs-target="#delete-message"
-                                          >
-                                            <span>
-                                              <i className="bx bx-trash" />
-                                            </span>
-                                            Delete
-                                          </button>
+                                              onClick={() => deleteUserMessage(m.id)}
+                                              className="dropdown-item"
+                                            // data-bs-toggle="modal"
+                                            // data-bs-target="#delete-message"
+                                            >
+                                              <span>
+                                                <i className="bx bx-trash" />
+                                              </span>
+                                              Delete
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
 
 
-                                  <div className="message-content">
+                                    <div className="message-content">
 
-                                    {/* 🟦 Reply Box */}
-                                    {m.reply && (
-                                      <div
-                                        style={{
-                                          background: "#f6f7f9",
-                                          borderLeft: "4px solid #4a7dff",
-                                          padding: "8px 10px",
-                                          marginBottom: "10px",
-                                          borderRadius: "6px",
-                                          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-                                        }}
-                                      >
+                                      {/* 🟦 Reply Box */}
+                                      {m.reply && (
+                                        <div
+                                          style={{
+                                            background: "#f6f7f9",
+                                            borderLeft: "4px solid #4a7dff",
+                                            padding: "8px 10px",
+                                            marginBottom: "10px",
+                                            borderRadius: "6px",
+                                            boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                                          }}
+                                        >
 
-                                        {/* Reply TEXT */}
-                                        {m.reply.message_type === "text" && (
-                                          <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
-                                            {m.reply.message_text}
-                                          </div>
-                                        )}
+                                          {/* Reply TEXT */}
+                                          {m.reply.message_type === "text" && (
+                                            <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
+                                              {m.reply.message_text}
+                                            </div>
+                                          )}
 
-                                        {/* Reply IMAGE */}
-                                        {m.reply.message_type === "image" && m.reply.file_url && (
-                                          <img
-                                            src={`${Imageurl}/${m.reply.file_url}`}
-                                            alt="reply-img"
-                                            style={{
-                                              width: "120px",
-                                              height: "120px",
-                                              borderRadius: "8px",
-                                              marginTop: "5px",
-                                              objectFit: "cover",
-                                            }}
-                                          />
-                                        )}
-
-                                        {/* Reply AUDIO */}
-                                        {m.reply.message_type === "audio" && m.reply.file_url && (
-                                          <audio
-                                            controls
-                                            preload="auto"
-                                            style={{ width: "180px", height: "28px", marginTop: "5px" }}
-                                          >
-                                            <source
-                                              src={`${Audiourl}/${m.reply.file_url}`}
-                                              type="audio/webm"
+                                          {/* Reply IMAGE */}
+                                          {m.reply.message_type === "image" && m.reply.file_url && (
+                                            <img
+                                              onClick={() => {
+                                                setOpen2(true)
+                                                setCurrImg(m.reply.file_url)
+                                              }}
+                                              src={`${Imageurl}/${m.reply.file_url}`}
+                                              alt="reply-img"
+                                              style={{
+                                                width: "120px",
+                                                height: "120px",
+                                                borderRadius: "8px",
+                                                marginTop: "5px",
+                                                objectFit: "cover",
+                                              }}
                                             />
-                                          </audio>
-                                        )}
+                                          )}
 
-                                        {/* {replay video} */}
-                                        {m.reply.message_type === "video" && m.reply.file_url && (
-                                          <video
-                                            controls
-                                            style={{ width: "200px", borderRadius: "10px" }}
-                                          >
-                                            <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
-                                          </video>
-                                        )}
+                                          {/* Reply AUDIO */}
+                                          {m.reply.message_type === "audio" && m.reply.file_url && (
+                                            <audio
+                                              controls
+                                              preload="auto"
+                                              style={{ width: "180px", height: "28px", marginTop: "5px" }}
+                                            >
+                                              <source
+                                                src={`${Audiourl}/${m.reply.file_url}`}
+                                                type="audio/webm"
+                                              />
+                                            </audio>
+                                          )}
 
-                                        {/* Reply DOCUMENT */}
-                                        {m.reply.message_type === "document" && m.reply.file_url && (
+                                          {/* {replay video} */}
+                                          {m.reply.message_type === "video" && m.reply.file_url && (
+                                            <video
+                                              controls
+                                              style={{ width: "200px", borderRadius: "10px" }}
+                                            >
+                                              <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
+                                            </video>
+                                          )}
+
+                                          {/* Reply DOCUMENT */}
+                                          {m.reply.message_type === "document" && m.reply.file_url && (
+                                            <a
+                                              href={`${Documenturl}/${m.reply.file_url}`}
+                                              download={m.reply.file_original_name}
+                                              target="_blank"
+                                              style={{
+                                                display: "inline-block",
+                                                marginTop: "4px",
+                                                padding: "6px 10px",
+                                                background: "#ececec",
+                                                borderRadius: "4px",
+                                                fontSize: "13px",
+                                                border: "1px solid #ddd",
+                                              }}
+                                            >
+                                              📄 {m.reply.message_text || "Document"}
+                                            </a>
+                                          )}
+
+
+
+                                        </div>
+                                      )}
+
+                                      {/* 🟩 MAIN MESSAGE */}
+
+                                      {/* Main TEXT */}
+                                      {m.message_type === "text" && (
+                                        urlRegex.test(m.message_text) ? (
                                           <a
-                                            href={`${Documenturl}/${m.reply.file_url}`}
-                                            download={m.reply.file_original_name}
+                                            href={m.message_text}
                                             target="_blank"
-                                            style={{
-                                              display: "inline-block",
-                                              marginTop: "4px",
-                                              padding: "6px 10px",
-                                              background: "#ececec",
-                                              borderRadius: "4px",
-                                              fontSize: "13px",
-                                              border: "1px solid #ddd",
-                                            }}
+                                            rel="noopener noreferrer"
+                                            style={{ fontSize: "14px", lineHeight: "1.4" }}
                                           >
-                                            📄 {m.reply.message_text || "Document"}
+                                            {m.message_text}
                                           </a>
-                                        )}
+                                        ) : (
+                                          <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
+                                            {m.message_text}
+                                          </span>
+                                        )
+                                      )}
+
+
+                                      {/* Main IMAGE */}
+                                      {m.message_type === "image" && m.file_url && (
+                                        <img
+                                          onClick={() => {
+                                            setOpen2(true)
+                                            setCurrImg(m.file_url)
+                                          }}
+                                          src={`${Imageurl}/${m.file_url}`}
+                                          alt="msg-img"
+                                          style={{
+                                            width: "220px",
+                                            borderRadius: "10px",
+                                            marginTop: "3px",
+                                            objectFit: "cover",
+                                          }}
+                                        />
+                                      )}
+
+                                      {/* Main AUDIO */}
+                                      {m.message_type === "audio" && m.file_url && (
+                                        <audio
+                                          controls
+                                          preload="auto"
+                                          style={{
+                                            width: "220px",
+                                            height: "32px",
+                                            marginTop: "3px",
+                                            display: "block",
+                                          }}
+                                        >
+                                          <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
+                                        </audio>
+                                      )}
+
+                                      {/* Main DOCUMENT */}
+                                      {m.message_type === "document" && m.file_url && (
+                                        <a
+                                          href={`${Documenturl}/${m.file_url}`}
+                                          download={m.file_original_name}
+                                          target="_blank"
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "7px 10px",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "6px",
+                                            background: "#f2f2f2",
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          📄 {m.file_original_name}
+                                        </a>
+                                      )}
+
+                                      {m.message_type === "video" && m.file_url && (
+                                        <video
+                                          controls
+                                          style={{ width: "250px", borderRadius: "10px" }}
+                                        >
+                                          <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
+                                        </video>
+                                      )}
+
+                                      {/* 🟨 Reaction UI */}
+                                      <div className="emoj-group rig-emoji-group me-3 sm:me-5">
+                                        <ul>
+                                          <li className="emoj-action">
+                                            <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
+                                              <i className="bx bx-smile" />
+                                            </Link>
+
+                                            {showEmoji && (
+                                              <div
+                                                className="emoj-group-list d-block"
+                                                style={{ marginTop: "5px" }}
+                                              >
+                                                <div
+                                                  style={{
+                                                    display: "flex",
+                                                    gap: "6px",
+                                                    padding: "6px 10px",
+                                                    background: "white",
+                                                    borderRadius: "50px",
+                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                  }}
+                                                >
+                                                  {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
+                                                    <span
+                                                      key={em}
+                                                      onClick={() => toggleReaction(m.id, m.reaction, em)}
+                                                      style={{
+                                                        fontSize: "18px",
+                                                        cursor: "pointer",
+                                                        padding: "5px",
+                                                        borderRadius: "50%",
+                                                        transition: "transform 0.2s",
+                                                      }}
+                                                      onMouseEnter={(e) =>
+                                                        (e.currentTarget.style.transform = "scale(1.4)")
+                                                      }
+                                                      onMouseLeave={(e) =>
+                                                        (e.currentTarget.style.transform = "scale(1)")
+                                                      }
+                                                    >
+                                                      {em}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </li>
+
+                                          <li>
+                                            <Link
+                                              to="#"
+                                              onClick={() =>
+                                                setReplyData({
+                                                  id: m.id,
+                                                  text: m.message_text,
+
+                                                })
+                                              }
+                                            >
+                                              <i className="bx bx-share" />
+                                            </Link>
+                                          </li>
+                                        </ul>
+
+                                      </div>
+                                    </div>
 
 
 
+
+                                    {Array.isArray(m.reaction) && m.reaction.length > 0 && (
+                                      <div className="d-flex align-items-center" style={{ gap: "4px" }}>
+                                        {m.reaction.map((reaction: any, index: any) => (
+                                          <span
+                                            key={`${reaction.userId}-${index}`}
+                                            style={{
+                                              fontSize: "18px",
+                                              padding: "1px",
+                                              borderRadius: "6px",
+                                              transition: "transform 0.15s ease",
+                                              cursor: "default"
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                          >
+                                            {reaction.emoji}
+                                          </span>
+                                        ))}
                                       </div>
                                     )}
 
-                                    {/* 🟩 MAIN MESSAGE */}
 
-                                    {/* Main TEXT */}
-                                    {m.message_type === "text" && (
-                                      <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
-                                        {m.message_text}
-                                      </span>
-                                    )}
-
-                                    {/* Main IMAGE */}
-                                    {m.message_type === "image" && m.file_url && (
-                                      <img
-                                        src={`${Imageurl}/${m.file_url}`}
-                                        alt="msg-img"
-                                        style={{
-                                          width: "220px",
-                                          borderRadius: "10px",
-                                          marginTop: "3px",
-                                          objectFit: "cover",
-                                        }}
-                                      />
-                                    )}
-
-                                    {/* Main AUDIO */}
-                                    {m.message_type === "audio" && m.file_url && (
-                                      <audio
-                                        controls
-                                        preload="auto"
-                                        style={{
-                                          width: "220px",
-                                          height: "32px",
-                                          marginTop: "3px",
-                                          display: "block",
-                                        }}
-                                      >
-                                        <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
-                                      </audio>
-                                    )}
-
-                                    {/* Main DOCUMENT */}
-                                    {m.message_type === "document" && m.file_url && (
-                                      <a
-                                        href={`${Documenturl}/${m.file_url}`}
-                                        download={m.file_original_name}
-                                        target="_blank"
-                                        style={{
-                                          display: "inline-block",
-                                          padding: "7px 10px",
-                                          border: "1px solid #ddd",
-                                          borderRadius: "6px",
-                                          background: "#f2f2f2",
-                                          cursor: "pointer",
-                                        }}
-                                      >
-                                        📄 {m.file_original_name}
-                                      </a>
-                                    )}
-
-                                    {m.message_type === "video" && m.file_url && (
-                                      <video
-                                        controls
-                                        style={{ width: "250px", borderRadius: "10px" }}
-                                      >
-                                        <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
-                                      </video>
-                                    )}
-
-                                    {/* 🟨 Reaction UI */}
-                                    <div className="emoj-group rig-emoji-group me-3 sm:me-5">
-
-                                      <ul>
-                                        <li className="emoj-action">
-                                          <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
-                                            <i className="bx bx-smile" />
-                                          </Link>
-
-                                          {showEmoji && (
-                                            <div
-                                              className="emoj-group-list d-block"
-                                              style={{ marginTop: "5px" }}
-                                            >
-                                              <div
-                                                style={{
-                                                  display: "flex",
-                                                  gap: "6px",
-                                                  padding: "6px 10px",
-                                                  background: "white",
-                                                  borderRadius: "50px",
-                                                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                }}
-                                              >
-                                                {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
-                                                  <span
-                                                    key={em}
-                                                    onClick={() => toggleReaction(m.id, m.reaction, em)}
-                                                    style={{
-                                                      fontSize: "18px",
-                                                      cursor: "pointer",
-                                                      padding: "5px",
-                                                      borderRadius: "50%",
-                                                      transition: "transform 0.2s",
-                                                    }}
-                                                    onMouseEnter={(e) =>
-                                                      (e.currentTarget.style.transform = "scale(1.4)")
-                                                    }
-                                                    onMouseLeave={(e) =>
-                                                      (e.currentTarget.style.transform = "scale(1)")
-                                                    }
-                                                  >
-                                                    {em}
-                                                  </span>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                        </li>
-
-                                        <li>
-                                          <Link
-                                            to="#"
-                                            onClick={() =>
-                                              setReplyData({
-                                                id: m.id,
-                                                text: m.message_text,
-
-                                              })
-                                            }
-                                          >
-                                            <i className="bx bx-share" />
-                                          </Link>
-                                        </li>
-                                      </ul>
-
-                                    </div>
                                   </div>
 
-
-
-
-                                  {Array.isArray(m.reaction) && m.reaction.length > 0 && (
-                                    <div className="d-flex align-items-center" style={{ gap: "4px" }}>
-                                      {m.reaction.map((reaction: any, index: any) => (
-                                        <span
-                                          key={`${reaction.userId}-${index}`}
-                                          style={{
-                                            fontSize: "18px",
-                                            padding: "1px",
-                                            borderRadius: "6px",
-                                            transition: "transform 0.15s ease",
-                                            cursor: "default"
-                                          }}
-                                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                                        >
-                                          {reaction.emoji}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-
-
-                                </div>
-
-                                <div className="chat-avatar">
-                                  {
-                                    m.user_img ? (<img
-                                      src={`${Imageurl}/${m.user_img}`}
-                                      className="rounded-circle dreams_chat"
-                                      alt="image"
-                                    />) : (
-                                      <ImageWithBasePath
-                                        src="assets/img/profiles/avatar-02.jpg"
+                                  <div className="chat-avatar">
+                                    {
+                                      m.user_img ? (<img
+                                        src={`${Imageurl}/${m.user_img}`}
                                         className="rounded-circle dreams_chat"
                                         alt="image"
-                                      />)
-                                  }
-                                </div>
+                                      />) : (
+                                        <ImageWithBasePath
+                                          src="assets/img/profiles/avatar-02.jpg"
+                                          className="rounded-circle dreams_chat"
+                                          alt="image"
+                                        />)
+                                    }
+                                  </div>
 
-                              </div></> : <><div className="chats">
-                                <div className="chat-avatar">
+                                </div></> : <><div className="chats">
+                                  <div className="chat-avatar">
 
-                                  {
-                                    m.user_img ? (<img
-                                      src={`${Imageurl}/${m.user_img}`}
-                                      className="rounded-circle dreams_chat"
-                                      alt="image"
-                                    />) : (
-                                      <ImageWithBasePath
-                                        src="assets/img/profiles/avatar-02.jpg"
+                                    {
+                                      m.user_img ? (<img
+                                        src={`${Imageurl}/${m.user_img}`}
                                         className="rounded-circle dreams_chat"
                                         alt="image"
-                                      />)
-                                  }
+                                      />) : (
+                                        <ImageWithBasePath
+                                          src="assets/img/profiles/avatar-02.jpg"
+                                          className="rounded-circle dreams_chat"
+                                          alt="image"
+                                        />)
+                                    }
 
 
-                                </div>
-                                <div className="chat-content">
-                                  <div className="chat-profile-name">
+                                  </div>
+                                  <div className="chat-content">
+                                    <div className="chat-profile-name">
 
-                                    <h6>
-                                      {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
-                                    </h6>
-                                    {m.isStar === 1 && (
-                                      <span className="reported-label text-danger">⭐</span>
-                                    )}
+                                      <h6>
+                                        {m.name}<span>{formatMessageTimeInConversation(m.created_at)}</span>
+                                      </h6>
+                                      {m.isStar === 1 && (
+                                        <span className="reported-label text-danger">⭐</span>
+                                      )}
 
-                                    {m.isReported === 1 && (
-                                      <span className="reported-label text-danger">⚠</span>
-                                    )}
-                                    <div className="chat-action-btns ms-3">
-                                      <div className="chat-action-col">
-                                        <Link
-                                          className="#"
-                                          to="#"
-                                          data-bs-toggle="dropdown"
-                                        >
-                                          <i className="bx bx-dots-horizontal-rounded" />
-                                        </Link>
-                                        <div className="dropdown-menu chat-drop-menu dropdown-menu-end">
+                                      {m.isReported === 1 && (
+                                        <span className="reported-label text-danger">⚠</span>
+                                      )}
+                                      <div className="chat-action-btns ms-3">
+                                        <div className="chat-action-col">
                                           <Link
+                                            className="#"
                                             to="#"
-                                            className="dropdown-item message-info-left"
+                                            data-bs-toggle="dropdown"
                                           >
-                                            <span>
-                                              <i className="bx bx-info-circle" />
-                                            </span>
-                                            Message Info{" "}
+                                            <i className="bx bx-dots-horizontal-rounded" />
                                           </Link>
-                                          <button
-                                            onClick={() => setReplyData({
-                                              id: m.id,
-                                              text: m.message_text
-                                            })}
-                                            className="dropdown-item">
-                                            <span>
-                                              <i className="bx bx-share" />
-                                            </span>
-                                            Reply
-                                          </button>
+                                          <div className="dropdown-menu chat-drop-menu dropdown-menu-end">
+                                            <Link
+                                              to="#"
+                                              className="dropdown-item message-info-left"
+                                            >
+                                              <span>
+                                                <i className="bx bx-info-circle" />
+                                              </span>
+                                              Message Info{" "}
+                                            </Link>
+                                            <button
+                                              onClick={() => setReplyData({
+                                                id: m.id,
+                                                text: m.message_text
+                                              })}
+                                              className="dropdown-item">
+                                              <span>
+                                                <i className="bx bx-share" />
+                                              </span>
+                                              Reply
+                                            </button>
 
-                                          <Link
-                                            to="#"
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#forward-message"
-                                          >
-                                            <span>
-                                              <i className="bx bx-reply" />
-                                            </span>
-                                            Forward
-                                          </Link>
-                                          <button
-                                            onClick={() => toggleStar(m.id, m.isStar)}
-                                            className="dropdown-item">
-                                            <span>
-                                              <i className="bx bx-star" />
-                                            </span>
-                                            {m.isStar === 1 ? 'UnStar Message' : 'Star Message'}
-                                          </button>
-                                          <button
-                                            onClick={() => toggleReport(m.id, m.isReported)}
-                                            className="dropdown-item"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#report-user"
-                                          >
-                                            <span>
-                                              <i className="bx bx-dislike" />
-                                            </span>
-                                            {m.isReported ? "Unreport" : "Report"}
-                                          </button>
-                                          {/* <Link
+                                            <Link
+                                              to="#"
+                                              className="dropdown-item"
+                                              data-bs-toggle="modal"
+                                              data-bs-target="#forward-message"
+                                            >
+                                              <span>
+                                                <i className="bx bx-reply" />
+                                              </span>
+                                              Forward
+                                            </Link>
+                                            <button
+                                              onClick={() => toggleStar(m.id, m.isStar)}
+                                              className="dropdown-item">
+                                              <span>
+                                                <i className="bx bx-star" />
+                                              </span>
+                                              {m.isStar === 1 ? 'UnStar Message' : 'Star Message'}
+                                            </button>
+                                            <button
+                                              onClick={() => toggleReport(m.id, m.isReported)}
+                                              className="dropdown-item"
+                                              data-bs-toggle="modal"
+                                              data-bs-target="#report-user"
+                                            >
+                                              <span>
+                                                <i className="bx bx-dislike" />
+                                              </span>
+                                              {m.isReported ? "Unreport" : "Report"}
+                                            </button>
+                                            {/* <Link
                                             to="#"
                                             className="dropdown-item"
                                             data-bs-toggle="modal"
@@ -1732,256 +1762,278 @@ const Chat = () => {
                                             </span>
                                             Delete
                                           </Link> */}
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
-                                  </div>
-                                  <div className="message-content">
+                                    <div className="message-content">
 
-                                    {/* 🟦 Reply Box */}
-                                    {m.reply && (
-                                      <div
-                                        style={{
-                                          background: "#f6f7f9",
-                                          borderLeft: "4px solid #4a7dff",
-                                          padding: "8px 10px",
-                                          marginBottom: "10px",
-                                          borderRadius: "6px",
-                                          boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-                                        }}
-                                      >
+                                      {/* 🟦 Reply Box */}
+                                      {m.reply && (
+                                        <div
+                                          style={{
+                                            background: "#f6f7f9",
+                                            borderLeft: "4px solid #4a7dff",
+                                            padding: "8px 10px",
+                                            marginBottom: "10px",
+                                            borderRadius: "6px",
+                                            boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                                          }}
+                                        >
 
-                                        {/* Reply TEXT */}
-                                        {m.reply.message_type === "text" && (
-                                          <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
-                                            {m.reply.message_text}
-                                          </div>
-                                        )}
-
-                                        {/* Reply IMAGE */}
-                                        {m.reply.message_type === "image" && m.reply.file_url && (
-                                          <img
-                                            src={`${Imageurl}/${m.reply.file_url}`}
-                                            alt="reply-img"
-                                            style={{
-                                              width: "120px",
-                                              height: "120px",
-                                              borderRadius: "8px",
-                                              marginTop: "5px",
-                                              objectFit: "cover",
-                                            }}
-                                          />
-                                        )}
-
-                                        {/* Reply AUDIO */}
-                                        {m.reply.message_type === "audio" && m.reply.file_url && (
-                                          <audio
-                                            controls
-                                            preload="auto"
-                                            style={{ width: "180px", height: "28px", marginTop: "5px" }}
-                                          >
-                                            <source
-                                              src={`${Audiourl}/${m.reply.file_url}`}
-                                              type="audio/webm"
-                                            />
-                                          </audio>
-                                        )}
-
-                                        {/* {replay video} */}
-                                        {m.reply.message_type === "video" && m.reply.file_url && (
-                                          <video
-                                            controls
-                                            style={{ width: "200px", borderRadius: "10px" }}
-                                          >
-                                            <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
-                                          </video>
-                                        )}
-
-                                        {/* Reply DOCUMENT */}
-                                        {m.reply.message_type === "document" && m.reply.file_url && (
-                                          <a
-                                            href={`${Documenturl}/${m.reply.file_url}`}
-                                            download={m.reply.file_original_name}
-                                            target="_blank"
-                                            style={{
-                                              display: "inline-block",
-                                              marginTop: "4px",
-                                              padding: "6px 10px",
-                                              background: "#ececec",
-                                              borderRadius: "4px",
-                                              fontSize: "13px",
-                                              border: "1px solid #ddd",
-                                            }}
-                                          >
-                                            📄 {m.reply.message_text || "Document"}
-                                          </a>
-                                        )}
-
-
-                                      </div>
-                                    )}
-
-                                    {/* 🟩 MAIN MESSAGE */}
-
-                                    {/* Main TEXT */}
-                                    {m.message_type === "text" && (
-                                      <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
-                                        {m.message_text}
-                                      </span>
-                                    )}
-
-                                    {/* Main IMAGE */}
-                                    {m.message_type === "image" && m.file_url && (
-                                      <img
-                                        src={`${Imageurl}/${m.file_url}`}
-                                        alt="msg-img"
-                                        style={{
-                                          width: "220px",
-                                          borderRadius: "10px",
-                                          marginTop: "3px",
-                                          objectFit: "cover",
-                                        }}
-                                      />
-                                    )}
-
-                                    {/* Main AUDIO */}
-                                    {m.message_type === "audio" && m.file_url && (
-                                      <audio
-                                        controls
-                                        preload="auto"
-                                        style={{
-                                          width: "220px",
-                                          height: "32px",
-                                          marginTop: "3px",
-                                          display: "block",
-                                        }}
-                                      >
-                                        <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
-                                      </audio>
-                                    )}
-
-                                    {/* Main DOCUMENT */}
-                                    {m.message_type === "document" && m.file_url && (
-                                      <a
-                                        href={`${Documenturl}/${m.file_url}`}
-                                        download={m.file_original_name}
-                                        target="_blank"
-                                        style={{
-                                          display: "inline-block",
-                                          padding: "7px 10px",
-                                          border: "1px solid #ddd",
-                                          borderRadius: "6px",
-                                          background: "#f2f2f2",
-                                          cursor: "pointer",
-                                        }}
-                                      >
-                                        📄 {m.file_original_name}
-                                      </a>
-                                    )}
-
-                                    {m.message_type === "video" && m.file_url && (
-                                      <video
-                                        controls
-                                        style={{ width: "250px", borderRadius: "10px" }}
-                                      >
-                                        <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
-                                      </video>
-                                    )}
-
-
-                                    {/* 🟨 Reaction UI */}
-                                    <div className="emoj-group ">
-
-                                      <ul>
-                                        <li className="emoj-action">
-                                          <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
-                                            <i className="bx bx-smile" />
-                                          </Link>
-
-                                          {showEmoji && (
-                                            <div
-                                              className="emoj-group-list d-block"
-                                              style={{ marginTop: "5px" }}
-                                            >
-                                              <div
-                                                style={{
-                                                  display: "flex",
-                                                  gap: "6px",
-                                                  padding: "6px 10px",
-                                                  background: "white",
-                                                  borderRadius: "50px",
-                                                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                                                }}
-                                              >
-                                                {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
-                                                  <span
-                                                    key={em}
-                                                    onClick={() => toggleReaction(m.id, m.reaction, em)}
-                                                    style={{
-                                                      fontSize: "18px",
-                                                      cursor: "pointer",
-                                                      padding: "5px",
-                                                      borderRadius: "50%",
-                                                      transition: "transform 0.2s",
-                                                    }}
-                                                    onMouseEnter={(e) =>
-                                                      (e.currentTarget.style.transform = "scale(1.4)")
-                                                    }
-                                                    onMouseLeave={(e) =>
-                                                      (e.currentTarget.style.transform = "scale(1)")
-                                                    }
-                                                  >
-                                                    {em}
-                                                  </span>
-                                                ))}
-                                              </div>
+                                          {/* Reply TEXT */}
+                                          {m.reply.message_type === "text" && (
+                                            <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.3" }}>
+                                              {m.reply.message_text}
                                             </div>
                                           )}
-                                        </li>
 
-                                        <li>
-                                          <Link
-                                            to="#"
-                                            onClick={() =>
-                                              setReplyData({
-                                                id: m.id,
-                                                text: m.message_text,
+                                          {/* Reply IMAGE */}
+                                          {m.reply.message_type === "image" && m.reply.file_url && (
+                                            <img
+                                              onClick={() => {
+                                                setOpen2(true)
+                                                setCurrImg(m.reply.file_url)
+                                              }}
+                                              src={`${Imageurl}/${m.reply.file_url}`}
+                                              alt="reply-img"
+                                              style={{
+                                                width: "120px",
+                                                height: "120px",
+                                                borderRadius: "8px",
+                                                marginTop: "5px",
+                                                objectFit: "cover",
+                                              }}
+                                            />
+                                          )}
 
-                                              })
-                                            }
-                                          >
-                                            <i className="bx bx-share" />
-                                          </Link>
-                                        </li>
-                                      </ul>
+                                          {/* Reply AUDIO */}
+                                          {m.reply.message_type === "audio" && m.reply.file_url && (
+                                            <audio
+                                              controls
+                                              preload="auto"
+                                              style={{ width: "180px", height: "28px", marginTop: "5px" }}
+                                            >
+                                              <source
+                                                src={`${Audiourl}/${m.reply.file_url}`}
+                                                type="audio/webm"
+                                              />
+                                            </audio>
+                                          )}
 
-                                    </div>
-                                  </div>
-                                  {Array.isArray(m.reaction) && m.reaction.length > 0 && (
-                                    <div className="d-flex align-items-center" style={{ gap: "4px" }}>
-                                      {m.reaction.map((reaction: any, index: any) => (
-                                        <span
-                                          key={`${reaction.userId}-${index}`}
-                                          style={{
-                                            fontSize: "18px",
-                                            padding: "1px",
-                                            borderRadius: "6px",
-                                            transition: "transform 0.15s ease",
-                                            cursor: "default"
+                                          {/* {replay video} */}
+                                          {m.reply.message_type === "video" && m.reply.file_url && (
+                                            <video
+                                              controls
+                                              style={{ width: "200px", borderRadius: "10px" }}
+                                            >
+                                              <source src={`${Videourl}/${m.reply.file_url}`} type="video/mp4" />
+                                            </video>
+                                          )}
+
+                                          {/* Reply DOCUMENT */}
+                                          {m.reply.message_type === "document" && m.reply.file_url && (
+                                            <a
+                                              href={`${Documenturl}/${m.reply.file_url}`}
+                                              download={m.reply.file_original_name}
+                                              target="_blank"
+                                              style={{
+                                                display: "inline-block",
+                                                marginTop: "4px",
+                                                padding: "6px 10px",
+                                                background: "#ececec",
+                                                borderRadius: "4px",
+                                                fontSize: "13px",
+                                                border: "1px solid #ddd",
+                                              }}
+                                            >
+                                              📄 {m.reply.message_text || "Document"}
+                                            </a>
+                                          )}
+
+
+                                        </div>
+                                      )}
+
+                                      {/* 🟩 MAIN MESSAGE */}
+
+                                      {/* Main TEXT */}
+                                      {
+                                        m.message_type === "text" && (
+                                          urlRegex.test(m.message_text)
+                                            ? (
+                                              <a
+                                                href={m.message_text}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontSize: "14px", lineHeight: "1.4" }}
+                                              >
+                                                {m.message_text}
+                                              </a>
+                                            ) : (
+                                              <span style={{ fontSize: "14px", lineHeight: "1.4" }}>
+                                                {m.message_text}
+                                              </span>
+                                            )
+                                        )}
+
+
+                                      {/* Main IMAGE */}
+                                      {m.message_type === "image" && m.file_url && (
+                                        <img
+                                          onClick={() => {
+                                            setOpen2(true)
+                                            setCurrImg(m.file_url)
                                           }}
-                                          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                                          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                                        >
-                                          {reaction.emoji}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              </>
+                                          src={`${Imageurl}/${m.file_url}`}
+                                          alt="msg-img"
+                                          style={{
+                                            width: "220px",
+                                            borderRadius: "10px",
+                                            marginTop: "3px",
+                                            objectFit: "cover",
+                                          }}
+                                        />
+                                      )}
 
-                            )))
+                                      {/* Main AUDIO */}
+                                      {m.message_type === "audio" && m.file_url && (
+                                        <audio
+                                          controls
+                                          preload="auto"
+                                          style={{
+                                            width: "220px",
+                                            height: "32px",
+                                            marginTop: "3px",
+                                            display: "block",
+                                          }}
+                                        >
+                                          <source src={`${Audiourl}/${m.file_url}`} type="audio/webm" />
+                                        </audio>
+                                      )}
+
+                                      {/* Main DOCUMENT */}
+                                      {m.message_type === "document" && m.file_url && (
+                                        <a
+                                          href={`${Documenturl}/${m.file_url}`}
+                                          download={m.file_original_name}
+                                          target="_blank"
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "7px 10px",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "6px",
+                                            background: "#f2f2f2",
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          📄 {m.file_original_name}
+                                        </a>
+                                      )}
+
+                                      {m.message_type === "video" && m.file_url && (
+                                        <video
+                                          controls
+                                          style={{ width: "250px", borderRadius: "10px" }}
+                                        >
+                                          <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
+                                        </video>
+                                      )}
+
+
+                                      {/* 🟨 Reaction UI */}
+                                      <div className="emoj-group ">
+
+                                        <ul>
+                                          <li className="emoj-action">
+                                            <Link to="#" onClick={() => setShowEmoji(!showEmoji)}>
+                                              <i className="bx bx-smile" />
+                                            </Link>
+
+                                            {showEmoji && (
+                                              <div
+                                                className="emoj-group-list d-block"
+                                                style={{ marginTop: "5px" }}
+                                              >
+                                                <div
+                                                  style={{
+                                                    display: "flex",
+                                                    gap: "6px",
+                                                    padding: "6px 10px",
+                                                    background: "white",
+                                                    borderRadius: "50px",
+                                                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                                  }}
+                                                >
+                                                  {["😂", "❤️", "👍", "😢", "🔥", "😍", "👏"].map((em) => (
+                                                    <span
+                                                      key={em}
+                                                      onClick={() => toggleReaction(m.id, m.reaction, em)}
+                                                      style={{
+                                                        fontSize: "18px",
+                                                        cursor: "pointer",
+                                                        padding: "5px",
+                                                        borderRadius: "50%",
+                                                        transition: "transform 0.2s",
+                                                      }}
+                                                      onMouseEnter={(e) =>
+                                                        (e.currentTarget.style.transform = "scale(1.4)")
+                                                      }
+                                                      onMouseLeave={(e) =>
+                                                        (e.currentTarget.style.transform = "scale(1)")
+                                                      }
+                                                    >
+                                                      {em}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </li>
+
+                                          <li>
+                                            <Link
+                                              to="#"
+                                              onClick={() =>
+                                                setReplyData({
+                                                  id: m.id,
+                                                  text: m.message_text,
+
+                                                })
+                                              }
+                                            >
+                                              <i className="bx bx-share" />
+                                            </Link>
+                                          </li>
+                                        </ul>
+
+                                      </div>
+                                    </div>
+                                    {Array.isArray(m.reaction) && m.reaction.length > 0 && (
+                                      <div className="d-flex align-items-center" style={{ gap: "4px" }}>
+                                        {m.reaction.map((reaction: any, index: any) => (
+                                          <span
+                                            key={`${reaction.userId}-${index}`}
+                                            style={{
+                                              fontSize: "18px",
+                                              padding: "1px",
+                                              borderRadius: "6px",
+                                              transition: "transform 0.15s ease",
+                                              cursor: "default"
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                                          >
+                                            {reaction.emoji}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                </>
+
+                              )))
                           )
                         }
 
@@ -3512,10 +3564,16 @@ const Chat = () => {
 
                               {
                                 otherUser.user_img ? (<img
+                                  onClick={() => {
+                                    setOpen2(true)
+                                    setCurrImg(otherUser.user_img)
+                                  }}
+                                  style={{ cursor: 'pointer' }}
                                   src={`${Imageurl}/${otherUser.user_img}`}
                                   className="rounded-circle"
                                   alt="image"
                                 />) : (<ImageWithBasePath
+
                                   src="assets/img/profiles/avatar-02.jpg"
                                   className="rounded-circle"
                                   alt="image"
@@ -3630,6 +3688,7 @@ const Chat = () => {
                             </div>
                           </nav>
                           <div className="tab-content pt-0" id="nav-tabContent">
+
                             <div
                               className="tab-pane fade show active"
                               id="info"
@@ -3637,181 +3696,86 @@ const Chat = () => {
                               <ul className="nav share-media-img mb-0">
                                 <Lightbox
                                   open={open2}
-                                  close={() => setOpen2(false)}
+                                  close={() => {
+                                    setOpen2(false)
+                                    setCurrImg(null)
+                                  }}
                                   slides={[
                                     {
-                                      src: "/assets/img/media/media-01.jpg",
+                                      src: `${Imageurl}/${currImg}`
                                     },
-                                    {
-                                      src: "/assets/img/media/media-02.jpg",
-                                    },
-                                    {
-                                      src: "/assets/img/media/media-03.jpg",
-                                    },
-                                    {
-                                      src: "/assets/img/media/media-04.jpg",
-                                    },
-                                    {
-                                      src: "/assets/img/media/media-02.jpg",
-                                    },
+                                    // {
+                                    //   src: "/assets/img/media/media-02.jpg",
+                                    // },
+                                    // {
+                                    //   src: "/assets/img/media/media-03.jpg",
+                                    // },
+                                    // {
+                                    //   src: "/assets/img/media/media-04.jpg",
+                                    // },
+                                    // {
+                                    //   src: "/assets/img/media/media-02.jpg",
+                                    // },
                                   ]}
                                 />
-                                <li>
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-01.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-02.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-03.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-04.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                </li>
-                                <li>
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-05.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                </li>
-                                <li className="blur-media">
-                                  <Link
-                                    onClick={() => setOpen2(true)}
-                                    to="#"
-                                    data-fancybox="gallery"
-                                    className="fancybox"
-                                  >
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-02.jpg"
-                                      alt=""
-                                    />
-                                  </Link>
-                                  <span>+10</span>
-                                </li>
+
+                                {
+                                  speRoomConv && speRoomConv.map((m: any) => (
+                                    m.message_type === 'image' && (<li key={m.id}>
+                                      <Link
+                                        onClick={() => {
+                                          setOpen2(true)
+                                          setCurrImg(m.file_url)
+                                        }}
+                                        to="#"
+                                        data-fancybox="gallery"
+                                        className="fancybox"
+                                      >
+                                        <img
+                                          src={`${Imageurl}/${m.file_url}`}
+                                          alt="msg-img"
+                                          style={{
+                                            // width: "220px",
+                                            borderRadius: "10px",
+                                            marginTop: "3px",
+                                            objectFit: "cover",
+                                          }}
+                                        />
+                                      </Link>
+                                    </li>)
+
+                                  ))
+                                }
                               </ul>
                             </div>
+
                             <div className="tab-pane fade" id="Participants">
                               <ul className="nav share-media-img mb-0">
-                                <li>
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-01.jpg"
-                                      alt="img"
-                                    />
-                                    <span>
-                                      <i className="bx bx-play-circle" />
-                                    </span>
-                                  </Link>
 
-                                </li>
-                                <li>
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-02.jpg"
-                                      alt="img"
-                                    />
-                                    <span>
-                                      <i className="bx bx-play-circle" />
-                                    </span>
-                                  </Link>
+                                {
+                                  speRoomConv && speRoomConv.map((m: any) => (
+                                    m.message_type === 'video' && (<li key={m.id}>
+                                      <Link to="#">
+                                        <video
+                                          controls
+                                          style={{ width: "180px", borderRadius: "10px" }}
+                                        >
+                                          <source src={`${Videourl}/${m.file_url}`} type="video/mp4" />
+                                        </video>
+                                        {/* <span>
+                                          <i className="bx bx-play-circle" />
+                                        </span> */}
+                                      </Link>
 
-                                </li>
-                                <li>
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-03.jpg"
-                                      alt="img"
-                                    />
-                                    <span>
-                                      <i className="bx bx-play-circle" />
-                                    </span>
-                                  </Link>
+                                    </li>)
 
-                                </li>
-                                <li>
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-04.jpg"
-                                      alt="img"
-                                    />
-                                    <span>
-                                      <i className="bx bx-play-circle" />
-                                    </span>
-                                  </Link>
-
-                                </li>
-                                <li>
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-05.jpg"
-                                      alt="img"
-                                    />
-                                    <span>
-                                      <i className="bx bx-play-circle" />
-                                    </span>
-                                  </Link>
+                                  ))
+                                }
 
 
-                                </li>
-                                <li className="blur-media">
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-03.jpg"
-                                      alt="img"
-                                    />
-                                  </Link>
-
-                                  <span>+10</span>
-                                </li>
                               </ul>
                             </div>
+
                             <div className="tab-pane fade" id="media">
                               <div className="media-file">
                                 <div className="media-doc-blk">
@@ -3871,48 +3835,45 @@ const Chat = () => {
                                 </div>
                               </div>
                             </div>
+
                             <div className="tab-pane fade" id="link">
-                              <div className="media-link-grp">
-                                <div className="link-img">
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-link-01.jpg"
-                                      alt="Img"
-                                    />
-                                  </Link>
-                                </div>
-                                <div className="media-link-detail">
-                                  <h6>
-                                    <Link to="#">Digital Marketing Guide</Link>
-                                  </h6>
-                                  <span>
-                                    <Link to="#">
-                                      https://elements.envato.com/all-items/blog
-                                    </Link>
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="media-link-grp mb-0">
-                                <div className="link-img">
-                                  <Link to="#">
-                                    <ImageWithBasePath
-                                      src="assets/img/media/media-link-02.jpg"
-                                      alt="Img"
-                                    />
-                                  </Link>
-                                </div>
-                                <div className="media-link-detail">
-                                  <h6>
-                                    <Link to="#">Blog Post</Link>
-                                  </h6>
-                                  <span>
-                                    <Link to="#">
-                                      https://elements.envato.com/blog-post-TXQ5FB8
-                                    </Link>
-                                  </span>
-                                </div>
-                              </div>
+
+                              {
+                                speRoomConv && speRoomConv.map((m: any) => (
+                                  (
+                                    m.message_type === "text" && urlRegex.test(m.message_text)
+                                  ) && (
+                                    <div className="media-link-grp" key={m.id}>
+
+                                      <div className="link-img">
+                                        <Link to="#">
+                                          <ImageWithBasePath
+                                             width={25}
+                                            src="assets/img/media/media-link-01.jpg"
+                                            alt="Img"
+                                          />
+                                        </Link>
+                                      </div>
+
+                                      <div className="media-link-detail">
+                                        <a
+                                          href={m.message_text}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ fontSize: "14px", lineHeight: "1.4" }}
+                                        >
+                                          {m.message_text}
+                                        </a>
+                                      </div>
+
+                                    </div>
+                                  )
+                                ))
+                              }
+
+
                             </div>
+
                           </div>
                         </div>
                       </div>

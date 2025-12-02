@@ -318,8 +318,6 @@ exports.sendFileMessage = async (req, res) => {
     let savedMessages = [];
 
     for (const file of files) {
-
-      // Detect file type
       let message_type = "file";
       if (file.mimetype.startsWith("image/")) message_type = "image";
       else if (file.mimetype.startsWith("video/")) message_type = "video";
@@ -328,8 +326,6 @@ exports.sendFileMessage = async (req, res) => {
         file.mimetype === "application/pdf" ||
         file.mimetype.includes("document")
       ) message_type = "document";
-
-      // Insert message
       const [result] = await db.query(
         `INSERT INTO messages 
            (conversation_id, sender_id, message_text, message_type, file_url, file_original_name, reply_to)
@@ -346,8 +342,6 @@ exports.sendFileMessage = async (req, res) => {
       );
 
       const insertedId = result.insertId;
-
-      // ⭐ Select formatted single message (same format as getMessages)
       const [rows] = await db.query(
         `
         SELECT 

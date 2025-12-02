@@ -603,6 +603,7 @@ exports.getSpeStuIssueBookData = async (req, res) => {
               ib.last_date,
               ib.bookId,
               ib.status,
+              ib.return_date,
               b.bookImg,
               b.bookName
               FROM libraryIssueBooks ib
@@ -645,7 +646,8 @@ exports.getSpeTeacherIssueBookData = async (req, res) => {
               ib.takenOn,
               ib.last_date,
               ib.bookId,
-              ib.status,  
+              ib.status, 
+              ib.return_date, 
               b.bookImg,
               b.bookName
               FROM libraryIssueBooks ib

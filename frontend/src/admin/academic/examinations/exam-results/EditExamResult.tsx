@@ -269,7 +269,7 @@ export default function ExamMarkUpload() {
   };
 
   const handleSave = async () => {
-    console.log(students);
+    
     const dataList = students.map((stu) => ({
       rollNum: stu.rollNum,
       admissionNum: stu.admissionNum,
@@ -290,7 +290,7 @@ export default function ExamMarkUpload() {
     };
     try {
       const { data } = await addExamResult2(finalPayload);
-      console.log(data);
+     
       if (data.success) {
         toast.success(data.message);
       }
@@ -298,7 +298,7 @@ export default function ExamMarkUpload() {
       console.log(error);
       toast.error(error.response.data.message);
     }
-    console.log("Final Save Payload:", finalPayload);
+   
   };
 
   const columns = [
@@ -566,7 +566,7 @@ export default function ExamMarkUpload() {
                 <Table
                   columns={columns}
                   dataSource={students}
-                  Selection={true}
+                  Selection={false}
                 />
               )}
             </Card>

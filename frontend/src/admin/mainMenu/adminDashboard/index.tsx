@@ -928,7 +928,7 @@ const AdminDashboard = () => {
     fetchAllLeaveRequest();
     fetchAllClassSubjects();
     fetchTodos()
-  }, [admin]);
+  }, []);
 
   const columns = [
     {

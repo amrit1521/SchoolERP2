@@ -845,7 +845,7 @@ exports.addExamResult2 = async (req, res) => {
           parseFloat(minMarks)
         );
 
-      //  console.log(grade  ,result)
+     
 
         if (existingResult) {
           if (existingResult.mark_obtained !== mark) {
@@ -1080,7 +1080,7 @@ exports.getExamResultAllStudents = async (req, res) => {
 
     rows.forEach((row) => {
       const key = `${row.rollnum}_${row.examName}`; // unique key per student per exam
-      // console.log(key);
+   
       if (!studentsMap[key]) {
         studentsMap[key] = {
           key: row.id,
@@ -1143,8 +1143,7 @@ exports.getExamResultAllStudents = async (req, res) => {
       else if (percent >= 33) overallGrade = "D";
 
       const overallResult = percent < 33 ? "Fail" : "Pass";
-      // console.log(student);
-      // console.log(student);
+      
       return {
         ...student,
         total: totalObtained,
@@ -1316,7 +1315,7 @@ exports.getExamResultAllStudentsOfAClass = async (req, res) => {
 exports.getExamResultUpdateList = async (req, res) => {
   try {
     const { className, section, examName } = req.body;
-    console.log(className, section, examName);
+    
     if (!className || !section || !examName) {
       return res.status(400).json({
         success: false,
@@ -1356,7 +1355,7 @@ exports.getExamResultUpdateList = async (req, res) => {
       section,
       examName,
     ]);
-    console.log("object: ", scheduleRows);
+    
     if (!scheduleRows.length) {
       return res.status(200).json({
         success: false,

@@ -67,7 +67,7 @@ exports.getTotalSubjectCount = async (req, res) => {
 
 exports.getTodayStudentAttendanceCount = async (req, res) => {
   const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
-  console.log("curentDate: ", currentDate);
+  
   try {
     const sql = `SELECT 
                     COUNT(CASE WHEN ai.attendance = 'Present' THEN 1 END) as present_count, 
@@ -79,7 +79,7 @@ exports.getTodayStudentAttendanceCount = async (req, res) => {
                 WHERE DATE(ai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log("rows: ", rows);
+   
     rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
@@ -101,7 +101,7 @@ exports.getTodayStudentAttendanceCount = async (req, res) => {
 
 exports.getTodayTeacherAttendanceCount = async (req, res) => {
   const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
-  console.log("curentDate: ", currentDate);
+  
   try {
     const sql = `SELECT 
                 COUNT(CASE WHEN tai.attendance = 'Present' THEN 1 END) as present_count, 
@@ -113,7 +113,7 @@ exports.getTodayTeacherAttendanceCount = async (req, res) => {
             WHERE DATE(tai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log("rows: ", rows);
+ 
     rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
@@ -135,7 +135,7 @@ exports.getTodayTeacherAttendanceCount = async (req, res) => {
 
 exports.getTodayStaffAttendanceCount = async (req, res) => {
   const currentDate = new Date(req.query.date || Date.now()).toISOString().slice(0, 10);
-  console.log("curentDate: ", currentDate);
+ 
   try {
     const sql = `SELECT 
                     COUNT(CASE WHEN sai.attendance = 'Present' THEN 1 END) as present_count, 
@@ -147,7 +147,7 @@ exports.getTodayStaffAttendanceCount = async (req, res) => {
                 WHERE DATE(sai.attendance_date_info) = ?;
             `;
     const [rows] = await db.execute(sql, [currentDate]);
-    console.log("rows: ", rows);
+    
     rows[0]["present_count"] += rows[0].late_count + rows[0].halfday_count;
     if (rows.length < 0) {
       return res.status(200).json({
