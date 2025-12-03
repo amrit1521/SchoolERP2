@@ -13,7 +13,7 @@ import { DatePicker } from "antd";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import React from "react";
-import { allChatUsers, allConversationforSpecficUser, clearRoomChat, createPrivateRoom, deleteMessage, deleteRoom, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, reportUser, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
+import { allChatUsers, allConversationforSpecficUser, allGroupMembers, clearRoomChat, createGroupChat, createPrivateRoom, deleteMessage, deleteRoom, msgReactionsUpdate, msgReportUpdate, msgStarUpdate, OnlineChatUsers, reportUser, sendFile, sendMessage, speConversationForARoom } from "../../service/chat";
 import { Spinner } from "../../spinner";
 import { toast } from "react-toastify";
 import { Socket, io } from "socket.io-client";
@@ -26,6 +26,9 @@ import { Audiourl, Documenturl, Imageurl, Videourl } from "../../service/api";
 import { MdOutlineAttachFile } from "react-icons/md";
 import EmojiPicker from "emoji-picker-react";
 import Swal from "sweetalert2";
+import CreateGroupModal from "./chatModal/createGroupModal";
+import dayjs from 'dayjs'
+import GroupMembersModal from "./chatModal/chatGroupMembersModal";
 
 
 
@@ -105,6 +108,8 @@ const Chat = () => {
   const [currImg, setCurrImg] = useState<string | null>(null)
   const chatAreaRef = useRef<HTMLDivElement | null>(null);
   const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|\b[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(\/[^\s]*)?/;
+
+
 
 
 
@@ -328,7 +333,9 @@ const Chat = () => {
           showConfirmButton: false,
         });
 
-        setSpeRoomConv([]);
+        setConversationId(null)
+        setOtherUser({})
+        setSpeRoomConv([])
       }
 
     } catch (error: any) {
@@ -391,6 +398,7 @@ const Chat = () => {
       const token = JSON.parse(tokenStr);
       setCurrentUserId(token.id);
       fetchAllConverationWithUser(token.id);
+      fetchUsers()
     }
   }, []);
 
@@ -708,32 +716,79 @@ const Chat = () => {
     if (!currentUserId) return toast.error("Login first");
 
     try {
-      const reason = prompt("Why are you reporting this user?");
-      if (!reason || !reason.trim()) {
-        toast.error('Reason is required !')
-        return
-      } else if (reason.length < 10) {
-        toast.error('Reason should be at least 10 chracters !')
-        return
-      }
+      // 1️⃣ Ask for reason using SweetAlert
+      const { value: reason } = await Swal.fire({
+        title: "Report User",
+        input: "textarea",
+        inputPlaceholder: "Enter the reason for reporting this user...",
+        inputAttributes: {
+          "aria-label": "Reason",
+        },
+        showCancelButton: true,
+        confirmButtonText: "Submit",
+        cancelButtonText: "Cancel",
+        inputValidator: (value) => {
+          if (!value || !value.trim()) {
+            return "Reason is required!";
+          }
+          if (value.trim().length < 10) {
+            return "Reason must be at least 10 characters!";
+          }
+          return null;
+        },
+      });
+
+      // ❌ Cancel pressed
+      if (!reason) return;
+
+      // 2️⃣ Final Confirmation
+      const confirm = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to report this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, Report",
+      });
+
+      if (!confirm.isConfirmed) return;
+
+      // 3️⃣ API Request
       const payload = {
         reportedUserId: userId,
         reportedBy: currentUserId,
-        reason,
-        conversationId
-      }
-      const { data } = await reportUser(payload)
+        reason: reason.trim(),
+        conversationId,
+      };
+
+      const { data } = await reportUser(payload);
 
       if (data.success) {
-        toast.success("User reported successfully");
+        Swal.fire({
+          icon: "success",
+          title: "Reported",
+          text: "User reported successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } else {
-        toast.error(data.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.message,
+        });
       }
     } catch (err) {
       console.log(err);
-      toast.error("Failed to report user");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to report user",
+      });
     }
   };
+
 
   // emoji
 
@@ -757,6 +812,52 @@ const Chat = () => {
   };
 
 
+  // for group chat 
+  const [showGroupModal, setShowGroupModal] = useState<boolean>(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const [groupData, setGroupData] = useState<{ id: number | null, name: string }>({
+    id: null,
+    name: ""
+  });
+
+  const createGroup = async (data: { name: string; members: number[] }) => {
+
+    const payload = {
+      name: data.name,
+      created_by: currentUserId,
+      members: data.members,
+    }
+    console.log(payload)
+    try {
+      const { data } = await createGroupChat(payload)
+      if (data.success) {
+        toast.success(data.message)
+        setShowGroupModal(false);
+      }
+
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  };
+
+  const fetchGroupMembers = async (id: number | null) => {
+    if (!id) return
+    setShowMembersModal(true)
+    try {
+      const { data } = await allGroupMembers(id)
+      if (data.success) {
+        setMembers(data.data)
+        setGroupData(data.group)
+      }
+
+    } catch (error: any) {
+      console.log(error)
+      toast.error(error.response.data.message)
+    }
+  }
 
   return (
     <>
@@ -797,7 +898,7 @@ const Chat = () => {
                                 </Link>
                                 <div className="dropdown-menu dropdown-menu-end">
                                   <button onClick={() => {
-                                    fetchUsers()
+
                                     setIsNewChat(true)
                                   }
                                   } className="dropdown-item ">
@@ -806,7 +907,7 @@ const Chat = () => {
                                     </span>
                                     New Chat{" "}
                                   </button>
-                                  <Link to="#" className="dropdown-item">
+                                  <Link to="#" onClick={() => setShowGroupModal(true)} className="dropdown-item">
                                     <span>
                                       <i className="bx bx-user-circle" />
                                     </span>
@@ -930,7 +1031,11 @@ const Chat = () => {
                     <div className="sidebar-body chat-body" id="chatsidebar">
                       {
                         isNewChat ? <>
-                          <h5 className="mb-3">New Chat</h5>
+                          <div className="d-flex border-top align-items-center justify-content-between p-2">
+                            <h4 className="modal-title fw-bold">New Chat</h4>
+                            <button className="btn-close" onClick={() => setIsNewChat(false)} ></button>
+
+                          </div>
                           <ul className="mb-3">
 
                             {
@@ -1116,7 +1221,7 @@ const Chat = () => {
                           }
                         </div>
                         <div>
-                          <h6>{otherUser ? otherUser.name : "Select User"}</h6>
+                          <h6>{otherUser ? (otherUser.roomname ? otherUser.roomname : otherUser.name) : "Select User"}</h6>
                           <small className="last-seen">
                             {otherUser?.is_online === 1
                               ? "Online"
@@ -1128,122 +1233,242 @@ const Chat = () => {
                         </div>
                       </div>
                       <div className="chat-options ">
-                        <ul className="list-inline">
-                          <li className="list-inline-item">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light chat-search-btn"
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="bottom"
-                              title="Search"
-                              onClick={handleShowClass}
-                            >
-                              <i className="bx bx-search" />
-                            </Link>
-                          </li>
-                          <li className="list-inline-item">
-                            <OverlayTrigger
-                              placement="bottom"
-                              overlay={
-                                <Tooltip id={`tooltip-${routes.videoCall}`}>
-                                  Video Call
-                                </Tooltip>
-                              }
-                            >
-                              <Link
-                                to={routes.videoCall}
-                                className="btn btn-outline-light"
-                              >
-                                <i className="bx bx-video" />
-                              </Link>
-                            </OverlayTrigger>
-                          </li>
-                          <li className="list-inline-item">
-                            <OverlayTrigger
-                              placement="bottom"
-                              overlay={
-                                <Tooltip id={`tooltip-${routes.audioCall}`}>
-                                  Voice Call
-                                </Tooltip>
-                              }
-                            >
-                              <Link
-                                to={routes.audioCall}
-                                className="btn btn-outline-light"
-                              >
-                                <i className="bx bx-phone" />
-                              </Link>
-                            </OverlayTrigger>
-                          </li>
-                          <li className="list-inline-item dream_profile_menu">
-                            <Link
-                              to="#"
-                              className="btn btn-outline-light not-chat-user"
-                              onClick={handleAddVisible}
-                            >
-                              <i className="bx bx-info-circle" />
-                            </Link>
-                          </li>
-                          <li className="list-inline-item">
-                            <Link
-                              className="btn btn-outline-light no-bg"
-                              to="#"
-                              data-bs-toggle="dropdown"
-                            >
-                              <i className="bx bx-dots-vertical-rounded" />
-                            </Link>
-                            <div className="dropdown-menu dropdown-menu-end">
-                              <Link onClick={closeSpeConversation} to="#" className="dropdown-item ">
-                                <span>
-                                  <i className="bx bx-x" />
-                                </span>
-                                Close Chat{" "}
-                              </Link>
-                              <Link to="#" className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-volume-mute" />
-                                </span>
-                                Mute Notification
-                              </Link>
-                              <Link to="#" className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-time-five" />
-                                </span>
-                                Disappearing Message
-                              </Link>
-                              <Link to="#" onClick={() => clearChat(conversationId)} className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-brush-alt" />
-                                </span>
-                                Clear Message
-                              </Link>
-                              <Link to="#" onClick={() => deleteChat(conversationId)} className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-trash-alt" />
-                                </span>
-                                Delete Chat
-                              </Link>
-                              <button disabled={otherUser.is_reported} onClick={() => handleReportUser(otherUser.id)} className="dropdown-item">
 
-                                {
-                                  otherUser.is_reported ? (<span className="text-danger">
-                                    <i className="bx bx-dislike" />
-                                  </span>) : (<span>
-                                    <i className="bx bx-like" />
-                                  </span>)
-                                }
-                                {otherUser.is_reported ? "reported" : "report"}
+                        {
+                          otherUser && otherUser.type === 'group' ? (
+                            <ul className="list-inline">
+                              <li className="list-inline-item">
+                                <Link
+                                  to="#"
+                                  className="btn btn-outline-light chat-search-btn"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-placement="bottom"
+                                  title="Search"
+                                  onClick={handleShowClass}
+                                >
+                                  <i className="bx bx-search" />
+                                </Link>
+                              </li>
+                              <li className="list-inline-item">
+                                <OverlayTrigger
+                                  placement="bottom"
+                                  overlay={
+                                    <Tooltip id={`tooltip-${routes.videoCall}`}>
+                                      Video Call
+                                    </Tooltip>
+                                  }
+                                >
+                                  <Link
+                                    to={routes.videoCall}
+                                    className="btn btn-outline-light"
+                                  >
+                                    <i className="bx bx-video" />
+                                  </Link>
+                                </OverlayTrigger>
+                              </li>
+                              <li className="list-inline-item">
+                                <OverlayTrigger
+                                  placement="bottom"
+                                  overlay={
+                                    <Tooltip id={`tooltip-${routes.audioCall}`}>
+                                      Voice Call
+                                    </Tooltip>
+                                  }
+                                >
+                                  <Link
+                                    to={routes.audioCall}
+                                    className="btn btn-outline-light"
+                                  >
+                                    <i className="bx bx-phone" />
+                                  </Link>
+                                </OverlayTrigger>
+                              </li>
+                              <li className="list-inline-item dream_profile_menu">
+                                <Link
+                                  to="#"
+                                  className="btn btn-outline-light not-chat-user"
+                                  onClick={handleAddVisible}
+                                >
+                                  <i className="bx bx-info-circle" />
+                                </Link>
+                              </li>
+                              <li className="list-inline-item">
+                                <Link
+                                  className="btn btn-outline-light no-bg"
+                                  to="#"
+                                  data-bs-toggle="dropdown"
+                                >
+                                  <i className="bx bx-dots-vertical-rounded" />
+                                </Link>
+                                <div className="dropdown-menu dropdown-menu-end">
+                                  <Link onClick={closeSpeConversation} to="#" className="dropdown-item ">
+                                    <span>
+                                      <i className="bx bx-x" />
+                                    </span>
+                                    Close Chat{" "}
+                                  </Link>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-volume-mute" />
+                                    </span>
+                                    Mute Notification
+                                  </Link>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-time-five" />
+                                    </span>
+                                    Disappearing Message
+                                  </Link>
+                                  <Link to="#" onClick={() => clearChat(conversationId)} className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-brush-alt" />
+                                    </span>
+                                    Clear Message
+                                  </Link>
+                                  <Link to="#" onClick={() => deleteChat(conversationId)} className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-trash-alt" />
+                                    </span>
+                                    Delete Chat
+                                  </Link>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-user " />
+                                    </span>
+                                    Add Member
+                                  </Link>
+                                  <Link to="#" onClick={(() => fetchGroupMembers(conversationId))} className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-group" />
+                                    </span>
+                                    All Members
+                                  </Link>
 
-                              </button>
-                              <Link to="#" className="dropdown-item">
-                                <span>
-                                  <i className="bx bx-block" />
-                                </span>
-                                Block
-                              </Link>
-                            </div>
-                          </li>
-                        </ul>
+                                </div>
+                              </li>
+                            </ul>) : (
+                            <ul className="list-inline">
+                              <li className="list-inline-item">
+                                <Link
+                                  to="#"
+                                  className="btn btn-outline-light chat-search-btn"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-placement="bottom"
+                                  title="Search"
+                                  onClick={handleShowClass}
+                                >
+                                  <i className="bx bx-search" />
+                                </Link>
+                              </li>
+                              <li className="list-inline-item">
+                                <OverlayTrigger
+                                  placement="bottom"
+                                  overlay={
+                                    <Tooltip id={`tooltip-${routes.videoCall}`}>
+                                      Video Call
+                                    </Tooltip>
+                                  }
+                                >
+                                  <Link
+                                    to={routes.videoCall}
+                                    className="btn btn-outline-light"
+                                  >
+                                    <i className="bx bx-video" />
+                                  </Link>
+                                </OverlayTrigger>
+                              </li>
+                              <li className="list-inline-item">
+                                <OverlayTrigger
+                                  placement="bottom"
+                                  overlay={
+                                    <Tooltip id={`tooltip-${routes.audioCall}`}>
+                                      Voice Call
+                                    </Tooltip>
+                                  }
+                                >
+                                  <Link
+                                    to={routes.audioCall}
+                                    className="btn btn-outline-light"
+                                  >
+                                    <i className="bx bx-phone" />
+                                  </Link>
+                                </OverlayTrigger>
+                              </li>
+                              <li className="list-inline-item dream_profile_menu">
+                                <Link
+                                  to="#"
+                                  className="btn btn-outline-light not-chat-user"
+                                  onClick={handleAddVisible}
+                                >
+                                  <i className="bx bx-info-circle" />
+                                </Link>
+                              </li>
+                              <li className="list-inline-item">
+                                <Link
+                                  className="btn btn-outline-light no-bg"
+                                  to="#"
+                                  data-bs-toggle="dropdown"
+                                >
+                                  <i className="bx bx-dots-vertical-rounded" />
+                                </Link>
+                                <div className="dropdown-menu dropdown-menu-end">
+                                  <Link onClick={closeSpeConversation} to="#" className="dropdown-item ">
+                                    <span>
+                                      <i className="bx bx-x" />
+                                    </span>
+                                    Close Chat{" "}
+                                  </Link>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-volume-mute" />
+                                    </span>
+                                    Mute Notification
+                                  </Link>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-time-five" />
+                                    </span>
+                                    Disappearing Message
+                                  </Link>
+                                  <Link to="#" onClick={() => clearChat(conversationId)} className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-brush-alt" />
+                                    </span>
+                                    Clear Message
+                                  </Link>
+                                  <Link to="#" onClick={() => deleteChat(conversationId)} className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-trash-alt" />
+                                    </span>
+                                    Delete Chat
+                                  </Link>
+                                  <button disabled={otherUser.is_reported} onClick={() => handleReportUser(otherUser.id)} className="dropdown-item">
+
+                                    {
+                                      otherUser.is_reported ? (<span className="text-danger">
+                                        <i className="bx bx-dislike" />
+                                      </span>) : (<span>
+                                        <i className="bx bx-like" />
+                                      </span>)
+                                    }
+                                    {otherUser.is_reported ? "reported" : "report"}
+
+                                  </button>
+                                  <Link to="#" className="dropdown-item">
+                                    <span>
+                                      <i className="bx bx-block" />
+                                    </span>
+                                    Block
+                                  </Link>
+                                </div>
+                              </li>
+                            </ul>)
+                        }
+
+
+
+
+
                       </div>
                       {/* Chat Search */}
                       <div
@@ -3582,7 +3807,7 @@ const Chat = () => {
 
 
                             </figure>
-                            <h5 className="profile-name">{otherUser.name}</h5>
+                            <h5 className="profile-name">{otherUser.roomname ? otherUser.roomname : otherUser.name}</h5>
                             <div className="last-seen-profile">
                               <span>{otherUser?.is_online === 1
                                 ? "Online"
@@ -3632,13 +3857,21 @@ const Chat = () => {
                             <div className="member-details">
                               <ul>
 
+                                {
+                                  otherUser.name && (<li>
+                                    <h6>Phone :</h6>
+                                    <span>{otherUser.mobile}</span>
+                                  </li>)
+                                }
+                                {
+                                  otherUser.email && (<li>
+                                    <h6>Email Address :</h6>
+                                    <span>{otherUser.email}</span>
+                                  </li>)
+                                }
                                 <li>
-                                  <h6>Phone</h6>
-                                  <span>{otherUser.mobile}</span>
-                                </li>
-                                <li>
-                                  <h6>Email Address</h6>
-                                  <span>{otherUser.email}</span>
+                                  <h6>Created At :</h6>
+                                  {otherUser.created_at && (<span>{dayjs(otherUser.created_at).format('DD MMM YYYY')}</span>)}
                                 </li>
                               </ul>
                             </div>
@@ -3848,7 +4081,7 @@ const Chat = () => {
                                       <div className="link-img">
                                         <Link to="#">
                                           <ImageWithBasePath
-                                             width={25}
+                                            width={25}
                                             src="assets/img/media/media-link-01.jpg"
                                             alt="Img"
                                           />
@@ -4493,6 +4726,31 @@ const Chat = () => {
             </div>
             {/* /Import Purchase */}
           </div>
+          {
+            currentUserId && (<CreateGroupModal
+              users={users}
+              show={showGroupModal}
+              onClose={() => setShowGroupModal(false)}
+              onCreate={createGroup}
+              currentUserId={currentUserId}
+              imageUrl={Imageurl}
+            />)
+          }
+
+          <GroupMembersModal
+            show={showMembersModal}
+            onClose={() => setShowMembersModal(false)}
+            setMembers={setMembers}
+            members={members}
+            imageUrl={Imageurl}
+            groupData={groupData}
+            onReportUser={handleReportUser}
+            currentUserId={currentUserId}
+          />
+
+
+
+
         </div>
       </div>
     </>

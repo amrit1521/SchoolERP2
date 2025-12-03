@@ -3,7 +3,7 @@ const db = require('../../config/db');
 // ✅ Get all messages in a conversation
 exports.getMessages = async (req, res) => {
   const { conversationId, userId } = req.params;
-  // console.log(userId)
+  console.log(userId)
   try {
     const [rows] = await db.query(
       `
@@ -143,6 +143,8 @@ exports.getMessages = async (req, res) => {
       [conversationId, userId]
     );
 
+    const [converRes] =await db.query('SELECT type , name AS roomname, created_at FROM conversations WHERE id=?' ,[conversationId])
+
     // ⭐ Get star count
     const [starCountResult] = await db.query(
       `
@@ -163,6 +165,7 @@ exports.getMessages = async (req, res) => {
       userData: {
         ...userData[0],
         starCount: starCount,
+        ...converRes[0]
       }
     });
 
@@ -443,7 +446,6 @@ exports.sendFileMessage = async (req, res) => {
     });
   }
 };
-
 
 
 exports.getLastMessageAllConverationForSpecficUser = async (req, res) => {

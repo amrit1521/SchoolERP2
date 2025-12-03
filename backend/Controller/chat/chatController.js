@@ -48,92 +48,251 @@ exports.createPrivateConversation = async (req, res) => {
   }
 };
 
-exports.createGroupConversation = async (req, res) => {
+exports.createGroupConversationViaPermission = async (req, res) => {
   const { name, created_by, members = [] } = req.body;
+
   try {
+
+    const [user] = await db.query(
+      `SELECT 
+        r.role_name AS role
+       FROM users u
+       JOIN roles r ON r.id = u.roll_id
+       WHERE u.id = ?`,
+      [created_by]
+    );
+
+    if (!user.length) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const role = user[0].role.toLowerCase();
+
+
+    if (role === "student") {
+      return res.status(403).json({
+        success: false,
+        message: "Students are not allowed to create groups",
+      });
+    }
+
+
+    if (role === "teacher") {
+      const [memberRoles] = await db.query(
+        `SELECT r.role_name AS role
+         FROM users u
+         JOIN roles r ON r.id = u.roll_id
+         WHERE u.id IN (?)`,
+        [members]
+      );
+
+      const invalidMembers = memberRoles.filter(
+        (m) => m.role.toLowerCase() !== "student"
+      );
+
+      if (invalidMembers.length > 0) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can create groups only with students",
+        });
+      }
+    }
+
+
     const [result] = await db.query(
-      `INSERT INTO conversations (name, type, created_by) VALUES (?, 'group', ?)`,
+      `INSERT INTO conversations (name, type, created_by)
+       VALUES (?, 'group', ?)`,
       [name, created_by]
     );
-    const convId = result.insertId;
 
-    // Add group members
-    const values = members.map(m => [convId, m, created_by]);
-    if (values.length) {
+    const convId = result.insertId;
+    const values = members.map((m) => [convId, m, created_by]);
+
+    if (values.length > 0) {
       await db.query(
-        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES ?`,
+        `INSERT INTO conversation_members (conversation_id, user_id, added_by)
+         VALUES ?`,
         [values]
       );
     }
 
-    // Ensure creator is also a member
     const [check] = await db.query(
-      `SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
+      `SELECT 1
+         FROM conversation_members 
+         WHERE conversation_id = ? AND user_id = ?`,
       [convId, created_by]
     );
 
-
-    if (check.length === 0) {
+    if (!check.length) {
       await db.query(
-        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES (?, ?, ?)`,
+        `INSERT INTO conversation_members (conversation_id, user_id, added_by)
+         VALUES (?, ?, ?)`,
         [convId, created_by, created_by]
       );
     }
 
     return res.json({
       success: true,
-      message: 'Group conversation created successfully.',
+      message: "Group conversation created successfully",
       data: { conversation_id: convId },
     });
+
   } catch (err) {
-    console.error('createGroupConversation Error:', err);
+    console.error("createGroupConversation Error:", err);
     return res.status(500).json({
       success: false,
-      message: 'Server error while creating group conversation.',
+      message: "Server error while creating group conversation",
       error: err.message,
     });
   }
 };
 
-exports.addMemberToConversation = async (req, res) => {
+exports.addMemberToGroup = async (req, res) => {
   const { conversationId } = req.params;
-  const { user_id, added_by } = req.body;
+  const { members = [], added_by } = req.body; // members = array of userIds
+
   try {
+    // --------------------------------------------
+    // 1️⃣ Validate members array
+    // --------------------------------------------
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Members must be a non-empty array",
+      });
+    }
+
+    // --------------------------------------------
+    // 2️⃣ Check if conversation exists + get creator
+    // --------------------------------------------
+    const [conv] = await db.query(
+      `SELECT created_by FROM conversations WHERE id = ?`,
+      [conversationId]
+    );
+
+    if (!conv.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Conversation not found",
+      });
+    }
+
+    const creatorId = conv[0].created_by;
+
+    // --------------------------------------------
+    // 3️⃣ Check permission (Only creator or admin)
+    // --------------------------------------------
+    const [roleRes] = await db.query(
+      `SELECT r.role_name AS role
+       FROM users u 
+       JOIN roles r ON r.id = u.roll_id
+       WHERE u.id = ?`,
+      [added_by]
+    );
+
+    if (!roleRes.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Adding user not found",
+      });
+    }
+
+    const isAdmin = roleRes[0].role.toLowerCase() === "admin";
+    const isCreator = added_by === creatorId;
+
+    if (!isAdmin && !isCreator) {
+      return res.status(403).json({
+        success: false,
+        message: "Only group creator or admin can add members",
+      });
+    }
+
+    // --------------------------------------------
+    // 4️⃣ Filter: Remove already added members
+    // --------------------------------------------
+    const [existing] = await db.query(
+      `SELECT user_id FROM conversation_members WHERE conversation_id = ?`,
+      [conversationId]
+    );
+
+    const existingIds = new Set(existing.map((m) => m.user_id));
+
+    const newMembers = members.filter((id) => !existingIds.has(id));
+
+    if (newMembers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "All provided members are already in the group",
+      });
+    }
+
+    // --------------------------------------------
+    // 5️⃣ Prepare data for bulk insert
+    // --------------------------------------------
+    const insertValues = newMembers.map((id) => [
+      conversationId,
+      id,
+      added_by,
+    ]);
+
+    // --------------------------------------------
+    // 6️⃣ Insert multiple users
+    // --------------------------------------------
     await db.query(
-      `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES (?, ?, ?)`,
-      [conversationId, user_id, added_by]
+      `INSERT INTO conversation_members (conversation_id, user_id, added_by)
+       VALUES ?`,
+      [insertValues]
     );
 
     return res.json({
       success: true,
-      message: 'Member added to conversation successfully.',
-      data: { conversation_id: conversationId, added_member: user_id },
+      message: "Members added successfully",
+      added_members: newMembers,
+      conversation_id: conversationId,
     });
+
   } catch (err) {
-    console.error('addMemberToConversation Error:', err);
+    console.error("addMemberToConversation Error:", err);
     return res.status(500).json({
       success: false,
-      message: 'Server error while adding member.',
+      message: "Server error while adding members",
       error: err.message,
     });
   }
 };
+
 
 exports.getConversationMembers = async (req, res) => {
   const { conversationId } = req.params;
   try {
     const [rows] = await db.query(
-      `SELECT u.id, u.firstname, u.lastname, u.role 
+      `SELECT u.id AS user_id, CONCAT(u.firstname,' ' ,u.lastname) AS name, r.role_name,
+      CASE 
+                WHEN r.role_name = 'student' THEN s.stu_img
+                WHEN r.role_name = 'teacher' THEN t.img_src
+                WHEN u.remark = 'staff' THEN st.img_src
+                ELSE NULL
+                END AS user_img
        FROM conversation_members cm 
        JOIN users u ON cm.user_id = u.id 
+       JOIN roles r ON r.id = u.roll_id
+       LEFT JOIN students s ON s.stu_id = u.id
+       LEFT JOIN teachers t ON t.user_id = u.id
+       LEFT JOIN staffs st ON st.user_id = u.id
        WHERE cm.conversation_id = ?`,
       [conversationId]
     );
+
+    const [roomRes] = await db.query('SELECT id , name FROM conversations WHERE id=? ' , [conversationId])
 
     return res.json({
       success: true,
       message: 'Conversation members fetched successfully.',
       data: rows,
+      group:roomRes[0]
     });
   } catch (err) {
     console.error('getConversationMembers Error:', err);
@@ -144,6 +303,77 @@ exports.getConversationMembers = async (req, res) => {
     });
   }
 };
+
+exports.removeMemberFromGroup = async (req, res) => {
+  const { conversationId } = req.params;
+  const { memberId, removedBy } = req.body;
+  
+
+  try {
+
+    const [rows] = await db.query(
+      `SELECT 
+         (SELECT created_by FROM conversations WHERE id = ?) AS creatorId,
+         (SELECT r.role_name 
+            FROM users u JOIN roles r ON r.id = u.roll_id 
+            WHERE u.id = ?) AS removerRole`,
+      [conversationId, removedBy]
+    );
+
+    if (!rows.length || !rows[0].creatorId) {
+      return res.status(404).json({ success: false, message: "Conversation not found" });
+    }
+
+    const { creatorId, removerRole } = rows[0];
+
+    if (removedBy !== creatorId && removerRole?.toLowerCase() !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only group creator or admin can remove members",
+      });
+    }
+
+    if (memberId === creatorId) {
+      return res.status(403).json({
+        success: false,
+        message: "Creator cannot remove himself",
+      });
+    }
+
+    const [exists] = await db.query(
+      `SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
+      [conversationId, memberId]
+    );
+
+    if (!exists.length) {
+      return res.status(400).json({
+        success: false,
+        message: "This user is not a member of the group",
+      });
+    }
+
+  
+    await db.query(
+      `DELETE FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
+      [conversationId, memberId]
+    );
+
+    return res.json({
+      success: true,
+      message: "Member removed successfully",
+      data: { conversation_id: conversationId, removed_member: memberId },
+    });
+
+  } catch (err) {
+    console.error("removeMember Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while removing member",
+      error: err.message,
+    });
+  }
+};
+
 
 exports.getUserConversations = async (req, res) => {
   const { userId } = req.params;
@@ -172,96 +402,6 @@ exports.getUserConversations = async (req, res) => {
   }
 };
 
-exports.createGroupConversationViaPermission = async (req, res) => {
-  const { name, created_by, members = [] } = req.body;
-
-  try {
-    // Get role of creator
-    const [user] = await db.query(
-      `SELECT role_id FROM users WHERE id = ?`,
-      [created_by]
-    );
-
-    if (user.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    const role = user[0].role_id;
-
-    // Student cannot create groups
-    if (role === 3) {
-      return res.status(403).json({
-        success: false,
-        message: "Students are not allowed to create groups"
-      });
-    }
-
-    // Teacher can only create student groups
-    if (role === 2) {
-      const [memberRoles] = await db.query(
-        `SELECT role_id FROM users WHERE id IN (?)`,
-        [members]
-      );
-
-      const invalid = memberRoles.filter(m => m.role_id !== 3);
-
-      if (invalid.length > 0) {
-        return res.status(403).json({
-          success: false,
-          message: "Teachers can create groups only with students"
-        });
-      }
-    }
-
-    // Create group
-    const [result] = await db.query(
-      `INSERT INTO conversations (name, type, created_by)
-       VALUES (?, 'group', ?)`,
-      [name, created_by]
-    );
-
-    const convId = result.insertId;
-
-    // Add members
-    const values = members.map(m => [convId, m, created_by]);
-    if (values.length) {
-      await db.query(
-        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES ?`,
-        [values]
-      );
-    }
-
-    // Add creator as member if not included
-    const [check] = await db.query(
-      `SELECT 1 FROM conversation_members WHERE conversation_id = ? AND user_id = ?`,
-      [convId, created_by]
-    );
-
-    if (!check.length) {
-      await db.query(
-        `INSERT INTO conversation_members (conversation_id, user_id, added_by) VALUES (?, ?, ?)`,
-        [convId, created_by, created_by]
-      );
-    }
-
-    return res.json({
-      success: true,
-      message: "Group conversation created successfully",
-      data: { conversation_id: convId },
-    });
-
-  } catch (err) {
-    console.error("createGroupConversation Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while creating group conversation",
-      error: err.message,
-    });
-  }
-};
 
 exports.deleteRoom = async (req, res) => {
   const { conversationId } = req.params;
