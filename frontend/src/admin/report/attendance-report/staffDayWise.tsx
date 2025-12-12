@@ -197,11 +197,11 @@ const StaffDayWise = () => {
                 <li>
                   <Link to={routes.attendanceReport}>Attendance Report</Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link to={routes.studentAttendanceType}>
                     Students Attendance Type
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link to={routes.dailyAttendance}>Daily Attendance</Link>
                 </li>

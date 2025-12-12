@@ -472,12 +472,12 @@ const TeacherDashboard = () => {
                             </div>
                           </div>
                         </div>
-                        <Link
+                        {/* <Link
                           to={`${routes.editTeacher}/${teacher?.teacher_id}`}
                           className="btn btn-primary flex-shrink-0 mb-3"
                         >
                           Edit
-                        </Link>
+                        </Link> */}
                       </div>
                       <div className="student-card-bg">
                         <ImageWithBasePath

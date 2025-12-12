@@ -222,7 +222,7 @@ const StudentTimeTable = () => {
                                                                     <p className="text-dark">Subject : {item.subject}</p>
                                                                     <div className="bg-white rounded p-1 mt-3">
                                                                         <Link
-                                                                            to={routes.teacherDetails}
+                                                                             to={`#`}
                                                                             className="text-muted d-flex align-items-center"
                                                                         >
                                                                             <span className="avatar avatar-sm me-2">

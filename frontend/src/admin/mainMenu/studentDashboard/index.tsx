@@ -701,12 +701,12 @@ const StudentDasboard = () => {
                               Pass
                             </span>
                           </div>
-                          <Link
+                          {/* <Link
                             to={`${routes.editStudent}/${student.rollnum}`}
                             className="btn btn-primary"
                           >
                             Edit
-                          </Link>
+                          </Link> */}
                         </div>
                         <div className="student-card-bg">
                           <ImageWithBasePath

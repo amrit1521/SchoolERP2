@@ -667,7 +667,7 @@ const ParentGrid = () => {
                                 className="avatar avatar-md flex-shrink-0 p-0 me-2"
                               >
                                 <img
-                                  src={`${Imageurl}${s.stu_img}`}
+                                  src={`${Imageurl}/${s.stu_img}`}
                                   alt="img"
                                   className="img-fluid rounded-circle"
                                 />
