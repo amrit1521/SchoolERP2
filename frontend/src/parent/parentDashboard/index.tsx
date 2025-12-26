@@ -19,7 +19,7 @@ import {
   Imageurl,
 } from "../../service/api";
 import { toast } from "react-toastify";
-import { parent_routes } from "../../admin/router/parent_routes";
+import { parent_routes } from "../../router/parent_routes";
 
 interface ParentInfo {
   parentId: string;
@@ -354,7 +354,7 @@ const PParentDashboard = () => {
                       </div>
                       <div className="d-block">
                         <span className="badge bg-transparent-primary text-primary mb-1">
-                          #P{parentDetails?.parentId}
+                          P{parentDetails?.parentId}
                         </span>
                         <h4 className="text-truncate text-white mb-1">
                           {parentDetails?.parentName}

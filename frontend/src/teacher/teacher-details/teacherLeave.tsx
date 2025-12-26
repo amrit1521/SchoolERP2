@@ -14,7 +14,7 @@ import { Spinner } from "../../spinner";
 import Skeleton from "react-loading-skeleton";
 import { toast } from "react-toastify";
 import { getSpecTeacherProfileDetails } from "../../service/teacherDashboardApi";
-import { teacher_routes } from "../../admin/router/teacher_routes";
+import { teacher_routes } from "../../router/teacher_routes";
 
 export interface LeaveInform {
   id: number;

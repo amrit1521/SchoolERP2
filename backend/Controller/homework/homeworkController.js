@@ -269,27 +269,11 @@ exports.getAllStudentHomeWork = async (req, res) => {
   }
 };
 
+
+// teacher dashboard
 exports.getAllTeacherHomeWork = async (req, res) => {
   try {
     const { userId } = req.params;
-    const [userRows] = await db.query(
-      `SELECT
-          users.id,
-          t.class,
-          t.section,
-          t.teacher_id
-      FROM users
-      LEFT JOIN teachers as t ON t.user_id = users.id
-      WHERE users.id = ?`,
-      [userId]
-    );
-    if (!userRows || userRows.length === 0) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-    const teacher = userRows[0];
-    const studentClass = teacher.class;
-    const section = teacher.section;
-
     const [home_work] = await db.query(
       `SELECT hw.id,c.class_name AS className,
         s.section_name AS section,
@@ -311,10 +295,10 @@ exports.getAllTeacherHomeWork = async (req, res) => {
         LEFT JOIN class_subject AS cs On cs.id = hw.subject
         LEFT JOIN users AS u ON u.id = hw.teacherId
         LEFT JOIN teachers t ON hw.teacherId = t.user_id
-        WHERE hw.class_id = ? AND hw.section_id = ?`,
-      [studentClass, section]
+        WHERE hw.teacherId = ?`,
+      [userId]
     );
-    console.log(home_work);
+    
     return res.status(200).json({
       message: "Fetched all homework successfully!",
       success: true,

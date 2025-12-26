@@ -10,7 +10,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 import { blog_categories_data } from "../../../core/data/json/blog_categories_data";
 import Table from "../../../core/common/dataTable/index";
 import type { TableData } from "../../../core/data/interface";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 
 const BlogCategories = () => {

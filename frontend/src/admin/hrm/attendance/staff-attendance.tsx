@@ -3,7 +3,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import Table from "../../../core/common/dataTable/index";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { Imageurl } from "../../../service/api";
 import { toast } from "react-toastify";

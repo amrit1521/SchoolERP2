@@ -26,7 +26,7 @@ import { Skeleton } from "antd";
 // import { getFeeDetailsOfSpecStudent } from "../service/studentapi";
 import { getAllChildFeeDetails } from "../service/parentDashboardApi";
 import CommonSelect from "../core/common/commonSelect";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 // import FileSaver from "file-saver";
 // import {

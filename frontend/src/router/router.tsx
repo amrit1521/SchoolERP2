@@ -3,7 +3,7 @@ import { Route, Routes } from "react-router";
 import { authRoutes, publicRoutes } from "./router.link";
 import Feature from "./feature";
 import AuthFeature from "./authFeature";
-import Login from "../auth/login/login";
+import Login from "../admin/auth/login/login";
 import { ToastContainer, Zoom } from 'react-toastify'
 
 const ALLRoutes: React.FC = () => {

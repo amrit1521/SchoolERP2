@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { callhistorydata } from "../../../core/data/json/callHistoryData";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import Table from "../../../core/common/dataTable/index";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 
 const CallHistory = () => {
   const routes = all_routes;

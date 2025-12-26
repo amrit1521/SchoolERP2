@@ -1,6 +1,6 @@
 
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import React, { useEffect, useState } from "react";
 import { speStaffDetails } from "../../../../service/staff";
 import Skeleton from "react-loading-skeleton";

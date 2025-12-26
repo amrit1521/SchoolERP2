@@ -4,7 +4,7 @@ import Header from "../core/common/header";
 import Sidebar from "../core/common/sidebar";
 import ThemeSettings from "../core/common/theme-settings";
 import { useEffect, useState } from "react";
-import { all_routes } from "./router/all_routes";
+import { all_routes } from "../router/all_routes";
 
 const Feature = () => {
   const routes = all_routes;

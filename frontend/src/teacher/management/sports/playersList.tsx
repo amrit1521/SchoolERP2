@@ -31,7 +31,7 @@ import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 
 interface StudentSport {
   id: number;

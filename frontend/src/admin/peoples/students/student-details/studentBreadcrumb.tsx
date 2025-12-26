@@ -1,6 +1,6 @@
 
 import type React from 'react';
-import { all_routes } from '../../../router/all_routes'
+import { all_routes } from '../../../../router/all_routes'
 import { Link } from 'react-router-dom'
 
 type Props = {

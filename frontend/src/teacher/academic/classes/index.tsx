@@ -19,7 +19,7 @@ import {
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allClassRoom, allRealClasses } from "../../../service/classApi";
 // import { all_routes } from "../../../admin/router/all_routes";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 
 interface AllSection {
   id: number;

@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 
 const TwoStepVerification2 = () => {

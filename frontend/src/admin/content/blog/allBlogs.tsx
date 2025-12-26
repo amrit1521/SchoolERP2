@@ -9,7 +9,7 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 import { Editor } from 'primereact/editor';
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 
 const AllBlogs = () => {

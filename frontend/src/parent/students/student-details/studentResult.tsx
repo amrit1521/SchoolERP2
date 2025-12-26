@@ -7,7 +7,7 @@ import { getExamResult, specificStudentData1 } from "../../../service/api";
 import { PdfTemplate1, PdfTemplate2, PdfTemplate3 } from "./pdfTemplate";
 import StudentSidebar from "./studentSidebar";
 import StudentBreadcrumb from "./studentBreadcrumb";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 
 async function waitForImagesToLoad(el: HTMLElement, timeoutMs = 5000) {
   const imgs = Array.from(el.querySelectorAll("img"));

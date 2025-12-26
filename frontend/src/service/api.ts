@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const BASE_URL: string =
-  import.meta.env.VITE_SERVERURL || "http://localhost:3004";
+export const BASE_URL: string =
+  import.meta.env.VITE_SERVERURL
 export const API_URL = `${BASE_URL}/api`;
 export const Imageurl = `${API_URL}/stu/uploads/image`;
 export const Audiourl = `${API_URL}/stu/uploads/audio`;

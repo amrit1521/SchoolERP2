@@ -14,7 +14,7 @@ import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
 import CommonSelect from "../../../../core/common/commonSelect";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { addExamGrade, allExamGrade, deleteGrade, editGrade, speGrade } from "../../../../service/api";
 import { toast } from "react-toastify";

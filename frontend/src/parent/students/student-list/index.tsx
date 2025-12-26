@@ -28,7 +28,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { getAllChildrenOfParent } from "../../../service/parentDashboardApi";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 // import { findNonSerializableValue } from "@reduxjs/toolkit";
 
 const ChildList = () => {

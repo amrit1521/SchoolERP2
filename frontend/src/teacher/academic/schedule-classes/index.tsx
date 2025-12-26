@@ -23,7 +23,7 @@ import { Spinner } from "../../../spinner";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 // import { all_routes } from "../../../router/all_routes";
 import { getAllRolePermissions } from "../../../service/api";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 
 const TScheduleClasses = () => {
   // const data = scheduleClass;

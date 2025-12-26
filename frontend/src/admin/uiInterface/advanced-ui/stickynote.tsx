@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import ReactStickyNotes from '@react-latest-ui/react-sticky-notes';
 
 const routes = all_routes;

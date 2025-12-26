@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { all_routes } from '../../../router/all_routes'
+import { all_routes } from '../../../../router/all_routes'
 import PredefinedDateRanges from '../../../../core/common/datePicker'
 import { allClass, names } from '../../../../core/common/selectoption/selectoption'
 import TeacherModal from '../teacherModal'

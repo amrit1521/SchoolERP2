@@ -13,7 +13,7 @@ import { Spinner } from "../spinner";
 import { Imageurl } from "../service/api";
 // import { getStudentAttendance } from "../service/studentapi";
 import { getAllChildAttendance } from "../service/parentDashboardApi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 const PAttendance = () => {
   // const routes = all_routes;

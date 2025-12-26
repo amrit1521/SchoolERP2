@@ -8,7 +8,7 @@ import StudentModals from "../admin/peoples/students/studentModals";
 import StudentSidebar from "../admin/peoples/students/student-details/studentSidebar";
 
 import { getSpecStudentProfileDetails } from "../service/studentapi";
-import { student_routes } from "../admin/router/student_routes";
+import { student_routes } from "../router/student_routes";
 
 const StudentProfileDetails = () => {
   interface Parent {

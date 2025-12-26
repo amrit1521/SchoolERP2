@@ -17,7 +17,7 @@ import {
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../handlePopUpmodal";
 import { getAllSubjectForClass } from "../service/parentDashboardApi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 const PStudentClassSubject = () => {
   // const routes = all_routes;

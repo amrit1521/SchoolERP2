@@ -8,7 +8,7 @@ import {
   weeklytest,
 } from "../../../../core/common/selectoption/selectoption";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { examattendance } from "../../../../core/data/json/exam_attendance";
 import type { TableData } from "../../../../core/data/interface";

@@ -17,7 +17,7 @@ import {
 import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import { toast } from "react-toastify";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 const TStudentLeaves = () => {
   // const routes = all_routes;

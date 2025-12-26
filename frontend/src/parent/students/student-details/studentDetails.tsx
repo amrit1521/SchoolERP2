@@ -11,7 +11,7 @@ import {
 } from "../../../service/api";
 import { useEffect, useState } from "react";
 import { Skeleton } from "antd";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 
 const PStudentDetails = () => {
   interface Parent {

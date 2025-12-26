@@ -1,6 +1,6 @@
 import  { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../../../router/all_routes";
+import { all_routes } from "../../../../../router/all_routes";
 
 const FormValidation = () => {
   const routes = all_routes;

@@ -30,7 +30,7 @@ import { handleModalPopUp } from "../handlePopUpmodal";
 import { allRealClasses } from "../service/classApi";
 // import { getSpecStudentTimeTable } from "../service/studentapi";
 import { getAllChildTimeTable } from "../service/parentDashboardApi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 const PStudentClassTimetable = () => {
   const routes = all_routes;

@@ -7,7 +7,7 @@ router.post('/create-private', chatControllers.createPrivateConversation);
 router.post('/create-group', chatControllers.createGroupConversationViaPermission);
 router.get('/:conversationId/members', chatControllers.getConversationMembers);
 router.put('/removemem/:conversationId', chatControllers.removeMemberFromGroup)
-router.post('/addmember/:conversationId', chatControllers.addMemberToGroup)
+router.post('/add-members/:conversationId', chatControllers.addMemberToGroup)
 // router.get('/:userId', chatControllers.getUserConversations); 
 router.delete('/delroom/:conversationId', chatControllers.deleteRoom)
 router.delete('/clearroom/:conversationId', chatControllers.clearRoomChat)

@@ -15,7 +15,7 @@ import AssignModal from "./assignModal";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { getAllRolePermissions } from "../../../service/api";
 import { toast } from "react-toastify";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 import { getAllFeesAssignDetailsForSpecClass } from "../../../service/teacherDashboardApi";
 // import FeesGroup from "./feesGroup";
 //feesAssignToStudents

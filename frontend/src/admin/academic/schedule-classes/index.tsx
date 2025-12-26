@@ -10,7 +10,7 @@ import {
 import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { addClassSchedule, allClassSchedule, deleteClassSchedule, editClassSchedule, speClassSchedule } from "../../../service/classApi";
 import { toast } from "react-toastify";

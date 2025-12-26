@@ -5,7 +5,7 @@ import TeacherSidebar from "./teacherSidebar";
 import TeacherBreadcrumb from "./teacherBreadcrumb";
 import { useEffect, useState } from "react";
 import { getSpecTeacherProfileDetails } from "../../service/teacherDashboardApi";
-import { teacher_routes } from "../../admin/router/teacher_routes";
+import { teacher_routes } from "../../router/teacher_routes";
 
 const TTeachersRoutine = () => {
   const { teacher_id } = useParams();

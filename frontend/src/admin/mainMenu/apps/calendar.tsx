@@ -12,7 +12,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { toast } from "react-toastify";
 import { addEvent, allEvents, updateEvent, deleteEvent } from "../../../service/event";
 import { MdDeleteForever } from "react-icons/md";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 
 const handleModalPopUp = (id: string) => {
   const modalEl = document.getElementById(id);

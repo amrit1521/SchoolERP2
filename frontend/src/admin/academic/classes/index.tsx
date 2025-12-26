@@ -8,7 +8,7 @@ import Table from "../../../core/common/dataTable";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { activeList } from "../../../core/common/selectoption/selectoption";
 import { getAllSection, addClassSection, deleteSection, speSection, editSection } from "../../../service/api";
 import { handleModalPopUp } from "../../../handlePopUpmodal";

@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 
 const GridGutters = () => {
   const routes = all_routes;

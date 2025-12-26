@@ -10,7 +10,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import { Link } from "react-router-dom";
 
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { DatePicker } from "antd";
 import dayjs from 'dayjs'

@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import CommonSelect from "../../core/common/commonSelect";
 import { membershipplan } from "../../core/common/selectoption/selectoption";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 
 const Membershipplan = () => {

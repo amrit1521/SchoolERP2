@@ -25,7 +25,7 @@ import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { getAllChildrenOfParent } from "../../../service/parentDashboardApi";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 
 const ChildGrid = () => {
   const routes = all_routes;

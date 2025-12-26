@@ -6,7 +6,7 @@ import type { TableData } from "../../core/data/interface";
 import PredefinedDateRanges from "../../core/common/datePicker";
 import CommonSelect from "../../core/common/commonSelect";
 import { Reason } from "../../core/common/selectoption/selectoption";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { allUsers, deleteUsersById } from "../../service/api";
 import { toast } from "react-toastify";

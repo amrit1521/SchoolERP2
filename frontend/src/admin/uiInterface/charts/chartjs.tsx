@@ -2,7 +2,7 @@ import  { useState } from "react";
 
 import { Chart } from "primereact/chart";
 import { useEffect } from "react";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { Link } from "react-router-dom";
 
 const ChartJs = () => {

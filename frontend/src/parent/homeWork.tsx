@@ -28,7 +28,7 @@ import { handleModalPopUp } from "../handlePopUpmodal";
 import { allRealClasses } from "../service/classApi";
 // import { getAllStudentHomeWork } from "../service/studentapi";
 import { getAllMyChildHomeWork } from "../service/parentDashboardApi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 export interface Homework {
   id: number;

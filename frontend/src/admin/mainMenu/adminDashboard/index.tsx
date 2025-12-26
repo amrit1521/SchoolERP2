@@ -6,7 +6,7 @@ import { Calendar } from "primereact/calendar";
 import type { Nullable } from "primereact/ts-helpers";
 import "bootstrap-daterangepicker/daterangepicker.css";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import Slider from "react-slick";
 import dayjs, { Dayjs } from "dayjs";
 import "slick-carousel/slick/slick.css";

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 // import { approveRequest } from "../../../../core/data/json/approve_request";
 import { Link } from "react-router-dom";
 import type { TableData } from "../../../../core/data/interface";

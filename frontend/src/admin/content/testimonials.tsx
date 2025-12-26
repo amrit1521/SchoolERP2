@@ -8,7 +8,7 @@ import Table from "../../core/common/dataTable/index";
 // import ImageWithBasePath from "../../core/common/imageWithBasePath";
 // import { DatePicker } from "antd";
 import type { TableData } from "../../core/data/interface";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";

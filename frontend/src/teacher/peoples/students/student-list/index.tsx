@@ -27,8 +27,8 @@ import {
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { all_routes } from "../../../../router/all_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 // import { findNonSerializableValue } from "@reduxjs/toolkit";
 
 const TStudentList = () => {

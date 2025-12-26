@@ -6,7 +6,7 @@ import TeacherBreadcrumb from "./teacherBreadcrumb";
 import { useEffect, useState } from "react";
 import { Documenturl } from "../../service/api";
 import { getSpecTeacherProfileDetails } from "../../service/teacherDashboardApi";
-import { teacher_routes } from "../../admin/router/teacher_routes";
+import { teacher_routes } from "../../router/teacher_routes";
 
 const TTeacherDetails = () => {
   // const routes = all_routes;

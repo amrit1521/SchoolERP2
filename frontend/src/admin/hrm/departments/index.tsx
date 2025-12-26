@@ -6,7 +6,7 @@ import type { TableData } from '../../../core/data/interface';
 // import { departments } from '../../../core/data/json/departments';
 import PredefinedDateRanges from '../../../core/common/datePicker';
 import CommonSelect from '../../../core/common/commonSelect';
-import { all_routes } from '../../router/all_routes';
+import { all_routes } from '../../../router/all_routes';
 import TooltipOption from '../../../core/common/tooltipOption';
 import { toast } from 'react-toastify';
 import { addDepartment, allDepartment, deleteDepartment, editDeprtment, speDepartment } from '../../../service/department';

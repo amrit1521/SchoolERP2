@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import CommonSelect from "../../../../core/common/commonSelect";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import { toast } from "react-toastify";
 import { Card, Input, Space, message } from "antd";
 import Table from "../../../../core/common/dataTable/index";

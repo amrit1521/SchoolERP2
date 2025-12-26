@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { all_routes } from '../../../router/all_routes'
+import { all_routes } from '../../../../router/all_routes'
 // import ImageWithBasePath from '../../../../core/common/imageWithBasePath'
 import { allClass, allSection, gender, names, status } from '../../../../core/common/selectoption/selectoption'
 // import StudentModals from '../studentModals'

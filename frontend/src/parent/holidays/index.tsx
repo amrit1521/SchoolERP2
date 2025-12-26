@@ -22,7 +22,7 @@ import {
   specficHoliday,
 } from "../../service/holidayApi";
 import { toast } from "react-toastify";
-import { parent_routes } from "../../admin/router/parent_routes";
+import { parent_routes } from "../../router/parent_routes";
 import { getAllRolePermissions } from "../../service/api";
 
 const PHoliday = () => {

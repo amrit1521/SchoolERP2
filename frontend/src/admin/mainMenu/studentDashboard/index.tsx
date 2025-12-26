@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import CircleProgress from "./circleProgress";
 import ReactApexChart from "react-apexcharts";
@@ -27,7 +27,7 @@ import {
 } from "../../../service/api";
 import { toast } from "react-toastify";
 import CommonSelect from "../../../core/common/commonSelect";
-import { student_routes } from "../../router/student_routes";
+import { student_routes } from "../../../router/student_routes";
 import { getAllSubjectForStudent } from "../../../service/studentapi";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -430,7 +430,7 @@ const StudentDasboard = () => {
           series: [
             {
               name: "Exam Percentage",
-              data: [...performanceResult.map((item: any) => item.percentage)],
+              data: [...performanceResult.map((item: any) => item.percentage.toFixed())],
             },
           ],
           xaxis: {

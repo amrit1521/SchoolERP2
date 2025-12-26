@@ -1,7 +1,7 @@
 import { all_routes } from "../../../router/all_routes";
-import { student_routes } from "../../../admin/router/student_routes";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { student_routes } from "../../../router/student_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
+import { parent_routes } from "../../../router/parent_routes";
 const routes = all_routes;
 
 export const SidebarData = [

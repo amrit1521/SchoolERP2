@@ -46,15 +46,7 @@ const sendWhatsApp = async(to, message)=> {
   }
 }
 
-
-
 module.exports = { sendSms ,sendWhatsApp , sendRegisterMessage };
-
-
-
-
-
-
 
 // MSG91 library
 // const axios = require("axios");

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import copy from "clipboard-copy";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 
 const ClipBoard: React.FC = () => {
   const inputCopyRef = useRef<HTMLInputElement>(null);

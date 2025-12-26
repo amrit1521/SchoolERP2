@@ -9,7 +9,7 @@ import {
   statusOption,
   ticketStatus,
 } from "../../core/common/selectoption/selectoption";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import CommonSelect from "../../core/common/commonSelect";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import TooltipOption from "../../core/common/tooltipOption";

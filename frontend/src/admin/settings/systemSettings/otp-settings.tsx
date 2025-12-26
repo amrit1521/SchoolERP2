@@ -6,7 +6,7 @@ import {
   otpSetMin,
   otpSetNum,
 } from "../../../core/common/selectoption/selectoption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 const OtpSettings = () => {

@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ParentModal from "../parentModal";
 import PredefinedDateRanges from "../../../../core/common/datePicker";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import {
   names,
   parent,

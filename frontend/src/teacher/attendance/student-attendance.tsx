@@ -16,7 +16,7 @@ import {
   markAttendance,
 } from "../../service/api";
 import { toast } from "react-toastify";
-import { teacher_routes } from "../../admin/router/teacher_routes";
+import { teacher_routes } from "../../router/teacher_routes";
 import { getAllStudentForClass } from "../../service/teacherDashboardApi";
 
 const TStudentAttendance = () => {

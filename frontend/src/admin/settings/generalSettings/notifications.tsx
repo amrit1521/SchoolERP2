@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 const Notificationssettings = () => {

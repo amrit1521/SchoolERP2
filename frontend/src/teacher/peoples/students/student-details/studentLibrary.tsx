@@ -13,7 +13,7 @@ import {
 } from "../../../../service/api";
 import { Skeleton } from "antd";
 import dayjs from "dayjs";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 export interface IssuedBook {
   id: number;
@@ -23,6 +23,7 @@ export interface IssuedBook {
   bookImg: string;
   bookName: string;
   status: string;
+  return_date:string|null;
 }
 
 const TStudentLibrary = () => {
@@ -318,6 +319,18 @@ const TStudentLibrary = () => {
                                           {dayjs(book.last_date).format(
                                             "DD MMM YYYY"
                                           )}
+                                        </p>
+                                      </div>
+                                    </div>
+                                     <div className="col-sm-6">
+                                      <div className="mb-3">
+                                        <span className="fs-12 mb-1">
+                                          Return Date
+                                        </span>
+                                        <p className="text-dark">
+                                          {book.return_date?dayjs(book.return_date).format(
+                                            "DD MMM YYYY"
+                                          ):'--'}
                                         </p>
                                       </div>
                                     </div>

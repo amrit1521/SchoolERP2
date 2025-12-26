@@ -23,7 +23,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
 // import { all_routes } from "../../../router/all_routes";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 import { getTimeTableForSpecTeacher } from "../../../service/teacherDashboardApi";
 
 const TClassTimetable = () => {

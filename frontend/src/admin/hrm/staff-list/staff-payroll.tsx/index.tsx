@@ -4,7 +4,7 @@ import Table from "../../../../core/common/dataTable/index";
 // import { staffpayroll } from "../../../../core/data/json/staff-payroll";
 import type { TableData } from "../../../../core/data/interface";
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import React, { useEffect, useState } from "react";
 import { speStaffDetails } from "../../../../service/staff";
 import { Imageurl } from "../../../../service/api";

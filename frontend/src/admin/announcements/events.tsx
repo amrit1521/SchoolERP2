@@ -14,7 +14,7 @@ import {
   // sections,
 } from "../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import { TimePicker } from "antd";

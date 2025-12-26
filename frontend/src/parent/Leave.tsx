@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import { Skeleton } from "antd";
 import TooltipOption from "../core/common/tooltipOption";
 // import { getStudentLeaveData } from "../service/studentapi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 import { getAllChildLeaveData } from "../service/parentDashboardApi";
 import CommonSelect from "../core/common/commonSelect";
 

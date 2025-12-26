@@ -23,8 +23,8 @@ import StudentModals from "../studentModals";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
-import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { all_routes } from "../../../../router/all_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 const TStudentGrid = () => {
   const routes = all_routes;

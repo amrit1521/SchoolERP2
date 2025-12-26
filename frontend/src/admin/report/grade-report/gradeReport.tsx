@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Table from "../../../core/common/dataTable/index";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import type { TableData } from "../../../core/data/interface";
 import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";

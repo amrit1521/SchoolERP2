@@ -11,7 +11,7 @@ import {
   paymentMethod,
 } from "../../core/common/selectoption/selectoption";
 import type { TableData } from "../../core/data/interface";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
 import { addExpense, allExpense, delExpense, editExpense, expCatForOpt, genExpenseInv, speExpense } from "../../service/accounts";

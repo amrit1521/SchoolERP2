@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import NotesContent from "./notesContent";
 import NotesModal from "./notesModal";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { allNotes } from "../../service/note";
 

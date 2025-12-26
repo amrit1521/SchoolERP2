@@ -1,5 +1,4 @@
 
-const { success } = require('zod');
 const db = require('../../config/db')
 
 exports.allUsers = async (req, res) => {

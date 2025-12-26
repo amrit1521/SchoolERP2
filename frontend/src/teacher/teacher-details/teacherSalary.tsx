@@ -18,7 +18,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { DatePicker } from "antd";
 import { Spinner } from "../../spinner";
 import { getSpecTeacherProfileDetails } from "../../service/teacherDashboardApi";
-import { teacher_routes } from "../../admin/router/teacher_routes";
+import { teacher_routes } from "../../router/teacher_routes";
 
 export interface ApplySalaryForm {
   salary_month: string;

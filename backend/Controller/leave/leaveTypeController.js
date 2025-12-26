@@ -217,7 +217,7 @@ exports.addLeave = async (req, res) => {
       });
     }
 
-    const maxAllowed = leaveType[0].total_allowed;
+    const maxAllowed = parseInt(leaveType[0].total_allowed);
 
     const [usedLeaves] = await db.query(
       `SELECT COALESCE(SUM(no_of_days), 0) AS used
@@ -229,8 +229,8 @@ exports.addLeave = async (req, res) => {
     );
 
     const alreadyUsed = usedLeaves[0].used;
-    const totalAfterApply = alreadyUsed + data.no_of_days;
 
+    const totalAfterApply = parseInt(alreadyUsed) + parseInt(data.no_of_days);
     if (totalAfterApply > maxAllowed) {
       return res.status(400).json({
         message: `You already used ${alreadyUsed}/${maxAllowed} days. You cannot apply ${data.no_of_days} more days.`,

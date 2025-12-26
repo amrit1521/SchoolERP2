@@ -19,6 +19,7 @@ export const msgReactionsUpdate = (data: object, messageId: number) => api.post(
 export const createPrivateRoom = (data: object) => api.post('chat/create-private', data)
 export const createGroupChat = (data: object) => api.post('/chat/create-group', data)
 export const allGroupMembers = (conversationId: number) => api.get(`/chat/${conversationId}/members`)
+export const addMembersToGroup = (conversationId: number, data: any)=>api.post(`/chat/add-members/${conversationId}`,data)
 export const removeMemberFromGroup = (data: object, conversationId: number) => api.put(`/chat/removemem/${conversationId}`, data)
 export const clearRoomChat = (conversationId: number) => api.delete(`/chat/clearroom/${conversationId}`)
 export const deleteRoom = (conversationId: number) => api.delete(`/chat/delroom/${conversationId}`)

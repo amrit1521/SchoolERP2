@@ -12,7 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { Skeleton } from "antd";
 // import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 const TStudentDetails = () => {
   interface Parent {

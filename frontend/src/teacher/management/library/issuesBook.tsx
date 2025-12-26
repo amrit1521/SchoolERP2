@@ -15,7 +15,7 @@ import LibraryModal from "./libraryModal";
 import { toast } from "react-toastify";
 import { getAllRolePermissions, Imageurl } from "../../../service/api";
 import dayjs from "dayjs";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 import { getAllIssueBookForSpecClass } from "../../../service/teacherDashboardApi";
 
 const TIssueBook = () => {

@@ -1,7 +1,7 @@
 
 import DefaultEditor from "react-simple-wysiwyg";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import React from "react";
 const routes = all_routes;
 const TextEditor = () => {

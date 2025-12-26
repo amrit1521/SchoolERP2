@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const transporter = require('../../utils/sendEmail');
 const { sendSms } = require("../../utils/sendOtpViaMobile");
 const { generateRandomPassword } = require("../../utils/generatePassword");
-const { success } = require("zod");
 require('dotenv').config()
 
 
@@ -70,7 +69,7 @@ exports.login = async (req, res) => {
     console.error("Login Error:", error);
     return res
       .status(500)
-      .json({ message: "Internal server error", success: false });
+      .json({ message: "Internal server error", success: false ,error:error.message });
   }
 };
 

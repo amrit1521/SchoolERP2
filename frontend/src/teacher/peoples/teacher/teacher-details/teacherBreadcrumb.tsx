@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { all_routes } from '../../../../router/all_routes'
 import type React from 'react';
-import { teacher_routes } from '../../../../admin/router/teacher_routes';
+import { teacher_routes } from '../../../../router/teacher_routes';
 
 type Props = {
   teacher_id:string;

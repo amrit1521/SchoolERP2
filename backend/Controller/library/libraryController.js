@@ -586,7 +586,7 @@ exports.getAllIssueBookForSpecClass = async (req, res) => {
 
 exports.getSpeStuIssueBookData = async (req, res) => {
   const { rollnum } = req.params;
-
+  
   if (!rollnum) {
     return res
       .status(403)

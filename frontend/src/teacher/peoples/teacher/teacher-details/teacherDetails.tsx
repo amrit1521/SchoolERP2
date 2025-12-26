@@ -6,7 +6,7 @@ import TeacherSidebar from './teacherSidebar'
 import TeacherBreadcrumb from './teacherBreadcrumb'
 import { useEffect, useState } from 'react'
 import { Documenturl, sepTeacher } from '../../../../service/api'
-import { teacher_routes } from '../../../../admin/router/teacher_routes'
+import { teacher_routes } from '../../../../router/teacher_routes'
 
 const TeacherDetails = () => {
   const routes = all_routes

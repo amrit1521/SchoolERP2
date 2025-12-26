@@ -10,7 +10,7 @@ import {
   transactionId,
   transactionType,
 } from "../../core/common/selectoption/selectoption";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { useEffect, useState } from "react";
 import { getTransactionsData } from "../../service/accounts";

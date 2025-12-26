@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from "react";
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { Link, useNavigate } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 // import Password from "antd/es/input/Password";
 import { login } from "../../../service/api";
 import { toast } from "react-toastify";
-import { jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import type { JwtPayload } from "jwt-decode";
 
 
 interface CustomJwtPayload extends JwtPayload {
-  role: number; // ya string, backend ke hisaab se
+  role: number;
+  rolename: string
 }
 const Login = () => {
   const routes = all_routes;
+  const navigate = useNavigate()
   const [isPasswordVisible, setPasswordVisible] = useState(false);
 
   const togglePasswordVisibility = () => {
@@ -38,12 +40,14 @@ const Login = () => {
     password?: string;
   }
 
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
   const [loginForm, setLoginForm] = useState<LoginForm>({
     email: '',
     password: ''
   })
   const [error, setError] = useState<Errors>({})
+  const [resError, setResError] = useState<string>("")
+  const [loading, setLoading] = useState<boolean>(false)
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,40 +89,46 @@ const Login = () => {
 
   // ✅ Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
-
-    // console.log("Form Submitted:", loginForm);
-
+    setLoading(true)
     if (!validateLoginForm(loginForm)) {
       return
     }
     try {
       const { data } = await login(loginForm)
-      if (data.success) {
-        toast.success(data.message)
 
-        const decoded = jwtDecode<CustomJwtPayload>(data.token)
-        localStorage.setItem('token' , JSON.stringify(decoded))
-        if (decoded.role === 1) {
-          navigate(`${routes.adminDashboard}`);
-        } else if (decoded.role === 2) {
-          navigate(`${routes.teacherDashboard}`);
-        } else if (decoded.role === 3) {
-          navigate(`${routes.studentDashboard}`);
-        } else {
-          navigate(`${routes.adminDashboard}`);
-        }
+      if (!data.success) return
+
+      const decoded = jwtDecode<CustomJwtPayload>(data.token)
+      const role = decoded.rolename?.toLowerCase()
+
+      const roleRoutes: Record<string, string> = {
+        admin: routes.adminDashboard,
+        teacher: routes.teacherDashboard,
+        student: routes.studentDashboard,
+        parent: routes.parentDashboard,
       }
+
+      if (!roleRoutes[role]) {
+        toast.error("Invalid role. Access denied")
+        navigate(routes.login)
+        return
+      }
+      toast.success(data.message) 
+      localStorage.setItem("token", JSON.stringify(decoded))     
+      setError({})
+      setResError("")
+
+      navigate(roleRoutes[role])
 
     } catch (error: any) {
       console.log(error)
-      toast.error(error.response.data.message)
+      setResError(error.response.data.message)
+      // toast.error()
+    } finally {
+      setLoading(false)
     }
-
-    //  navigate(`${routes.adminDashboard}`)
-
-
-
   };
 
   return (
@@ -262,6 +272,7 @@ const Login = () => {
                         <div className="login-or">
                           <span className="span-or">Or</span>
                         </div>
+                        {resError && (<p className="text-danger fw-semi text-capitalize text-center">{resError}</p>)}
                         <div className="mb-3 ">
                           <label className="form-label">Email Address</label>
                           <div className="input-icon mb-3 position-relative">
@@ -315,16 +326,18 @@ const Login = () => {
                             </Link>
                           </div>
                         </div>
-                        
+
                       </div>
                       <div className="p-4 pt-0">
                         <div className="mb-3">
+
                           <button
+                            disabled={loading}
                             type="submit"
-                            // to={routes.adminDashboard}
                             className="btn btn-primary w-100"
                           >
-                            Sign In
+                            {loading ? "Signing" : " Sign In"}
+
                           </button>
                         </div>
                         {/* <div className="text-center">

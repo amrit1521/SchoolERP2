@@ -26,7 +26,7 @@ import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
 // import { all_routes } from "../../../router/all_routes";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 import { getAllTTeacherHomeWork } from "../../../service/teacherDashboardApi";
 
 export interface Homework {

@@ -9,7 +9,7 @@ import {
 import { DatePicker } from "antd";
 import { Editor } from "primereact/editor";
 import React, { useEffect, useState } from "react";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import dayjs from "dayjs";
 // import jsPDF from "jspdf";
 // import html2canvas from "html2canvas";

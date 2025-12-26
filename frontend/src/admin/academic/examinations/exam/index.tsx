@@ -14,7 +14,7 @@ import type { TableData } from "../../../../core/data/interface";
 import CommonSelect from "../../../../core/common/commonSelect";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import { addExamName, allExamData, deleteExam, editExam, speExam } from "../../../../service/api";

@@ -25,7 +25,7 @@ import {
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { Spinner } from "../../../spinner";
 import { getAllRolePermissions } from "../../../service/api";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 
 interface SportData {
   id: number;

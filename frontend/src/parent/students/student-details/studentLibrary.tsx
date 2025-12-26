@@ -12,7 +12,7 @@ import {
 } from "../../../service/api";
 import { Skeleton } from "antd";
 import dayjs from "dayjs";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 
 export interface IssuedBook {
   id: number;

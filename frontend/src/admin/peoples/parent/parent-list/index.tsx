@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ParentModal from "../parentModal";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import { Link } from "react-router-dom";
 import { Modal } from "react-bootstrap";
 // import ImageWithBasePath from "../../../../core/common/imageWithBasePath";

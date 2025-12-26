@@ -364,10 +364,23 @@ exports.AddFeesMaster = async (req, res) => {
     } = req.body;
 
 
-
     if (!amount || !dueDate || !feesGroup || !feesType) {
-      return res.status(400).json({ error: "Required fields are missing" });
+      return res.status(400).json({ error: "Required fields are missing", success: false });
     }
+
+
+    const [exist] = await db.query(
+      'SELECT id FROM fees_master WHERE feesGroup = ? AND feesType = ?',
+      [feesGroup, feesType]
+    );
+
+    if (exist.length > 0) {
+      return res.status(400).json({
+        message: "Fees master for this group and type already exists!",
+        success: false,
+      });
+    }
+
 
     const sql = `
       INSERT INTO fees_master 
@@ -381,23 +394,28 @@ exports.AddFeesMaster = async (req, res) => {
       feesGroup,
       feesType,
       fineType || "",
-      fixedAmount || "0",
-      percentage || "0",
-      percentageAmount || "0",
+      fixedAmount || 0,
+      percentage || 0,
+      percentageAmount || 0,
       status || "0",
       totalAmount || amount,
-      fineAmount
+      fineAmount || 0
     ];
 
-    const [feesMasterRes] = await db.query(sql, values)
+    const [feesMasterRes] = await db.query(sql, values);
 
-    return res.status(201).json({ message: 'Master fees added successfully !', success: true })
+    return res.status(201).json({
+      message: "Master fees added successfully!",
+      success: true,
+      feesMasterId: feesMasterRes.insertId
+    });
 
   } catch (error) {
     console.error("❌ Controller Error:", error);
-    res.status(500).json({ message: "Internal server error", success: false });
+    return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
+
 
 exports.AllFeesMaster = async (req, res) => {
   try {
@@ -507,10 +525,25 @@ exports.UpdateFeesMaster = async (req, res) => {
   } = req.body;
 
   try {
+    // 1️⃣ Validate required fields
     if (!amount || !dueDate || !feesGroup || !feesType) {
       return res.status(400).json({ error: "Required fields are missing", success: false });
     }
 
+    // 2️⃣ Duplicate check
+    const [exist] = await db.query(
+      'SELECT id FROM fees_master WHERE feesGroup = ? AND feesType = ? AND id != ?',
+      [feesGroup, feesType, id]
+    );
+
+    if (exist.length > 0) {
+      return res.status(400).json({
+        message: "Fees master for this group and type already exists!",
+        success: false,
+      });
+    }
+
+    // 3️⃣ Update query
     const sql = `
       UPDATE fees_master SET
         amount = ?,
@@ -533,9 +566,9 @@ exports.UpdateFeesMaster = async (req, res) => {
       feesGroup,
       feesType,
       fineType || "",
-      fixedAmount || "0",
-      percentage || "0",
-      percentageAmount || "0",
+      Number(fixedAmount) || 0,
+      Number(percentage) || 0,
+      Number(percentageAmount) || 0,
       status || "0",
       totalAmount || amount,
       fineAmount || 0,
@@ -561,28 +594,52 @@ exports.UpdateFeesMaster = async (req, res) => {
 };
 
 
+
 // assigen
 exports.feesAssignToStudent = async (req, res) => {
   try {
     const payload = req.body;
-    const studentLengts = payload.length;
-
+    let assignedCount = 0; // correct counter
 
     for (const student of payload) {
       for (const feeId of student.fees) {
-        await db.query(
-          "INSERT INTO fees_assign (student_rollnum, fees_masterId) VALUES (?, ?)",
+        // Check if already assigned
+        const [existing] = await db.query(
+          "SELECT * FROM fees_assign WHERE student_rollnum = ? AND fees_masterId = ?",
           [student.rollnum, feeId]
         );
+
+        if (existing.length === 0) {
+          await db.query(
+            "INSERT INTO fees_assign (student_rollnum, fees_masterId) VALUES (?, ?)",
+            [student.rollnum, feeId]
+          );
+          assignedCount += 1; // increment correctly
+        }
       }
     }
 
-    return res.status(200).json({ message: `Fees assigned to ${studentLengts} students successfully `, success: true })
+    if (assignedCount === 0) {
+      return res.status(400).json({
+        message: "Fees already assigned to all selected students!",
+        success: false,
+      });
+    }
+
+    return res.status(200).json({
+      message: `Fees assigned successfully to ${assignedCount} entries`,
+      success: true,
+    });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({ message: 'Internal server errror !', success: false })
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error!",
+      success: false,
+    });
   }
-}
+};
+
+
 
 
 exports.getFeesDeatilsSpecStudent = async (req, res) => {
@@ -713,8 +770,10 @@ exports.feesSubmit = async (req, res) => {
       notes,
     } = req.body;
 
+    
+
     // Validate required fields
-    if (!student_rollnum || !feesGroup || !feesType || !amount || !collectionDate || !paymentType) {
+    if (!student_rollnum ||!amount || !collectionDate || !paymentType) {
       return res.status(400).json({ success: false, message: "Missing required fields!" });
     }
 
@@ -737,8 +796,7 @@ exports.feesSubmit = async (req, res) => {
     const query = `
       UPDATE fees_assign
       SET 
-        fees_groupId = ?,
-        fees_typeId = ?,
+       
         AmountPay = ?,
         collectionDate = ?,
         payementType = ?,
@@ -750,8 +808,6 @@ exports.feesSubmit = async (req, res) => {
     `;
 
     const values = [
-      feesGroup,
-      feesType,
       amount,
       dayjs(collectionDate).format("YYYY-MM-DD"),
       paymentType,
@@ -880,14 +936,14 @@ exports.feesReport = async (req, res) => {
 exports.getFeesDeatilsOfSpecStudent = async (req, res) => {
   try {
     const userId = req.params?.userId;
-  
-    if(!userId){
+
+    if (!userId) {
       return res.status(404).json({
-      success: false,
-      message:"user not found."
-    });
+        success: false,
+        message: "user not found."
+      });
     }
-  
+
     const [userRows] = await db.query(
       `SELECT
           users.id,
@@ -904,7 +960,7 @@ exports.getFeesDeatilsOfSpecStudent = async (req, res) => {
     }
     const student = userRows[0];
     const rollnum = student.rollnum;
-      
+
     const sql = `
       SELECT 
         sfa.id,
@@ -963,14 +1019,14 @@ exports.getFeesDeatilsOfSpecStudent = async (req, res) => {
 exports.getSpecStudentFeeReminder = async (req, res) => {
   try {
     const userId = req.params?.userId;
-  
-    if(!userId){
+
+    if (!userId) {
       return res.status(404).json({
-      success: false,
-      message:"user not found."
-    });
+        success: false,
+        message: "user not found."
+      });
     }
-  
+
     const [userRows] = await db.query(
       `SELECT
           users.id,
@@ -990,8 +1046,9 @@ exports.getSpecStudentFeeReminder = async (req, res) => {
 
     const sql = `SELECT 
                   fa.id as fee_assign_id,
-                    fa.AmountPay, 
+                    fm.totalAmount as AmountPay, 
                     fa.collectionDate, 
+                    fm.dueDate,
                     ft.name AS fee_type,
                     fg.id AS fees_group_id,
                     fg.feesGroup,
@@ -999,12 +1056,14 @@ exports.getSpecStudentFeeReminder = async (req, res) => {
                     c.class_name,
                     se.section_name 
                 FROM fees_assign fa
-                LEFT JOIN fees_type ft ON ft.id = fa.fees_typeId
-                LEFT JOIN fees_group fg ON fg.id = fa.fees_groupId
+                LEFT JOIN fees_master fm ON fm.id=fa.fees_masterId
+                LEFT JOIN fees_type ft ON ft.id = fm.feesType  
+                LEFT JOIN fees_group fg ON fg.id = fm.feesGroup
+
                 LEFT JOIN students st ON st.rollnum = fa.student_rollnum
                 LEFT JOIN classes c ON st.class_id = c.id
                 LEFT JOIN sections se ON st.section_id = se.id
-                WHERE fa.student_rollnum = 111;`;
+                WHERE fa.student_rollnum = ? AND fa.status='0'`;
 
     const [rows] = await db.execute(sql, [rollnum]);
     if (rows.length <= 0) {
@@ -1085,7 +1144,7 @@ exports.allAssignDetailsForSpecClass = async (req, res) => {
           se.section_name
     `;
 
-    const [rows] = await db.query(sql,[studentClass,section]);
+    const [rows] = await db.query(sql, [studentClass, section]);
 
     return res.status(200).json({
       message: "All assigned details",

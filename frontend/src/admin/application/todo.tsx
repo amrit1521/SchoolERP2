@@ -3,7 +3,7 @@ import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import Select from "react-select";
 
 import TodoModal from "../../core/modals/todoModal";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import { lastModified } from "../../core/common/selectoption/selectoption";
 import { useEffect, useState } from "react";

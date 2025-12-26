@@ -11,7 +11,7 @@ import {
 import Table from "../../../core/common/dataTable/index";
 import { cities_data } from "../../../core/data/json/cities_data";
 import type { TableData } from "../../../core/data/interface";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 
 const Cities = () => {

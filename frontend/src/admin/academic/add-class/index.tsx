@@ -7,7 +7,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { addClass, allClasses, deleteClass, editClass, speClass } from "../../../service/classApi";
 // allClasses
 import { toast } from "react-toastify";

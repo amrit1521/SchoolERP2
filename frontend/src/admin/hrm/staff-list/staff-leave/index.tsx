@@ -3,7 +3,7 @@ import Table from "../../../../core/common/dataTable/index";
 // import { staffleave } from "../../../../core/data/json/staff-leave";
 import type { TableData } from "../../../../core/data/interface";
 import { Link, useParams } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import CommonSelect from "../../../../core/common/commonSelect";
 
 import { DatePicker } from "antd";

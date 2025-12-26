@@ -358,7 +358,7 @@ export const dashboard = async (req, res) => {
         [link.parent_id]
       );
 
-      const student = studentRows[0]; 
+      const student = studentRows[0];
       if (!student) continue;
 
       const rollnum = student.rollnum;

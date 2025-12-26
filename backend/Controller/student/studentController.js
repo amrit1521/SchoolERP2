@@ -5,7 +5,7 @@ const transporter = require('../../utils/sendEmail')
 const dayjs = require('dayjs');
 const { sendWhatsApp, sendRegisterMessage } = require('../../utils/sendOtpViaMobile');
 const { generateRandomPassword } = require('../../utils/generatePassword');
-const { success } = require('zod');
+
 
 async function getUserId(rollnum) {
   const [stu] = await db.query(`SELECT stu_id FROM students WHERE rollnum =?`, [rollnum])
@@ -1609,89 +1609,6 @@ exports.getSpecStudentDetails = async (req, res) => {
   }
 };
 
-
-// exports.allStudentsOfTeacher = async (req, res) => {
-//   const userId = req.params?.userId;
-
-//   if(!userId){
-//     return res.status(404).json({
-//     success: false,
-//     message:"user not found."
-//   });
-//   }
-
-//   const [userRows] = await db.query(
-//     `SELECT
-//       u.id as user_id,
-//       t.id,
-//       t.class as class_id,
-//       t.section as section_id,
-//       t.teacher_id
-//     FROM users u
-//     LEFT JOIN teachers as t ON t.user_id = u.id
-//     WHERE u.id = ?`,
-//     [userId]
-//   );
-//   if (!userRows || userRows.length === 0) {
-//     return res.status(404).json({ message: "Teacher not found" });
-//   }
-//   const teacher = userRows[0];
-//   const teacherId = teacher.teacher_id;
-//   try {
-//     const sql = `
-//             SELECT
-//                 u.id AS user_id,
-//                 u.firstname,
-//                 u.lastname,
-//                 u.mobile,
-//                 u.email,
-//                 u.roll_id,
-//                 r.role_name,
-//                 u.status,
-//                 s.id AS student_id,
-//                 s.stu_id,
-//                 s.academicyear,
-//                 s.admissionnum,
-//                 s.admissiondate,
-//                 s.rollnum,
-//                 UPPER(c.class_name) as class,
-//                 s.class_id,
-//                UPPER( se.section_name) as section,
-//                 s.section_id,
-//                 s.gender,
-//                 s.dob,
-//                 s.bloodgp,
-//                 s.house,
-//                 s.religion,
-//                 s.category,
-//                 s.caste,
-//                 p.name,
-//                 s.motherton,
-//                 s.lanknown,
-//                 s.stu_img
-//             FROM users u
-//             RIGHT JOIN students s
-//                 ON u.id = s.stu_id
-//           RIGHT JOIN classes  c ON c.id =  s.class_id
-//           RIGHT JOIN sections se ON se.id = s.section_id
-//           LEFT JOIN parents_info p ON s.stu_id = p.user_id AND relation = "Father"
-//           JOIN roles r on r.id=u.roll_id
-//           WHERE u.roll_id=3
-//         `;
-
-//     const [students] = await db.query(sql);
-
-//     res.status(200).json({
-//       message: "Students fetched successfully",
-//       success: true,
-//       students
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ message: 'Internal server error!', success: false });
-//   }
-// };
 
 exports.allStudentsForClass = async (req, res) => {
   try {

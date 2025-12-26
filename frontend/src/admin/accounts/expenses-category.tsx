@@ -6,7 +6,7 @@ import type { TableData } from "../../core/data/interface";
 import CommonSelect from "../../core/common/commonSelect";
 import { category2 } from "../../core/common/selectoption/selectoption";
 import PredefinedDateRanges from "../../core/common/datePicker";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
 import { addExpCat, allExpCat, delExpCat, editExpCat, speExpCat } from "../../service/accounts";

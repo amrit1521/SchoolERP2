@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import CommonSelect from "../../../core/common/commonSelect";
 import { gdprCookies } from "../../../core/common/selectoption/selectoption";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";

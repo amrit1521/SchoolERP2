@@ -10,7 +10,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import Table from "../../../core/common/dataTable/index";
 // import { fees_report_data } from "../../../core/data/json/fees_report_data";
 import type { TableData } from "../../../core/data/interface";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { useEffect, useRef, useState } from "react";
 import { feesReportData } from "../../../service/reports";
 import { Spinner } from "../../../spinner";

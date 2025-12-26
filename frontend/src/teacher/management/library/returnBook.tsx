@@ -23,7 +23,7 @@ import { DatePicker } from "antd";
 import MultiSelect from "../../../core/common/multiSelect";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 import dayjs from "dayjs";
-import { teacher_routes } from "../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../router/teacher_routes";
 import { getAllIssueBookForSpecClass } from "../../../service/teacherDashboardApi";
 
 const TReturnBook = () => {

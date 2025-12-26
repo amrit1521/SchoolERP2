@@ -1,6 +1,6 @@
-
 const {CloudinaryStorage} = require('multer-storage-cloudinary');
 const cloudinary = require('cloudinary');
+
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -25,7 +25,7 @@ const storage = new CloudinaryStorage({
     return {
       folder: folder,
       allowed_formats: ["png", "jpg", "jpeg", "pdf"], 
-      public_id: file.fieldname + "-" + Date.now(),   // optional custom name
+      public_id: file.fieldname + "-" + Date.now(),   
     };
   },
 });

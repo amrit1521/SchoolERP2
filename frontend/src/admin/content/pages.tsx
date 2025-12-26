@@ -6,7 +6,7 @@ import { page } from "../../core/common/selectoption/selectoption";
 import { pages_data } from "../../core/data/json/pages_data";
 import Table from "../../core/common/dataTable/index";
 import type { TableData } from "../../core/data/interface";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 
 const Pages = () => {

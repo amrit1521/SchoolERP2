@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import Select from "react-select";
-import { all_routes } from "../../../../router/all_routes";
+import { all_routes } from "../../../../../router/all_routes";
 
 const FormSelect2 = () => {
   const routes = all_routes;

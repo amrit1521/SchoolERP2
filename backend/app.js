@@ -65,9 +65,9 @@ app.use('/api/chat', require('./routes/chat/chatRoutes'))
 app.use('/api/message', require('./routes/chat/messageRoutes'))
 app.use('/api/faq', require('./routes/faq/faqRoutes'))
 app.use('/api/testimonials', require('./routes/testimonials/testimonialsRoutes'))
-app.use('/api/note' , require('./routes/notes/notesRoutes'))
-app.use('/api/todo' , require('./routes/todos/todoRoutes'))
-app.use('/api/event' , require('./routes/events/eventsRoutes'))
+app.use('/api/note', require('./routes/notes/notesRoutes'))
+app.use('/api/todo', require('./routes/todos/todoRoutes'))
+app.use('/api/event', require('./routes/events/eventsRoutes'))
 
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error:", err.stack);

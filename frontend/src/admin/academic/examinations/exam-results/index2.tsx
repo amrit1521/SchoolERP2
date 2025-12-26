@@ -10,7 +10,7 @@ import {
   allClass,
   classSection,
 } from "../../../../core/common/selectoption/selectoption";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { allExamData, getSpeExamResult } from "../../../../service/api";
 

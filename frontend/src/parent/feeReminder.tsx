@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import AssignModal from "../admin/management/feescollection/assignModal";
 // import { getFeeReminderDetailsOfSpecStudent } from "../service/studentapi";
 import { getAllChildFeeReminder } from "../service/parentDashboardApi";
-import { parent_routes } from "../admin/router/parent_routes";
+import { parent_routes } from "../router/parent_routes";
 
 const PFeesReminder = () => {
   // const routes = all_routes;

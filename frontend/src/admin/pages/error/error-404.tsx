@@ -1,7 +1,7 @@
 
 import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 
 const Error404 = () => {
   const routes = all_routes;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 // import { Studentlist } from "../../../../core/data/json/studentList";
 import type { TableData } from "../../../../core/data/interface";
 // import ImageWithBasePath from "../../../../core/common/imageWithBasePath";

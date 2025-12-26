@@ -12,7 +12,7 @@ import {
 } from "../../../core/common/selectoption/selectoption";
 import { TimePicker } from "antd";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import {
   addClassRoutine,

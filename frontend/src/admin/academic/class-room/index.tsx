@@ -10,7 +10,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import { addClassRoom, allClassRoom, deleteClassRoom, editClassRoom, speClassRoom } from "../../../service/classApi";
 import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
@@ -172,8 +172,9 @@ const ClassRoom = () => {
         status: "1",
       });
       setErrors({});
-    } catch (error) {
+    } catch (error:any) {
       console.log(error)
+      toast.error(error.response.data.message)
     }
   };
 

@@ -10,7 +10,7 @@ import {
 import type { TableData } from "../../../core/data/interface";
 import CommonSelect from "../../../core/common/commonSelect";
 import PredefinedDateRanges from "../../../core/common/datePicker";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { addAcademicReason, allAcademicReason, deleteReason, editReason, speReason } from "../../../service/api";
 import { toast } from "react-toastify";

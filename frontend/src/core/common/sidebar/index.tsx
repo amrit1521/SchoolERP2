@@ -20,7 +20,7 @@ import usePreviousRoute from "./usePreviousRoute";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import "../../../../node_modules/react-perfect-scrollbar/dist/css/styles.css";
-import { all_routes } from "../../../admin/router/all_routes"
+import { all_routes } from "../../../router/all_routes"
 // import { parent_routes } from "../../../admin/router/parent_routes";
 const routes = all_routes;
 

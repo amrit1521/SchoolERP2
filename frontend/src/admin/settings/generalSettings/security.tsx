@@ -1,5 +1,5 @@
 
-import { all_routes } from '../../router/all_routes';
+import { all_routes } from '../../../router/all_routes';
 import { Link } from 'react-router-dom';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 

@@ -41,7 +41,6 @@ exports.addSection = async (req, res) => {
   try {
     const { class_id, room_no, section, noOfStudents, noOfSubjects, status } = req.body;
 
-
     if (!class_id || !room_no || !section || !noOfStudents || !noOfSubjects) {
       return res.status(400).json({
         success: false,
@@ -51,7 +50,7 @@ exports.addSection = async (req, res) => {
 
     const sectionName = section.trim().toLowerCase();
 
-
+    // Check if room is already assigned to another class
     const [roomExists] = await db.query(
       `SELECT id FROM sections WHERE room_no = ? AND class_id != ?`,
       [room_no, class_id]
@@ -64,7 +63,7 @@ exports.addSection = async (req, res) => {
       });
     }
 
-
+    // Check if section already exists in this class
     const [sectionExists] = await db.query(
       `SELECT id FROM sections WHERE LOWER(section_name) = ? AND class_id = ?`,
       [sectionName, class_id]
@@ -77,10 +76,34 @@ exports.addSection = async (req, res) => {
       });
     }
 
+    // Check room capacity
+    // Assume you have a table `rooms` with `room_no` and `capacity`
+    const [roomCapacityData] = await db.query(
+      `SELECT capacity FROM class_room WHERE id = ?`,
+      [room_no]
+    );
 
+    if (roomCapacityData.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found.",
+      });
+    }
+
+    const roomCapacity = roomCapacityData[0].capacity;
+
+
+    if (parseInt(noOfStudents) > parseInt(roomCapacity)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot add section. Room capacity exceeded. Room can hold only ${roomCapacity} students.`,
+      });
+    }
+
+    // Insert new section
     const [result] = await db.query(
       `INSERT INTO sections (class_id, section_name, room_no, noOfStudents , noOfSubjects, status)
-       VALUES (?, ?, ?,?,?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [class_id, sectionName, room_no, noOfStudents, noOfSubjects, status.trim()]
     );
 
@@ -99,6 +122,7 @@ exports.addSection = async (req, res) => {
     });
   }
 };
+
 
 
 exports.getSectionSpecClass = async (req, res) => {
@@ -164,6 +188,28 @@ exports.editSpecificSection = async (req, res) => {
       });
     }
 
+    const [roomCapacityData] = await db.query(
+      `SELECT capacity FROM class_room WHERE id = ?`,
+      [room_no]
+    );
+
+    if (roomCapacityData.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found.",
+      });
+    }
+
+    const roomCapacity = roomCapacityData[0].capacity;
+
+
+    if (parseInt(noOfStudents) > parseInt(roomCapacity)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot add section. Room capacity exceeded. Room can hold only ${roomCapacity} students.`,
+      });
+    }
+
     const [result] = await db.query(
       `UPDATE sections SET class_id =? , section_name = ?,room_no =?, noOfStudents=?,noOfSubjects=?  ,status = ? WHERE id = ?`,
       [class_id, sectionName, room_no, noOfStudents, noOfSubjects, status.trim(), id]
@@ -191,8 +237,8 @@ exports.editSpecificSection = async (req, res) => {
 };
 
 
-exports.getSectionSpecClass = async (req,res) => {
-  try{
+exports.getSectionSpecClass = async (req, res) => {
+  try {
     const id = Number(req.params.id);
     if (!id) {
       return res.status(400).json({
@@ -202,7 +248,7 @@ exports.getSectionSpecClass = async (req,res) => {
     }
 
     const [rows] = await db.query(`SELECT id, UPPER(section_name) AS section_name , status FROM sections WHERE class_id = ?`, [id]);
-    
+
     if (rows.length === 0) {
       return res.status(200).json({
         success: false,

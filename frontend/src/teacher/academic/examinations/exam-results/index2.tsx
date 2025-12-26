@@ -13,7 +13,7 @@ import {
 
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { allExamData, getSpeExamResult } from "../../../../service/api";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 export default function ExamMarkUpload() {
 

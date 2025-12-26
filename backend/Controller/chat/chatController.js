@@ -152,7 +152,7 @@ exports.createGroupConversationViaPermission = async (req, res) => {
 
 exports.addMemberToGroup = async (req, res) => {
   const { conversationId } = req.params;
-  const { members = [], added_by } = req.body; // members = array of userIds
+  const { members = [], added_by } = req.body; 
 
   try {
     // --------------------------------------------
@@ -250,7 +250,6 @@ exports.addMemberToGroup = async (req, res) => {
     return res.json({
       success: true,
       message: "Members added successfully",
-      added_members: newMembers,
       conversation_id: conversationId,
     });
 

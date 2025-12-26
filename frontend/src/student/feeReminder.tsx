@@ -10,6 +10,7 @@ import TooltipOption from "../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import AssignModal from "../admin/management/feescollection/assignModal";
 import { getFeeReminderDetailsOfSpecStudent } from "../service/studentapi";
+import dayjs from 'dayjs'
 
 const FeesReminder = () => {
   const routes = all_routes;
@@ -28,9 +29,10 @@ const FeesReminder = () => {
   interface ReminderDetails {
     feesGroup: string;
     feesType: string;
-    class: string;
-    section: string;
-    gender: string;
+    // class: string;
+    // section: string;
+    // gender: string;
+    dueDate: string;
     category: string;
     amount: string;
   }
@@ -40,9 +42,10 @@ const FeesReminder = () => {
       {
         feesGroup: "",
         feesType: "",
-        class: "",
-        section: "",
-        gender: "",
+        // class: "",
+        // section: "",
+        // gender: "",
+        dueDate: "",
         category: "",
         amount: "",
       },
@@ -54,7 +57,7 @@ const FeesReminder = () => {
     setLoading(true);
     try {
       const { data } = await getFeeReminderDetailsOfSpecStudent(userId);
-
+    
       setFeesAssignDetails(
         data.data.map((fd: any) => ({
           feesGroup: fd.feesGroup,
@@ -62,6 +65,7 @@ const FeesReminder = () => {
           amount: fd.AmountPay,
           class: fd.class_name,
           section: fd.section_name,
+          dueDate:fd.dueDate,
           gender: fd.gender,
         }))
       );
@@ -84,10 +88,11 @@ const FeesReminder = () => {
     sNo: index + 1,
     feesGroup: item.feesGroup,
     feesType: item.feesType,
-    class: item.class,
-    section: item.section,
+    // class: item.class,
+    // section: item.section,
     amount: item.amount,
-    gender: item.gender,
+    dueDate:dayjs(item.dueDate).format('DD MMM YYYY'),
+    // gender: item.gender,
     category: item.category,
   }));
 
@@ -110,32 +115,41 @@ const FeesReminder = () => {
       sorter: (a: TableData, b: TableData) =>
         a.feesType.length - b.feesType.length,
     },
-    {
-      title: "Class",
-      dataIndex: "class",
-      sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
-    },
-    {
-      title: "Section",
-      dataIndex: "section",
-      sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
-    },
+    // {
+    //   title: "Class",
+    //   dataIndex: "class",
+    //   sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
+    // },
+    // {
+    //   title: "Section",
+    //   dataIndex: "section",
+    //   render:(text:string)=>(
+    //     <span className="text-uppercase">{text}</span>
+    //   ),
+    //   sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
+    // },
     {
       title: "Amount",
       dataIndex: "amount",
       sorter: (a: TableData, b: TableData) => a.amount.length - b.amount.length,
     },
     {
-      title: "Gender",
-      dataIndex: "gender",
+      title: "Last Date",
+      dataIndex: "dueDate",
       sorter: (a: TableData, b: TableData) => a.gender.length - b.gender.length,
     },
+    // {
+    //   title: "Gender",
+    //   dataIndex: "gender",
+    //   sorter: (a: TableData, b: TableData) => a.gender.length - b.gender.length,
+    // },
     // {
     //   title: "Category",
     //   dataIndex: "category",
     //   sorter: (a: TableData, b: TableData) =>
     //     a.category.length - b.category.length,
     // },
+
   ];
   return (
     <>
@@ -196,7 +210,7 @@ const FeesReminder = () => {
                               <CommonSelect
                                 className="select"
                                 options={allClass}
-                                // defaultValue={allSection[0]}
+                              // defaultValue={allSection[0]}
                               />
                             </div>
                           </div>
@@ -206,7 +220,7 @@ const FeesReminder = () => {
                               <CommonSelect
                                 className="select"
                                 options={sections}
-                                // defaultValue={gender[0]}
+                              // defaultValue={gender[0]}
                               />
                             </div>
                           </div>
@@ -289,7 +303,7 @@ const FeesReminder = () => {
                   <Table
                     dataSource={tableData}
                     columns={columns}
-                    Selection={true}
+                    Selection={false}
                   />
                 </>
               )}

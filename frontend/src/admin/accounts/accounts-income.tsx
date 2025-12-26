@@ -12,7 +12,7 @@ import {
   source,
 } from "../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import ImageWithBasePath from "../../core/common/imageWithBasePath";
 import { toast } from "react-toastify";

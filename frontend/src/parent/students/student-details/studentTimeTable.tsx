@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { getStuTimeTable, specificStudentData1 } from "../../../service/api";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { parent_routes } from "../../../admin/router/parent_routes";
+import { parent_routes } from "../../../router/parent_routes";
 
 const PStudentTimeTable = () => {
   const routes = all_routes;

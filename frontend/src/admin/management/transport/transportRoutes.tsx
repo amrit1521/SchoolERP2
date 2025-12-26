@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import Table from "../../../core/common/dataTable";
 import TooltipOption from "../../../core/common/tooltipOption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TransportModal from "./transportModal";
 import {
   getAllTransportRoutes,

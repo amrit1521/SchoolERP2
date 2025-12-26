@@ -20,7 +20,7 @@ import { toast } from "react-toastify";
 import { allRealClasses } from "../../../../service/classApi";
 import { Spinner } from "../../../../spinner";
 // import { all_routes } from "../../../../admin/router/all_routes";
-import { teacher_routes } from "../../../../admin/router/teacher_routes";
+import { teacher_routes } from "../../../../router/teacher_routes";
 
 interface FromClass {
   class: number | null;
@@ -198,6 +198,10 @@ const TStudentPromotion = () => {
       );
       return;
     }
+    // if(fromClassData.class!=teacher.class&&fromClassData.section!=teacher.section){
+    //   toast.error('You can parmote only your class students!')
+    //   return
+    // }
     try {
       setLoadingStudents(true);
       await new Promise((res) => setTimeout(res, 500));
@@ -572,7 +576,7 @@ const TStudentPromotion = () => {
                       </div>
                     </div>
                     <div className="col-md-12">
-                      {permission?.can_edit ? (
+                      {!permission?.can_edit ? (
                         <div className="manage-promote-btn d-flex justify-content-center flex-wrap row-gap-2">
                           <button
                             type="reset"

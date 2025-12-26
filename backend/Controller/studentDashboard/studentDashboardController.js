@@ -112,13 +112,18 @@ exports.getStudentHomework = async (req, res) => {
 exports.getStudentFeeReminder = async (req, res) => {
   try {
     const { rollNum } = req.params;
-    const sql = `SELECT fa.AmountPay, fa.collectionDate, ft.name as fee_type FROM fees_assign fa
-    LEFT JOIN  fees_type ft ON ft.id = fa.fees_typeId
-    WHERE fa.student_rollnum = ?`;
+    const sql = `SELECT
+       fm.totalAmount AS AmountPay,
+       fm.dueDate AS collectionDate, 
+       ft.name as fee_type
+       FROM fees_assign fa
+       LEFT JOIN fees_master fm ON fm.id = fa.fees_masterId
+    LEFT JOIN  fees_type ft ON ft.id = fm.feesType
+    WHERE fa.student_rollnum = ? AND fa.status='0'`;
 
     const [rows] = await db.execute(sql, [rollNum]);
     if (rows.length <= 0) {
-      return res.status(200).json({
+      return res.status(400).json({
         success: false,
         data: rows,
       });
@@ -180,6 +185,7 @@ exports.getSpeStuIssueBookData = async (req, res) => {
               ib.takenOn,
               ib.last_date,
               ib.bookId,
+              ib.return_date,
               ib.status,
               b.bookImg,
               b.bookName

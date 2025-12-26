@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { useEffect, useRef, useState } from "react";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 // import { studentreport } from "../../../core/data/json/student_report";
 import Table from "../../../core/common/dataTable/index";
 import { Link } from "react-router-dom";

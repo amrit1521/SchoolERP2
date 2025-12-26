@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ImageWithBasePath from '../../../core/common/imageWithBasePath'
-import { all_routes } from '../../router/all_routes'
+import { all_routes } from '../../../router/all_routes'
 import { allClass, cast, classSection, feeGroup, feesTypes, gender } from '../../../core/common/selectoption/selectoption'
 import CommonSelect from '../../../core/common/commonSelect'
 import { Modal } from "react-bootstrap";
@@ -109,8 +109,9 @@ const AssignModal = ({ addModal, setAddModal, editModal, setEditModal }: any) =>
         setSelectedFees([]);
         setSelectedStudents([]);
       }
-    } catch (err) {
+    } catch (err:any) {
       console.error("Error:", err);
+      toast.error(err.response.data.message)
     }
   };
 

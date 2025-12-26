@@ -8,7 +8,7 @@ import CommonSelect from "../../../../core/common/commonSelect";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { Spinner } from "../../../../spinner";
 import { Imageurl } from "../../../../service/api";
-import { all_routes } from "../../../router/all_routes";
+import { all_routes } from "../../../../router/all_routes";
 import { deleteStaff, speDetailsForAllStaff } from "../../../../service/staff";
 
 import {

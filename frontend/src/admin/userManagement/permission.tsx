@@ -4,7 +4,7 @@ import PredefinedDateRanges from "../../core/common/datePicker";
 // import type { TableData } from "../../core/data/interface";
 import Table from "../../core/common/dataTable/index";
 // import { permission } from "../../core/data/json/permission";
-import { all_routes } from "../router/all_routes";
+import { all_routes } from "../../router/all_routes";
 import TooltipOption from "../../core/common/tooltipOption";
 import {
   addModules,

@@ -11,7 +11,7 @@ import CommonSelect from "../../../core/common/commonSelect";
 //   classSylabus,
 //   studentsnumber,
 // } from "../../../core/common/selectoption/selectoption";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 // import { classstudentreport } from "../../../core/data/json/class_studentreport";
 // import ImageWithBasePath from "../../../core/common/imageWithBasePath";
 // import { classreport } from "../../../core/data/json/class_report";

@@ -1,4 +1,4 @@
-import { success } from "zod";
+
 import db from "../../config/db.js";
 
 export const getAllUsers = async (req, res) => {

@@ -6,7 +6,7 @@ import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import { activeList, holidays } from "../../../core/common/selectoption/selectoption";
 import { Link } from "react-router-dom";
-import { all_routes } from "../../router/all_routes";
+import { all_routes } from "../../../router/all_routes";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import { adddesignation, alldesignation, deletedesignation, editDesignation, spedesignation } from "../../../service/designation";
