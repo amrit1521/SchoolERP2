@@ -21,6 +21,7 @@ import { allStudents, deleteStudent, disableStudent, enableStudent, Imageurl } f
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { handleModalPopUp } from "../../../../handlePopUpmodal";
+import { Spinner } from "../../../../spinner";
 // import { findNonSerializableValue } from "@reduxjs/toolkit";
 
 const StudentList = () => {
@@ -156,7 +157,7 @@ const StudentList = () => {
       dataIndex: "name",
       render: (text: string, record: any) => (
         <div className="d-flex align-items-center">
-          <Link to={`${routes.studentDetail}/${record.action}`} className="avatar avatar-md">
+          <Link to={`${routes.studentDetail}/${record.RollNo}`} className="avatar avatar-md">
             <img
               src={`${Imageurl}/${record.imgSrc}`}
               className="img-fluid rounded-circle"
@@ -165,7 +166,7 @@ const StudentList = () => {
           </Link>
           <div className="ms-2">
             <p className="text-dark mb-0">
-              <Link to={`${routes.studentDetail}/${record.action}`} className='text-capitalize'>{text}</Link>
+              <Link to={`${routes.studentDetail}/${record.RollNo}`} className='text-capitalize'>{text}</Link>
             </p>
           </div>
         </div>
@@ -377,6 +378,7 @@ const StudentList = () => {
           </div>
           {/* /Page Header */}
           {/* Students List */}
+
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
               <h4 className="mb-3">Students List</h4>
@@ -525,17 +527,14 @@ const StudentList = () => {
               {
                 loading ?
                   (
-                    <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
+                    <Spinner/>
                   )
                   :
                   (<><Table dataSource={tableData} columns={columns} Selection={true} /></>)
               }
             </div>
           </div>
+
           {/* /Students List */}
         </div>
       </div>

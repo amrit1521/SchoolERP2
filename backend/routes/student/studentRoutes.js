@@ -17,6 +17,12 @@ router.delete(`/deletestu/:rollnum`, studentController.deleteStudent);
 router.get("/getstubytoken/:userId", studentController.getStuByToken);
 // filter students
 router.post("/filterstudents", studentController.filterStudents);
+
+router.post(
+  "/filterstudents2",
+  studentController.filterStudents2
+);
+
 router.post(
   "/filterstudentsforoption",
   studentController.filterStudentsForOption

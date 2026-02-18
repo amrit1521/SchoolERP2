@@ -249,6 +249,11 @@ import StudentGrid from "../admin/peoples/students/student-grid/index.tsx";
 import Storage from "../admin/settings/otherSettings/storage.tsx";
 import TeacherAttendance from "../admin/hrm/attendance/teacher-attendance.tsx";
 import ExamMarkUpload from "../admin/academic/examinations/exam-results/EditExamResult.tsx";
+import StudentAttemdance2 from "../admin/hrm/attendance2/index.tsx";
+import AttendanceData2 from "../admin/hrm/attendance2Data/index.tsx";
+
+
+
 import { student_routes } from "./student_routes.tsx";
 import HomeWork from "../student/homeWork.tsx";
 import MyAttendance from "../student/myAttendance.tsx";
@@ -1875,6 +1880,16 @@ export const publicRoutes = [
   {
     path: routes.activity,
     element: <NotificationActivities />,
+    route: Route,
+  },
+  {
+    path: routes.studentattendance2,
+    element: <StudentAttemdance2 />,
+    route: Route,
+  },
+  {
+    path: routes.studentattendancedata2,
+    element: <AttendanceData2 />,
     route: Route,
   },
 ];

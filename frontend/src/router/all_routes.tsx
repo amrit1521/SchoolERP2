@@ -1,3 +1,4 @@
+
 export const all_routes = {
 // dashboard routes
   adminDashboard: "/index",
@@ -321,5 +322,10 @@ export const all_routes = {
   staffDayWise: "/report/staff-day-wise",
   //page module
   profile:"/pages/profile",
-  activity:"/pages/activities"
+  activity:"/pages/activities",
+
+
+  // new feature
+  studentattendance2:"/hrm/student-attendance2",
+  studentattendancedata2:"/hrm/student-attendancedata2",
 };

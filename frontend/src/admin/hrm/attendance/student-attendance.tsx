@@ -33,6 +33,8 @@ const StudentAttendance = () => {
       id: student.student_id,
       rollNo: student.rollnum,
       name: `${student.firstname} ${student.lastname}`,
+      class_id:student.class_id,
+      section_id:student.section_id,
       class: student.class,
       section: student.section,
       attendance: "Absent",
@@ -45,8 +47,10 @@ const StudentAttendance = () => {
       try {
         setLoading(true);
         const { data } = await allStudents();
+       
         if (data.success) {
           setStudents(data.students);
+
           setAllStudentsList(data.students);
         }
       } catch (error: any) {
@@ -84,6 +88,7 @@ const StudentAttendance = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
       const { data } = await markAttendance(attendanceData);
       if (data.success) {
@@ -194,11 +199,11 @@ const StudentAttendance = () => {
 //  filter students
 
   interface FilterData {
-    class: string;
-    section: string;
+    class: number|null;
+    section: number|null;
   }
 
-  const [filterData, setFilterData] = useState<FilterData>({ class: "", section: "" });
+  const [filterData, setFilterData] = useState<FilterData>({ class:null, section: null });
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleFilterSelectChange = (name: keyof FilterData, value: string | number) => {
@@ -221,7 +226,7 @@ const StudentAttendance = () => {
 
   const handleResetFilter = (e?: React.MouseEvent) => {
     e?.preventDefault();
-    setFilterData({ class: "", section: "" });
+    setFilterData({ class: null, section: null });
     setStudents(allStudentsList); 
 
     if (dropdownMenuRef.current) {

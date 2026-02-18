@@ -1,9 +1,6 @@
 const express = require('express')
 const attendanaceController = require('../../Controller/attendance/attendanceCntroller')
 
-
-
-
 const router = express.Router()
 
 router.post('/markstuattendance' , attendanaceController.markStudentAttendance)
@@ -11,6 +8,8 @@ router.get('/getstuattendance/:rollno' , attendanaceController.getStudentAttenda
 router.get('/getstuattendancereport' , attendanaceController.getStuAttendanceReport)
 router.get('/getdailyclassattendancereport',attendanaceController.getDailyClassAttendanceReport)
 router.get('/getdailystudentattendancereport',attendanaceController.getDailyStudentAttendanceReport)
+router.post('/markstuattendance2' , attendanaceController.markStudentAttendance2)
+router.post('/getstuattendance2data' , attendanaceController.getAttendance2Data)
 
 // staff attendance
 router.post('/markstaffattendance' , attendanaceController.markStaffAttendance)

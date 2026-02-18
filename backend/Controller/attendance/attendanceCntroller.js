@@ -435,8 +435,8 @@ exports.markStudentAttendance = async (req, res) => {
       `;
       const [existing] = await db.query(checkSql, [
         item.rollNo,
-        item.class,
-        item.section,
+        item.class_id,
+        item.section_id,
         today,
       ]);
 
@@ -458,8 +458,8 @@ exports.markStudentAttendance = async (req, res) => {
     const values = data.map((item) => [
       item.attendance,
       item.rollNo,
-      item.class,
-      item.section,
+      item.class_id,
+      item.section_id,
       item.notes,
       new Date(),
     ]);
@@ -911,3 +911,112 @@ exports.getStuAttendanceData = async (req,res) =>{
     });
   }
 }
+
+
+// new feature
+exports.markStudentAttendance2 = async (req, res) => {
+  const data = req.body;
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return res.status(400).json({
+      message: "Attendance data is required!",
+      success: false,
+    });
+  }
+
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    for (let item of data) {
+      const checkSql = `
+        SELECT id FROM attendance_info2
+        WHERE student_rollnum = ?
+        AND attendance_date = ?
+      `;
+
+      const [existing] = await db.query(checkSql, [
+        item.rollNo,
+        today,
+      ]);
+
+      if (existing.length > 0) {
+        return res.status(400).json({
+          message: `Attendance already marked for Roll No ${item.rollNo} today`,
+          success: false,
+        });
+      }
+    }
+
+    const insertSql = `
+      INSERT INTO attendance_info2
+      (student_rollnum, class_id , section_id,  attendance, attendance_date)
+      VALUES ?
+    `;
+
+    const values = data.map((item) => [
+      item.rollNo,
+      item.class,
+      item.section,
+      item.attendance === "Present" ? "Present" : "Absent",
+      today,
+    ]);
+
+    await db.query(insertSql, [values]);
+
+    return res.status(200).json({
+      message: "Attendance marked successfully!",
+      success: true,
+    });
+
+  } catch (error) {
+    console.error("Error marking attendance:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+    });
+  }
+};
+
+
+exports.getAttendance2Data = async (req, res) => {
+  try {
+    const { class:classId, section, date } = req.body;
+   
+    if (!classId || !section || !date) {
+      return res.status(400).json({
+        success: false,
+        message: "class_id, section_id and date are required",
+      });
+    }
+
+    const sql = `
+      SELECT 
+        ai.attendance, 
+        u.firstname,
+        u.lastname,
+        s.stu_img,
+        s.stu_id AS student_id,
+        ai.student_rollnum,
+        s.admissionnum
+      FROM attendance_info2 ai
+      LEFT JOIN students s ON s.rollnum = ai.student_rollnum
+      LEFT JOIN users u ON u.id=s.stu_id
+      WHERE ai.class_id = ? AND ai.section_id = ? AND ai.attendance_date = ?
+      ORDER BY ai.student_rollnum ASC
+    `;
+
+    const [rows] = await db.query(sql, [classId, section, date]);
+
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (err) {
+    console.error("Error fetching attendance:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+

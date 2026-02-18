@@ -224,6 +224,20 @@ export const SidebarData = [
         submenu: false,
       },
       {
+        label: "New Attendance",
+        link: routes.studentattendance2,
+        icon: "ti ti-building",
+        showSubRoute: false,
+        submenu: false,
+      },
+       {
+        label: "New Attendance Data",
+        link: routes.studentattendancedata2,
+        icon: "ti ti-building",
+        showSubRoute: false,
+        submenu: false,
+      },
+      {
         label: "Class Routine",
         link: routes.classRoutine,
         icon: "ti ti-bell-school",

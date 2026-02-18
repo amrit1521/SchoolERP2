@@ -382,6 +382,55 @@ exports.filterStudents = async (req, res) => {
   }
 };
 
+exports.filterStudents2 = async (req, res) => {
+  const data = req.body;
+
+  try {
+    const sql = `
+      SELECT 
+        s.id AS student_id,
+        s.rollnum,
+        s.admissionnum,
+        u.firstname, 
+        u.lastname,
+        s.class_id,
+        s.section_id,
+        s.stu_img,
+        UPPER(c.class_name) AS class,
+        UPPER(se.section_name) AS section
+      FROM students s
+      JOIN users u ON u.id = s.stu_id
+      JOIN classes c ON c.id = s.class_id
+      JOIN sections se ON se.id = s.section_id
+      WHERE s.class_id = ?  AND s.section_id = ?
+      ORDER BY s.rollnum;
+    `;
+
+    const [rows] = await db.query(sql, [data.class, data.section]);
+    // console.log(rows);
+
+    if (!rows.length) {
+      return res.status(200).json({
+        success: false,
+        message: "No student found!",
+      });
+    }
+
+    
+    return res.status(200).json({
+      success: true,
+      message: "Student fetched successfully for promotion!",
+      students: rows,
+    });
+  } catch (error) {
+    console.error("❌ Error in filtering student:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+
 exports.filterStudentsForOption = async (req, res) => {
   const data = req.body;
   try {
@@ -1299,6 +1348,8 @@ exports.filterStudentsForParmotion = async (req, res) => {
     });
   }
 };
+
+
 
 
 exports.promoteStudents = async (req, res) => {

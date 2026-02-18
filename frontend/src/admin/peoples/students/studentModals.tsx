@@ -17,8 +17,8 @@ import { toast } from "react-toastify";
 import { handleModalPopUp } from "../../../handlePopUpmodal";
 
 type Props = {
-  rollnum: number | null;
-  onAdd: () => void;
+  rollnum?: number | null;
+  onAdd?: () => void;
 };
 
 export interface ApplyLeave {
@@ -137,7 +137,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
     try {
       const { data } = await addLeave(updatedForm);
       if (data.success) {
-        onAdd();
+        if(onAdd)  onAdd();
         toast.success(data.message);
         setApplayLeaveForm({
           idOrRollNum: null,
@@ -177,7 +177,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
   // add fees -------------------------------------------------------------
 
   const [formData, setFormData] = useState<FeesFormData>({
-    student_rollnum: rollnum,
+    student_rollnum: null,
     feesGroup: "",
     feesType: "",
     amount: "",
@@ -269,7 +269,7 @@ const StudentModals: React.FC<Props> = ({ rollnum, onAdd }) => {
       if (data.success) {
         toast.success(data.message);
         handleModalPopUp("add_fees_collect");
-        onAdd();
+       if(onAdd)  onAdd();
         setFormData({
           student_rollnum: 0,
           feesGroup: "",

@@ -124,6 +124,7 @@ export const getStuByToken = (userId: number) =>
   api.get(`/stu/getstubytoken/${userId}`);
 export const stuForOption = () => api.get(`/stu/stuforoption`);
 export const stuForOption2 = () => api.get(`/stu/stuforoption2`);
+export const studentsFilter2 = (data: object) => api.post('/stu/filterstudents2', data)
 export const studentsForParmotion = (data: object) => api.post('/stu/filterstudentsforparmotion', data)
 export const parmoteStudents = (data: object) => api.post('/stu/parmotestudents', data)
 
@@ -208,6 +209,16 @@ export const getspeteacherissuebookdata = (teacherId: number) => api.get(`/libra
 // attendance routes----------------------------
 export const markAttendance = (data: object) =>
   api.post("/attendance/markstuattendance", data);
+
+// new feature
+export const markAttendance2 = (data: object) =>
+  api.post("/attendance/markstuattendance2", data);
+
+export const getAttendanceData2 = (data: object) =>
+  api.post("attendance/getstuattendance2data", data);
+// new feature
+
+
 export const getStuAttendanceData = (rollnum: any) =>
   api.get(`/attendance/getstuattendance/${rollnum}`);
 
