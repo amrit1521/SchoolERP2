@@ -178,10 +178,11 @@ const PlayersList = () => {
 
       if (data.success) {
         toast.success(data.message);
-        handleModalPopUp(editId ? "edit_player" : "add_player");
+      
         fetchPlayers();
         setForm(initailData)
         setEditId(null)
+        handleModalPopUp(editId ? "edit_player" : "add_player");
       }
 
     } catch (error: any) {
