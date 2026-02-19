@@ -16,7 +16,6 @@ import { DatePicker } from "antd";
 import dayjs from 'dayjs'
 import { addHomeWork, allHomeWork, allTeacherForOption, deleteHomework, editHomework, getAllSection, getAllSectionForAClass, getAllSubject, Imageurl, speHomework } from "../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allRealClasses } from "../../../service/classApi";
 
 
@@ -92,6 +91,8 @@ const ClassHomeWork = () => {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [allClass, setAllClass] = useState<classes[]>([])
   const [loading, setLoading] = useState<boolean>(false);
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [editModal ,setEditModal] = useState<boolean>(false)
 
 
   const fetchData = async <T,>(
@@ -275,6 +276,7 @@ const ClassHomeWork = () => {
     try {
       const { data } = await speHomework(id)
       if (data.success) {
+        setEditModal(true)
         setFormData({
           className: data.data.className,
           section: Number(data.data.section),
@@ -291,8 +293,9 @@ const ClassHomeWork = () => {
         setEditId(id)
       }
 
-    } catch (error) {
+    } catch (error:any) {
       console.log(error)
+      toast.error(error?.response?.data?.message)
     }
   }
 
@@ -313,6 +316,8 @@ const ClassHomeWork = () => {
       title: ""
     })
     setErrors({});
+    setEditModal(false)
+    setAddModal(false)
   }
 
 
@@ -329,13 +334,13 @@ const ClassHomeWork = () => {
         if (data.success) {
           toast.success(data.message)
           setEditId(null)
-          handleModalPopUp("edit_home_work");
+           setEditModal(false)
         }
       } else {
         const { data } = await addHomeWork(formData);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp("add_home_work");
+          setAddModal(false)
 
         }
       }
@@ -361,6 +366,8 @@ const ClassHomeWork = () => {
 
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal ,setDelModal] = useState<boolean>(false)
+
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     // console.log(id)
     e.preventDefault()
@@ -370,7 +377,7 @@ const ClassHomeWork = () => {
       if (data.success) {
         toast.success(data.message)
         fetchHomeWorks()
-        handleModalPopUp('delete-modal')
+         setDelModal(false)
       }
 
 
@@ -383,6 +390,7 @@ const ClassHomeWork = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -483,8 +491,7 @@ const ClassHomeWork = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={() => fetchHwById(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_home_work"
+                 
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -493,9 +500,10 @@ const ClassHomeWork = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={() =>{ setDeleteId(text)
+                    setDelModal(true)
+                   }}
+                 
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -535,15 +543,14 @@ const ClassHomeWork = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                     type="button"
                     className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_home_work"
+                     onClick={()=>setAddModal(true)}
                   >
                     <i className="ti ti-square-rounded-plus-filled me-2" />
                     Add Home Work
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -682,7 +689,8 @@ const ClassHomeWork = () => {
         </div>
         {/* /Page Wrapper */}
         {/* Add Home Work */}
-        <div className="modal fade" id="add_home_work">
+         {
+          addModal&&(<div className="modal fade show d-block" id="add_home_work">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -690,8 +698,7 @@ const ClassHomeWork = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                   onClick={(e) => cancelEdit(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -908,9 +915,9 @@ const ClassHomeWork = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button type="button" className="btn btn-light me-2"   onClick={(e) => cancelEdit(e)}>
                     Cancel
-                  </Link>
+                  </button>
                   <button type="submit" className="btn btn-primary">
                     Add Homework
                   </button>
@@ -918,10 +925,12 @@ const ClassHomeWork = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Add Home Work */}
         {/* Edit Home Work */}
-        <div className="modal fade" id="edit_home_work">
+        {
+          editModal&&( <div className="modal fade show d-block" id="edit_home_work">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -930,8 +939,7 @@ const ClassHomeWork = () => {
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                 
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -1153,7 +1161,7 @@ const ClassHomeWork = () => {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                  <button onClick={(e) => cancelEdit(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
+                  <button onClick={(e) => cancelEdit(e)} className="btn btn-light me-2" type="button">
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -1163,12 +1171,14 @@ const ClassHomeWork = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Edit Home Work */}
 
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+         {
+          delModal&&(<div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -1186,7 +1196,7 @@ const ClassHomeWork = () => {
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -1200,7 +1210,8 @@ const ClassHomeWork = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Delete Modal */}
       </>
     </div>

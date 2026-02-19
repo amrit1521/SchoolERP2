@@ -11,7 +11,6 @@ import TooltipOption from "../../core/common/tooltipOption";
 import React, { useEffect, useState } from "react";
 import { addExpCat, allExpCat, delExpCat, editExpCat, speExpCat } from "../../service/accounts";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../handlePopUpmodal";
 import { Spinner } from "../../spinner";
 
 interface ExpenseCategory {
@@ -45,6 +44,8 @@ const ExpensesCategory = () => {
   });
   const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
 
 
@@ -105,6 +106,7 @@ const ExpensesCategory = () => {
     try {
       const { data } = await speExpCat(id)
       if (data.success) {
+        setEditModal(true)
         const res = data.data
         setFormData({
           category: res.category,
@@ -129,7 +131,8 @@ const ExpensesCategory = () => {
         setFormData({ category: "", description: "" });
         fetchExpCat()
         setEditId(null)
-        handleModalPopUp(editId ? 'edit_expenses_category' : 'add_expenses_category')
+        setAddModal(false)
+        setEditModal(false)
       }
 
     } catch (error: any) {
@@ -143,12 +146,15 @@ const ExpensesCategory = () => {
     e.preventDefault()
     setFormData({ category: "", description: "" });
     setErrors({})
+    setAddModal(false)
+    setEditModal(false)
 
 
   }
 
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     // console.log(id)
     e.preventDefault()
@@ -158,7 +164,7 @@ const ExpensesCategory = () => {
       if (data.success) {
         toast.success(data.message)
         fetchExpCat()
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
 
@@ -171,6 +177,7 @@ const ExpensesCategory = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -216,8 +223,7 @@ const ExpensesCategory = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={(() => fetchByid(record.id))}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_expenses_category"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -225,10 +231,12 @@ const ExpensesCategory = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() => {
+                      setDeleteId(record.id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -269,15 +277,14 @@ const ExpensesCategory = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                   type="button"
                   className="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_expenses_category"
+                  onClick={()=>setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Category
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -375,158 +382,164 @@ const ExpensesCategory = () => {
       </div>
       {/* /Page Wrapper */}
       {/* Add Expenses Category */}
-      <div className="modal fade" id="add_expenses_category">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Add Category</h4>
-              <button
-                type="button"
-                onClick={(e) => handleCancel(e)}
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label className="form-label">Category</label>
-                      <input
-                        type="text"
-                        name="category"
-                        className={`form-control ${errors.category ? "is-invalid" : ""}`}
-                        value={formData.category}
-                        onChange={handleChange}
-                      />
-                      {errors.category && <div className="invalid-feedback">{errors.category}</div>}
-                    </div>
-                    <div className="mb-0">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                      {errors.description && (
-                        <div className="invalid-feedback">{errors.description}</div>
-                      )}
+      {
+        addModal && (<div className="modal fade show d-block" id="add_expenses_category">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Add Category</h4>
+                <button
+                  type="button"
+                  onClick={(e) => handleCancel(e)}
+                  className="btn-close custom-btn-close"
+
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      <div className="mb-3">
+                        <label className="form-label">Category</label>
+                        <input
+                          type="text"
+                          name="category"
+                          className={`form-control ${errors.category ? "is-invalid" : ""}`}
+                          value={formData.category}
+                          onChange={handleChange}
+                        />
+                        {errors.category && <div className="invalid-feedback">{errors.category}</div>}
+                      </div>
+                      <div className="mb-0">
+                        <label className="form-label">Description</label>
+                        <textarea
+                          name="description"
+                          rows={4}
+                          className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                          value={formData.description}
+                          onChange={handleChange}
+                        />
+                        {errors.description && (
+                          <div className="invalid-feedback">{errors.description}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Add Category
-                </button>
-              </div>
-            </form>
+                <div className="modal-footer">
+                  <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Add Category
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Add Expenses Category */}
       {/* Edit Expenses Category */}
-      <div className="modal fade" id="edit_expenses_category">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Edit Category</h4>
-              <button
-                type="button"
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    <div className="mb-3">
-                      <label className="form-label">Category</label>
-                      <input
-                        type="text"
-                        name="category"
-                        className={`form-control ${errors.category ? "is-invalid" : ""}`}
-                        value={formData.category}
-                        onChange={handleChange}
-                      />
-                      {errors.category && <div className="invalid-feedback">{errors.category}</div>}
-                    </div>
-                    <div className="mb-0">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        className={`form-control ${errors.description ? "is-invalid" : ""}`}
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                      {errors.description && (
-                        <div className="invalid-feedback">{errors.description}</div>
-                      )}
+      {
+        editModal && (<div className="modal fade show d-block" id="edit_expenses_category">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Category</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  onClick={(e) => handleCancel(e)}
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      <div className="mb-3">
+                        <label className="form-label">Category</label>
+                        <input
+                          type="text"
+                          name="category"
+                          className={`form-control ${errors.category ? "is-invalid" : ""}`}
+                          value={formData.category}
+                          onChange={handleChange}
+                        />
+                        {errors.category && <div className="invalid-feedback">{errors.category}</div>}
+                      </div>
+                      <div className="mb-0">
+                        <label className="form-label">Description</label>
+                        <textarea
+                          name="description"
+                          rows={4}
+                          className={`form-control ${errors.description ? "is-invalid" : ""}`}
+                          value={formData.description}
+                          onChange={handleChange}
+                        />
+                        {errors.description && (
+                          <div className="invalid-feedback">{errors.description}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Save Changes
-                </button>
-              </div>
-            </form>
+                <div className="modal-footer">
+                  <button type="button" onClick={(e) => handleCancel(e)} className="btn btn-light me-2" >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Edit Expenses Category */}
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <form >
-              <div className="modal-body text-center">
-                <span className="delete-icon">
-                  <i className="ti ti-trash-x" />
-                </span>
-                <h4>Confirm Deletion</h4>
-                <p>
-                  You want to delete  marked item, this cant be undone
-                  once you delete.
-                </p>
-                {
-                  deleteId && (<div className="d-flex justify-content-center">
-                    <button
-                      onClick={(e) => cancelDelete(e)}
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </button>
-                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                    >
-                      Yes, Delete
-                    </button>
-                  </div>)
-                }
+      {
+        delModal && (
+          <div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form >
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete  marked item, this cant be undone
+                      once you delete.
+                    </p>
+                    {
+                      deleteId && (<div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>)
+                    }
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      </div>
+        )
+      }
       {/* /Delete Modal */}
     </div>
   );

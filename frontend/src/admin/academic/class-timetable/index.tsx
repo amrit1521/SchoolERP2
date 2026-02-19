@@ -22,7 +22,7 @@ import { addTimeTable, allTeacherForOption, filterTimeTable, getAllSectionForACl
 import { toast } from "react-toastify";
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 import { allRealClasses } from "../../../service/classApi";
 
 const ClassTimetable = () => {
@@ -122,6 +122,7 @@ const ClassTimetable = () => {
     timefrom: "",
     timeto: "",
   });
+  const [addModal ,setAddModal] = useState<boolean>(false)
 
   // 🔹 for other inputs (subject, class, etc.)
   const handleSelectChange = (name: keyof TimeTable, value: string | number) => {
@@ -157,7 +158,7 @@ const ClassTimetable = () => {
           timefrom: "",
           timeto: "",
         })
-        handleModalPopUp(`add_time_table`)
+        setAddModal(false)
       }
     } catch (error) {
       console.log(error);
@@ -395,15 +396,14 @@ const ClassTimetable = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_time_table"
+                  onClick={()=>setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Time Table
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -638,7 +638,8 @@ const ClassTimetable = () => {
       {/* /Page Wrapper */}
       <>
         {/* Add Class Time Table */}
-        <div className="modal fade" id="add_time_table">
+         {
+          addModal&&(<div className="modal fade show d-block" id="add_time_table">
           <div className="modal-dialog modal-dialog-centered modal-xl">
             <div className="modal-content">
               <div className="modal-header">
@@ -646,8 +647,7 @@ const ClassTimetable = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                   onClick={()=>setAddModal(false)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -781,301 +781,21 @@ const ClassTimetable = () => {
                           </Link>
                         </div>
                       </div>
-
-                      {/* <div
-                        className="tab-pane fade"
-                        id="pills-tuesday"
-                        role="tabpanel"
-                        aria-labelledby="pills-tuesday-tab"
-                      >
-                        {tuesdayContents.map((_, index) => (
-                          <div className="add-timetable-row">
-                            <div className="row timetable-count">
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Subject</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={language}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Teacher</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={teacher}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Time From</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={Time}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="d-flex align-items-end">
-                                  <div className="mb-3 flex-fill">
-                                    <label className="form-label">Time To</label>
-                                    <CommonSelect
-                                      className="select"
-                                      options={Timeto}
-                                    />
-                                  </div>
-                                  {tuesdayContents.length > 1 && (
-                                    <div className="mb-3 ms-2">
-                                      <Link to="#" className="delete-time-table" onClick={() => removetuesdayContent(index)}>
-                                        <i className="ti ti-trash" />
-                                      </Link>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div>
-                          <Link
-                            to="#" onClick={addTuesdayContent}
-                            className="btn btn-primary add-new-timetable"
-                          >
-                            <i className="ti ti-square-rounded-plus-filled me-2" />
-                            Add New
-                          </Link>
-                        </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        id="pills-wednesday"
-                        role="tabpanel"
-                        aria-labelledby="pills-wednesday-tab"
-                      >
-                        {wednessdayContents.map((_, index) => (
-                          <div className="add-timetable-row">
-                            <div className="row timetable-count">
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Subject</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={language}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Teacher</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={teacher}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Time From</label>
-
-                                  <CommonSelect
-                                    className="select"
-                                    options={Time}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="d-flex align-items-end">
-                                  <div className="mb-3 flex-fill">
-                                    <label className="form-label">Time To</label>
-                                    <CommonSelect
-                                      className="select"
-                                      options={Time}
-                                    />
-                                  </div>
-                                  {wednessdayContents.length > 1 && (
-                                    <div className="mb-3 ms-2">
-                                      <Link to="#" className="delete-time-table" onClick={() => removewednessdayContent(index)}>
-                                        <i className="ti ti-trash" />
-                                      </Link>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div>
-
-                          <Link
-                            to="#"
-                            className="btn btn-primary add-new-timetable" onClick={addwednessdayContent}
-                          >
-                            <i className="ti ti-square-rounded-plus-filled me-2" />
-                            Add New
-                          </Link>
-                        </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        id="pills-thursday"
-                        role="tabpanel"
-                        aria-labelledby="pills-thursday-tab"
-                      >
-                        {thursdayContents.map((_, index) => (
-                          <div className="add-timetable-row">
-                            <div className="row timetable-count">
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Subject</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={language}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Teacher</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={routinename}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Time From</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={Time}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="d-flex align-items-end">
-                                  <div className="mb-3 flex-fill">
-                                    <label className="form-label">Time To</label>
-                                    <CommonSelect
-                                      className="select"
-                                      options={Time}
-                                    />
-                                  </div>
-                                  {thursdayContents.length > 1 && (
-                                    <div className="mb-3 ms-2">
-                                      <Link to="#" className="delete-time-table" onClick={() => removethursdayContents(index)}>
-                                        <i className="ti ti-trash" />
-                                      </Link>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div>
-                          <Link
-                            to="#"
-                            className="btn btn-primary add-new-timetable" onClick={addthursdayContents}
-                          >
-                            <i className="ti ti-square-rounded-plus-filled me-2" />
-                            Add New
-                          </Link>
-                        </div>
-                      </div>
-
-                      <div
-                        className="tab-pane fade"
-                        id="pills-friday"
-                        role="tabpanel"
-                        aria-labelledby="pills-friday-tab"
-                      >
-                        {fridayContents.map((_, index) => (
-                          <div className="add-timetable-row">
-                            <div className="row timetable-count">
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Subject</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={language}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Teacher</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={teacher}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="mb-3">
-                                  <label className="form-label">Time From</label>
-                                  <CommonSelect
-                                    className="select"
-                                    options={Time}
-                                  />
-                                </div>
-                              </div>
-                              <div className="col-lg-3">
-                                <div className="d-flex align-items-end">
-                                  <div className="mb-3 flex-fill">
-                                    <label className="form-label">Time To</label>
-                                    <CommonSelect
-                                      className="select"
-                                      options={Timeto}
-                                    />
-                                  </div>
-                                  {fridayContents.length > 1 && (
-                                    <div className="mb-3 ms-2">
-                                      <Link to="#" className="delete-time-table" onClick={() => removefridayContents(index)}>
-                                        <i className="ti ti-trash" />
-                                      </Link>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div>
-                          <Link
-                            to="#"
-                            className="btn btn-primary add-new-timetable" onClick={addfridayContents}
-                          >
-                            <i className="ti ti-square-rounded-plus-filled me-2" />
-                            Add New
-                          </Link>
-                        </div>
-                      </div> */}
-
                     </div>
-
-
                   </div>
-
-
                 </div>
-
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                     onClick={()=>setAddModal(false)}
                   >
                     Cancel
-                  </Link>
+                  </button>
                   <button
                     onClick={handleSubmitTable}
                     className="btn btn-primary"
-                    data-bs-dismiss="modal"
+                   
                   >
                     Add Time Table
                   </button>
@@ -1084,7 +804,8 @@ const ClassTimetable = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Add Class Time Table */}
       </>
     </div>

@@ -13,7 +13,7 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import { all_routes } from "../../../router/all_routes";
 import { addClassRoom, allClassRoom, deleteClassRoom, editClassRoom, speClassRoom } from "../../../service/classApi";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 
 
 
@@ -32,12 +32,15 @@ const ClassRoom = () => {
 
   const [allroom, setAllroom] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
+
 
 
   const fetchAllClassRoom = async () => {
     setLoading(true)
     await new Promise((res) => setTimeout(res, 500))
-   
+
     try {
       const { data } = await allClassRoom()
       if (data.success) {
@@ -122,6 +125,7 @@ const ClassRoom = () => {
           capacity: data.data.capacity,
           status: data.data.status,
         });
+        setEditModal(true)
 
       }
 
@@ -139,6 +143,8 @@ const ClassRoom = () => {
     });
     setErrors({});
     setEditId(null)
+    setEditModal(false)
+    setAddModal(false)
   }
 
 
@@ -152,7 +158,7 @@ const ClassRoom = () => {
         const { data } = await editClassRoom(formData, editId)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_class_room')
+          setEditModal(false)
           setEditId(null)
         }
       } else {
@@ -160,7 +166,7 @@ const ClassRoom = () => {
 
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_class_room')
+          setAddModal(false)
 
         }
       }
@@ -172,7 +178,7 @@ const ClassRoom = () => {
         status: "1",
       });
       setErrors({});
-    } catch (error:any) {
+    } catch (error: any) {
       console.log(error)
       toast.error(error.response.data.message)
     }
@@ -182,6 +188,7 @@ const ClassRoom = () => {
 
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     // console.log(id)
     e.preventDefault()
@@ -191,7 +198,7 @@ const ClassRoom = () => {
       if (data.success) {
         toast.success(data.message)
         fetchAllClassRoom()
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
 
@@ -204,6 +211,7 @@ const ClassRoom = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -267,8 +275,7 @@ const ClassRoom = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={(() => fetchClassRoomByid(id))}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_class_room"
+
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -277,9 +284,11 @@ const ClassRoom = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={(() => setDeleteId(id))}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={(() => {
+                    setDeleteId(id)
+                    setDelModal(true)
+                  })}
+
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -319,15 +328,15 @@ const ClassRoom = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
                     className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_class_room"
+                    onClick={() => setAddModal(true)}
+
                   >
                     <i className="ti ti-square-rounded-plus-filled me-2" />
                     Add Class Room
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -453,235 +462,239 @@ const ClassRoom = () => {
 
         {/* Add Class Room */}
 
-        
-        <div className="modal fade" id="add_class_room">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Class Room</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
 
-              {/* Controlled Form */}
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Room No */}
-                      <div className="mb-3">
-                        <label className="form-label">Room No</label>
-                        <input
-                          type="number"
-                          className={`form-control ${errors.room_no ? "is-invalid" : ""
-                            }`}
-                          name="room_no"
-                          value={formData.room_no}
-                          onChange={handleChange}
-                          placeholder="Enter Room No"
-                        />
-                        {errors.room_no && (
-                          <div className="text-danger">{errors.room_no}</div>
-                        )}
-                      </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_class_room">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Class Room</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
-                      {/* Capacity */}
-                      <div className="mb-3">
-                        <label className="form-label">Capacity</label>
-                        <input
-                          type="number"
-                          className={`form-control ${errors.capacity ? "is-invalid" : ""
-                            }`}
-                          name="capacity"
-                          value={formData.capacity}
-                          onChange={handleChange}
-                          placeholder="Enter Capacity"
-                        />
-                        {errors.capacity && (
-                          <div className="text-danger">{errors.capacity}</div>
-                        )}
-                      </div>
-
-                      {/* Status */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                {/* Controlled Form */}
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Room No */}
+                        <div className="mb-3">
+                          <label className="form-label">Room No</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm"
-                            name="status"
-                            checked={formData.status === "1"}
+                            type="number"
+                            className={`form-control ${errors.room_no ? "is-invalid" : ""
+                              }`}
+                            name="room_no"
+                            value={formData.room_no}
                             onChange={handleChange}
+                            placeholder="Enter Room No"
                           />
+                          {errors.room_no && (
+                            <div className="text-danger">{errors.room_no}</div>
+                          )}
+                        </div>
+
+                        {/* Capacity */}
+                        <div className="mb-3">
+                          <label className="form-label">Capacity</label>
+                          <input
+                            type="number"
+                            className={`form-control ${errors.capacity ? "is-invalid" : ""
+                              }`}
+                            name="capacity"
+                            value={formData.capacity}
+                            onChange={handleChange}
+                            placeholder="Enter Capacity"
+                          />
+                          {errors.capacity && (
+                            <div className="text-danger">{errors.capacity}</div>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm"
+                              name="status"
+                              checked={formData.status === "1"}
+                              onChange={handleChange}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-primary">
-                    Add Class Room
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+                      onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Add Class Room
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-
+          )
+        }
         {/* /Add Class Room */}
         {/* Edit Class Room */}
-        <div className="modal fade" id="edit_class_room">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Class Room</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_class_room">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Class Room</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Room No */}
-                      <div className="mb-3">
-                        <label className="form-label">Room No</label>
-                        <input
-                          type="number"
-                          className={`form-control ${errors.room_no ? "is-invalid" : ""
-                            }`}
-                          name="room_no"
-                          value={formData.room_no}
-                          onChange={handleChange}
-                          placeholder="Enter Room No"
-                        />
-                        {errors.room_no && (
-                          <div className="text-danger">{errors.room_no}</div>
-                        )}
-                      </div>
-
-                      {/* Capacity */}
-                      <div className="mb-3">
-                        <label className="form-label">Capacity</label>
-                        <input
-                          type="number"
-                          className={`form-control ${errors.capacity ? "is-invalid" : ""
-                            }`}
-                          name="capacity"
-                          value={formData.capacity}
-                          onChange={handleChange}
-                          placeholder="Enter Capacity"
-                        />
-                        {errors.capacity && (
-                          <div className="text-danger">{errors.capacity}</div>
-                        )}
-                      </div>
-
-                      {/* Status */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Room No */}
+                        <div className="mb-3">
+                          <label className="form-label">Room No</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm"
-                            name="status"
-                            checked={formData.status === "1"}
+                            type="number"
+                            className={`form-control ${errors.room_no ? "is-invalid" : ""
+                              }`}
+                            name="room_no"
+                            value={formData.room_no}
                             onChange={handleChange}
+                            placeholder="Enter Room No"
                           />
+                          {errors.room_no && (
+                            <div className="text-danger">{errors.room_no}</div>
+                          )}
+                        </div>
+
+                        {/* Capacity */}
+                        <div className="mb-3">
+                          <label className="form-label">Capacity</label>
+                          <input
+                            type="number"
+                            className={`form-control ${errors.capacity ? "is-invalid" : ""
+                              }`}
+                            name="capacity"
+                            value={formData.capacity}
+                            onChange={handleChange}
+                            placeholder="Enter Capacity"
+                          />
+                          {errors.capacity && (
+                            <div className="text-danger">{errors.capacity}</div>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm"
+                              name="status"
+                              checked={formData.status === "1"}
+                              onChange={handleChange}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
 
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Edit Class Room */}
 
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form >
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete  marked item, this cant be undone
-                    once you delete.
-                  </p>
-                  {
-                    deleteId && (<div className="d-flex justify-content-center">
-                      <button
-                        onClick={(e) => cancelDelete(e)}
-                        className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
-                      >
-                        Cancel
-                      </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>)
-                  }
-                </div>
-              </form>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form >
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete  marked item, this cant be undone
+                      once you delete.
+                    </p>
+                    {
+                      deleteId && (<div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          data-bs-dismiss="modal"
+                        >
+                          Cancel
+                        </button>
+                        <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>)
+                    }
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </div>
     </div>

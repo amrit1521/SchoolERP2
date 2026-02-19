@@ -5,14 +5,13 @@ import { toast } from "react-toastify";
 
 // Core imports
 import Table from "../../../core/common/dataTable";
-import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { all_routes } from "../../../router/all_routes";
 import { activeList } from "../../../core/common/selectoption/selectoption";
 import { getAllSection, addClassSection, deleteSection, speSection, editSection } from "../../../service/api";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { allClassRoom, allRealClasses } from "../../../service/classApi";
+import { Spinner } from "../../../spinner";
 
 
 interface AllSection {
@@ -74,6 +73,8 @@ const Classes: React.FC = () => {
     noOfStudents: "",
     noOfSubjects: ""
   });
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [editModal ,setEditModal] = useState<boolean>(false)
 
   // 🔹 Form Handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +108,7 @@ const Classes: React.FC = () => {
           noOfStudents: data.data.noOfStudents,
           noOfSubjects: data.data.noOfSubjects,
         })
+        setEditModal(true)
       }
 
     } catch (error) {
@@ -172,14 +174,14 @@ const Classes: React.FC = () => {
         const { data } = await editSection(sectionData, editId);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp("edit_section");
+          setEditModal(false)
           setEditId(null);
         }
       } else {
         const { data } = await addClassSection(sectionData);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp("add_class_section");
+          setAddModal(false)
         }
       }
 
@@ -198,10 +200,9 @@ const Classes: React.FC = () => {
     setEditId(null)
     setSectionData({ class_id: null, room_no: null, section: "", status: "0", noOfStudents: "", noOfSubjects: "" });
     setErrors({ class_id: "", room_no: "", section: "", noOfStudents: "", noOfSubjects: "" });
+    setAddModal(false)
+    setEditModal(false)
   }
-
-
-
 
   // 🔹 Fetch Sections
   const fetchSection = async () => {
@@ -241,6 +242,7 @@ const Classes: React.FC = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal , setDelModal] =useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -252,7 +254,7 @@ const Classes: React.FC = () => {
         toast.success(data.message)
         fetchSection();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -263,6 +265,7 @@ const Classes: React.FC = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   // 🔹 Table Columns
@@ -352,8 +355,7 @@ const Classes: React.FC = () => {
               <button
                 className="dropdown-item rounded-1"
                 onClick={() => fetchSectionbyId(id)}
-                data-bs-toggle="modal"
-                data-bs-target="#edit_section"
+               
               >
                 <i className="ti ti-edit-circle me-2" /> Edit
               </button>
@@ -361,9 +363,11 @@ const Classes: React.FC = () => {
             <li>
               <button
                 className="dropdown-item rounded-1"
-                onClick={() => setDeleteId(id)}
-                data-bs-toggle="modal"
-                data-bs-target="#delete-modal"
+                onClick={() =>{ 
+                  setDeleteId(id) 
+                  setDelModal(true)
+                }}
+                
               >
                 <i className="ti ti-trash-x me-2" /> Delete
               </button>
@@ -412,10 +416,6 @@ const Classes: React.FC = () => {
     [allClass]
   );
 
-
-
-
-
   const handleApplyClick = () => {
     dropdownMenuRef.current?.classList.remove("show");
   };
@@ -444,15 +444,15 @@ const Classes: React.FC = () => {
           <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
             <TooltipOption />
             <div className="mb-2">
-              <Link
-                to="#"
+              <button
+                 type="button"
                 className="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#add_class_section"
+                onClick={()=>setAddModal(true)}
+                 
               >
                 <i className="ti ti-square-rounded-plus-filled me-2" />
                 Add Section
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -462,10 +462,7 @@ const Classes: React.FC = () => {
           <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
             <h4 className="mb-3">Class Section</h4>
             <div className="d-flex align-items-center flex-wrap">
-              <div className="input-icon-start mb-3 me-2 position-relative">
-                <PredefinedDateRanges />
-              </div>
-
+             
               {/* Filter */}
               <div className="dropdown mb-3 me-2">
                 <Link
@@ -542,11 +539,7 @@ const Classes: React.FC = () => {
           {/* Table Body */}
           <div className="card-body p-0 py-3">
             {loading ? (
-              <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-              </div>
+              <Spinner/>
             ) : (
               <Table columns={columns} dataSource={tableData} Selection />
             )}
@@ -556,7 +549,9 @@ const Classes: React.FC = () => {
 
 
       {/* 🔹 Add Section Modal */}
-      <div className="modal fade" id="add_class_section">
+    {
+      addModal&&(
+          <div className="modal fade show d-block" id="add_class_section">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form onSubmit={handleSubmit}>
@@ -663,11 +658,13 @@ const Classes: React.FC = () => {
           </div>
         </div>
       </div>
+      )
+    }
 
-      {/* 🔹 Add Section Modal */}
 
       {/* edit section modal */}
-      <div className="modal fade" id="edit_section">
+       {
+        editModal&&(<div className="modal fade show d-block" id="edit_section">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form onSubmit={handleSubmit}>
@@ -773,11 +770,13 @@ const Classes: React.FC = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* edit section modal */}
 
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
+      {
+        delModal&&(<div className="modal fade show d-block" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -795,7 +794,7 @@ const Classes: React.FC = () => {
                     <button
                       onClick={(e) => cancelDelete(e)}
                       className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                   
                     >
                       Cancel
                     </button>
@@ -809,7 +808,8 @@ const Classes: React.FC = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+      }
       {/* /Delete Modal */}
     </div>
 

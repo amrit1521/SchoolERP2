@@ -15,7 +15,6 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import { addClassSchedule, allClassSchedule, deleteClassSchedule, editClassSchedule, speClassSchedule } from "../../../service/classApi";
 import { toast } from "react-toastify";
 import { Spinner } from "../../../spinner";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
 
 const ScheduleClasses = () => {
   // const data = scheduleClass;
@@ -38,6 +37,8 @@ const ScheduleClasses = () => {
 
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
 
   const fetchSchedule = async () => {
@@ -132,6 +133,7 @@ const ScheduleClasses = () => {
           status: data.data.status,
         })
         setEditId(id)
+        setEditModal(true)
       }
     } catch (error) {
       console.log(error)
@@ -148,6 +150,8 @@ const ScheduleClasses = () => {
       status: "1",
     })
     setErrors({})
+    setAddModal(false)
+    setEditModal(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,22 +160,22 @@ const ScheduleClasses = () => {
 
     try {
 
-     if(editId){
-      
-      const {data} = await editClassSchedule(formData,editId)
-      if(data.success){
-        toast.success(data.message)
-        handleModalPopUp('edit_Schedule')
-        setEditId(null)
-      }
-     }else{
-       const { data } = await addClassSchedule(formData)
-      if (data.success) {
-        toast.success(data.message)
-        handleModalPopUp('add_Schedule')
+      if (editId) {
 
+        const { data } = await editClassSchedule(formData, editId)
+        if (data.success) {
+          toast.success(data.message)
+          setEditModal(false)
+          setEditId(null)
+        }
+      } else {
+        const { data } = await addClassSchedule(formData)
+        if (data.success) {
+          toast.success(data.message)
+          setAddModal(false)
+
+        }
       }
-     }
       fetchSchedule()
       setFormData({
         className: "",
@@ -190,6 +194,7 @@ const ScheduleClasses = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -201,7 +206,7 @@ const ScheduleClasses = () => {
         toast.success(data.message)
         fetchSchedule();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -212,6 +217,7 @@ const ScheduleClasses = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -224,7 +230,7 @@ const ScheduleClasses = () => {
       render: (text: number) => (
         <>
           <Link to="#" className="link-primary">
-            SC{text}
+            SC-{text}
           </Link>
         </>
       ),
@@ -287,8 +293,7 @@ const ScheduleClasses = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchScheduleById(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_Schedule"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -297,9 +302,11 @@ const ScheduleClasses = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() => {
+                      setDeleteId(id)
+                      setDelModal(true)
+                    }}
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -338,15 +345,15 @@ const ScheduleClasses = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_Schedule"
+                  onClick={() => setAddModal(true)}
+
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Schedule
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -462,102 +469,104 @@ const ScheduleClasses = () => {
       {/* /Page Wrapper */}
       <div>
         {/* Add Schedule */}
-        <div className="modal fade" id="add_Schedule">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Schedule</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Type */}
-                      <div className="mb-3">
-                        <label className="form-label">Class</label>
-                        <CommonSelect
-                          className="select"
-                          options={classselect}
-                          value={formData.className}
-                          onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
-                        />
-                        {errors.className && <small className="text-danger">{errors.className}</small>}
-                      </div>
-
-                      {/* Start Time */}
-                      <div className="mb-3">
-                        <label className="form-label">Start Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.startTime}
-                          onChange={(opt) => handleSelectChange("startTime", opt ? opt.value : "")}
-                        />
-                        {errors.startTime && <small className="text-danger">{errors.startTime}</small>}
-                      </div>
-
-                      {/* End Time */}
-                      <div className="mb-3">
-                        <label className="form-label">End Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={formData.endTime}
-                          onChange={(opt) => handleSelectChange("endTime", opt ? opt.value : "")}
-                        />
-                        {errors.endTime && <small className="text-danger">{errors.endTime}</small>}
-                      </div>
-
-                      {/* Status Toggle */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm"
-                            name="status"
-                            checked={formData.status === "1"}
-                            onChange={handleChange}
+        {
+          addModal && (<div className="modal fade show d-block" id="add_Schedule">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Schedule</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Type */}
+                        <div className="mb-3">
+                          <label className="form-label">Class</label>
+                          <CommonSelect
+                            className="select"
+                            options={classselect}
+                            value={formData.className}
+                            onChange={(opt) => handleSelectChange("className", opt ? opt.value : "")}
                           />
+                          {errors.className && <small className="text-danger">{errors.className}</small>}
+                        </div>
+
+                        {/* Start Time */}
+                        <div className="mb-3">
+                          <label className="form-label">Start Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTime}
+                            value={formData.startTime}
+                            onChange={(opt) => handleSelectChange("startTime", opt ? opt.value : "")}
+                          />
+                          {errors.startTime && <small className="text-danger">{errors.startTime}</small>}
+                        </div>
+
+                        {/* End Time */}
+                        <div className="mb-3">
+                          <label className="form-label">End Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTime}
+                            value={formData.endTime}
+                            onChange={(opt) => handleSelectChange("endTime", opt ? opt.value : "")}
+                          />
+                          {errors.endTime && <small className="text-danger">{errors.endTime}</small>}
+                        </div>
+
+                        {/* Status Toggle */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm"
+                              name="status"
+                              checked={formData.status === "1"}
+                              onChange={handleChange}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Add Schedule
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+                      onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Add Schedule
+                    </button>
+                  </div>
+                </form>
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Add Schedule */}
         {/* Edit Schedule */}
-        <div className="modal fade" id="edit_Schedule">
+        {
+          editModal&&( <div className="modal fade show d-block" id="edit_Schedule">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -566,8 +575,7 @@ const ScheduleClasses = () => {
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                 
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -639,7 +647,7 @@ const ScheduleClasses = () => {
                     type="button"
                     onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                   
                   >
                     Cancel
                   </button>
@@ -650,43 +658,46 @@ const ScheduleClasses = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Edit Schedule */}
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form >
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
-                  </p>
-                  {
-                    deleteId && (<div className="d-flex justify-content-center">
-                      <button
-                        onClick={(e) => cancelDelete(e)}
-                        className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
-                      >
-                        Cancel
-                      </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>)
-                  }
-                </div>
-              </form>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form >
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete all the marked items, this cant be undone
+                      once you delete.
+                    </p>
+                    {
+                      deleteId && (<div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          data-bs-dismiss="modal"
+                        >
+                          Cancel
+                        </button>
+                        <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>)
+                    }
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </div>
     </div>

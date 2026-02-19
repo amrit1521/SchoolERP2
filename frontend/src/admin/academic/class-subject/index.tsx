@@ -6,7 +6,6 @@ import {
   language,
   typetheory,
 } from "../../../core/common/selectoption/selectoption";
-import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
@@ -14,7 +13,7 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import { all_routes } from "../../../router/all_routes";
 import { addSubject, deleteSubject, editSubject, getAllSubject, speSubject } from "../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 
 const ClassSubject = () => {
   const routes = all_routes;
@@ -36,12 +35,14 @@ const ClassSubject = () => {
 
   const [allSubject, setSAllSubject] = useState<AllSubject[]>([]);
   const [loading, setloading] = useState<boolean>(false);
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchAllSubject = async () => {
-      setloading(true);
-      await new Promise((res)=>setTimeout(res,500))
+    setloading(true);
+    await new Promise((res) => setTimeout(res, 500))
     try {
-    
+
       const { data } = await getAllSubject();
       if (data.success) {
         setSAllSubject(data.data);
@@ -59,7 +60,7 @@ const ClassSubject = () => {
   }, []);
 
 
-  // Table data को transform करना
+
   const tabledata = allSubject.map((item) => ({
     key: item.id,
     id: item.id,
@@ -71,7 +72,6 @@ const ClassSubject = () => {
 
 
 
-  // Form Data
   interface subjecformdata {
     name: string;
     code: string;
@@ -107,6 +107,7 @@ const ClassSubject = () => {
     try {
       const { data } = await speSubject(id)
       if (data.success) {
+        setEditModal(true)
         setformdata({
           name: data.data.name,
           code: data.data.code,
@@ -115,10 +116,12 @@ const ClassSubject = () => {
 
         })
         setEditId(id)
+
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.response?.data?.message)
 
     }
   }
@@ -131,14 +134,14 @@ const ClassSubject = () => {
         const { data } = await editSubject(fromdata, editId)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_subject')
+          setEditModal(false)
           setEditId(null)
         }
       } else {
         const { data } = await addSubject(fromdata);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp('add_subject')
+          setAddModal(false)
 
         }
       }
@@ -157,12 +160,15 @@ const ClassSubject = () => {
     setformdata({
       name: "", code: "", type: "", status: ""
     })
+    setEditModal(false)
+    setAddModal(false)
   }
 
 
   // delete subject-----------------------------------------------------------------
 
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     // console.log(id)
     e.preventDefault()
@@ -172,8 +178,9 @@ const ClassSubject = () => {
       if (data.success) {
         toast.success(data.message)
         fetchAllSubject()
-        handleModalPopUp('delete-modal')
+
         setDeleteId(null)
+        setDelModal(false)
       }
 
 
@@ -186,6 +193,7 @@ const ClassSubject = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -257,8 +265,7 @@ const ClassSubject = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={() => fetchSubjectById(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_subject"
+
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -267,9 +274,11 @@ const ClassSubject = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(text)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={() => {
+                    setDeleteId(text)
+                    setDelModal(true)
+                  }}
+
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -308,15 +317,15 @@ const ClassSubject = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_subject"
+                  onClick={() => setAddModal(true)}
+
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Subject
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -327,9 +336,7 @@ const ClassSubject = () => {
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
               <h4 className="mb-3">Class Subject</h4>
               <div className="d-flex align-items-center flex-wrap">
-                <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
-                </div>
+
                 {/* Filter Dropdown */}
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -441,223 +448,227 @@ const ClassSubject = () => {
       {/* /Page Wrapper */}
 
       {/* Add Subject Modal */}
-      <div className="modal fade" id="add_subject">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Add Subject</h4>
-              <button
-                type="button"
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
+      {
+        addModal && (<div className="modal fade show d-block" id="add_subject">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Add Subject</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  onClick={(e) => handeledit(e)}
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    {/* Name */}
-                    <div className="mb-3">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter Name"
-                        name="name"
-                        value={fromdata.name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    {/* Code */}
-                    <div className="mb-3">
-                      <label className="form-label">Code</label>
-                      <CommonSelect
-                        className="select"
-                        options={count}
-                        value={fromdata.code}
-                        onChange={(option) =>
-                          handelSelectChange("code", option ? option.value : "")
-                        }
-                      />
-                    </div>
-                    {/* Type */}
-                    <div className="mb-3">
-                      <label className="form-label">Type</label>
-                      <CommonSelect
-                        className="select"
-                        options={typetheory}
-                        defaultValue={typetheory[0]}
-                        value={fromdata.type}
-                        onChange={(option) =>
-                          handelSelectChange("type", option ? option.value : "")
-                        }
-                      />
-                    </div>
-                    {/* Status */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
-                      </div>
-                      <div className="form-check form-switch">
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      {/* Name */}
+                      <div className="mb-3">
+                        <label className="form-label">Name</label>
                         <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm2"
-                          name="status"
-                          checked={fromdata.status === "1"}
+                          type="text"
+                          className="form-control"
+                          placeholder="Enter Name"
+                          name="name"
+                          value={fromdata.name}
                           onChange={handleChange}
                         />
+                      </div>
+                      {/* Code */}
+                      <div className="mb-3">
+                        <label className="form-label">Code</label>
+                        <CommonSelect
+                          className="select"
+                          options={count}
+                          value={fromdata.code}
+                          onChange={(option) =>
+                            handelSelectChange("code", option ? option.value : "")
+                          }
+                        />
+                      </div>
+                      {/* Type */}
+                      <div className="mb-3">
+                        <label className="form-label">Type</label>
+                        <CommonSelect
+                          className="select"
+                          options={typetheory}
+                          defaultValue={typetheory[0]}
+                          value={fromdata.type}
+                          onChange={(option) =>
+                            handelSelectChange("type", option ? option.value : "")
+                          }
+                        />
+                      </div>
+                      {/* Status */}
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle</p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm2"
+                            name="status"
+                            checked={fromdata.status === "1"}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Footer */}
-              <div className="modal-footer">
-                <Link to="#" className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </Link>
-                <button type="submit" className="btn btn-primary" >
-                  Add Subject
-                </button>
-              </div>
-            </form>
+                {/* Footer */}
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-light me-2" onClick={(e) => handeledit(e)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" >
+                    Add Subject
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
 
       {/* Edit Subject Modal */}
-      <div className="modal fade" id="edit_subject">
-        <div className="modal-dialog modal-dialog-centere">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Edit Subject</h4>
-              <button
-                type="button"
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
+      {
+        editModal && (<div className="modal fade show d-block" id="edit_subject">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Subject</h4>
+                <button
+                  type="button"
+                  className="btn-close custom-btn-close"
+                  onClick={(e) => handeledit(e)}
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    {/* Name */}
-                    <div className="mb-3">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Enter Name"
-                        name="name"
-                        value={fromdata.name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    {/* Code */}
-                    <div className="mb-3">
-                      <label className="form-label">Code</label>
-                      <CommonSelect
-                        className="select"
-                        options={count}
-                        value={fromdata.code}
-                        onChange={(option) =>
-                          handelSelectChange("code", option ? option.value : "")
-                        }
-                      />
-                    </div>
-                    {/* Type */}
-                    <div className="mb-3">
-                      <label className="form-label">Type</label>
-                      <CommonSelect
-                        className="select"
-                        options={typetheory}
-                        value={fromdata.type}
-                        onChange={(option) =>
-                          handelSelectChange("type", option ? option.value : "")
-                        }
-                      />
-                    </div>
-                    {/* Status */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
-                      </div>
-                      <div className="form-check form-switch">
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      {/* Name */}
+                      <div className="mb-3">
+                        <label className="form-label">Name</label>
                         <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm2"
-                          name="status"
-                          checked={fromdata.status === "1"}
+                          type="text"
+                          className="form-control"
+                          placeholder="Enter Name"
+                          name="name"
+                          value={fromdata.name}
                           onChange={handleChange}
                         />
+                      </div>
+                      {/* Code */}
+                      <div className="mb-3">
+                        <label className="form-label">Code</label>
+                        <CommonSelect
+                          className="select"
+                          options={count}
+                          value={fromdata.code}
+                          onChange={(option) =>
+                            handelSelectChange("code", option ? option.value : "")
+                          }
+                        />
+                      </div>
+                      {/* Type */}
+                      <div className="mb-3">
+                        <label className="form-label">Type</label>
+                        <CommonSelect
+                          className="select"
+                          options={typetheory}
+                          value={fromdata.type}
+                          onChange={(option) =>
+                            handelSelectChange("type", option ? option.value : "")
+                          }
+                        />
+                      </div>
+                      {/* Status */}
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle</p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm2"
+                            name="status"
+                            checked={fromdata.status === "1"}
+                            onChange={handleChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Footer */}
-              <div className="modal-footer">
+                {/* Footer */}
+                <div className="modal-footer">
 
-                <button onClick={(e) => handeledit(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" >
-                  Save Changes
-                </button>
-              </div>
-            </form>
+                  <button type="button" onClick={(e) => handeledit(e)} className="btn btn-light me-2">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
 
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <form >
-              <div className="modal-body text-center">
-                <span className="delete-icon">
-                  <i className="ti ti-trash-x" />
-                </span>
-                <h4>Confirm Deletion</h4>
-                <p>
-                  You want to delete , this can't be undone
-                  once you delete.
-                </p>
-                {
-                  deleteId && (<div className="d-flex justify-content-center">
-                    <button
-                      onClick={(e) => cancelDelete(e)}
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </button>
-                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                    >
-                      Yes, Delete
-                    </button>
-                  </div>)
-                }
-              </div>
-            </form>
+      {
+        delModal && (<div className="modal fade show d-block" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete , this can't be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        data-bs-dismiss="modal"
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Delete Modal */}
     </div>
   );

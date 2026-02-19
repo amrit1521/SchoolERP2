@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 // import type { TableData } from '../../../../core/data/interface';
 import Table from "../../../../core/common/dataTable/index";
 import { Link, useNavigate } from "react-router-dom";
-import PredefinedDateRanges from "../../../../core/common/datePicker";
+
 import CommonSelect from "../../../../core/common/commonSelect";
 import { all_routes } from "../../../../router/all_routes";
 import html2pdf from "html2pdf.js";
@@ -1180,7 +1180,7 @@ const ExamResult = () => {
                 <h4 className="mb-3">Exam Results</h4>
                 <div className="d-flex align-items-center flex-wrap">
                   <div className="input-icon-start mb-3 me-2 position-relative">
-                    <PredefinedDateRanges />
+                 
                   </div>
                   <div className="dropdown mb-3 me-2">
                     <Link
@@ -1271,38 +1271,7 @@ const ExamResult = () => {
                       </form>
                     </div>
                   </div>
-                  <div className="dropdown mb-3">
-                    <Link
-                      to="#"
-                      className="btn btn-outline-light bg-white dropdown-toggle"
-                      data-bs-toggle="dropdown"
-                    >
-                      <i className="ti ti-sort-ascending-2 me-2" />
-                      Sort by A-Z
-                    </Link>
-                    <ul className="dropdown-menu p-3">
-                      <li>
-                        <Link to="#" className="dropdown-item rounded-1 active">
-                          Ascending
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="#" className="dropdown-item rounded-1">
-                          Descending
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="#" className="dropdown-item rounded-1">
-                          Recently Viewed
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="#" className="dropdown-item rounded-1">
-                          Recently Added
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
+                 
                 </div>
               </div>
               <div className="card-body p-0 py-3">

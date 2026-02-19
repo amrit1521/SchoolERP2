@@ -1,30 +1,21 @@
-import { useEffect,useRef, useState } from "react";
+import { useEffect, useState } from "react";
 // import { classes } from "../../../core/data/json/classes";
 import Table from "../../../core/common/dataTable/index";
-import PredefinedDateRanges from "../../../core/common/datePicker";
-
-import CommonSelect from "../../../core/common/commonSelect";
 import type { TableData } from "../../../core/data/interface";
 import { Link } from "react-router-dom";
 import TooltipOption from "../../../core/common/tooltipOption";
 import { all_routes } from "../../../router/all_routes";
 import { addClass, allClasses, deleteClass, editClass, speClass } from "../../../service/classApi";
-// allClasses
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
-import { status } from "../../../core/common/selectoption/selectoption";
 
 
 const Classes = () => {
-
-
   // const data = classes;
-
   const route = all_routes
-
   const [classList, setClassList] = useState<any>([])
-  const [origialClassList, setOriginalClassList] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchClasses = async () => {
     setLoading(true)
@@ -34,7 +25,6 @@ const Classes = () => {
       // console.log(data)
       if (data.success) {
         setClassList(data.data)
-        setOriginalClassList(data.data)
       }
 
     } catch (error) {
@@ -78,32 +68,39 @@ const Classes = () => {
 
     try {
       const { data } = await speClass(id)
-      setFormData({
-        className: data.data.className,
-        status: data.data.status,
+      if (data.success) {
+        setFormData({
+          className: data.data.className,
+          status: data.data.status,
+        }
+        )
+        setEditModal(true)
+        setEditId(id)
       }
-      )
-      setEditId(id)
     } catch (error) {
       console.log(error)
     }
 
   }
 
-  const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+
+  const cancelEditOrAdd = () => {
+
     setFormData({
       className: "",
       status: "1",
-    });
-    // setErrors({});
+    })
+    setEditModal(false)
+    setAddModal(false)
     setEditId(null)
+
   }
+
 
   // ✅ Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(!formData.className.trim()){
+    if (!formData.className.trim()) {
       toast.warn('Classname must be required !')
       return
     }
@@ -113,7 +110,7 @@ const Classes = () => {
 
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_class')
+
           setEditId(null)
         }
 
@@ -122,15 +119,12 @@ const Classes = () => {
         const { data } = await addClass(formData)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_class')
+
 
         }
       }
       fetchClasses()
-      setFormData({
-        className: "",
-        status: "1",
-      })
+      cancelEditOrAdd()
 
     } catch (error) {
       console.log(error)
@@ -141,6 +135,7 @@ const Classes = () => {
 
   // delete class--------------------------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelmodal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
@@ -149,7 +144,7 @@ const Classes = () => {
         setDeleteId(null)
         toast.success(data.message)
         fetchClasses()
-        handleModalPopUp('delete-modal')
+        setDelmodal(false)
 
       }
 
@@ -162,7 +157,9 @@ const Classes = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelmodal(false)
   }
+
 
 
 
@@ -173,7 +170,7 @@ const Classes = () => {
       render: (text: any) => (
         <>
           <Link to="#" className="link-primary">
-            CL{text}
+            CL-{text}
           </Link>
         </>
       ),
@@ -207,25 +204,25 @@ const Classes = () => {
     {
       title: "Action",
       dataIndex: "action",
-      render: (_:any , record:any) => (
+      render: (_: any, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
-              <Link
-                to="#"
+              <button
+                type="button"
                 className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
                 data-bs-toggle="dropdown"
-                aria-expanded="false"
               >
                 <i className="ti ti-dots-vertical fs-14" />
-              </Link>
+              </button>
+
+
               <ul className="dropdown-menu dropdown-menu-right p-3">
                 <li>
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchSpecificClass(record.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_class"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -234,9 +231,11 @@ const Classes = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(record.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() => {
+                      setDeleteId(record.id)
+                      setDelmodal(true)
+                    }}
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -250,39 +249,6 @@ const Classes = () => {
     },
   ];
 
-
-  interface FilterData {
-   status:string;
-  }
-
-  const [filterData, setFilterData] = useState<FilterData>({ status: "" });
-
-  const handleFilterSelectChange = (name: keyof FilterData, value: string | number) => {
-    setFilterData((prev) => ({ ...prev, [name]: String(value) }));
-  };
-
-  const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
-
-  const handleApplyClick = (e: React.FormEvent) => {
-    e.preventDefault();
-    const filtered = origialClassList.filter((row: any) => {
-      const matchClass = filterData.status ? row.status === filterData.status : true;
-      return matchClass ;
-    });
-    setClassList(filtered);
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
-
-  const handleResetFilter = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    setFilterData({ status: "" });
-    setClassList(origialClassList);
-    if (dropdownMenuRef.current) {
-      dropdownMenuRef.current.classList.remove("show");
-    }
-  };
   return (
     <div>
       {/* Page Wrapper */}
@@ -309,15 +275,15 @@ const Classes = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
+                  onClick={() => setAddModal(true)}
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_class"
+
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Class
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -326,89 +292,7 @@ const Classes = () => {
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
               <h4 className="mb-3">Classes List</h4>
-              <div className="d-flex align-items-center flex-wrap">
-                <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
-                </div>
-                <div className="dropdown mb-3 me-2">
-                  <Link
-                    to="#"
-                    className="btn btn-outline-light bg-white dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                    data-bs-auto-close="outside"
-                  >
-                    <i className="ti ti-filter me-2" />
-                    Filter
-                  </Link>
-                  <div className="dropdown-menu drop-width" ref={dropdownMenuRef}>
 
-
-                    <form >
-                      <div className="d-flex align-items-center border-bottom p-3">
-                        <h4>Filter</h4>
-                      </div>
-                      <div className="p-3 border-bottom pb-0">
-                        <div className="row">
-                          <div className="col-md-12">
-                            <div className="mb-3">
-                              <label className="form-label">Status</label>
-                              <CommonSelect
-                                className="select"
-                                options={status}
-                                onChange={(option) => handleFilterSelectChange("status", option ? option.value : "")}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 d-flex align-items-center justify-content-end">
-                        <button onClick={handleResetFilter} className="btn btn-light me-3">
-                          Reset
-                        </button>
-                        <button
-                          // to="#"
-                          className="btn btn-primary"
-                          onClick={handleApplyClick}
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-                <div className="dropdown mb-3">
-                  <Link
-                    to="#"
-                    className="btn btn-outline-light bg-white dropdown-toggle"
-                    data-bs-toggle="dropdown"
-                  >
-                    <i className="ti ti-sort-ascending-2 me-2" />
-                    Sort by A-Z
-                  </Link>
-                  <ul className="dropdown-menu p-3">
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1 active">
-                        Ascending
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Descending
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Recently Viewed
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="#" className="dropdown-item rounded-1">
-                        Recently Added
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-              </div>
             </div>
             <div className="card-body p-0 py-3">
               {/* Guardians List */}
@@ -429,257 +313,207 @@ const Classes = () => {
       {/* /Page Wrapper */}
       <>
         {/* Add Classes */}
-        <div className="modal fade" id="add_class">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Class</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_class">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Class</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={() => cancelEditOrAdd()}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Class Name */}
-                      <div className="mb-3">
-                        <label className="form-label">Class Name</label>
-                        <input
-                          className="form-control"
-                          type="text"
-                          name="className"
-                          value={formData.className}
-                          autoComplete="off"
-                          onChange={handleChange}
-                        />
-                      </div>
-
-                      {/* Status Switch */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Class Name */}
+                        <div className="mb-3">
+                          <label className="form-label">Class Name</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm2"
-                            name="status"
-                            checked={formData.status === "1"}
+                            className="form-control"
+                            type="text"
+                            name="className"
+                            value={formData.className}
+                            autoComplete="off"
                             onChange={handleChange}
                           />
+                        </div>
+
+                        {/* Status Switch */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm2"
+                              name="status"
+                              checked={formData.status === "1"}
+                              onChange={handleChange}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+                      onClick={() => cancelEditOrAdd()}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
 
-                  >
-                    Add Class
-                  </button>
-                </div>
-              </form>
+                    >
+                      Add Class
+                    </button>
+                  </div>
+                </form>
 
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Add Classes */}
 
 
         {/* Edit Classes */}
-        <div className="modal fade" id="edit_class">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Class</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          editModal && (<div className="modal show d-block fade" id="edit_class">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Class</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={() => cancelEditOrAdd()}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Class Name */}
-                      <div className="mb-3">
-                        <label className="form-label">Class Name</label>
-                        <input
-                          className="form-control"
-                          type="text"
-                          name="className"
-                          value={formData.className}
-                          autoComplete="off"
-                          onChange={handleChange}
-                        />
-                      </div>
-                      {/* Status Switch */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Class Name */}
+                        <div className="mb-3">
+                          <label className="form-label">Class Name</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm2"
-                            name="status"
-                            checked={formData.status === "1"}
+                            className="form-control"
+                            type="text"
+                            name="className"
+                            value={formData.className}
+                            autoComplete="off"
                             onChange={handleChange}
                           />
                         </div>
+                        {/* Status Switch */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm2"
+                              name="status"
+                              checked={formData.status === "1"}
+                              onChange={handleChange}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      onClick={() => cancelEditOrAdd()}
+                      className="btn btn-light me-2"
+                       type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
 
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
 
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Edit Classes */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form>
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete this items, this cant be undone once
-                    you delete.
-                  </p>
-                  {
-                    deleteId && (
-                      <div className="d-flex justify-content-center">
-                        <button
-                          onClick={(e) => cancelDelete(e)}
-                          className="btn btn-light me-3"
-                          data-bs-dismiss="modal"
-                        >
-                          Cancel
-                        </button>
-                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
-                          Yes, Delete
-                        </button>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form>
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete this item, it cant be undone once
+                      you delete.
+                    </p>
+                    {
+                      deleteId && (
+                        <div className="d-flex justify-content-center">
+                          <button
+                            onClick={(e) => cancelDelete(e)}
+                            className="btn btn-light me-3"
+                            data-bs-dismiss="modal"
+                          >
+                            Cancel
+                          </button>
+                          <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                            Yes, Delete
+                          </button>
 
-                      </div>
-                    )}
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        {/* /Delete Modal */}
-        {/* View Classes */}
-        <div className="modal fade" id="view_class">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <div className="d-flex align-items-center">
-                  <h4 className="modal-title">Class Details</h4>
-                  <span className="badge badge-soft-success ms-2">
-                    <i className="ti ti-circle-filled me-1 fs-5" />
-                    Active
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form >
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="class-detail-info">
-                        <p>Class Name</p>
-                        <span>III</span>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="class-detail-info">
-                        <p>Section</p>
-                        <span>A</span>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="class-detail-info">
-                        <p>No of Subjects</p>
-                        <span>05</span>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="class-detail-info">
-                        <p>No of Students</p>
-                        <span>25</span>
-                      </div>
-                    </div>
+                        </div>
+                      )}
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
-        {/* /View Classes */}
+          </div>)
+        }
+        {/* /Delete Modal */}
+       
       </>
     </div>
   );

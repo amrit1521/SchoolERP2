@@ -16,7 +16,7 @@ import { Documenturl, getAllSubject } from "../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
 import { Spinner } from "../../../spinner";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 import { addClassSyllabus, addSubjectInAClass, allClassSyllabus, allRealClasses, deleteClassSyllabus, deleteSubjectFromClassSyllabus, updateSyllabusPdfFile } from "../../../service/classApi";
 import MultiSelect from "../../../core/common/multiSelect";
 import { TiDelete } from "react-icons/ti";
@@ -73,6 +73,8 @@ const ClassSyllabus = () => {
   const [classOptions, setClassOptions] = useState<Option[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [deleteSubId, setDeleteSubId] = useState<number | null>(null)
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [updPdfModal ,setUpdPdfModal] = useState<boolean>(false)
 
 
 
@@ -197,6 +199,7 @@ const ClassSyllabus = () => {
     });
 
     setErrors({});
+    setAddModal(false)
 
   }
 
@@ -223,7 +226,7 @@ const ClassSyllabus = () => {
 
         toast.success(data.message)
         fetchSyllbus()
-        handleModalPopUp('add_syllabus')
+       setAddModal(false)
 
       }
 
@@ -243,6 +246,8 @@ const ClassSyllabus = () => {
 
   // delete-------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal ,setDelModal] = useState<boolean>(false)
+  const [delSubModal , setDelSubModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -254,7 +259,7 @@ const ClassSyllabus = () => {
 
         setDeleteId(null)
         fetchSyllbus()
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error: any) {
@@ -266,6 +271,7 @@ const ClassSyllabus = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -280,7 +286,7 @@ const ClassSyllabus = () => {
 
         setDeleteId(null)
         fetchSyllbus()
-        handleModalPopUp('delete-sub-modal')
+       setDelSubModal(false)
       }
 
     } catch (error: any) {
@@ -292,6 +298,7 @@ const ClassSyllabus = () => {
   const cancelDeleteSubj = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteSubId(null)
+    setDelSubModal(false)
   }
 
   // update pdf file
@@ -331,6 +338,7 @@ const ClassSyllabus = () => {
         setClassId(null)
         setUpdatePdfFile(null)
         setErrors({})
+        setUpdPdfModal(false)
       }
 
 
@@ -344,6 +352,7 @@ const ClassSyllabus = () => {
     e.preventDefault()
     setClassId(null)
     setUpdatePdfFile(null)
+    setUpdPdfModal(false)
   }
 
   // add subjects
@@ -352,6 +361,7 @@ const ClassSyllabus = () => {
     subId: []
   })
   const [loading2, setLoading2] = useState<boolean>(false)
+  const [subModal ,setSubModal] = useState<boolean>(false)
   const handleUpdateSubject = (field: keyof AddSubjectForm, value: (string | number)[]) => {
     setAddSubject((prev) => ({ ...prev, [field]: value }));
   };
@@ -377,7 +387,7 @@ const ClassSyllabus = () => {
           subId: []
         });
         fetchSyllbus()
-        handleModalPopUp('add_subject')
+        setSubModal(false)
       }
 
     } catch (error: any) {
@@ -396,6 +406,7 @@ const ClassSyllabus = () => {
     });
 
     setErrors({});
+    setSubModal(false)
   }
 
   // table data
@@ -450,9 +461,10 @@ const ClassSyllabus = () => {
                     marginLeft: "4px",
                     transition: "0.2s",
                   }}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-sub-modal"
-                  onClick={() => setDeleteSubId(sub.id)}
+                  
+                  onClick={() =>{ setDeleteSubId(sub.id) 
+                    setDelSubModal(true)
+                  }}
                 />
               </div>
             ))
@@ -510,9 +522,10 @@ const ClassSyllabus = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setAddSubject((prev: any) => ({ ...prev, classId: classId }))}
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_subject"
+                    onClick={() =>{ setAddSubject((prev: any) => ({ ...prev, classId: classId }))
+                    setSubModal(true)
+                  }}
+                   
                   >
                     <i className="ti ti-plus me-2" />
                     Add Subject
@@ -522,9 +535,10 @@ const ClassSyllabus = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setClassId(classId)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#update-pdf"
+                    onClick={() => {setClassId(classId) 
+                      setUpdPdfModal(true)
+                    }}
+                    
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Update Pdf
@@ -533,9 +547,10 @@ const ClassSyllabus = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(classId)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() =>{ setDeleteId(classId) 
+                      setDelModal(true)
+                    } }
+                    
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -586,15 +601,15 @@ const ClassSyllabus = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                     type="button"
                     className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_syllabus"
+                    onClick={()=>setAddModal(true)}
+                    
                   >
                     <i className="ti ti-square-rounded-plus-filled me-2" />
                     Add Syllabus
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -735,7 +750,8 @@ const ClassSyllabus = () => {
       <div>
 
         {/* Add Syllabus */}
-        <div className="modal fade" id="add_syllabus">
+         {
+          addModal&&(<div className="modal fade show d-block" id="add_syllabus">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -744,8 +760,7 @@ const ClassSyllabus = () => {
                   type="button"
                   onClick={(e) => cancelEdit(e)}
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                 
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -815,7 +830,7 @@ const ClassSyllabus = () => {
                     type="button"
                     onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                    
                   >
                     Cancel
                   </button>
@@ -826,11 +841,13 @@ const ClassSyllabus = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Add Syllabus */}
 
         {/* Edit Syllabus */}
-        <div className="modal fade" id="add_subject">
+       {
+         subModal&&(  <div className="modal fade show d-block" id="add_subject">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -838,8 +855,8 @@ const ClassSyllabus = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  
+                    onClick={(e) => cancelAddSubject(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -882,7 +899,7 @@ const ClassSyllabus = () => {
                     type="button"
                     onClick={(e) => cancelAddSubject(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                    
                   >
                     Cancel
                   </button>
@@ -893,11 +910,13 @@ const ClassSyllabus = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+       }
         {/* /Edit Syllabus	*/}
 
         {/* Update PDF */}
-        <div className="modal fade" id="update-pdf">
+        {
+          updPdfModal&&(<div className="modal fade show d-block" id="update-pdf">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -905,8 +924,7 @@ const ClassSyllabus = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                    onClick={(e) => cancelUpdatePdfFile(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -935,7 +953,7 @@ const ClassSyllabus = () => {
                     type="button"
                     onClick={(e) => cancelUpdatePdfFile(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                   
                   >
                     Cancel
                   </button>
@@ -946,12 +964,14 @@ const ClassSyllabus = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* Update PDF	*/}
 
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+         {
+          delModal&&(<div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -983,11 +1003,13 @@ const ClassSyllabus = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Delete Modal */}
 
         {/* Delete subject Modal */}
-        <div className="modal fade" id="delete-sub-modal">
+        {
+          delSubModal&&( <div className="modal fade show d-block" id="delete-sub-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -1003,9 +1025,10 @@ const ClassSyllabus = () => {
                   {
                     deleteSubId && (<div className="d-flex justify-content-center">
                       <button
+                         type="button"
                         onClick={(e) => cancelDeleteSubj(e)}
                         className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
+                       
                       >
                         Cancel
                       </button>
@@ -1019,7 +1042,8 @@ const ClassSyllabus = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
       </div>
     </div>
   );

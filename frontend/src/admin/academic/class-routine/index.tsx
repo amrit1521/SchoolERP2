@@ -29,7 +29,7 @@ import {
 } from "../../../service/api";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 
 interface ClassRoutine {
   id: number;
@@ -107,23 +107,7 @@ const initialErrorData = {
 const ClassRoutine = () => {
   const routes = all_routes;
 
-  // const data = classRoutine;
-  // const getModalContainer = () => {
-  //   const modalElement = document.getElementById("modal-datepicker");
-  //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-  // };
-  // const getModalContainer2 = () => {
-  //   const modalElement = document.getElementById("modal_datepicker");
-  //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-  // };
-  // const getModalContainer3 = () => {
-  //   const modalElement = document.getElementById("modal_datepicker");
-  //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-  // };
-  // const getModalContainer4 = () => {
-  //   const modalElement = document.getElementById("modal_datepicker");
-  //   return modalElement ? modalElement : document.body; // Fallback to document.body if modalElement is null
-  // };
+
   const dropdownMenuRef = useRef<HTMLDivElement | null>(null);
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -142,6 +126,8 @@ const ClassRoutine = () => {
   const [routineForm, setRoutineForm] =useState<RoutineFormData>(initailFormData);
   const [editId, setEditId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Partial<RoutineError>>(initialErrorData);
+  const [addModal, setAddModal] = useState<boolean>(false)
+    const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
@@ -259,6 +245,7 @@ const ClassRoutine = () => {
     try {
       const { data } = await speClassRoutine(id);
       if (data.success) {
+        setEditModal(true)
         setRoutineForm({
           teacher: data.data.teacher,
           className: data.data.className,
@@ -269,8 +256,9 @@ const ClassRoutine = () => {
           classRoom: data.data.classRoom,
           status: data.data.status,
         });
+         setEditId(id);
       }
-      setEditId(id);
+     
     } catch (error) {
       console.log(error);
     }
@@ -284,7 +272,7 @@ const ClassRoutine = () => {
         const { data } = await editClassRoutine(routineForm, editId);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp("edit_class_routine");
+           setEditModal(false)
           setEditId(null);
         }
       } else {
@@ -292,7 +280,7 @@ const ClassRoutine = () => {
         if (data.success) {
           toast.success(data.message);
           fetchRoutines();
-          handleModalPopUp("add_class_routine");
+         setAddModal(false)
         }
       }
       fetchRoutines();
@@ -309,10 +297,13 @@ const ClassRoutine = () => {
     setRoutineForm(initailFormData);
     setErrors(initialErrorData);
     setEditId(null);
+    setAddModal(false)
+    setEditModal(false)
   };
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [delmodal ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (
     id: number,
@@ -326,7 +317,7 @@ const ClassRoutine = () => {
         toast.success(data.message);
         fetchRoutines();
         setDeleteId(null);
-        handleModalPopUp("delete-modal");
+        setDelModal(false)
       }
     } catch (error) {
       console.log(error);
@@ -336,6 +327,7 @@ const ClassRoutine = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setDeleteId(null);
+    setDelModal(false)
   };
 
   const columns = [
@@ -415,8 +407,7 @@ const ClassRoutine = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={() => fetchroutinebyid(id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_class_routine"
+                 
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -425,9 +416,11 @@ const ClassRoutine = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={() =>{
+                    setDeleteId(id)
+                     setDelModal(true)
+                   }}
+                 
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -467,15 +460,15 @@ const ClassRoutine = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                    type="button"
                     className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_class_routine"
+                     onClick={()=>setAddModal(true)}
+                   
                   >
                     <i className="ti ti-square-rounded-plus-filled me-2" />
                     Add Class Routine
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -639,7 +632,8 @@ const ClassRoutine = () => {
       </>
       <>
         {/* Add Class Routine */}
-        <div className="modal fade" id="add_class_routine">
+        {
+          addModal&&( <div className="modal fade show d-block" id="add_class_routine">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -648,8 +642,7 @@ const ClassRoutine = () => {
                   type="button"
                   onClick={(e) => handlecancel(e)}
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -857,7 +850,7 @@ const ClassRoutine = () => {
                     type="button"
                     onClick={(e) => handlecancel(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                    
                   >
                     Cancel
                   </button>
@@ -868,11 +861,13 @@ const ClassRoutine = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
 
         {/* /Add Class Routine */}
         {/* Edit Class Routine */}
-        <div className="modal fade" id="edit_class_routine">
+        {
+          editModal&&( <div className="modal fade show d-block" id="edit_class_routine">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -1089,7 +1084,7 @@ const ClassRoutine = () => {
                     type="button"
                     onClick={(e) => handlecancel(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                  
                   >
                     Cancel
                   </button>
@@ -1100,11 +1095,13 @@ const ClassRoutine = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Edit Class Routine */}
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+         {
+          delmodal&&(<div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form>
@@ -1138,7 +1135,8 @@ const ClassRoutine = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Delete Modal */}
       </>
     </div>

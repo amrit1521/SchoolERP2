@@ -18,7 +18,7 @@ import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import { addExamName, allExamData, deleteExam, editExam, speExam } from "../../../../service/api";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
+
 
 const Exam = () => {
   const routes = all_routes;
@@ -31,7 +31,7 @@ const Exam = () => {
   const day = String(today.getDate()).padStart(2, "0");
   const formattedDate = `${month}-${day}-${year}`;
   const defaultValue = dayjs(formattedDate);
-  console.log(defaultValue?"":"")
+  console.log(defaultValue ? "" : "")
 
   const handleApplyClick = () => {
     if (dropdownMenuRef.current) {
@@ -62,6 +62,8 @@ const Exam = () => {
     endTime: "",
   });
   const [editId, setEditId] = useState<number | null>(null)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -81,8 +83,8 @@ const Exam = () => {
 
     try {
       const { data } = await speExam(id)
-      console.log(data)
       if (data.success) {
+        setEditModal(true)
         setExamForm({
           examName: data.data.examName,
           examDate: dayjs(data.data.examDate).format('DD MMM YYYY'),
@@ -106,6 +108,8 @@ const Exam = () => {
       startTime: "",
       endTime: "",
     })
+    setAddModal(false)
+    setEditModal(false)
   }
 
 
@@ -118,7 +122,7 @@ const Exam = () => {
         const { data } = await editExam(examForm, editId)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_exam')
+          setEditModal(false)
           setEditId(null)
         }
 
@@ -126,8 +130,7 @@ const Exam = () => {
         const { data } = await addExamName(examForm)
         if (data?.success) {
           toast.success(data.message)
-
-          handleModalPopUp('add_exam')
+          setAddModal(false)
         }
 
       }
@@ -174,7 +177,7 @@ const Exam = () => {
 
   // delete exam
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal, setDelModal] = useState(false)
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -184,7 +187,7 @@ const Exam = () => {
         if (data.success) {
           toast.success(data.message)
           setDeleteId(null)
-          handleModalPopUp('delete-modal')
+          setDelModal(false)
           fetchAllExam()
         }
       }
@@ -198,6 +201,7 @@ const Exam = () => {
 
   const handleDeleteCancel = () => {
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -260,8 +264,7 @@ const Exam = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_exam"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -269,10 +272,12 @@ const Exam = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(id)}
+                    onClick={() => {
+                      setDeleteId(id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -312,15 +317,15 @@ const Exam = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_exam"
+                  onClick={() => setAddModal(true)}
+
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Exam
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -444,229 +449,233 @@ const Exam = () => {
         {/* Add Exam */}
 
 
-        <div className="modal fade" id="add_exam">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Exam</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_exam">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Exam</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Exam Name</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="examName"
-                          value={examForm.examName}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Exam Date</label>
-                        <div className="date-pic">
-                          <DatePicker
-                            className="form-control datetimepicker text-capitalize"
-                            format="DD MMM YYYY"
-                            value={
-                              examForm.examDate
-                                ? dayjs(examForm.examDate, 'DD MMM YYYY')
-                                : null
-                            }
-                            placeholder="Select Date"
-                            onChange={(dateString) =>
-                              handleDateChange('examDate', Array.isArray(dateString) ? dateString[0] : dateString)
-                            }
-
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Exam Name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="examName"
+                            value={examForm.examName}
+                            onChange={handleChange}
                           />
-                          <span className="cal-icon">
-                            <i className="ti ti-calendar" />
-                          </span>
                         </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Start Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={examForm.startTime}
-                          onChange={(option: any) =>
-                            handleSelectChange("startTime", option?.value)
-                          }
-                        />
-                      </div>
-                      <div className="mb-0">
-                        <label className="form-label">End Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTimeOne}
-                          value={examForm.endTime}
-                          onChange={(option: any) =>
-                            handleSelectChange("endTime", option?.value)
-                          }
-                        />
+                        <div className="mb-3">
+                          <label className="form-label">Exam Date</label>
+                          <div className="date-pic">
+                            <DatePicker
+                              className="form-control datetimepicker text-capitalize"
+                              format="DD MMM YYYY"
+                              value={
+                                examForm.examDate
+                                  ? dayjs(examForm.examDate, 'DD MMM YYYY')
+                                  : null
+                              }
+                              placeholder="Select Date"
+                              onChange={(dateString) =>
+                                handleDateChange('examDate', Array.isArray(dateString) ? dateString[0] : dateString)
+                              }
+
+                            />
+                            <span className="cal-icon">
+                              <i className="ti ti-calendar" />
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">Start Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTime}
+                            value={examForm.startTime}
+                            onChange={(option: any) =>
+                              handleSelectChange("startTime", option?.value)
+                            }
+                          />
+                        </div>
+                        <div className="mb-0">
+                          <label className="form-label">End Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTimeOne}
+                            value={examForm.endTime}
+                            onChange={(option: any) =>
+                              handleSelectChange("endTime", option?.value)
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-primary" >
-                    Add Exam
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer">
+                    <button
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary" >
+                      Add Exam
+                    </button>
+                  </div>
+                </form>
 
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
 
 
         {/* Add Exam */}
         {/* Edit Exam */}
-        <div className="modal fade" id="edit_exam">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Exam</h4>
-                <button
-                  type="button"
-                  onClick={(e) => cancelEdit(e)}
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Exam Name</label>
-                        <input
-                          type="text"
-                          className="form-control text-capitalize"
-                          name="examName"
-                          value={examForm.examName}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Exam Date</label>
-                        <div className="date-pic">
-                          <DatePicker
-                            className="form-control datetimepicker"
-                            format="DD MMM YYYY"
-                            value={
-                              examForm.examDate
-                                ? dayjs(examForm.examDate, 'DD MMM YYYY')
-                                : null
-                            }
-                            placeholder="Select Date"
-                            onChange={(dateString) =>
-                              handleDateChange('examDate', Array.isArray(dateString) ? dateString[0] : dateString)
-                            }
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_exam">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Exam</h4>
+                  <button
+                    type="button"
+                    onClick={(e) => cancelEdit(e)}
+                    className="btn-close custom-btn-close"
 
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Exam Name</label>
+                          <input
+                            type="text"
+                            className="form-control text-capitalize"
+                            name="examName"
+                            value={examForm.examName}
+                            onChange={handleChange}
                           />
-                          <span className="cal-icon">
-                            <i className="ti ti-calendar" />
-                          </span>
                         </div>
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label">Start Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTime}
-                          value={examForm.startTime}
-                          onChange={(option: any) =>
-                            handleSelectChange("startTime", option?.value)
-                          }
-                        />
-                      </div>
-                      <div className="mb-0">
-                        <label className="form-label">End Time</label>
-                        <CommonSelect
-                          className="select"
-                          options={startTimeOne}
-                          value={examForm.endTime}
-                          onChange={(option: any) =>
-                            handleSelectChange("endTime", option?.value)
-                          }
-                        />
+                        <div className="mb-3">
+                          <label className="form-label">Exam Date</label>
+                          <div className="date-pic">
+                            <DatePicker
+                              className="form-control datetimepicker"
+                              format="DD MMM YYYY"
+                              value={
+                                examForm.examDate
+                                  ? dayjs(examForm.examDate, 'DD MMM YYYY')
+                                  : null
+                              }
+                              placeholder="Select Date"
+                              onChange={(dateString) =>
+                                handleDateChange('examDate', Array.isArray(dateString) ? dateString[0] : dateString)
+                              }
+
+                            />
+                            <span className="cal-icon">
+                              <i className="ti ti-calendar" />
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">Start Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTime}
+                            value={examForm.startTime}
+                            onChange={(option: any) =>
+                              handleSelectChange("startTime", option?.value)
+                            }
+                          />
+                        </div>
+                        <div className="mb-0">
+                          <label className="form-label">End Time</label>
+                          <CommonSelect
+                            className="select"
+                            options={startTimeOne}
+                            value={examForm.endTime}
+                            onChange={(option: any) =>
+                              handleSelectChange("endTime", option?.value)
+                            }
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" >
-                    Save Exam
-                  </button>
-                </div>
-              </form>
-
-            </div>
-          </div>
-        </div>
-        {/* Edit Exam */}
-        {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form onSubmit={handleDelete}>
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
-                  </p>
-                  <div className="d-flex justify-content-center">
+                  <div className="modal-footer">
                     <button
-                      onClick={handleDeleteCancel}
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type="button"
                     >
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-danger">
-                      Yes, Delete
+                    <button type="submit" className="btn btn-primary" >
+                      Save Exam
                     </button>
                   </div>
-                </div>
-              </form>
+                </form>
+
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
+        {/* Edit Exam */}
+        {/* Delete Modal */}
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form onSubmit={handleDelete}>
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete this item, this can not be undone
+                      once you delete.
+                    </p>
+                    <div className="d-flex justify-content-center">
+                      <button
+                        onClick={handleDeleteCancel}
+                        className="btn btn-light me-3"
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn btn-danger">
+                        Yes, Delete
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </>
     </div>

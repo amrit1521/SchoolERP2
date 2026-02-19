@@ -13,12 +13,13 @@ import Table from "../../../../core/common/dataTable/index";
 // import { gradetable } from "../../../../core/data/json/grade";
 import type { TableData } from "../../../../core/data/interface";
 import CommonSelect from "../../../../core/common/commonSelect";
-import PredefinedDateRanges from "../../../../core/common/datePicker";
+
 import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { addExamGrade, allExamGrade, deleteGrade, editGrade, speGrade } from "../../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
+
+import { Spinner } from "../../../../spinner";
 const Grade = () => {
   const routes = all_routes;
   // const data = gradetable;
@@ -33,6 +34,8 @@ const Grade = () => {
 
   const [allGrade, setAllgrade] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchAllGrade = async () => {
     setLoading(true)
@@ -106,8 +109,9 @@ const Grade = () => {
 
     try {
       const { data } = await speGrade(id)
-      console.log(data)
+
       if (data.success) {
+      setEditModal(true)
         setGradeForm({
           grade: data.data.grade,
           marksFrom: data.data.marksFrom,
@@ -119,8 +123,9 @@ const Grade = () => {
         setEditId(id)
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.response?.data?.message)
     }
   }
 
@@ -136,6 +141,8 @@ const Grade = () => {
       status: "",
       description: "",
     })
+    setAddModal(false)
+    setEditModal(false)
   }
 
   // ✅ Submit handler
@@ -148,14 +155,14 @@ const Grade = () => {
         if (data.success) {
           toast.success(data.message)
           setEditId(null)
-          handleModalPopUp(`edit_grade`)
+          setEditModal(false)
         }
 
       } else {
         const { data } = await addExamGrade(gradeForm)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp(`add_grade`)
+          setAddModal(false)
         }
       }
       fetchAllGrade()
@@ -178,10 +185,11 @@ const Grade = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+
     try {
 
       const { data } = await deleteGrade(id)
@@ -189,17 +197,19 @@ const Grade = () => {
         toast.success(data.message)
         fetchAllGrade();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
+      toast.error(error?.response?.data?.message)
     }
   }
 
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -263,8 +273,7 @@ const Grade = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_grade"
+                   
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -273,9 +282,11 @@ const Grade = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() => {
+                      setDeleteId(id)
+                      setDelModal(true)
+                    }}
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -317,15 +328,14 @@ const Grade = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_grade"
+                  onClick={() => setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Grade
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -336,7 +346,7 @@ const Grade = () => {
               <h4 className="mb-3">Grade List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+               
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -428,11 +438,7 @@ const Grade = () => {
               {/* Guardians List */}
               {
                 loading ? (
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
+                  <Spinner />
                 ) : (<Table columns={columns} dataSource={tableData} Selection={true} />)
               }
 
@@ -443,300 +449,270 @@ const Grade = () => {
         </div>
       </div>
       <>
-        <div className="d-flex align-items-center">
-          <div className="dropdown">
-            <Link
-              to="#"
-              className="btn btn-white btn-icon btn-sm d-flex align-items-center justify-content-center rounded-circle p-0"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i className="ti ti-dots-vertical fs-14" />
-            </Link>
-            <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <Link
-                  className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_grade"
-                >
-                  <i className="ti ti-edit-circle me-2" />
-                  Edit
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
-                >
-                  <i className="ti ti-trash-x me-2" />
-                  Delete
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
+
         {/* Add Grade */}
-        <div className="modal fade" id="add_grade">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Grade</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_grade">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Grade</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
                 <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Grade</label>
-                        <CommonSelect
-                          className="select"
-                          options={gradeOne}
-                          value={gradeForm.grade}
-                          onChange={(option: any) =>
-                            handleSelectChange("grade", option.value)
-                          }
-                        />
-                      </div>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Grade</label>
+                          <CommonSelect
+                            className="select"
+                            options={gradeOne}
+                            value={gradeForm.grade}
+                            onChange={(option: any) =>
+                              handleSelectChange("grade", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Marks From(%)</label>
-                        <CommonSelect
-                          className="select"
-                          options={marksFrom}
-                          value={gradeForm.marksFrom}
-                          onChange={(option: any) =>
-                            handleSelectChange("marksFrom", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Marks From(%)</label>
+                          <CommonSelect
+                            className="select"
+                            options={marksFrom}
+                            value={gradeForm.marksFrom}
+                            onChange={(option: any) =>
+                              handleSelectChange("marksFrom", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Marks Upto(%)</label>
-                        <CommonSelect
-                          className="select"
-                          options={marksUpto}
-                          value={gradeForm.marksUpto}
-                          onChange={(option: any) =>
-                            handleSelectChange("marksUpto", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Marks Upto(%)</label>
+                          <CommonSelect
+                            className="select"
+                            options={marksUpto}
+                            value={gradeForm.marksUpto}
+                            onChange={(option: any) =>
+                              handleSelectChange("marksUpto", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Grade Points</label>
-                        <CommonSelect
-                          className="select"
-                          options={gradePoints}
-                           value={gradeForm.gradePoints}
-                          onChange={(option: any) =>
-                            handleSelectChange("gradePoints", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Grade Points</label>
+                          <CommonSelect
+                            className="select"
+                            options={gradePoints}
+                            value={gradeForm.gradePoints}
+                            onChange={(option: any) =>
+                              handleSelectChange("gradePoints", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <CommonSelect
-                          className="select"
-                          options={activeList}
-                         value={gradeForm.status}
-                          onChange={(option: any) =>
-                            handleSelectChange("status", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Status</label>
+                          <CommonSelect
+                            className="select"
+                            options={activeList}
+                            value={gradeForm.status}
+                            onChange={(option: any) =>
+                              handleSelectChange("status", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-0">
-                        <label className="form-label">Description</label>
-                        <textarea
-                          className="form-control"
-                          rows={4}
-                          name="description"
-                          value={gradeForm.description}
-                          onChange={handleInputChange}
-                        />
+                        <div className="mb-0">
+                          <label className="form-label">Description</label>
+                          <textarea
+                            className="form-control"
+                            rows={4}
+                            name="description"
+                            value={gradeForm.description}
+                            onChange={handleInputChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" >
-                    Add Grade
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer">
+                    <button
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary" >
+                      Add Grade
+                    </button>
+                  </div>
+                </form>
 
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Add Grade */}
         {/* Edit Grade */}
-        <div className="modal fade" id="edit_grade">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Grade</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Grade</label>
-                        <CommonSelect
-                          className="select"
-                          options={gradeOne}
-                          value={gradeForm.grade}
-                          onChange={(option: any) =>
-                            handleSelectChange("grade", option.value)
-                          }
-                        />
-                      </div>
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_grade">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Grade</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Grade</label>
+                          <CommonSelect
+                            className="select"
+                            options={gradeOne}
+                            value={gradeForm.grade}
+                            onChange={(option: any) =>
+                              handleSelectChange("grade", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Marks From(%)</label>
-                        <CommonSelect
-                          className="select"
-                          options={marksFrom}
-                          value={gradeForm.marksFrom}
-                          onChange={(option: any) =>
-                            handleSelectChange("marksFrom", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Marks From(%)</label>
+                          <CommonSelect
+                            className="select"
+                            options={marksFrom}
+                            value={gradeForm.marksFrom}
+                            onChange={(option: any) =>
+                              handleSelectChange("marksFrom", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Marks Upto(%)</label>
-                        <CommonSelect
-                          className="select"
-                          options={marksUpto}
-                          value={gradeForm.marksUpto}
-                          onChange={(option: any) =>
-                            handleSelectChange("marksUpto", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Marks Upto(%)</label>
+                          <CommonSelect
+                            className="select"
+                            options={marksUpto}
+                            value={gradeForm.marksUpto}
+                            onChange={(option: any) =>
+                              handleSelectChange("marksUpto", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Grade Points</label>
-                        <CommonSelect
-                          className="select"
-                          options={gradePoints}
-                           value={gradeForm.gradePoints}
-                          onChange={(option: any) =>
-                            handleSelectChange("gradePoints", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Grade Points</label>
+                          <CommonSelect
+                            className="select"
+                            options={gradePoints}
+                            value={gradeForm.gradePoints}
+                            onChange={(option: any) =>
+                              handleSelectChange("gradePoints", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-3">
-                        <label className="form-label">Status</label>
-                        <CommonSelect
-                          className="select"
-                          options={activeList}
-                         value={gradeForm.status}
-                          onChange={(option: any) =>
-                            handleSelectChange("status", option.value)
-                          }
-                        />
-                      </div>
+                        <div className="mb-3">
+                          <label className="form-label">Status</label>
+                          <CommonSelect
+                            className="select"
+                            options={activeList}
+                            value={gradeForm.status}
+                            onChange={(option: any) =>
+                              handleSelectChange("status", option.value)
+                            }
+                          />
+                        </div>
 
-                      <div className="mb-0">
-                        <label className="form-label">Description</label>
-                        <textarea
-                          className="form-control"
-                          rows={4}
-                          name="description"
-                          value={gradeForm.description}
-                          onChange={handleInputChange}
-                        />
+                        <div className="mb-0">
+                          <label className="form-label">Description</label>
+                          <textarea
+                            className="form-control"
+                            rows={4}
+                            name="description"
+                            value={gradeForm.description}
+                            onChange={handleInputChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" >
-                    Edit Grade
-                  </button>
-                </div>
-              </form>
+                  <div className="modal-footer">
+                    <button
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary" >
+                      Edit Grade
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Edit Grade */}
 
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form >
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
-                  </p>
-                  {
-                    deleteId && (<div className="d-flex justify-content-center">
-                      <button
-                        onClick={(e) => cancelDelete(e)}
-                        className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
-                      >
-                        Cancel
-                      </button>
-                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>)
-                  }
-                </div>
-              </form>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form >
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete thsi item, this can not be undone
+                      once you delete.
+                    </p>
+                    {
+                      deleteId && (<div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>)
+                    }
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </>
     </div>

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import PredefinedDateRanges from "../../../../core/common/datePicker";
 import {
   // classSection,
   classSylabus,
@@ -31,9 +30,10 @@ import {
   speExamSchedule,
 } from "../../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
+
 import { allClassRoom, allRealClasses } from "../../../../service/classApi";
 import dayjs from "dayjs";
+import { Spinner } from "../../../../spinner";
 export interface Section {
   id: number;
   section: string;
@@ -66,6 +66,8 @@ const ExamSchedule = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [allClass, setAllClass] = useState<any[]>([]);
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchData = async <T,>(
     apiFn: () => Promise<{ data: { success: boolean; data: T } }>,
@@ -122,7 +124,6 @@ const ExamSchedule = () => {
     fetchRooms();
     fetchExams();
     fetchClass();
-    console.log(allClass);
   }, []);
 
   const examNameOptions = useMemo(
@@ -248,8 +249,9 @@ const ExamSchedule = () => {
   const fetchById = async (id: number) => {
     try {
       const { data } = await speExamSchedule(id);
-      console.log(data);
+
       if (data.success) {
+        setEditModal(true)
         setExamScheduleForm({
           className: data.data.className,
           section: data.data.section,
@@ -265,8 +267,9 @@ const ExamSchedule = () => {
         });
         setEditId(id);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast.error(error?.response?.data?.message)
     }
   };
 
@@ -286,6 +289,8 @@ const ExamSchedule = () => {
       maxMarks: "",
       minMarks: "",
     });
+    setAddModal(false)
+    setEditModal(false)
   };
 
   const handleSubmit = async () => {
@@ -294,15 +299,15 @@ const ExamSchedule = () => {
         const { data } = await editExamSchedule(examScheduleForm, editId);
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp(`edit_exam_schedule`);
+          setEditModal(false)
           setEditId(null);
         }
       } else {
         const { data } = await addExamSchedule(examScheduleForm);
-        console.log(data);
+
         if (data.success) {
           toast.success(data.message);
-          handleModalPopUp(`add_exam_schedule`);
+          setAddModal(false)
         }
       }
       fetchSchedule();
@@ -328,6 +333,7 @@ const ExamSchedule = () => {
   // delete-----------------------------------
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [delModal, setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (
     id: number,
@@ -341,7 +347,7 @@ const ExamSchedule = () => {
         toast.success(data.message);
         fetchSchedule();
         setDeleteId(null);
-        handleModalPopUp("delete-modal");
+        setDelModal(false)
       }
     } catch (error) {
       console.log(error);
@@ -351,6 +357,7 @@ const ExamSchedule = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setDeleteId(null);
+    setDelModal(false)
   };
 
   const columns = [
@@ -431,8 +438,7 @@ const ExamSchedule = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_exam_schedule"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -441,9 +447,11 @@ const ExamSchedule = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() => {
+                      setDeleteId(id)
+                      setDelModal(true)
+                    }}
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -482,15 +490,14 @@ const ExamSchedule = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_exam_schedule"
+                  type="button"
+                  onClick={() => setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus-filled me-2" />
                   Add Exam Schedule
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -501,7 +508,7 @@ const ExamSchedule = () => {
               <h4 className="mb-3">Exam Schedule</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                  {/* <PredefinedDateRanges /> */}
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -595,14 +602,7 @@ const ExamSchedule = () => {
             <div className="card-body p-0 py-3">
               {/* Guardians List */}
               {loading ? (
-                <div
-                  className="d-flex justify-content-center align-items-center"
-                  style={{ height: "200px" }}
-                >
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                </div>
+                <Spinner />
               ) : (
                 <Table
                   columns={columns}
@@ -619,437 +619,441 @@ const ExamSchedule = () => {
       </div>
       <>
         {/* Add Exam Schedule */}
-        <div className="modal fade" id="add_exam_schedule">
-          <div className="modal-dialog modal-dialog-centered  modal-xl">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Exam Schedule</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_exam_schedule">
+            <div className="modal-dialog modal-dialog-centered  modal-xl">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Exam Schedule</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="row">
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Class</label>
+                              <CommonSelect
+                                className="select"
+                                options={allClass}
+                                value={examScheduleForm.className}
+                                onChange={(option: any) =>
+                                  handleChange("className", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Section</label>
+                              <CommonSelect
+                                className="select text-capitalize"
+                                options={sectionOptions}
+                                value={examScheduleForm.section}
+                                onChange={(option: any) =>
+                                  handleChange("section", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Exam Name</label>
+                              <CommonSelect
+                                className="select"
+                                options={examNameOptions}
+                                value={examScheduleForm.examName}
+                                onChange={(option: any) =>
+                                  handleChange("examName", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Start Time</label>
+                              <CommonSelect
+                                className="select"
+                                options={examStartTimeOptions}
+                                value={examScheduleForm.startTime}
+                                onChange={(option: any) =>
+                                  handleChange("startTime", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">End Time</label>
+                              <CommonSelect
+                                className="select"
+                                options={examEndTimeOptions}
+                                value={examScheduleForm.endTime}
+                                onChange={(option: any) =>
+                                  handleChange("endTime", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Duration(min)</label>
+                              <CommonSelect
+                                className="select"
+                                options={durationOne}
+                                value={examScheduleForm.duration}
+                                onChange={(option: any) =>
+                                  handleChange("duration", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="exam-schedule-add">
+                      <div className="exam-schedule-row d-flex align-items-center flex-wrap column-gap-3">
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Exam Date</label>
+                            <CommonSelect
+                              className="select"
+                              options={examDateOptions}
+                              value={examScheduleForm.examDate}
+                              onChange={(option: any) =>
+                                handleChange("examDate", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Subject</label>
+                            <CommonSelect
+                              className="select"
+                              options={subjectOptions}
+                              value={examScheduleForm.subject}
+                              onChange={(option: any) =>
+                                handleChange("subject", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Room No</label>
+                            <CommonSelect
+                              className="select"
+                              options={roomOptions}
+                              value={examScheduleForm.roomNo}
+                              onChange={(option: any) =>
+                                handleChange("roomNo", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Max Marks</label>
+                            <CommonSelect
+                              className="select"
+                              options={maxMark}
+                              value={examScheduleForm.maxMarks}
+                              onChange={(option: any) =>
+                                handleChange("maxMarks", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="d-flex align-items-end">
+                            <div className="mb-3 flex-fill">
+                              <label className="form-label">Min Marks</label>
+                              <CommonSelect
+                                className="select"
+                                options={minMark}
+                                value={examScheduleForm.minMarks}
+                                onChange={(option: any) =>
+                                  handleChange("minMarks", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+                      onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSubmit}
+                    >
+                      Add Exam Schedule
+                    </button>
+                  </div>
+                </form>
               </div>
-
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="row">
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Class</label>
-                            <CommonSelect
-                              className="select"
-                              options={allClass}
-                              value={examScheduleForm.className}
-                              onChange={(option: any) =>
-                                handleChange("className", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Section</label>
-                            <CommonSelect
-                              className="select text-capitalize"
-                              options={sectionOptions}
-                              value={examScheduleForm.section}
-                              onChange={(option: any) =>
-                                handleChange("section", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Exam Name</label>
-                            <CommonSelect
-                              className="select"
-                              options={examNameOptions}
-                              value={examScheduleForm.examName}
-                              onChange={(option: any) =>
-                                handleChange("examName", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Start Time</label>
-                            <CommonSelect
-                              className="select"
-                              options={examStartTimeOptions}
-                              value={examScheduleForm.startTime}
-                              onChange={(option: any) =>
-                                handleChange("startTime", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">End Time</label>
-                            <CommonSelect
-                              className="select"
-                              options={examEndTimeOptions}
-                              value={examScheduleForm.endTime}
-                              onChange={(option: any) =>
-                                handleChange("endTime", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Duration(min)</label>
-                            <CommonSelect
-                              className="select"
-                              options={durationOne}
-                              value={examScheduleForm.duration}
-                              onChange={(option: any) =>
-                                handleChange("duration", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="exam-schedule-add">
-                    <div className="exam-schedule-row d-flex align-items-center flex-wrap column-gap-3">
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Exam Date</label>
-                          <CommonSelect
-                            className="select"
-                            options={examDateOptions}
-                            value={examScheduleForm.examDate}
-                            onChange={(option: any) =>
-                              handleChange("examDate", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Subject</label>
-                          <CommonSelect
-                            className="select"
-                            options={subjectOptions}
-                            value={examScheduleForm.subject}
-                            onChange={(option: any) =>
-                              handleChange("subject", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Room No</label>
-                          <CommonSelect
-                            className="select"
-                            options={roomOptions}
-                            value={examScheduleForm.roomNo}
-                            onChange={(option: any) =>
-                              handleChange("roomNo", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Max Marks</label>
-                          <CommonSelect
-                            className="select"
-                            options={maxMark}
-                            value={examScheduleForm.maxMarks}
-                            onChange={(option: any) =>
-                              handleChange("maxMarks", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="d-flex align-items-end">
-                          <div className="mb-3 flex-fill">
-                            <label className="form-label">Min Marks</label>
-                            <CommonSelect
-                              className="select"
-                              options={minMark}
-                              value={examScheduleForm.minMarks}
-                              onChange={(option: any) =>
-                                handleChange("minMarks", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleSubmit}
-                  >
-                    Add Exam Schedule
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Add Exam Schedule */}
 
         {/* Edit Exam Schedule */}
-        <div className="modal fade" id="edit_exam_schedule">
-          <div className="modal-dialog modal-dialog-centered  modal-xl">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Exam Schedule</h4>
-                <button
-                  onClick={(e) => cancelEdit(e)}
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      <div className="row">
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Class</label>
-                            <CommonSelect
-                              className="select"
-                              options={allClass}
-                              value={examScheduleForm.className}
-                              onChange={(option: any) =>
-                                handleChange("className", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Section</label>
-                            <CommonSelect
-                              className="select text-capitalize"
-                              options={sectionOptions}
-                              value={examScheduleForm.section}
-                              onChange={(option: any) =>
-                                handleChange("section", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Exam Name</label>
-                            <CommonSelect
-                              className="select"
-                              options={examNameOptions}
-                              value={examScheduleForm.examName}
-                              onChange={(option: any) =>
-                                handleChange("examName", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Start Time</label>
-                            <CommonSelect
-                              className="select"
-                              options={examStartTimeOptions}
-                              value={examScheduleForm.startTime}
-                              onChange={(option: any) =>
-                                handleChange("startTime", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">End Time</label>
-                            <CommonSelect
-                              className="select"
-                              options={examEndTimeOptions}
-                              value={examScheduleForm.endTime}
-                              onChange={(option: any) =>
-                                handleChange("endTime", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="mb-3">
-                            <label className="form-label">Duration(min)</label>
-                            <CommonSelect
-                              className="select"
-                              options={durationOne}
-                              value={examScheduleForm.duration}
-                              onChange={(option: any) =>
-                                handleChange("duration", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="exam-schedule-add">
-                    <div className="exam-schedule-row d-flex align-items-center flex-wrap column-gap-3">
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Exam Date</label>
-                          <CommonSelect
-                            className="select"
-                            options={examDateOptions}
-                            value={examScheduleForm.examDate}
-                            onChange={(option: any) =>
-                              handleChange("examDate", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Subject</label>
-                          <CommonSelect
-                            className="select"
-                            options={subjectOptions}
-                            value={examScheduleForm.subject}
-                            onChange={(option: any) =>
-                              handleChange("subject", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Room No</label>
-                          <CommonSelect
-                            className="select"
-                            options={roomOptions}
-                            value={examScheduleForm.roomNo}
-                            onChange={(option: any) =>
-                              handleChange("roomNo", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="mb-3">
-                          <label className="form-label">Max Marks</label>
-                          <CommonSelect
-                            className="select"
-                            options={maxMark}
-                            value={examScheduleForm.maxMarks}
-                            onChange={(option: any) =>
-                              handleChange("maxMarks", option.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="shedule-info flex-fill">
-                        <div className="d-flex align-items-end">
-                          <div className="mb-3 flex-fill">
-                            <label className="form-label">Min Marks</label>
-                            <CommonSelect
-                              className="select"
-                              options={minMark}
-                              value={examScheduleForm.minMarks}
-                              onChange={(option: any) =>
-                                handleChange("minMarks", option.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="modal-footer">
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_exam_schedule">
+            <div className="modal-dialog modal-dialog-centered  modal-xl">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Exam Schedule</h4>
                   <button
-                    type="button"
                     onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button
                     type="button"
-                    className="btn btn-primary"
-                    onClick={handleSubmit}
+                    className="btn-close custom-btn-close"
+
                   >
-                    Edit Exam Schedule
+                    <i className="ti ti-x" />
                   </button>
                 </div>
-              </form>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        <div className="row">
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Class</label>
+                              <CommonSelect
+                                className="select"
+                                options={allClass}
+                                value={examScheduleForm.className}
+                                onChange={(option: any) =>
+                                  handleChange("className", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Section</label>
+                              <CommonSelect
+                                className="select text-capitalize"
+                                options={sectionOptions}
+                                value={examScheduleForm.section}
+                                onChange={(option: any) =>
+                                  handleChange("section", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Exam Name</label>
+                              <CommonSelect
+                                className="select"
+                                options={examNameOptions}
+                                value={examScheduleForm.examName}
+                                onChange={(option: any) =>
+                                  handleChange("examName", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Start Time</label>
+                              <CommonSelect
+                                className="select"
+                                options={examStartTimeOptions}
+                                value={examScheduleForm.startTime}
+                                onChange={(option: any) =>
+                                  handleChange("startTime", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">End Time</label>
+                              <CommonSelect
+                                className="select"
+                                options={examEndTimeOptions}
+                                value={examScheduleForm.endTime}
+                                onChange={(option: any) =>
+                                  handleChange("endTime", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div className="col-md-4">
+                            <div className="mb-3">
+                              <label className="form-label">Duration(min)</label>
+                              <CommonSelect
+                                className="select"
+                                options={durationOne}
+                                value={examScheduleForm.duration}
+                                onChange={(option: any) =>
+                                  handleChange("duration", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="exam-schedule-add">
+                      <div className="exam-schedule-row d-flex align-items-center flex-wrap column-gap-3">
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Exam Date</label>
+                            <CommonSelect
+                              className="select"
+                              options={examDateOptions}
+                              value={examScheduleForm.examDate}
+                              onChange={(option: any) =>
+                                handleChange("examDate", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Subject</label>
+                            <CommonSelect
+                              className="select"
+                              options={subjectOptions}
+                              value={examScheduleForm.subject}
+                              onChange={(option: any) =>
+                                handleChange("subject", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Room No</label>
+                            <CommonSelect
+                              className="select"
+                              options={roomOptions}
+                              value={examScheduleForm.roomNo}
+                              onChange={(option: any) =>
+                                handleChange("roomNo", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="mb-3">
+                            <label className="form-label">Max Marks</label>
+                            <CommonSelect
+                              className="select"
+                              options={maxMark}
+                              value={examScheduleForm.maxMarks}
+                              onChange={(option: any) =>
+                                handleChange("maxMarks", option.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="shedule-info flex-fill">
+                          <div className="d-flex align-items-end">
+                            <div className="mb-3 flex-fill">
+                              <label className="form-label">Min Marks</label>
+                              <CommonSelect
+                                className="select"
+                                options={minMark}
+                                value={examScheduleForm.minMarks}
+                                onChange={(option: any) =>
+                                  handleChange("minMarks", option.value)
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleSubmit}
+                    >
+                      Edit Exam Schedule
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Edit Exam Schedule */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form>
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
-                  </p>
-                  {deleteId && (
-                    <div className="d-flex justify-content-center">
-                      <button
-                        onClick={(e) => cancelDelete(e)}
-                        className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(deleteId, e)}
-                        className="btn btn-danger"
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </form>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form>
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete all the marked items, this cant be undone
+                      once you delete.
+                    </p>
+                    {deleteId && (
+                      <div className="d-flex justify-content-center">
+                        <button
+                          onClick={(e) => cancelDelete(e)}
+                          className="btn btn-light me-3"
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(deleteId, e)}
+                          className="btn btn-danger"
+                        >
+                          Yes, Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </>
     </div>

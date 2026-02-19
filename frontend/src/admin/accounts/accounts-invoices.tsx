@@ -18,9 +18,8 @@ import { useEffect, useState } from "react";
 import { allInvoice, deleteInvoice, genInvoice } from "../../service/accounts";
 import { Spinner } from "../../spinner";
 import dayjs from 'dayjs'
-import { handleModalPopUp } from "../../handlePopUpmodal";
 import { toast } from "react-toastify";
-import InvoicePreviewModal from "./invoicePreviewModal";
+// import InvoicePreviewModal from "./invoicePreviewModal";
 
 export interface Invoice {
   id: number;
@@ -97,6 +96,7 @@ const AccountsInvoices = () => {
 
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal ,setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
 
     e.preventDefault()
@@ -106,7 +106,7 @@ const AccountsInvoices = () => {
       if (data.success) {
         toast.success(data.message)
         fetchInvData()
-        handleModalPopUp('delete-modal')
+         setDelModal(false)
       }
 
 
@@ -119,6 +119,7 @@ const AccountsInvoices = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -221,17 +222,7 @@ const AccountsInvoices = () => {
               <i className="ti ti-dots-vertical fs-14" />
             </Link>
             <ul className="dropdown-menu dropdown-menu-right p-3">
-              <li>
-                <Link
-                  className="dropdown-item rounded-1"
-                  to="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#view_invoice"
-                >
-                  <i className="ti ti-menu me-2" />
-                  View Invoice
-                </Link>
-              </li>
+            
               <li>
                 <Link
                   className="dropdown-item rounded-1"
@@ -242,10 +233,11 @@ const AccountsInvoices = () => {
                 </Link>
               </li>
               <button
-                onClick={() => setDeleteId(record.id)}
+                onClick={() =>{ setDeleteId(record.id) 
+                  setDelModal(true)
+                }}
                 className="dropdown-item rounded-1"
-                data-bs-toggle="modal"
-                data-bs-target="#delete-modal"
+              
               >
                 <i className="ti ti-trash-x me-2" />
                 Delete
@@ -411,184 +403,13 @@ const AccountsInvoices = () => {
       </div>
       {/* /Page Wrapper */}
       {/* View Modal */}
-      {/* <div className="modal fade" id="view_invoice">
-        <div className="modal-dialog modal-dialog-centered  modal-xl invoice-modal">
-          <div className="modal-content">
-            <div className="modal-wrapper">
-              <div className="invoice-popup-head d-flex align-items-center justify-content-between mb-4">
-                <span>
-                  <ImageWithBasePath src="assets/img/logo.svg" alt="Img" />
-                </span>
-                <div className="popup-title">
-                  <h2>UNIVERSITY NAME</h2>
-                  <p>Original For Recipient</p>
-                </div>
-              </div>
-              <div className="tax-info mb-2">
-                <div className="mb-4 text-center">
-                  <h1>Tax Invoice</h1>
-                </div>
-                <div className="row">
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Student Name :</h5>
-                      <h6>Walter Roberson</h6>
-                    </div>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Student ID :</h5>
-                      <h6>DD465123</h6>
-                    </div>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Term :</h5>
-                      <h6>Term 1</h6>
-                    </div>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Invoice No :</h5>
-                      <h6>INV681531</h6>
-                    </div>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Invoice Date :</h5>
-                      <h6>24 Apr 2024</h6>
-                    </div>
-                  </div>
-                  <div className="col-lg-4">
-                    <div className="tax-invoice-info d-flex align-items-center justify-content-between">
-                      <h5>Due Date :</h5>
-                      <h6>30 Apr 2024</h6>
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <h6 className="mb-1">Bill To :</h6>
-                  <p>
-                    <span className="text-dark">Walter Roberson</span> <br />
-                    299 Star Trek Drive, Panama City, Florida, 32405, USA.{" "}
-                    <br />
-                    walter@gmail.com <br />
-                    +45 5421 4523
-                  </p>
-                </div>
-                <div className="invoice-product-table">
-                  <div className="table-responsive invoice-table">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>Description</th>
-                          <th>Due Date</th>
-                          <th>Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Semester Fees</td>
-                          <td>25 Apr 2024</td>
-                          <td>$5,000</td>
-                        </tr>
-                        <tr>
-                          <td>Exam Fees</td>
-                          <td>25 Apr 2024</td>
-                          <td>$1000</td>
-                        </tr>
-                        <tr>
-                          <td>Transport Fees</td>
-                          <td>25 Apr 2024</td>
-                          <td>$4,000</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div className="row">
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <h5 className="mb-1">Important Note: </h5>
-                      <p className="text-dark mb-0">
-                        Delivery dates are not guaranteed and Seller has
-                      </p>
-                      <p className="text-dark">
-                        no liability for damages that may be incurred due to any
-                        delay. has
-                      </p>
-                    </div>
-                    <div>
-                      <h5 className="mb-1">Total amount ( in words):</h5>
-                      <p className="text-dark fw-medium">
-                        USD Ten Thousand One Hundred Sixty Five Only
-                      </p>
-                    </div>
-                  </div>
-                  <div className="col-lg-6">
-                    <div className="total-amount-tax">
-                      <ul>
-                        <li className="fw-medium text-dark">Subtotal</li>
-                        <li className="fw-medium text-dark">Discount 0%</li>
-                        <li className="fw-medium text-dark">IGST 18.0%</li>
-                      </ul>
-                      <ul>
-                        <li>$10,000.00</li>
-                        <li>+ $0.00</li>
-                        <li>$10,000.00</li>
-                      </ul>
-                    </div>
-                    <div className="total-amount-tax mb-3">
-                      <ul className="total-amount">
-                        <li className="text-dark">Amount Payable</li>
-                      </ul>
-                      <ul className="total-amount">
-                        <li className="text-dark">$10,165.00</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div className="payment-info">
-                  <div className="row align-items-center">
-                    <div className="col-lg-6 mb-4 pt-4">
-                      <h5 className="mb-2">Payment Info:</h5>
-                      <p className="mb-1">
-                        Debit Card :{" "}
-                        <span className="fw-medium text-dark">
-                          465 *************645
-                        </span>
-                      </p>
-                      <p className="mb-0">
-                        Amount :{" "}
-                        <span className="fw-medium text-dark">$10,165</span>
-                      </p>
-                    </div>
-                    <div className="col-lg-6 text-end mb-4 pt-4 ">
-                      <h6 className="mb-2">For Dreamguys</h6>
-                      <ImageWithBasePath src="assets/img/icons/signature.svg" alt="Img" />
-                    </div>
-                  </div>
-                </div>
-                <div className="border-bottom text-center pt-4 pb-4">
-                  <span className="text-dark fw-medium">
-                    Terms &amp; Conditions :{" "}
-                  </span>
-                  <p>
-                    Here we can write a additional notes for the client to get a
-                    better understanding of this invoice.
-                  </p>
-                </div>
-                <p className="text-center pt-3">Thanks for your Business</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
-      <InvoicePreviewModal/>
+     
+      {/* <InvoicePreviewModal/> */}
       
       {/* /View Modal */}
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
+       {
+        delModal&&<div className="modal fade show d-block" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -606,7 +427,7 @@ const AccountsInvoices = () => {
                     <button
                       onClick={(e) => cancelDelete(e)}
                       className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                      
                     >
                       Cancel
                     </button>
@@ -621,6 +442,7 @@ const AccountsInvoices = () => {
           </div>
         </div>
       </div>
+       }
       {/* /Delete Modal */}
     </div>
   );

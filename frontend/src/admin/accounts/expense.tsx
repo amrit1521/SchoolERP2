@@ -18,7 +18,7 @@ import { addExpense, allExpense, delExpense, editExpense, expCatForOpt, genExpen
 import { DatePicker } from "antd";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../handlePopUpmodal";
+
 import { Spinner } from "../../spinner";
 
 export interface Expense {
@@ -85,8 +85,10 @@ const Expense = () => {
   const [formData, setFormData] = useState<ExpenseFormData>(initaldata);
   const [errors, setErrors] = useState<ExpenseFormErrors>({});
   const [editId, setEditId] = useState<number | null>(null)
-  const [genLoading  , setGenLoading] = useState<boolean>(false)
-  const [genId , setGenId] = useState<number|null>(null)
+  const [genLoading, setGenLoading] = useState<boolean>(false)
+  const [genId, setGenId] = useState<number | null>(null)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchExpCatForOpt = async () => {
     try {
@@ -139,14 +141,14 @@ const Expense = () => {
       newErrors.mobile = "Enter a valid 10-digit mobile number!";
     }
 
- 
+
     const emailRegex =
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       newErrors.email = "Enter a valid email address!";
     }
 
-  
+
     if (!formData.expenseName.trim()) {
       newErrors.expenseName = "Expense Name is required!";
     }
@@ -156,12 +158,12 @@ const Expense = () => {
       newErrors.category = "Category is required!";
     }
 
-   
+
     if (!formData.date) {
       newErrors.date = "Date is required!";
     }
 
-   
+
     if (formData.amount === null || formData.amount <= 0) {
       newErrors.amount = "Amount must be greater than 0!";
     }
@@ -170,12 +172,12 @@ const Expense = () => {
       newErrors.invoiceNo = "Invoice No must be greater than 0!";
     }
 
- 
+
     if (!formData.paymentMethod) {
       newErrors.paymentMethod = "Payment method is required!";
     }
 
- 
+
     setErrors(newErrors);
 
 
@@ -192,19 +194,19 @@ const Expense = () => {
       [name]:
         type === "number" ? (value === "" ? null : Number(value)) : value,
     }));
-    setErrors((prev)=>({...prev , [name]:undefined}))
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
   };
 
 
   const handleSelectChange = (name: keyof ExpenseFormData, value: number | string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-     setErrors((prev)=>({...prev , [name]:undefined}))
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
   };
 
 
   const handleDateChange = (field: keyof ExpenseFormData, date: Date | null) => {
     setFormData((prev) => ({ ...prev, [field]: date }));
-     setErrors((prev)=>({...prev , [field]:undefined}))
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
   };
   const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
@@ -221,6 +223,7 @@ const Expense = () => {
       const { data } = await speExpense(id)
       if (data.success) {
         const res = data.data
+        setEditModal(true)
         setFormData({
           name: res.name,
           mobile: res.mobile,
@@ -258,7 +261,8 @@ const Expense = () => {
         toast.success(data.message)
         setFormData(initaldata)
         fetchAllExpData()
-        handleModalPopUp(editId ? 'edit_expenses' : 'add_expenses')
+        setAddModal(false)
+        setEditModal(false)
       }
     } catch (error: any) {
       console.log(error)
@@ -271,10 +275,14 @@ const Expense = () => {
     setFormData(initaldata)
     setEditId(null)
     setErrors({})
+    setAddModal(false)
+    setEditModal(false)
+
   }
 
   // delete class room-----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
 
     e.preventDefault()
@@ -284,7 +292,7 @@ const Expense = () => {
       if (data.success) {
         toast.success(data.message)
         fetchAllExpData()
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
 
@@ -297,6 +305,7 @@ const Expense = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const generateInv = async (id: number) => {
@@ -316,10 +325,10 @@ const Expense = () => {
       link.remove();
 
       window.URL.revokeObjectURL(url);
-      
+
     } catch (error) {
       console.error("Error generating invoice:", error);
-    }finally{
+    } finally {
       setGenLoading(false)
     }
   };
@@ -368,7 +377,7 @@ const Expense = () => {
     {
       title: "Invoice No",
       dataIndex: "invoiceNo",
-      sorter: (a: TableData, b: TableData) => a.invoiceNo- b.invoiceNo,
+      sorter: (a: TableData, b: TableData) => a.invoiceNo - b.invoiceNo,
       render: (text: any) => (
         <Link to="#" className="link-primary">
           INV-{text}
@@ -385,7 +394,7 @@ const Expense = () => {
       dataIndex: "inv",
       render: (_: any, record: any) => (
         <>
-          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId===record.id&&genLoading?'Generating...':'Gen-Invoice'}</button>
+          <button onClick={() => generateInv(record.id)} className="btn btn-sm btn-outline-success ">{genId === record.id && genLoading ? 'Generating...' : 'Gen-Invoice'}</button>
         </>
       ),
     },
@@ -410,8 +419,7 @@ const Expense = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={(() => fetchById(record.id))}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_expenses"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -419,10 +427,12 @@ const Expense = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() => {
+                      setDeleteId(record.id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -463,15 +473,14 @@ const Expense = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_expenses"
+                  onClick={() => setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Expense
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -591,429 +600,433 @@ const Expense = () => {
       </div>
       {/* /Page Wrapper */}
       {/* Add Expenses */}
-      <div className="modal fade" id="add_expenses">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Add Expense</h4>
-              <button
-                type="button"
-                onClick={(e) => handleCancel(e)}
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    <div className="row">
+      {
+        addModal && (<div className="modal fade show d-block" id="add_expenses">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Add Expense</h4>
+                <button
+                  type="button"
+                  onClick={(e) => handleCancel(e)}
+                  className="btn-close custom-btn-close"
 
-                    <div className="mb-3 col col-sm-6">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                        value={formData.name}
-                        onChange={handleChange}
-                      />
-                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                    </div>
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      <div className="row">
 
-                     <div className="mb-3 col col-sm-6">
-                      <label className="form-label">Mobile Number</label>
-                      <input
-                        type="phone"
-                        name="mobile"
-                        className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
-                        value={formData.mobile}
-                        onChange={handleChange}
-                      />
-                      {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
-                    </div>
+                        <div className="mb-3 col col-sm-6">
+                          <label className="form-label">Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                            value={formData.name}
+                            onChange={handleChange}
+                          />
+                          {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                        </div>
 
-                    </div>
-                     <div className="mb-3">
-                      <label className="form-label">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                        value={formData.email}
-                        onChange={handleChange}
-                      />
-                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                    </div>
+                        <div className="mb-3 col col-sm-6">
+                          <label className="form-label">Mobile Number</label>
+                          <input
+                            type="phone"
+                            name="mobile"
+                            className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
+                            value={formData.mobile}
+                            onChange={handleChange}
+                          />
+                          {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
+                        </div>
 
-                    {/* Expense Name */}
-                    <div className="mb-3">
-                      <label className="form-label">Expense Name</label>
-                      <input
-                        type="text"
-                        name="expenseName"
-                        className={`form-control ${errors.expenseName ? "is-invalid" : ""}`}
-                        value={formData.expenseName}
-                        onChange={handleChange}
-                      />
-                      {errors.expenseName && <div className="invalid-feedback">{errors.expenseName}</div>}
-                    </div>
-
-                    {/* Category */}
-                    <div className="mb-3">
-                      <label className="form-label">Category</label>
-                      <CommonSelect
-                        className={`select ${errors.category ? "is-invalid" : ""}`}
-                        options={expcatopt}
-                        value={formData.category}
-                        onChange={(opt) => handleSelectChange("category", opt?.value || "")}
-                      />
-                      {errors.category && <div className="invalid-feedback d-block">{errors.category}</div>}
-                    </div>
-
-                    {/* Date */}
-                    <div className="mb-3">
-                      <label className="form-label">Date</label>
-                      <div className="input-icon position-relative">
-                        <DatePicker
-                          className={`form-control datetimepicker`}
-                          format="DD MMM YYYY"
-                          value={
-                            formData.date
-                              ? dayjs(formData.date, "DD MMM YYYY")
-                              : null
-                          }
-                          placeholder="Select Date"
-                          onChange={(dateString) =>
-                            handleDateChange(
-                              "date",
-                              Array.isArray(dateString)
-                                ? dateString[0]
-                                : dateString
-                            )
-                          }
-                        />
-
-                        <span className="input-icon-addon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                        {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
                       </div>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="mb-3">
-                      <label className="form-label">Amount</label>
-                      <input
-                        type="number"
-                        name="amount"
-                        className={`form-control ${errors.amount ? "is-invalid" : ""}`}
-                        value={formData.amount ?? ""}
-                        onChange={handleChange}
-                      />
-                      {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
-                    </div>
-
-                    {/* Invoice No */}
-                    <div className="mb-3">
-                      <label className="form-label">Invoice No</label>
-                      <input
-                        type="number"
-                        name="invoiceNo"
-                        className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
-                        value={formData.invoiceNo ?? ""}
-                        onChange={handleChange}
-                      />
-                      {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
-                    </div>
-
-                    {/* Payment Method */}
-                    <div className="mb-3">
-                      <label className="form-label">Payment Method</label>
-                      <CommonSelect
-                        className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
-                        options={paymentMethod}
-                        value={formData.paymentMethod}
-                        onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
-                      />
-                      {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
-                    </div>
-
-                    {/* Description */}
-                    <div className="mb-3">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        className="form-control"
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
-                      </div>
-                      <div className="form-check form-switch">
+                      <div className="mb-3">
+                        <label className="form-label">Email</label>
                         <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm2"
-                          name="status"
-                          checked={formData.status === "1"}
-                          onChange={handleStatusChange}
+                          type="email"
+                          name="email"
+                          className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                          value={formData.email}
+                          onChange={handleChange}
                         />
+                        {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                      </div>
+
+                      {/* Expense Name */}
+                      <div className="mb-3">
+                        <label className="form-label">Expense Name</label>
+                        <input
+                          type="text"
+                          name="expenseName"
+                          className={`form-control ${errors.expenseName ? "is-invalid" : ""}`}
+                          value={formData.expenseName}
+                          onChange={handleChange}
+                        />
+                        {errors.expenseName && <div className="invalid-feedback">{errors.expenseName}</div>}
+                      </div>
+
+                      {/* Category */}
+                      <div className="mb-3">
+                        <label className="form-label">Category</label>
+                        <CommonSelect
+                          className={`select ${errors.category ? "is-invalid" : ""}`}
+                          options={expcatopt}
+                          value={formData.category}
+                          onChange={(opt) => handleSelectChange("category", opt?.value || "")}
+                        />
+                        {errors.category && <div className="invalid-feedback d-block">{errors.category}</div>}
+                      </div>
+
+                      {/* Date */}
+                      <div className="mb-3">
+                        <label className="form-label">Date</label>
+                        <div className="input-icon position-relative">
+                          <DatePicker
+                            className={`form-control datetimepicker`}
+                            format="DD MMM YYYY"
+                            value={
+                              formData.date
+                                ? dayjs(formData.date, "DD MMM YYYY")
+                                : null
+                            }
+                            placeholder="Select Date"
+                            onChange={(dateString) =>
+                              handleDateChange(
+                                "date",
+                                Array.isArray(dateString)
+                                  ? dateString[0]
+                                  : dateString
+                              )
+                            }
+                          />
+
+                          <span className="input-icon-addon">
+                            <i className="ti ti-calendar" />
+                          </span>
+                          {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="mb-3">
+                        <label className="form-label">Amount</label>
+                        <input
+                          type="number"
+                          name="amount"
+                          className={`form-control ${errors.amount ? "is-invalid" : ""}`}
+                          value={formData.amount ?? ""}
+                          onChange={handleChange}
+                        />
+                        {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
+                      </div>
+
+                      {/* Invoice No */}
+                      <div className="mb-3">
+                        <label className="form-label">Invoice No</label>
+                        <input
+                          type="number"
+                          name="invoiceNo"
+                          className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
+                          value={formData.invoiceNo ?? ""}
+                          onChange={handleChange}
+                        />
+                        {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
+                      </div>
+
+                      {/* Payment Method */}
+                      <div className="mb-3">
+                        <label className="form-label">Payment Method</label>
+                        <CommonSelect
+                          className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
+                          options={paymentMethod}
+                          value={formData.paymentMethod}
+                          onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
+                        />
+                        {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
+                      </div>
+
+                      {/* Description */}
+                      <div className="mb-3">
+                        <label className="form-label">Description</label>
+                        <textarea
+                          name="description"
+                          rows={4}
+                          className="form-control"
+                          value={formData.description}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle</p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm2"
+                            name="status"
+                            checked={formData.status === "1"}
+                            onChange={handleStatusChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button"
-                  onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Add Expense
-                </button>
-              </div>
-            </form>
+                <div className="modal-footer">
+                  <button type="button"
+                    onClick={(e) => handleCancel(e)} className="btn btn-light me-2" >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Add Expense
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Add Expenses */}
       {/* Edit Expenses */}
-      <div className="modal fade" id="edit_expenses">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title">Edit Expense</h4>
-              <button
-                type="button"
-                onClick={(e) => handleCancel(e)}
-                className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              >
-                <i className="ti ti-x" />
-              </button>
-            </div>
-             <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-12">
-                    <div className="row">
-                           <div className="mb-3 col col-sm-6">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                        value={formData.name}
-                        onChange={handleChange}
-                      />
-                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                    </div>
-                     <div className="mb-3 col col-sm-6">
-                      <label className="form-label">Mobile Number</label>
-                      <input
-                        type="phone"
-                        name="mobile"
-                        className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
-                        value={formData.mobile}
-                        onChange={handleChange}
-                      />
-                      {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
-                    </div>
-                    </div>
-                     <div className="mb-3">
-                      <label className="form-label">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                        value={formData.email}
-                        onChange={handleChange}
-                      />
-                      {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                    </div>
-                    {/* Expense Name */}
-                    <div className="mb-3">
-                      <label className="form-label">Expense Name</label>
-                      <input
-                        type="text"
-                        name="expenseName"
-                        className={`form-control ${errors.expenseName ? "is-invalid" : ""}`}
-                        value={formData.expenseName}
-                        onChange={handleChange}
-                      />
-                      {errors.expenseName && <div className="invalid-feedback">{errors.expenseName}</div>}
-                    </div>
-
-                    {/* Category */}
-                    <div className="mb-3">
-                      <label className="form-label">Category</label>
-                      <CommonSelect
-                        className={`select ${errors.category ? "is-invalid" : ""}`}
-                        options={expcatopt}
-                        value={formData.category}
-                        onChange={(opt) => handleSelectChange("category", opt?.value || "")}
-                      />
-                      {errors.category && <div className="invalid-feedback d-block">{errors.category}</div>}
-                    </div>
-
-                    {/* Date */}
-                    <div className="mb-3">
-                      <label className="form-label">Date</label>
-                      <div className="input-icon position-relative">
-                        <DatePicker
-                          className={`form-control datetimepicker`}
-                          format="DD MMM YYYY"
-                          value={
-                            formData.date
-                              ? dayjs(formData.date, "DD MMM YYYY")
-                              : null
-                          }
-                          placeholder="Select Date"
-                          onChange={(dateString) =>
-                            handleDateChange(
-                              "date",
-                              Array.isArray(dateString)
-                                ? dateString[0]
-                                : dateString
-                            )
-                          }
-                        />
-
-                        <span className="input-icon-addon">
-                          <i className="ti ti-calendar" />
-                        </span>
-                        {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
+      {
+        editModal && (<div className="modal fade show d-block" id="edit_expenses">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Edit Expense</h4>
+                <button
+                  type="button"
+                  onClick={(e) => handleCancel(e)}
+                  className="btn-close custom-btn-close"
+                  
+                >
+                  <i className="ti ti-x" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit}>
+                <div className="modal-body">
+                  <div className="row">
+                    <div className="col-md-12">
+                      <div className="row">
+                        <div className="mb-3 col col-sm-6">
+                          <label className="form-label">Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                            value={formData.name}
+                            onChange={handleChange}
+                          />
+                          {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                        </div>
+                        <div className="mb-3 col col-sm-6">
+                          <label className="form-label">Mobile Number</label>
+                          <input
+                            type="phone"
+                            name="mobile"
+                            className={`form-control ${errors.mobile ? "is-invalid" : ""}`}
+                            value={formData.mobile}
+                            onChange={handleChange}
+                          />
+                          {errors.mobile && <div className="invalid-feedback">{errors.mobile}</div>}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="mb-3">
-                      <label className="form-label">Amount</label>
-                      <input
-                        type="number"
-                        name="amount"
-                        className={`form-control ${errors.amount ? "is-invalid" : ""}`}
-                        value={formData.amount ?? ""}
-                        onChange={handleChange}
-                      />
-                      {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
-                    </div>
-
-                    {/* Invoice No */}
-                    <div className="mb-3">
-                      <label className="form-label">Invoice No</label>
-                      <input
-                        type="number"
-                        name="invoiceNo"
-                        className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
-                        value={formData.invoiceNo ?? ""}
-                        onChange={handleChange}
-                      />
-                      {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
-                    </div>
-
-                    {/* Payment Method */}
-                    <div className="mb-3">
-                      <label className="form-label">Payment Method</label>
-                      <CommonSelect
-                        className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
-                        options={paymentMethod}
-                        value={formData.paymentMethod}
-                        onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
-                      />
-                      {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
-                    </div>
-
-                    {/* Description */}
-                    <div className="mb-3">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        className="form-control"
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle</p>
-                      </div>
-                      <div className="form-check form-switch">
+                      <div className="mb-3">
+                        <label className="form-label">Email</label>
                         <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm2"
-                          name="status"
-                          checked={formData.status === "1"}
-                          onChange={handleStatusChange}
+                          type="email"
+                          name="email"
+                          className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                          value={formData.email}
+                          onChange={handleChange}
                         />
+                        {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                      </div>
+                      {/* Expense Name */}
+                      <div className="mb-3">
+                        <label className="form-label">Expense Name</label>
+                        <input
+                          type="text"
+                          name="expenseName"
+                          className={`form-control ${errors.expenseName ? "is-invalid" : ""}`}
+                          value={formData.expenseName}
+                          onChange={handleChange}
+                        />
+                        {errors.expenseName && <div className="invalid-feedback">{errors.expenseName}</div>}
+                      </div>
+
+                      {/* Category */}
+                      <div className="mb-3">
+                        <label className="form-label">Category</label>
+                        <CommonSelect
+                          className={`select ${errors.category ? "is-invalid" : ""}`}
+                          options={expcatopt}
+                          value={formData.category}
+                          onChange={(opt) => handleSelectChange("category", opt?.value || "")}
+                        />
+                        {errors.category && <div className="invalid-feedback d-block">{errors.category}</div>}
+                      </div>
+
+                      {/* Date */}
+                      <div className="mb-3">
+                        <label className="form-label">Date</label>
+                        <div className="input-icon position-relative">
+                          <DatePicker
+                            className={`form-control datetimepicker`}
+                            format="DD MMM YYYY"
+                            value={
+                              formData.date
+                                ? dayjs(formData.date, "DD MMM YYYY")
+                                : null
+                            }
+                            placeholder="Select Date"
+                            onChange={(dateString) =>
+                              handleDateChange(
+                                "date",
+                                Array.isArray(dateString)
+                                  ? dateString[0]
+                                  : dateString
+                              )
+                            }
+                          />
+
+                          <span className="input-icon-addon">
+                            <i className="ti ti-calendar" />
+                          </span>
+                          {errors.date && <div className="invalid-feedback d-block">{errors.date}</div>}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="mb-3">
+                        <label className="form-label">Amount</label>
+                        <input
+                          type="number"
+                          name="amount"
+                          className={`form-control ${errors.amount ? "is-invalid" : ""}`}
+                          value={formData.amount ?? ""}
+                          onChange={handleChange}
+                        />
+                        {errors.amount && <div className="invalid-feedback">{errors.amount}</div>}
+                      </div>
+
+                      {/* Invoice No */}
+                      <div className="mb-3">
+                        <label className="form-label">Invoice No</label>
+                        <input
+                          type="number"
+                          name="invoiceNo"
+                          className={`form-control ${errors.invoiceNo ? "is-invalid" : ""}`}
+                          value={formData.invoiceNo ?? ""}
+                          onChange={handleChange}
+                        />
+                        {errors.invoiceNo && <div className="invalid-feedback">{errors.invoiceNo}</div>}
+                      </div>
+
+                      {/* Payment Method */}
+                      <div className="mb-3">
+                        <label className="form-label">Payment Method</label>
+                        <CommonSelect
+                          className={`select ${errors.paymentMethod ? "is-invalid" : ""}`}
+                          options={paymentMethod}
+                          value={formData.paymentMethod}
+                          onChange={(opt) => handleSelectChange("paymentMethod", opt?.value || "")}
+                        />
+                        {errors.paymentMethod && <div className="invalid-feedback d-block">{errors.paymentMethod}</div>}
+                      </div>
+
+                      {/* Description */}
+                      <div className="mb-3">
+                        <label className="form-label">Description</label>
+                        <textarea
+                          name="description"
+                          rows={4}
+                          className="form-control"
+                          value={formData.description}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle</p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm2"
+                            name="status"
+                            checked={formData.status === "1"}
+                            onChange={handleStatusChange}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button"
-                  onClick={(e) => handleCancel(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Edit Expense
-                </button>
-              </div>
-            </form>
+                <div className="modal-footer">
+                  <button type="button"
+                    onClick={(e) => handleCancel(e)} className="btn btn-light me-2" >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Edit Expense
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Edit Expenses */}
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <form >
-              <div className="modal-body text-center">
-                <span className="delete-icon">
-                  <i className="ti ti-trash-x" />
-                </span>
-                <h4>Confirm Deletion</h4>
-                <p>
-                  You want to delete  marked item, this can't be undone
-                  once you delete.
-                </p>
-                {
-                  deleteId && (<div className="d-flex justify-content-center">
-                    <button
-                      onClick={(e) => cancelDelete(e)}
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </button>
-                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                    >
-                      Yes, Delete
-                    </button>
-                  </div>)
-                }
-              </div>
-            </form>
+      {
+        delModal && (<div className="modal fade show d-block" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete  marked item, this can't be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Delete Modal */}
     </div>
   );
