@@ -5,6 +5,7 @@ require('dotenv').config()
 const path = require('path')
 const { Server } = require('socket.io')
 const http = require('http')
+require('./mqttbroker/mqttAttendance')
 
 const app = express();
 const port = process.env.PORT || 3000;

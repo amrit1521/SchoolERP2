@@ -9,7 +9,8 @@ router.get('/getstuattendancereport' , attendanaceController.getStuAttendanceRep
 router.get('/getdailyclassattendancereport',attendanaceController.getDailyClassAttendanceReport)
 router.get('/getdailystudentattendancereport',attendanaceController.getDailyStudentAttendanceReport)
 router.post('/markstuattendance2' , attendanaceController.markStudentAttendance2)
-router.post('/getstuattendance2data' , attendanaceController.getAttendance2Data)
+router.post('/getstuattendance2data' , attendanaceController.getFilterAttendance2Data)
+router.get('/getallstuattendace2data' , attendanaceController.getAllAttendance2Data)
 
 // staff attendance
 router.post('/markstaffattendance' , attendanaceController.markStaffAttendance)

@@ -948,14 +948,12 @@ exports.markStudentAttendance2 = async (req, res) => {
 
     const insertSql = `
       INSERT INTO attendance_info2
-      (student_rollnum, class_id , section_id,  attendance, attendance_date)
+      (student_rollnum,  attendance, attendance_date)
       VALUES ?
     `;
 
     const values = data.map((item) => [
       item.rollNo,
-      item.class,
-      item.section,
       item.attendance === "Present" ? "Present" : "Absent",
       today,
     ]);
@@ -977,7 +975,7 @@ exports.markStudentAttendance2 = async (req, res) => {
 };
 
 
-exports.getAttendance2Data = async (req, res) => {
+exports.getFilterAttendance2Data = async (req, res) => {
   try {
     const { class:classId, section, date } = req.body;
    
@@ -995,16 +993,61 @@ exports.getAttendance2Data = async (req, res) => {
         u.lastname,
         s.stu_img,
         s.stu_id AS student_id,
+        UPPER(c.class_name) as class,   
+        UPPER( se.section_name) as section,
         ai.student_rollnum,
         s.admissionnum
       FROM attendance_info2 ai
       LEFT JOIN students s ON s.rollnum = ai.student_rollnum
       LEFT JOIN users u ON u.id=s.stu_id
-      WHERE ai.class_id = ? AND ai.section_id = ? AND ai.attendance_date = ?
+      LEFT JOIN classes  c ON c.id =  s.class_id
+      LEFT JOIN sections se ON se.id = s.section_id
+      WHERE s.class_id = ? AND s.section_id = ? AND ai.attendance_date = ?
       ORDER BY ai.student_rollnum ASC
     `;
 
     const [rows] = await db.query(sql, [classId, section, date]);
+
+    return res.status(200).json({
+      success: true,
+      data: rows,
+    });
+  } catch (err) {
+    console.error("Error fetching attendance:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+exports.getAllAttendance2Data = async (req, res) => {
+  try {
+   
+ const today = new Date().toISOString().split("T")[0];
+
+    const sql = `
+      SELECT 
+        ai.attendance, 
+        u.firstname,
+        u.lastname,
+        s.stu_img,
+        s.stu_id AS student_id,
+        ai.student_rollnum,
+         UPPER(c.class_name) as class,     
+         UPPER( se.section_name) as section,
+        s.admissionnum
+      FROM attendance_info2 ai
+      LEFT JOIN students s ON s.rollnum = ai.student_rollnum
+      LEFT JOIN users u ON u.id=s.stu_id
+      LEFT JOIN classes  c ON c.id =  s.class_id
+      LEFT JOIN sections se ON se.id = s.section_id
+      WHERE ai.attendance_date = ?
+      ORDER BY ai.student_rollnum ASC
+    `;
+
+    const [rows] = await db.query(sql, [today]);
 
     return res.status(200).json({
       success: true,

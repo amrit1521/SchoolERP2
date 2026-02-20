@@ -215,6 +215,10 @@ export const markAttendance2 = (data: object) =>
 
 export const getAttendanceData2 = (data: object) =>
   api.post("attendance/getstuattendance2data", data);
+
+export const getAllAttendanceData2 = () =>
+  api.get("attendance/getallstuattendace2data");
+
 // new feature
 
 

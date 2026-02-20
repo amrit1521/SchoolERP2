@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Table from "../../../core/common/dataTable/index";
 import CommonSelect from "../../../core/common/commonSelect";
 import { toast } from "react-toastify";
-import { getAllSectionForAClass, getAttendanceData2, Imageurl } from "../../../service/api";
+import { getAllAttendanceData2, getAllSectionForAClass, getAttendanceData2, Imageurl } from "../../../service/api";
 import { allRealClasses } from "../../../service/classApi";
 import { Spinner } from "../../../spinner";
 import { all_routes } from "../../../router/all_routes";
@@ -63,6 +63,23 @@ const AttendanceData2 = () => {
         }
     };
 
+    const fetchAllStudents = async()=>{
+        try {
+            const {data} = await getAllAttendanceData2()
+            if(data.success){
+                setStudents(data.data)
+              
+            }    
+        } catch (error) {
+             console.log(error)
+             
+        }
+    }
+
+    useEffect(()=>{      
+              fetchAllStudents() 
+    } ,[])
+
     // Fetch Students
     const fetchStudents = async () => {
         if (!fromClassData.class || !fromClassData.section || !date) {
@@ -76,16 +93,12 @@ const AttendanceData2 = () => {
             date: formattedDate,
         };
 
-        console.log("Fetching attendance with payload:", payload);
 
         try {
             setLoadingStudents(true);
             const { data } = await getAttendanceData2(payload);
-            console.log(data);
-
             if (data.success) {
                 setStudents(data.data || []);
-
                 if (dropdownMenuRef.current) {
                     dropdownMenuRef.current.classList.remove("show");
                 }
@@ -117,9 +130,13 @@ const AttendanceData2 = () => {
     };
 
        const handleReset = () => {
+         if (dropdownMenuRef.current) {
+                    dropdownMenuRef.current.classList.remove("show");
+                }
         setFromClassData({ class: null, section: null });
         setDate("");
-        setStudents([]);
+       fetchAllStudents()
+
     };
 
 
@@ -128,6 +145,8 @@ const AttendanceData2 = () => {
         key: s.student_rollnum,
         roll: s.student_rollnum,
         img: s.stu_img,
+        className:s.class,
+        section:s.section,
         admission: s.admissionnum,
         name: `${s.firstname} ${s.lastname}`,
         attendance: s.attendance,
@@ -158,6 +177,8 @@ const AttendanceData2 = () => {
             sorter: (a: any, b: any) =>
                 a.name.length - b.name.length,
         },
+         { title: "Class", dataIndex: "className" },
+          { title: "Section", dataIndex: "section" },
         {
             title: "Attendance",
             render: (_: any, record: any) => {

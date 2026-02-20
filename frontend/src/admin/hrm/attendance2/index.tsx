@@ -78,7 +78,7 @@ const StudentAttendance2 = () => {
         try {
             setLoadingStudents(true);
             const { data } = await studentsFilter2(fromClassData);
-            console.log(data.students)
+          
 
             if (data.success) {
                 setStudents(data.students || []);
@@ -131,12 +131,10 @@ const StudentAttendance2 = () => {
 
         const payload = students.map((s) => ({
             rollNo: s.rollnum,
-            attendance: attendance[s.rollnum],
-            class:fromClassData.class,
-            section:fromClassData.section
+            attendance: attendance[s.rollnum]
         }));
 
-        try {
+        try {-
             setSubmitting(true);
             
             const { data } = await markAttendance2(payload);
