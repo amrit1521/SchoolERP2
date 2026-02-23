@@ -16,7 +16,6 @@ import { DatePicker } from "antd";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
 import { addSport, allSport, deleteSport, editSport, speSport } from "../../../service/sport";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
 import { Spinner } from "../../../spinner";
 
 interface SportData {
@@ -49,6 +48,8 @@ const SportsList = () => {
   const [formData, setFormData] = useState<SportFormData>(initailData);
   const [errors, setErrors] = useState(initailData);
   const [editId, setEditId] = useState<number | null>(null)
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [editModal ,setEditModal] = useState<boolean>(false)
 
 
 
@@ -116,8 +117,8 @@ const SportsList = () => {
 
     try {
       const { data } = await speSport(id)
-      console.log(data.data)
       if (data.success) {
+        setEditModal(true)
         setFormData({
           name: data.data.name,
           coach: data.data.coach,
@@ -143,14 +144,14 @@ const SportsList = () => {
         const { data } = await editSport(formData, editId)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_sports')
+          setEditModal(false)
         }
 
       } else {
         const { data } = await addSport(formData)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_sports')
+          setAddModal(false)
         }
       }
       setFormData(initailData);
@@ -169,11 +170,14 @@ const SportsList = () => {
     e.preventDefault()
     setFormData(initailData)
     setEditId(null)
+    setAddModal(false)
+    setEditModal(false)
   }
 
 
   // delete----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -183,7 +187,7 @@ const SportsList = () => {
         toast.success(data.message)
         fetchSports();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -194,6 +198,7 @@ const SportsList = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -267,18 +272,19 @@ const SportsList = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(record.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_sports"
+                    
                   >
                     <i className="ti ti-edit-circle me-2"></i>Edit
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() => {
+                      setDeleteId(record.id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -319,15 +325,14 @@ const SportsList = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_sports"
+                  onClick={()=>setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Sport
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -454,7 +459,8 @@ const SportsList = () => {
       </div>
       {/* /Page Wrapper */}
       {/* Add Sports */}
-      <div className="modal fade" id="add_sports">
+       {
+        addModal&&(<div className="modal fade show d-block" id="add_sports">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -463,7 +469,7 @@ const SportsList = () => {
                 type="button"
                 onClick={(e) => handleCancel(e)}
                 className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
+               
               >
                 <i className="ti ti-x" />
               </button>
@@ -520,7 +526,7 @@ const SportsList = () => {
                   type="button"
                   onClick={(e) => handleCancel(e)}
                   className="btn btn-light me-2"
-                  data-bs-dismiss="modal"
+                
                 >
                   Cancel
                 </button>
@@ -531,11 +537,13 @@ const SportsList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
 
       {/* Add Sports */}
       {/* Edit Sports */}
-      <div className="modal fade" id="edit_sports">
+       {
+        editModal&&(<div className="modal fade show d-block" id="edit_sports">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -544,7 +552,7 @@ const SportsList = () => {
                 type="button"
                 onClick={(e) => handleCancel(e)}
                 className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
+               
               >
                 <i className="ti ti-x" />
               </button>
@@ -601,7 +609,7 @@ const SportsList = () => {
                   type="button"
                   onClick={(e) => handleCancel(e)}
                   className="btn btn-light me-2"
-                  data-bs-dismiss="modal"
+                 
                 >
                   Cancel
                 </button>
@@ -612,42 +620,45 @@ const SportsList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* Edit Sports */}
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <form >
-              <div className="modal-body text-center">
-                <span className="delete-icon">
-                  <i className="ti ti-trash-x" />
-                </span>
-                <h4>Confirm Deletion</h4>
-                <p>
-                  You want to delete all the marked items, this cant be undone
-                  once you delete.
-                </p>
-                {
-                  deleteId && (<div className="d-flex justify-content-center">
-                    <button
-                      onClick={(e) => cancelDelete(e)}
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </button>
-                    <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
-                    >
-                      Yes, Delete
-                    </button>
-                  </div>)
-                }
-              </div>
-            </form>
+      {
+        delModal && (<div className="modal fade show d-block" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete this item, this can not be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Delete Modal */}
     </>
   );

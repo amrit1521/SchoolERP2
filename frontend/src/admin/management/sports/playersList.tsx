@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { all_routes } from "../../../router/all_routes";
 import { Link } from "react-router-dom";
-import PredefinedDateRanges from "../../../core/common/datePicker";
 import CommonSelect from "../../../core/common/commonSelect";
 import {
 
@@ -20,7 +19,7 @@ import { DatePicker } from "antd";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
 import { Spinner } from "../../../spinner";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 
 interface StudentSport {
   id: number;
@@ -66,6 +65,8 @@ const PlayersList = () => {
   const [form, setForm] = useState<PlayerForm>(initailData);
   const [errors, setErrors] = useState<PlayerFormErrors>({});
   const [editId, setEditId] = useState<number | null>(null)
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [editModal ,setEditModal] = useState<boolean>(false)
 
   const fetchOptions = async () => {
     try {
@@ -135,9 +136,9 @@ const PlayersList = () => {
       const response = await spePlayer(id);
       const { data } = response;
 
-      if (data?.success && data?.data) {
+      if (data?.success ) {
         const playerData = data.data;
-
+           setEditModal(true)
         setForm({
           playerId: playerData.player_id ?? "",
           sportId: playerData.sport_id ?? "",
@@ -182,7 +183,8 @@ const PlayersList = () => {
         fetchPlayers();
         setForm(initailData)
         setEditId(null)
-        handleModalPopUp(editId ? "edit_player" : "add_player");
+        setAddModal(false)
+        setEditModal(false)
       }
 
     } catch (error: any) {
@@ -195,11 +197,13 @@ const PlayersList = () => {
     e.preventDefault()
     setForm(initailData)
     setEditId(null)
+    setAddModal(false)
+    setEditModal(false)
   }
 
   // delete----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal ,setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
@@ -208,7 +212,7 @@ const PlayersList = () => {
         toast.success(data.message)
         fetchPlayers();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -219,6 +223,7 @@ const PlayersList = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
   const columns = [
@@ -292,18 +297,18 @@ const PlayersList = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(record.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_player"
+                   
                   >
                     <i className="ti ti-edit-circle me-2"></i>Edit
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() =>{ setDeleteId(record.id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -344,15 +349,14 @@ const PlayersList = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                   type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_player"
+                  onClick={()=>setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Players
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -363,7 +367,7 @@ const PlayersList = () => {
               <h4 className="mb-3">Players List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                  {/* <PredefinedDateRanges /> */}
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -470,7 +474,8 @@ const PlayersList = () => {
       </div>
       {/* /Page Wrapper */}
       {/* Add Player */}
-      <div className="modal fade" id="add_player">
+      {
+        addModal&&( <div className="modal fade show d-block" id="add_player">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -479,8 +484,7 @@ const PlayersList = () => {
                 type="button"
                 onClick={(e) => handleCancelSubmit(e)}
                 className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
+              
               >
                 <i className="ti ti-x" />
               </button>
@@ -533,7 +537,7 @@ const PlayersList = () => {
               </div>
               <div className="modal-footer">
                 <button type="button"
-                  onClick={(e) => handleCancelSubmit(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
+                  onClick={(e) => handleCancelSubmit(e)} className="btn btn-light me-2" >
                   Cancel
                 </button>
                 <button type="button" className="btn btn-primary" onClick={handleSubmit}>
@@ -543,10 +547,12 @@ const PlayersList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+      }
       {/* Add Player */}
       {/* Edit Player */}
-      <div className="modal fade" id="edit_player">
+       {
+        editModal&&(<div className="modal fade show d-block" id="edit_player">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <div className="modal-header">
@@ -555,8 +561,7 @@ const PlayersList = () => {
                 type="button"
                 onClick={(e) => handleCancelSubmit(e)}
                 className="btn-close custom-btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
+              
               >
                 <i className="ti ti-x" />
               </button>
@@ -608,7 +613,7 @@ const PlayersList = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" onClick={(e) => handleCancelSubmit(e)} className="btn btn-light me-2" data-bs-dismiss="modal">
+                <button type="button" onClick={(e) => handleCancelSubmit(e)} className="btn btn-light me-2">
                   Cancel
                 </button>
                 <button type="button" className="btn btn-primary" onClick={handleSubmit}>
@@ -618,9 +623,11 @@ const PlayersList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* Delete Modal */}
-      <div className="modal fade" id="delete-modal">
+       {
+        delModal&&(<div className="modal fade show d-block" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -638,7 +645,7 @@ const PlayersList = () => {
                     <button
                       onClick={(e) => cancelDelete(e)}
                       className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                      type="button"
                     >
                       Cancel
                     </button>
@@ -652,7 +659,8 @@ const PlayersList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* /Delete Modal */}
       {/* Edit Player */}
     </>

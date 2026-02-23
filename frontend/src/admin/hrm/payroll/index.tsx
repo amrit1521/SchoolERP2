@@ -17,7 +17,6 @@ import { getAllapplySalaryDetail, paySalary, speSalaryDetails } from "../../../s
 import { Spinner } from "../../../spinner";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
 
 export interface SalaryApplication {
   id: number;
@@ -97,14 +96,22 @@ const Payroll = () => {
     net_salary: "",
   })
   const [loading2, setLoading2] = useState<boolean>(false)
+  const [viewPaySlipModal, setViewPaySlipModal] = useState<boolean>(false)
+  const [PaySlipModal, setPaySlipModal] = useState<boolean>(false)
 
-  const payrollDetails = async (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
+  const payrollDetails = async (e: React.MouseEvent<HTMLButtonElement>, id: number, type: 'pay' | 'view') => {
     e.preventDefault()
     setLoading2(true)
     try {
 
       const { data } = await speSalaryDetails(id)
       if (data.success) {
+        if (type === 'view') {
+          setViewPaySlipModal(true)
+        } else {
+          setPaySlipModal(true)
+        }
+
         setSpePayroll(data.data)
       }
 
@@ -114,6 +121,7 @@ const Payroll = () => {
       setLoading2(false)
     }
   }
+
 
 
   // pay salary
@@ -129,7 +137,7 @@ const Payroll = () => {
 
     try {
       if (!spePayroll.id) return
-      const { data } = await paySalary({payment_method:paymentMethod}, spePayroll.id)
+      const { data } = await paySalary({ payment_method: paymentMethod }, spePayroll.id)
       if (data.success) {
         toast.success(data.message)
         setPaymentMethod("")
@@ -148,7 +156,7 @@ const Payroll = () => {
           net_salary: "",
         })
         fetchPayRoll()
-        handleModalPopUp('pay_salary')
+        setPaySlipModal(false)
       }
 
     } catch (error: any) {
@@ -220,9 +228,8 @@ const Payroll = () => {
       render: (_: any, record: any) =>
         record.status === "1" ? (
           <button
-            onClick={(e) => payrollDetails(e, record.id)}
-            data-bs-target="#view_payslip"
-            data-bs-toggle="modal"
+            onClick={(e) => payrollDetails(e, record.id, 'view')}
+            type="button"
             className="btn btn-primary d-inline-flex align-items-center "
           >
 
@@ -230,9 +237,8 @@ const Payroll = () => {
           </button>
         ) : (
           <button
-            onClick={(e) => payrollDetails(e, record.id)}
-            data-bs-target="#pay_salary"
-            data-bs-toggle="modal"
+            onClick={(e) => payrollDetails(e, record.id, 'pay')}
+            type="button"
             className="btn btn-primary d-inline-flex align-items-center "
           >
 
@@ -408,173 +414,179 @@ const Payroll = () => {
         {/* /Page Wrapper */}
       </>
       {/* Pay Salary Modal */}
-      <div className="modal fade" id="pay_salary">
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content shadow-lg border-0 rounded-4">
+      {
+        PaySlipModal && (<div className="modal fade show d-block" id="pay_salary">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content shadow-lg border-0 rounded-4">
 
-            {/* Header */}
-            <div className="modal-header border-0 pb-0">
-              <h5 className="modal-title fw-bold">Pay Salary</h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
+              {/* Header */}
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Pay Salary</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={()=>  setPaySlipModal(false)}
+                />
+              </div>
+
+              {loading2 ? (
+                <Spinner />
+              ) : (
+                <form onSubmit={handleSubmitPayment}>
+                  <div className="modal-body pt-2">
+
+                    {/* Employee Info Card */}
+                    <div className="p-4 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: '#ffffff' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-secondary">Employee Information</h6>
+                        <span
+                          className={`badge badge-soft-warning`}
+                        >
+                          <i className="ti ti-circle-filled me-1" />
+                          {spePayroll.status_label}
+                        </span>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied By</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">ID</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.employee_id}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Role</small>
+                          <p className="mb-0 text-capitalize fw-semibold">{spePayroll.role_name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">For Month</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.salary_month).format('MMMM')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied On</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.apply_date).format('DD MMM YYYY')}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Method */}
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label fw-semibold">Payment Method</label>
+                        <CommonSelect
+                          className="select"
+                          options={paymentType}
+                          value={paymentMethod}
+                          onChange={(option) =>
+                            setPaymentMethod(option ? String(option.value) : "")
+                          }
+
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Footer */}
+                  <div className="modal-footer border-0 pt-0">
+                    <button type="button" onClick={() => {
+                      setPaymentMethod("")
+                      setPaySlipModal(false)
+
+                    }} className="btn btn-light me-2" >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Submit
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-
-            {loading2 ? (
-              <Spinner />
-            ) : (
-              <form onSubmit={handleSubmitPayment}>
-                <div className="modal-body pt-2">
-
-                  {/* Employee Info Card */}
-                  <div className="p-4 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: '#ffffff' }}>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="mb-0 text-secondary">Employee Information</h6>
-                      <span
-                        className={`badge badge-soft-warning`}
-                      >
-                        <i className="ti ti-circle-filled me-1" />
-                        {spePayroll.status_label}
-                      </span>
-                    </div>
-
-                    <div className="row">
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Applied By</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.name}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">ID</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.employee_id}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Role</small>
-                        <p className="mb-0 text-capitalize fw-semibold">{spePayroll.role_name}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">For Month</small>
-                        <p className="mb-0 fw-semibold">{dayjs(spePayroll.salary_month).format('MMMM')}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Applied On</small>
-                        <p className="mb-0 fw-semibold">{dayjs(spePayroll.apply_date).format('DD MMM YYYY')}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Method */}
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Payment Method</label>
-                      <CommonSelect
-                        className="select"
-                        options={paymentType}
-                        value={paymentMethod}
-                        onChange={(option) =>
-                          setPaymentMethod(option ? String(option.value) : "")
-                        }
-
-                      />
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Footer */}
-                <div className="modal-footer border-0 pt-0">
-                  <button type="button" onClick={() => setPaymentMethod("")} className="btn btn-light me-2" data-bs-dismiss="modal">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Submit
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Pay Salary Modal */}
 
 
 
       {/* Payslip Modal */}
-      <div className="modal fade" id="view_payslip">
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content shadow-lg border-0 rounded-4">
+      {
+        viewPaySlipModal && (<div className="modal fade show d-block" id="view_payslip">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content shadow-lg border-0 rounded-4">
 
-            {/* Header */}
-            <div className="modal-header border-0 pb-0">
-              <h5 className="modal-title fw-bold">Payslip</h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
+              {/* Header */}
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Payslip</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setViewPaySlipModal(false)}
+                />
+              </div>
 
-            {loading2 ? (
-              <Spinner />
-            ) : (
-              <form>
-                <div className="modal-body pt-2">
+              {loading2 ? (
+                <Spinner />
+              ) : (
+                <form>
+                  <div className="modal-body pt-2">
 
-                  {/* Employee Info Card */}
-                  <div className="p-4 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: '#ffffff' }}>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="mb-0 text-secondary">Employee Information</h6>
-                      <span className={`badge ${spePayroll.status === '1' ? 'badge-soft-success' : 'badge-soft-danger'}`}>
-                        <i className="ti ti-circle-filled me-2" />
-                        {spePayroll.status_label}
-                      </span>
+                    {/* Employee Info Card */}
+                    <div className="p-4 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: '#ffffff' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-secondary">Employee Information</h6>
+                        <span className={`badge ${spePayroll.status === '1' ? 'badge-soft-success' : 'badge-soft-danger'}`}>
+                          <i className="ti ti-circle-filled me-2" />
+                          {spePayroll.status_label}
+                        </span>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied By</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">ID</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.employee_id}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Role</small>
+                          <p className="mb-0 text-capitalize fw-semibold">{spePayroll.role_name}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">For Month</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.salary_month).format('MMMM')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Applied On</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.apply_date).format('DD MMM YYYY')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Paid On</small>
+                          <p className="mb-0 fw-semibold">{dayjs(spePayroll.paid_date).format('DD MMM YYYY')}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Paid Amount</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.net_salary}</p>
+                        </div>
+                        <div className="col-md-6 mb-2">
+                          <small className="text-muted">Payment Method</small>
+                          <p className="mb-0 fw-semibold">{spePayroll.payment_method}</p>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="row">
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Applied By</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.name}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">ID</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.employee_id}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Role</small>
-                        <p className="mb-0 text-capitalize fw-semibold">{spePayroll.role_name}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">For Month</small>
-                        <p className="mb-0 fw-semibold">{dayjs(spePayroll.salary_month).format('MMMM')}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Applied On</small>
-                        <p className="mb-0 fw-semibold">{dayjs(spePayroll.apply_date).format('DD MMM YYYY')}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Paid On</small>
-                        <p className="mb-0 fw-semibold">{dayjs(spePayroll.paid_date).format('DD MMM YYYY')}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Paid Amount</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.net_salary}</p>
-                      </div>
-                      <div className="col-md-6 mb-2">
-                        <small className="text-muted">Payment Method</small>
-                        <p className="mb-0 fw-semibold">{spePayroll.payment_method}</p>
-                      </div>
-                    </div>
                   </div>
-
-                </div>
-              </form>
-            )}
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </div>)
+      }
       {/* /Payslip Modal */}
 
     </div>

@@ -13,7 +13,6 @@ import dayjs, { Dayjs } from 'dayjs'
 import { DatePicker } from "antd";
 import { toast } from "react-toastify";
 import { applySalary, salaryDeatilsTeacherStaff, speSalaryDetails } from "../../../../service/salaryPayment";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
 
 // satff salary details
@@ -140,6 +139,7 @@ const StaffPayRoll = () => {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+  const [applyModal  ,setApplyModal] = useState<boolean>(false)
 
 
   const disabledPastDate = (current: Dayjs) => {
@@ -187,7 +187,7 @@ const StaffPayRoll = () => {
       if (data.success) {
         toast.success(data.message)
         setFormData({ salary_month: "", apply_date: null, notes: "", type: "staff" });
-        handleModalPopUp('apply_salary')
+        setApplyModal(false)
       }
     } catch (error: any) {
       console.log(error)
@@ -201,6 +201,7 @@ const StaffPayRoll = () => {
 
     e.preventDefault()
     setFormData({ salary_month: "", apply_date: null, notes: "", type: "staff" });
+    setApplyModal(false)
   }
 
 
@@ -221,6 +222,7 @@ const StaffPayRoll = () => {
     net_salary: "",
   })
   const [loading2, setLoading2] = useState<boolean>(false)
+  const [viewModal , setViewModal] = useState<boolean>(false)
 
   const payrollDetails = async (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
     e.preventDefault()
@@ -229,6 +231,7 @@ const StaffPayRoll = () => {
 
       const { data } = await speSalaryDetails(id)
       if (data.success) {
+        setViewModal(true)
         setSpePayroll(data.data)
       }
 
@@ -287,8 +290,7 @@ const StaffPayRoll = () => {
         <>
           <button
             onClick={(e) => payrollDetails(e, record.id)}
-            data-bs-target="#view_payslip"
-            data-bs-toggle="modal"
+            type="button"
             className="btn btn-primary d-inline-flex align-items-center "
           >
 
@@ -630,15 +632,15 @@ const StaffPayRoll = () => {
                   <div className="card">
                     <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
                       <h4 className="mb-3">Payroll</h4>
-                      <Link
-                        to="#"
-                        data-bs-target="#apply_salary"
-                        data-bs-toggle="modal"
+                      <button
+                       type="button"
+                       
+                       onClick={()=>setApplyModal(true)}
                         className="btn btn-primary d-inline-flex align-items-center mb-3"
                       >
                         <i className="ti ti-calendar-event me-2" />
                         Apply Salary
-                      </Link>
+                      </button>
                     </div>
                     <div className="card-body p-0 py-3">
                       {/* Payroll List */}
@@ -660,12 +662,13 @@ const StaffPayRoll = () => {
         {/* /Page Wrapper */}
 
         {/* apply salary */}
-        <div className="modal fade" id="apply_salary" tabIndex={-1}>
+        {
+          applyModal&&( <div className="modal fade show d-block" id="apply_salary" >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h4 className="modal-title">Apply Salary</h4>
-                <button type="button" onClick={(e) => cancelApply(e)} className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" onClick={(e) => cancelApply(e)} className="btn-close" ></button>
               </div>
 
               <form onSubmit={handleSubmit}>
@@ -716,17 +719,19 @@ const StaffPayRoll = () => {
                 </div>
 
                 <div className="modal-footer">
-                  <button type="button" onClick={(e) => cancelApply(e)} className="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button"  onClick={(e) => cancelApply(e)} className="btn btn-light me-2">Cancel</button>
                   <button type="submit" className="btn btn-primary">Apply Salary</button>
                 </div>
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* apply salary */}
 
         {/* Payslip Modal */}
-        <div className="modal fade" id="view_payslip">
+         {
+          viewModal&&(<div className="modal fade show d-block" id="view_payslip">
           <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content shadow-lg border-0 rounded-4">
 
@@ -736,8 +741,7 @@ const StaffPayRoll = () => {
                 <button
                   type="button"
                   className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  onClick={()=>setViewModal(false)}
                 />
               </div>
 
@@ -798,7 +802,8 @@ const StaffPayRoll = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Payslip Modal */}
 
 

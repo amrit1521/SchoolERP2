@@ -3,14 +3,11 @@ import { Link } from 'react-router-dom'
 import Table from "../../../core/common/dataTable/index";
 import { activeList, departmentSelect } from '../../../core/common/selectoption/selectoption';
 import type { TableData } from '../../../core/data/interface';
-// import { departments } from '../../../core/data/json/departments';
-import PredefinedDateRanges from '../../../core/common/datePicker';
 import CommonSelect from '../../../core/common/commonSelect';
 import { all_routes } from '../../../router/all_routes';
 import TooltipOption from '../../../core/common/tooltipOption';
 import { toast } from 'react-toastify';
 import { addDepartment, allDepartment, deleteDepartment, editDeprtment, speDepartment } from '../../../service/department';
-import { handleModalPopUp } from '../../../handlePopUpmodal';
 import { Spinner } from '../../../spinner';
 
 export interface Department {
@@ -38,6 +35,8 @@ const Departments = () => {
 
   const [departmentData, setDepartmentData] = useState<Department[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   const fetchDepartment = async () => {
     setLoading(true)
@@ -88,6 +87,7 @@ const Departments = () => {
 
       const { data } = await speDepartment(id)
       if (data.success) {
+        setEditModal(true)
         setFormData({
           name: data.data.name,
           status: data.data.status
@@ -102,14 +102,14 @@ const Departments = () => {
   }
 
   const cancelEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
-
     e.preventDefault()
-
     setFormData({
       name: "",
       status: "1"
     })
     setEditId(null)
+    setAddModal(false)
+    setEditModal(false)
 
   }
 
@@ -130,10 +130,12 @@ const Departments = () => {
 
       if (data.success) {
         toast.success(data.message);
-        handleModalPopUp(editId ? "edit_department" : "add_department");
+
         setEditId(null);
         setFormData({ name: "", status: "1" });
         fetchDepartment();
+        setAddModal(false)
+        setEditModal(false)
       }
     } catch (error: any) {
       console.error(error);
@@ -144,7 +146,7 @@ const Departments = () => {
 
   // delete holiday------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal, setDelmodal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -155,8 +157,7 @@ const Departments = () => {
         setDeleteId(null)
         toast.success(data.message)
         fetchDepartment()
-
-        handleModalPopUp('delete-modal')
+        setDelmodal(false)
 
       }
 
@@ -169,6 +170,7 @@ const Departments = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelmodal(false)
   }
 
 
@@ -236,8 +238,7 @@ const Departments = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_department"
+
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -246,9 +247,11 @@ const Departments = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    onClick={() => {
+                      setDeleteId(id)
+                      setDelmodal(true)
+                    }}
+
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -289,15 +292,15 @@ const Departments = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  type='button'
                   className="btn btn-primary d-flex align-items-center"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_department"
+                  onClick={() => setAddModal(true)}
+
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Department
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -308,7 +311,7 @@ const Departments = () => {
               <h4 className="mb-3">Department List</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                  {/* <PredefinedDateRanges /> */}
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -424,191 +427,195 @@ const Departments = () => {
       </div>
       <>
         {/* Add Department */}
-        <div className="modal fade" id="add_department">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              {/* Header */}
-              <div className="modal-header">
-                <h4 className="modal-title">Add Department</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_department">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                {/* Header */}
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Department</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    {/* Department Name */}
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Department Name</label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          placeholder="Enter department name"
+                {/* Form */}
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      {/* Department Name */}
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Department Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            placeholder="Enter department name"
 
-                        />
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Status Toggle */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle </p>
-                      </div>
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm"
-                          checked={formData.status === "1"}
-                          onChange={handleInputChange}
-                          name="status"
-                        />
+                      {/* Status Toggle */}
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle </p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm"
+                            checked={formData.status === "1"}
+                            onChange={handleInputChange}
+                            name="status"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                    onClick={(e) => cancelEdit(e)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Add Department
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+
+                      onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Add Department
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Add Department */}
         {/* Edit Department */}
-        <div className="modal fade" id="edit_department">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Department</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    {/* Department Name */}
-                    <div className="col-md-12">
-                      <div className="mb-3">
-                        <label className="form-label">Department Name</label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className="form-control"
-                          placeholder="Enter department name"
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_department">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Department</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      {/* Department Name */}
+                      <div className="col-md-12">
+                        <div className="mb-3">
+                          <label className="form-label">Department Name</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="form-control"
+                            placeholder="Enter department name"
 
-                        />
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Status Toggle */}
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="status-title">
-                        <h5>Status</h5>
-                        <p>Change the Status by toggle </p>
-                      </div>
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          id="switch-sm"
-                          checked={formData.status === "1"}
-                          onChange={handleInputChange}
-                          name="status"
-                        />
+                      {/* Status Toggle */}
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="status-title">
+                          <h5>Status</h5>
+                          <p>Change the Status by toggle </p>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            id="switch-sm"
+                            checked={formData.status === "1"}
+                            onChange={handleInputChange}
+                            name="status"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    type="button"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                    onClick={(e) => cancelEdit(e)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Edit Department
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-light me-2"
+
+                      onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Edit Department
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Edit Department */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form>
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone once
-                    you delete.
-                  </p>
-                  {
-                    deleteId && (
-                      <div className="d-flex justify-content-center">
-                        <button
-                          onClick={(e) => cancelDelete(e)}
-                          className="btn btn-light me-3"
-                          data-bs-dismiss="modal"
-                        >
-                          Cancel
-                        </button>
-                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
-                          Yes, Delete
-                        </button>
+        {
+          delModal && (<div className="modal fade d-block show" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form>
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete this item, this can not be undone once
+                      you delete.
+                    </p>
+                    {
+                      deleteId && (
+                        <div className="d-flex justify-content-center">
+                          <button
+                            onClick={(e) => cancelDelete(e)}
+                            className="btn btn-light me-3"
+                            data-bs-dismiss="modal"
+                          >
+                            Cancel
+                          </button>
+                          <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                            Yes, Delete
+                          </button>
 
-                      </div>
-                    )}
-                </div>
-              </form>
+                        </div>
+                      )}
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </>
 

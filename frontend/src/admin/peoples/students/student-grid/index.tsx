@@ -13,7 +13,7 @@ import 'react-loading-skeleton/dist/skeleton.css'
 import StudentModals from '../studentModals'
 import dayjs from 'dayjs'
 import { toast } from 'react-toastify'
-import { handleModalPopUp } from '../../../../handlePopUpmodal'
+
 
 const StudentGrid = () => {
   const routes = all_routes
@@ -54,7 +54,7 @@ const StudentGrid = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -66,7 +66,7 @@ const StudentGrid = () => {
         toast.success(data.message)
         fetchStudent();
         setDeleteId(null)
-        handleModalPopUp('delete_modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -77,6 +77,7 @@ const StudentGrid = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+      setDelModal(false)
   }
 
 
@@ -363,9 +364,10 @@ const StudentGrid = () => {
                                 <li>
                                   <button
                                     className="dropdown-item rounded-1"
-                                    onClick={() => setDeleteId(student.rollnum)}
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#delete_modal"
+                                    onClick={() =>{ setDeleteId(student.rollnum) 
+                                      setDelModal(true)
+                                    }}
+                                    
                                   >
                                     <i className="ti ti-trash-x me-2" />
                                     Delete
@@ -463,7 +465,8 @@ const StudentGrid = () => {
       {/* /Page Wrapper */}
       
        {/* /Delete Modal */}
-      <div className="modal fade" id="delete_modal">
+       {
+        delModal&&(<div className="modal fade show d-block" id="delete_modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -495,7 +498,8 @@ const StudentGrid = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* /Delete Modal */}
 
       <StudentModals onAdd={() => { }} rollnum={0} />

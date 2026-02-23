@@ -1,6 +1,4 @@
 
-import ImageWithBasePath from "../../../core/common/imageWithBasePath";
-import { Link } from "react-router-dom";
 // import { leaveType } from "../../../core/common/selectoption/selectoption";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
@@ -191,75 +189,6 @@ const TeacherModal: React.FC<props> = ({ onAdd, teacherId }) => {
 
   return (
     <>
-
-      <>
-        {/* Login Details */}
-        <div className="modal fade" id="login_detail">
-          <div className="modal-dialog modal-dialog-centered  modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Login Details</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
-              <div className="modal-body">
-                <div className="student-detail-info">
-                  <span className="student-img">
-                    <ImageWithBasePath
-                      src="assets/img/teachers/teacher-01.jpg"
-                      alt="img"
-                    />
-                  </span>
-                  <div className="name-info">
-                    <h6>
-                      Teresa <span>III, A</span>
-                    </h6>
-                  </div>
-                </div>
-                <div className="table-responsive custom-table no-datatable_length">
-                  <table className="table datanew">
-                    <thead className="thead-light">
-                      <tr>
-                        <th>User Type</th>
-                        <th>User Name</th>
-                        <th>Password </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Teacher</td>
-                        <td>teacher20</td>
-                        <td>teacher@53</td>
-                      </tr>
-                      <tr>
-                        <td>Parent</td>
-                        <td>parent53</td>
-                        <td>parent@53</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <Link
-                  to="#"
-                  className="btn btn-light me-2"
-                  data-bs-dismiss="modal"
-                >
-                  Cancel
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* /Login Details */}
-      </>
       {/* Apply Leave */}
       <div className="modal fade" id="apply_leave">
         <div className="modal-dialog modal-dialog-centered">

@@ -13,7 +13,7 @@ import Table from "../../../../core/common/dataTable/index";
 import type { TableData } from "../../../../core/data/interface";
 
 import TooltipOption from "../../../../core/common/tooltipOption";
-import { allTeachers, disableTeacher, enableTeacher, Imageurl } from "../../../../service/api";
+import { allTeachers, deleteTeacher, disableTeacher, enableTeacher, Imageurl } from "../../../../service/api";
 import { toast } from "react-toastify";
 
 const TeacherList = () => {
@@ -21,7 +21,7 @@ const TeacherList = () => {
 
   const [teachers, setTeachers] = useState<any>([])
   const [loading, setLoading] = useState<boolean>(false)
-     const [token, setToken] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
 
   const fetchTeachers = async () => {
     setLoading(true)
@@ -46,10 +46,10 @@ const TeacherList = () => {
     fetchTeachers()
   }, [])
 
-  const disableTea = async(teacher_id:string)=>{
+  const disableTea = async (teacher_id: string) => {
     try {
-      const {data} = await disableTeacher(teacher_id)
-      if(data.success){
+      const { data } = await disableTeacher(teacher_id)
+      if (data.success) {
         toast.success(data.message)
         fetchTeachers()
       }
@@ -59,10 +59,10 @@ const TeacherList = () => {
     }
   }
 
-    const enableTea = async(teacher_id:string)=>{
+  const enableTea = async (teacher_id: string) => {
     try {
-      const {data} = await enableTeacher(teacher_id)
-      if(data.success){
+      const { data } = await enableTeacher(teacher_id)
+      if (data.success) {
         toast.success(data.message)
         fetchTeachers()
       }
@@ -71,6 +71,34 @@ const TeacherList = () => {
       console.log(error)
     }
   }
+
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [delModal, setDelModal] = useState<boolean>(false)
+
+  const handleDelete = async (teacher_id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    // console.log(id)
+    try {
+
+      const { data } = await deleteTeacher(teacher_id)
+      if (data.success) {
+        toast.success(data.message)
+        fetchTeachers();
+        setDeleteId(null)
+        setDelModal(false)
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setDeleteId(null)
+    setDelModal(false)
+  }
+
 
   const tableData = teachers.map((teacher: any) => ({
     key: teacher.id,
@@ -83,8 +111,10 @@ const TeacherList = () => {
     phone: teacher.mobile,
     dateofJoin: teacher.date_of_join,
     status: teacher.status == "1" ? "Active" : "Inactive",
-   
+
   }))
+
+
 
 
   const columns = [
@@ -122,8 +152,8 @@ const TeacherList = () => {
     {
       title: "Class",
       dataIndex: "class",
-      render:(text:any)=>(
-              <span className="text-uppercase">{text}</span>
+      render: (text: any) => (
+        <span className="text-uppercase">{text}</span>
       ),
       sorter: (a: TableData, b: TableData) => a.class.length - b.class.length,
     },
@@ -174,7 +204,7 @@ const TeacherList = () => {
     {
       title: "Action",
       dataIndex: "id",
-      render: (id: string , record:any) => (
+      render: (id: string, record: any) => (
         <>
           <div className="d-flex align-items-center">
             <div className="dropdown">
@@ -205,33 +235,25 @@ const TeacherList = () => {
                     Edit
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    className="dropdown-item rounded-1"
-                    to="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#login_detail"
-                  >
-                    <i className="ti ti-lock me-2" />
-                    Login Details
-                  </Link>
-                </li>
+
                 <li>
                   <button className="dropdown-item rounded-1" onClick={() => { `${record.status}` === 'Active' ? disableTea(id) : enableTea(id) }}>
                     <i className="ti ti-toggle-right me-2" />
-                     {`${record.status}` === 'Active' ? "Disable" : "Enable"}
+                    {`${record.status}` === 'Active' ? "Disable" : "Enable"}
                   </button>
                 </li>
                 <li>
-                  <Link
+                  <button
                     className="dropdown-item rounded-1"
-                    to="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                  
+                       onClick={() => {
+                                   setDeleteId(id)
+                                  setDelModal(true)}
+                                  }
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -322,7 +344,7 @@ const TeacherList = () => {
                               <CommonSelect
                                 className="select"
                                 options={names}
-                                // defaultValue={names[0]}
+                              // defaultValue={names[0]}
                               />
                             </div>
                           </div>
@@ -332,7 +354,7 @@ const TeacherList = () => {
                               <CommonSelect
                                 className="select"
                                 options={allClass}
-                                // defaultValue={allClass[0]}
+                              // defaultValue={allClass[0]}
                               />
                             </div>
                           </div>
@@ -342,7 +364,7 @@ const TeacherList = () => {
                               <CommonSelect
                                 className="select"
                                 options={status}
-                                // defaultValue={status[0]}
+                              // defaultValue={status[0]}
                               />
                             </div>
                           </div>
@@ -429,8 +451,43 @@ const TeacherList = () => {
           {/* /Students List */}
         </div>
       </div>
+      {
+        delModal && (<div className="modal fade show d-block" id="delete-modal">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <form >
+                <div className="modal-body text-center">
+                  <span className="delete-icon">
+                    <i className="ti ti-trash-x" />
+                  </span>
+                  <h4>Confirm Deletion</h4>
+                  <p>
+                    You want to delete this item, this cann't be undone
+                    once you delete.
+                  </p>
+                  {
+                    deleteId && (<div className="d-flex justify-content-center">
+                      <button
+                        onClick={(e) => cancelDelete(e)}
+                        className="btn btn-light me-3"
+                        type='button'
+                      >
+                        Cancel
+                      </button>
+                      <button onClick={(e) => handleDelete(deleteId, e)} className="btn btn-danger"
+                      >
+                        Yes, Delete
+                      </button>
+                    </div>)
+                  }
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>)
+      }
       {/* /Page Wrapper */}
-       <TeacherModal onAdd={()=>{}}  teacherId={""}/>
+      <TeacherModal onAdd={() => { }} teacherId={""} />
     </>
   );
 };

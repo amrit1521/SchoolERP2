@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { all_routes } from "../../../router/all_routes";
 import { Link } from "react-router-dom";
-import PredefinedDateRanges from "../../../core/common/datePicker";
+
 import CommonSelect from "../../../core/common/commonSelect";
 import {
   bedcount,
@@ -18,7 +18,7 @@ import TooltipOption from "../../../core/common/tooltipOption";
 // import { hostelRoomsData } from "../../../core/data/json/hostelRoomsData";
 import { addHostelRoom, allHostelRoom, deleteHostelRoom, editHostelRoom, hostelForOption, hostelRoomTypeForOption, speHostelRoom } from "../../../service/hostel";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 import { Spinner } from "../../../spinner";
 
 interface HostelRoomFormData {
@@ -66,6 +66,8 @@ const HostelRooms = () => {
   });
   const [editId, setEditId] = useState<number | null>(null)
   const [errors, setErrors] = useState<HostelRoomFormErrors>({});
+  const [addModal ,setAddmodal]= useState<boolean>(false)
+  const [editModal ,setEditmodal]= useState<boolean>(false)
 
   const fetchOptions = useCallback(async () => {
     try {
@@ -161,6 +163,7 @@ const HostelRooms = () => {
       const { data } = await speHostelRoom(id)
       if (data.success) {
         const res = data.data
+        setEditmodal(true)
         setFormData({
           roomNo: res.roomNo,
           hostelId: res.hostelId,
@@ -183,14 +186,14 @@ const HostelRooms = () => {
         const { data } = await editHostelRoom(formData, editId)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_hostel_rooms')
+         setEditmodal(false)
 
         }
       } else {
         const { data } = await addHostelRoom(formData);
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_hostel_rooms')
+          setAddmodal(false)
         }
       }
       setEditId(null)
@@ -219,13 +222,15 @@ const HostelRooms = () => {
       costPerBed: null,
     })
     setEditId(null)
+    setAddmodal(false)
+    setEditmodal(false)
   }
 
 
   // delete 
   // delete----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal ,setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
@@ -234,7 +239,7 @@ const HostelRooms = () => {
         toast.success(data.message)
         fetchHostelRooms();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
       setEditId(null)
 
@@ -246,6 +251,7 @@ const HostelRooms = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
   const columns = [
     {
@@ -324,10 +330,11 @@ const HostelRooms = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() =>{ setDeleteId(record.id)
+                      setDelModal(true)
+                     }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                    
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -368,15 +375,14 @@ const HostelRooms = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                  onClick={()=>setAddmodal(true)}
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_hostel_rooms"
+                   type="button"
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Hostel Rooms
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -387,7 +393,7 @@ const HostelRooms = () => {
               <h4 className="mb-3">Hostel Rooms</h4>
               <div className="d-flex align-items-center flex-wrap">
                 <div className="input-icon-start mb-3 me-2 position-relative">
-                  <PredefinedDateRanges />
+                  {/* <PredefinedDateRanges /> */}
                 </div>
                 <div className="dropdown mb-3 me-2">
                   <Link
@@ -515,7 +521,8 @@ const HostelRooms = () => {
       {/* /Page Wrapper */}
       <>
         {/* Add Hostel Rooms */}
-        <div className="modal fade" id="add_hostel_rooms">
+         {
+          addModal&&(<div className="modal fade show d-block" id="add_hostel_rooms">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               {/* Header */}
@@ -524,8 +531,7 @@ const HostelRooms = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                 
                   onClick={(e) => handleCancel(e)}
                 >
                   <i className="ti ti-x" />
@@ -613,7 +619,7 @@ const HostelRooms = () => {
                   <button
                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                   
                     onClick={(e) => handleCancel(e)}
                   >
                     Cancel
@@ -625,10 +631,12 @@ const HostelRooms = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* Add Hostel Rooms */}
         {/* Edit Hostel Room */}
-        <div className="modal fade" id="edit_hostel_rooms">
+        {
+          editModal&&( <div className="modal fade show d-block" id="edit_hostel_rooms">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               {/* Header */}
@@ -637,8 +645,7 @@ const HostelRooms = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  
                   onClick={(e) => handleCancel(e)}
                 >
                   <i className="ti ti-x" />
@@ -726,7 +733,7 @@ const HostelRooms = () => {
                   <button
                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                 
                     onClick={(e) => handleCancel(e)}
                   >
                     Cancel
@@ -738,11 +745,13 @@ const HostelRooms = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* Edit Hostel Room */}
 
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+        {
+          delModal&&( <div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -752,7 +761,7 @@ const HostelRooms = () => {
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
+                    You want to delete this item, this can not be undone
                     once you delete.
                   </p>
                   {
@@ -760,7 +769,7 @@ const HostelRooms = () => {
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
+                         type="button"
                       >
                         Cancel
                       </button>
@@ -774,7 +783,8 @@ const HostelRooms = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Delete Modal */}
       </>
     </>

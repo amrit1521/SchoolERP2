@@ -10,9 +10,9 @@ import { all_routes } from '../../../router/all_routes';
 import TooltipOption from '../../../core/common/tooltipOption';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs'
-import { handleModalPopUp } from '../../../handlePopUpmodal';
 import { addHoliday, allHoliday, deleteHoliday, editHoliday, specficHoliday } from '../../../service/holidayApi';
 import { toast } from 'react-toastify';
+import { Spinner } from '../../../spinner';
 
 
 const Holiday = () => {
@@ -81,6 +81,8 @@ const Holiday = () => {
   });
 
   const [errors, setErrors] = useState<Partial<Holiday>>({});
+  const [addModal, setAddModal] = useState<boolean>(false)
+  const [editModal, setEditModal] = useState<boolean>(false)
 
   // ✅ Handle text/textarea changes
   const handleChange = (field: keyof Holiday, value: string) => {
@@ -122,18 +124,20 @@ const Holiday = () => {
 
 
   const fetchSpecificHoliday = async (id: number) => {
-    console.log(id)
+
     try {
       const { data } = await specficHoliday(id)
-      // console.log(data)
-      setFormdata({
-        title: data.holiday.title,
-        description: data.holiday.description,
-        date: dayjs(data.holiday.date).format('DD MMM YYYY'),
-        status: data.holiday.status
+      if (data) {
+        setEditModal(true)
+        setFormdata({
+          title: data.holiday.title,
+          description: data.holiday.description,
+          date: dayjs(data.holiday.date).format('DD MMM YYYY'),
+          status: data.holiday.status
+        }
+        )
+        setSelectedEditId(id)
       }
-      )
-      setSelectedEditId(id)
     } catch (error) {
       console.log(error)
     }
@@ -148,6 +152,8 @@ const Holiday = () => {
       description: "",
       status: "0",
     });
+    setAddModal(false)
+    setEditModal(false)
     setErrors({});
     setSelectedEditId(null)
   }
@@ -163,14 +169,14 @@ const Holiday = () => {
         // console.log(data)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('edit_holiday')
-           setSelectedEditId(null)
+          setEditModal(false)
+          setSelectedEditId(null)
         }
       } else {
         const { data } = await addHoliday(formdata)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_holiday')
+          setAddModal(false)
         }
       }
 
@@ -182,7 +188,7 @@ const Holiday = () => {
         status: "0",
       });
       setErrors({});
-     
+
     } catch (error) {
       console.log(error)
     }
@@ -190,10 +196,10 @@ const Holiday = () => {
 
   // delete holiday------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal, setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(id)
+
     e.preventDefault()
     try {
 
@@ -203,7 +209,7 @@ const Holiday = () => {
         toast.success(data.message)
         fetchAllHoliday()
         setAllholiday((prev) => prev.filter((item) => item.id != id))
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
 
       }
 
@@ -216,6 +222,7 @@ const Holiday = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -298,8 +305,7 @@ const Holiday = () => {
                 style={{ cursor: 'pointer' }}
                 className="dropdown-item rounded-1"
                 onClick={() => fetchSpecificHoliday(id)}
-                data-bs-toggle="modal"
-                data-bs-target="#edit_holiday"
+
               >
                 <i className="ti ti-edit-circle me-2" />
                 Edit
@@ -309,9 +315,11 @@ const Holiday = () => {
               <div
                 style={{ cursor: 'pointer' }}
                 className="dropdown-item rounded-1"
-                onClick={() => setDeleteId(id)}
-                data-bs-toggle="modal"
-                data-bs-target="#delete-modal"
+                onClick={() => {
+                  setDeleteId(id)
+                  setDelModal(true)
+                }}
+
               >
                 <i className="ti ti-trash-x me-2" />
                 Delete
@@ -351,15 +359,14 @@ const Holiday = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                    type='button'
                     className="btn btn-primary d-flex align-items-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_holiday"
+                    onClick={() => setAddModal(true)}
                   >
                     <i className="ti ti-square-rounded-plus me-2" />
                     Add Holiday
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -475,11 +482,7 @@ const Holiday = () => {
 
 
                 {loading ? (
-                  <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  </div>
+                  <Spinner />
                 ) : (<Table columns={columns} dataSource={allholiday} Selection={true} />)
                 }
 
@@ -490,273 +493,277 @@ const Holiday = () => {
         </div>
         {/* /Page Wrapper */}
         {/* Add Holiday */}
-        <div className="modal fade" id="add_holiday">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Add Holiday</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          addModal && (<div className="modal fade show d-block" id="add_holiday">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Add Holiday</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                     onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
-              {/* ✅ Form */}
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Title */}
-                      <div className="mb-3">
-                        <label className="form-label">Holiday Title</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={formdata.title}
-                          onChange={(e) => handleChange("title", e.target.value)}
-                        />
-                        {errors.title && (
-                          <small className="text-danger">{errors.title}</small>
-                        )}
-                      </div>
-
-                      {/* Date */}
-                      <div className="mb-3">
-                        <label className="form-label">Date</label>
-                        <div className="input-icon position-relative">
-                          <DatePicker
-                            className="form-control datetimepicker"
-                            format="DD MMM YYYY"
-                            value={
-                              formdata.date
-                                ? dayjs(formdata.date, "DD MMM YYYY")
-                                : null
-                            }
-                            placeholder="Select Date"
-                            onChange={(dateString) =>
-                              handleDateChange(
-                                "date",
-                                Array.isArray(dateString) ? dateString[0] : dateString
-                              )
-                            }
-                          />
-                          <span className="input-icon-addon">
-                            <i className="ti ti-calendar" />
-                          </span>
-                        </div>
-                        {errors.date && (
-                          <small className="text-danger">{errors.date}</small>
-                        )}
-                      </div>
-
-                      {/* Description */}
-                      <div className="mb-3">
-                        <label className="form-label">Description</label>
-                        <textarea
-                          rows={4}
-                          className="form-control"
-                          value={formdata.description}
-                          onChange={(e) =>
-                            handleChange("description", e.target.value)
-                          }
-                        />
-                        {errors.description && (
-                          <small className="text-danger">
-                            {errors.description}
-                          </small>
-                        )}
-                      </div>
-
-                      {/* Status */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                {/* ✅ Form */}
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Title */}
+                        <div className="mb-3">
+                          <label className="form-label">Holiday Title</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm"
-                            checked={formdata.status === "1"}
-                            onChange={handleToggleStatus}
+                            type="text"
+                            className="form-control"
+                            value={formdata.title}
+                            onChange={(e) => handleChange("title", e.target.value)}
                           />
+                          {errors.title && (
+                            <small className="text-danger">{errors.title}</small>
+                          )}
+                        </div>
+
+                        {/* Date */}
+                        <div className="mb-3">
+                          <label className="form-label">Date</label>
+                          <div className="input-icon position-relative">
+                            <DatePicker
+                              className="form-control datetimepicker"
+                              format="DD MMM YYYY"
+                              value={
+                                formdata.date
+                                  ? dayjs(formdata.date, "DD MMM YYYY")
+                                  : null
+                              }
+                              placeholder="Select Date"
+                              onChange={(dateString) =>
+                                handleDateChange(
+                                  "date",
+                                  Array.isArray(dateString) ? dateString[0] : dateString
+                                )
+                              }
+                            />
+                            <span className="input-icon-addon">
+                              <i className="ti ti-calendar" />
+                            </span>
+                          </div>
+                          {errors.date && (
+                            <small className="text-danger">{errors.date}</small>
+                          )}
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-3">
+                          <label className="form-label">Description</label>
+                          <textarea
+                            rows={4}
+                            className="form-control"
+                            value={formdata.description}
+                            onChange={(e) =>
+                              handleChange("description", e.target.value)
+                            }
+                          />
+                          {errors.description && (
+                            <small className="text-danger">
+                              {errors.description}
+                            </small>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm"
+                              checked={formdata.status === "1"}
+                              onChange={handleToggleStatus}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <Link
-                    to="#"
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </Link>
-                  <button type="submit" className="btn btn-primary">
-                    Add Holiday
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      type='button'
+                      className="btn btn-light me-2"
+                       onClick={(e) => cancelEdit(e)}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Add Holiday
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* Add Holiday */}
         {/* Edit Holiday */}
-        <div className="modal fade" id="edit_holiday">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Edit Holiday</h4>
-                <button
-                  type="button"
-                  className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                >
-                  <i className="ti ti-x" />
-                </button>
-              </div>
+        {
+          editModal && (<div className="modal fade show d-block" id="edit_holiday">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h4 className="modal-title">Edit Holiday</h4>
+                  <button
+                    type="button"
+                    className="btn-close custom-btn-close"
+                    onClick={(e) => cancelEdit(e)}
+                  >
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
 
-              {/* ✅ Same Form (reuse handleSubmit) */}
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-12">
-                      {/* Title */}
-                      <div className="mb-3">
-                        <label className="form-label">Holiday Title</label>
-                        <input
-                          type="text"
-                          className="form-control text-capitalize"
-                          value={formdata.title}
-                          onChange={(e) => handleChange("title", e.target.value)}
-                        />
-                      </div>
-
-                      {/* Date */}
-                      <div className="mb-3">
-                        <label className="form-label">Date</label>
-                        <div className="input-icon position-relative">
-                          <DatePicker
-                            className="form-control datetimepicker"
-                            format="DD MMM YYYY"
-                            value={
-                              formdata.date
-                                ? dayjs(formdata.date, "DD MMM YYYY")
-                                : null
-                            }
-                            placeholder="Select Date"
-                            onChange={(dateString) =>
-                              handleDateChange(
-                                "date",
-                                Array.isArray(dateString) ? dateString[0] : dateString
-                              )
-                            }
-                          />
-                          <span className="input-icon-addon">
-                            <i className="ti ti-calendar" />
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <div className="mb-3">
-                        <label className="form-label">Description</label>
-                        <textarea
-                          rows={4}
-                          className="form-control"
-                          value={formdata.description}
-                          onChange={(e) =>
-                            handleChange("description", e.target.value)
-                          }
-                        />
-                      </div>
-
-                      {/* Status */}
-                      <div className="d-flex align-items-center justify-content-between">
-                        <div className="status-title">
-                          <h5>Status</h5>
-                          <p>Change the Status by toggle</p>
-                        </div>
-                        <div className="form-check form-switch">
+                {/* ✅ Same Form (reuse handleSubmit) */}
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-12">
+                        {/* Title */}
+                        <div className="mb-3">
+                          <label className="form-label">Holiday Title</label>
                           <input
-                            className="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="switch-sm2"
-                            checked={formdata.status === "1"}
-                            onChange={handleToggleStatus}
+                            type="text"
+                            className="form-control text-capitalize"
+                            value={formdata.title}
+                            onChange={(e) => handleChange("title", e.target.value)}
                           />
+                        </div>
+
+                        {/* Date */}
+                        <div className="mb-3">
+                          <label className="form-label">Date</label>
+                          <div className="input-icon position-relative">
+                            <DatePicker
+                              className="form-control datetimepicker"
+                              format="DD MMM YYYY"
+                              value={
+                                formdata.date
+                                  ? dayjs(formdata.date, "DD MMM YYYY")
+                                  : null
+                              }
+                              placeholder="Select Date"
+                              onChange={(dateString) =>
+                                handleDateChange(
+                                  "date",
+                                  Array.isArray(dateString) ? dateString[0] : dateString
+                                )
+                              }
+                            />
+                            <span className="input-icon-addon">
+                              <i className="ti ti-calendar" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-3">
+                          <label className="form-label">Description</label>
+                          <textarea
+                            rows={4}
+                            className="form-control"
+                            value={formdata.description}
+                            onChange={(e) =>
+                              handleChange("description", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        {/* Status */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <div className="status-title">
+                            <h5>Status</h5>
+                            <p>Change the Status by toggle</p>
+                          </div>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              id="switch-sm2"
+                              checked={formdata.status === "1"}
+                              onChange={handleToggleStatus}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Footer */}
-                <div className="modal-footer">
-                  <button
-                    onClick={(e) => cancelEdit(e)}
-                    className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Save Changes
-                  </button>
-                </div>
-              </form>
+                  {/* Footer */}
+                  <div className="modal-footer">
+                    <button
+                      onClick={(e) => cancelEdit(e)}
+                      className="btn btn-light me-2"
+                      type='button'
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
 
 
         {/* Edit Holiday */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form>
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone once
-                    you delete.
-                  </p>
-                  {
-                    deleteId && (
-                      <div className="d-flex justify-content-center">
-                        <button
-                          onClick={(e) => cancelDelete(e)}
-                          className="btn btn-light me-3"
-                          data-bs-dismiss="modal"
-                        >
-                          Cancel
-                        </button>
-                        <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
-                          Yes, Delete
-                        </button>
+        {
+          delModal && (<div className="modal fade show d-block" id="delete-modal">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <form>
+                  <div className="modal-body text-center">
+                    <span className="delete-icon">
+                      <i className="ti ti-trash-x" />
+                    </span>
+                    <h4>Confirm Deletion</h4>
+                    <p>
+                      You want to delete all the marked items, this cant be undone once
+                      you delete.
+                    </p>
+                    {
+                      deleteId && (
+                        <div className="d-flex justify-content-center">
+                          <button
+                            onClick={(e) => cancelDelete(e)}
+                            className="btn btn-light me-3"
+                            type='button'
+                          >
+                            Cancel
+                          </button>
+                          <button className="btn btn-danger" onClick={(e) => handleDelete(deleteId, e)}>
+                            Yes, Delete
+                          </button>
 
-                      </div>
-                    )}
-                </div>
-              </form>
+                        </div>
+                      )}
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        </div>
+          </div>)
+        }
         {/* /Delete Modal */}
       </>
 

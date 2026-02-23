@@ -9,7 +9,7 @@ import TooltipOption from '../../../../core/common/tooltipOption'
 import { allTeachers, deleteTeacher, Imageurl } from '../../../../service/api'
 import { Skeleton } from 'antd'
 import { toast } from 'react-toastify'
-import { handleModalPopUp } from '../../../../handlePopUpmodal'
+
 
 const TeacherGrid = () => {
   const routes = all_routes
@@ -50,7 +50,7 @@ const TeacherGrid = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<string | null>(null)
-
+  const [delModal ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (teacher_id: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -62,7 +62,7 @@ const TeacherGrid = () => {
         toast.success(data.message)
         fetchTeachers();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+       setDelModal(false)
       }
 
     } catch (error) {
@@ -73,6 +73,7 @@ const TeacherGrid = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -312,9 +313,11 @@ const TeacherGrid = () => {
                             <li>
                               <button
                                 className="dropdown-item rounded-1"
-                                onClick={() => { setDeleteId(teacher.teacher_id)}}
-                                data-bs-toggle="modal"
-                                data-bs-target="#delete-modal"
+                                onClick={() => {
+                                   setDeleteId(teacher.teacher_id)
+                                  setDelModal(true)}
+                                  }
+                               
                               >
                                 <i className="ti ti-trash-x me-2" /> Delete
                               </button>
@@ -383,7 +386,8 @@ const TeacherGrid = () => {
         </div>
       </div>
       {/* /Delete Modal */}
-      <div className="modal fade" id="delete-modal">
+      {
+        delModal&&( <div className="modal fade show d-block" id="delete-modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -401,7 +405,7 @@ const TeacherGrid = () => {
                     <button
                       onClick={(e) => cancelDelete(e)}
                       className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                      type='button'
                     >
                       Cancel
                     </button>
@@ -415,7 +419,8 @@ const TeacherGrid = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+      }
       {/* /Delete Modal */}
       {/* /Page Wrapper */}
       <TeacherModal onAdd={()=>{}}  teacherId={""}/>

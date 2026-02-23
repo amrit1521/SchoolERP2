@@ -9,7 +9,8 @@ import { all_routes } from "../../../../router/all_routes";
 import TooltipOption from "../../../../core/common/tooltipOption";
 import { addLeaveType, deleteLeaveType, editLeaveType, getAllLeaveTypeData, speLeaveType } from "../../../../service/api";
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
+
+import { Spinner } from "../../../../spinner";
 
 const ListLeaves = () => {
   const routes = all_routes;
@@ -66,6 +67,8 @@ const ListLeaves = () => {
     total_allowed: "",
     status: "1",
   });
+  const [addModal  ,setAddModal] = useState<boolean>(false)
+  const [editModal  ,setEditModal] = useState<boolean>(false)
 
   
   const [editId, setEditId] = useState<number | null>(null)
@@ -83,6 +86,7 @@ const ListLeaves = () => {
     try {
       const { data } = await speLeaveType(id)
       if (data.success) {
+        setEditModal(true)
         setFormData({
           name: data.data.name,
           total_allowed: data.data.total_allowed,
@@ -104,6 +108,8 @@ const ListLeaves = () => {
       total_allowed: "",
       status: "1",
     })
+    setAddModal(false)
+    setEditModal(false)
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -114,7 +120,7 @@ const ListLeaves = () => {
         if (data.success) {
           toast.success(data.message)
           setEditId(null)
-          handleModalPopUp('edit_leaves')
+          setEditModal(false)
         }
 
       } else {
@@ -122,7 +128,7 @@ const ListLeaves = () => {
         const { data } = await addLeaveType(formData)
         if (data.success) {
           toast.success(data.message)
-          handleModalPopUp('add_leaves')
+          setAddModal(false)
         }
       }
 
@@ -144,10 +150,11 @@ const ListLeaves = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+
     try {
 
       const { data } = await deleteLeaveType(id)
@@ -155,7 +162,7 @@ const ListLeaves = () => {
         toast.success(data.message)
         fetchLeaveData();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
       }
 
     } catch (error) {
@@ -166,6 +173,7 @@ const ListLeaves = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+     setDelModal(false)
   }
 
 
@@ -241,8 +249,7 @@ const ListLeaves = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={() => fetchById(id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#edit_leaves"
+                  
                 >
                   <i className="ti ti-edit-circle me-2" />
                   Edit
@@ -251,9 +258,10 @@ const ListLeaves = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={() =>{ setDeleteId(id)
+                    setDelModal(true)
+                   }}
+                   
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -297,15 +305,14 @@ const ListLeaves = () => {
               <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
                 <TooltipOption />
                 <div className="mb-2">
-                  <Link
-                    to="#"
+                  <button
+                   type="button"
                     className="btn btn-primary d-flex align-items-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#add_leaves"
+                    onClick={()=>setAddModal(true)}
                   >
                     <i className="ti ti-square-rounded-plus me-2" />
                     Add Leave Type
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -421,11 +428,7 @@ const ListLeaves = () => {
                 {/* List Leaves List */}
                 {
                   loading ? (
-                    <div className="d-flex justify-content-center align-items-center" style={{ height: "200px" }}>
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                    </div>
+                    <Spinner/>
                   ) : (<Table columns={columns} dataSource={tableData} Selection={true} />)}
                 {/* / List Leaves List */}
               </div>
@@ -434,7 +437,8 @@ const ListLeaves = () => {
         </div>
         {/* /Page Wrapper */}
         {/* Add Leaves */}
-        <div className="modal fade" id="add_leaves">
+        {
+          addModal&&( <div className="modal fade show d-block" id="add_leaves">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -442,8 +446,7 @@ const ListLeaves = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                   onClick={(e) => cancelEdit(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -493,13 +496,13 @@ const ListLeaves = () => {
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <Link
-                    to="#"
+                  <button
+                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                     onClick={(e) => cancelEdit(e)}
                   >
                     Cancel
-                  </Link>
+                  </button>
                   <button
                     type="submit"
                     className="btn btn-primary"
@@ -511,10 +514,12 @@ const ListLeaves = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* Add Leaves */}
         {/* Edit Leaves */}
-        <div className="modal fade" id="edit_leaves">
+         {
+          editModal&&(<div className="modal fade show d-block" id="edit_leaves">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -522,8 +527,7 @@ const ListLeaves = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  onClick={(e) => cancelEdit(e)}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -576,7 +580,7 @@ const ListLeaves = () => {
                   <button
                     onClick={(e) => cancelEdit(e)}
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                     type="button"
                   >
                     Cancel
                   </button>
@@ -591,10 +595,12 @@ const ListLeaves = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* Edit Leaves */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+         {
+          delModal&&(<div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -604,7 +610,7 @@ const ListLeaves = () => {
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
+                    You want to delete this item, this can not be undone
                     once you delete.
                   </p>
                   {
@@ -612,7 +618,7 @@ const ListLeaves = () => {
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -626,7 +632,8 @@ const ListLeaves = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* /Delete Modal */}
       </>
     </div>

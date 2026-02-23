@@ -13,7 +13,6 @@ import { addLeave, getAllLeaveTypeData, Imageurl } from "../../../../service/api
 import Skeleton from "react-loading-skeleton";
 import dayjs from 'dayjs'
 import { toast } from "react-toastify";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
 export interface LeaveInform {
   id: number;
@@ -36,6 +35,7 @@ const StaffLeave = () => {
   // ✅ Separate loading states
   const [loading1, setLoading1] = useState<boolean>(false); // for staff
   const [loading2, setLoading2] = useState<boolean>(false); // for leave
+  const [applyModal ,setApplyModal] = useState<boolean>(false)
 
   // ✅ Fetch Staff Details
   const fetchStaff = async (staffid: number) => {
@@ -284,7 +284,7 @@ const StaffLeave = () => {
           leave_date: "",
 
         })
-        handleModalPopUp('apply_leave')
+       setApplyModal(false)
       }
 
     } catch (error: any) {
@@ -306,6 +306,7 @@ const StaffLeave = () => {
       leave_date: "",
 
     })
+    setApplyModal(false)
   }
 
 
@@ -611,15 +612,14 @@ const StaffLeave = () => {
                       {/* Leaves List */}
                       <div className="card-header d-flex align-items-center justify-content-between flex-wrap pb-0">
                         <h4 className="mb-3">Leaves</h4>
-                        <Link
-                          to="#"
-                          data-bs-target="#apply_leave"
-                          data-bs-toggle="modal"
+                        <button
+                         onClick={()=>setApplyModal(true)}
+                          type="button"
                           className="btn btn-primary d-inline-flex align-items-center mb-3"
                         >
                           <i className="ti ti-calendar-event me-2" />
                           Apply Leave
-                        </Link>
+                        </button>
                       </div>
                       <div className="card-body p-0 py-3">
                         {
@@ -640,7 +640,8 @@ const StaffLeave = () => {
         </div>
         {/* /Page Wrapper */}
         {/* Apply Leave */}
-        <div className="modal fade" id="apply_leave">
+        {
+          applyModal&&( <div className="modal fade show d-block" id="apply_leave">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -648,8 +649,7 @@ const StaffLeave = () => {
                 <button
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                  onClick={handleCancelLeave}
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -660,7 +660,7 @@ const StaffLeave = () => {
                   <div className="row">
                     {/* Leave Date */}
                     <div className="col-md-12 mb-3">
-                      <label className="form-label">Leave Date</label>
+                      <label className="form-label">Apply Date</label>
                       <DatePicker
                         className="form-control datetimepicker"
                         format="DD MMM YYYY"
@@ -786,7 +786,7 @@ const StaffLeave = () => {
                     onClick={handleCancelLeave}
                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                 
                   >
                     Cancel
                   </button>
@@ -798,40 +798,10 @@ const StaffLeave = () => {
 
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Apply Leave */}
-        {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <form >
-                <div className="modal-body text-center">
-                  <span className="delete-icon">
-                    <i className="ti ti-trash-x" />
-                  </span>
-                  <h4>Confirm Deletion</h4>
-                  <p>
-                    You want to delete all the marked items, this cant be undone
-                    once you delete.
-                  </p>
-                  <div className="d-flex justify-content-center">
-                    <Link
-                      to="#"
-                      className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
-                    >
-                      Cancel
-                    </Link>
-                    <button type="submit" className="btn btn-danger">
-                      Yes, Delete
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        {/* /Delete Modal */}
+        
       </>
     </div>
   );

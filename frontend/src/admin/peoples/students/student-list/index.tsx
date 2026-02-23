@@ -20,7 +20,6 @@ import TooltipOption from "../../../../core/common/tooltipOption";
 import { allStudents, deleteStudent, disableStudent, enableStudent, Imageurl } from "../../../../service/api";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs'
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { Spinner } from "../../../../spinner";
 // import { findNonSerializableValue } from "@reduxjs/toolkit";
 
@@ -109,11 +108,11 @@ const StudentList = () => {
 
   // delete section----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
-
+  const [delModal ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log(id)
+   
     try {
 
       const { data } = await deleteStudent(id)
@@ -121,7 +120,7 @@ const StudentList = () => {
         toast.success(data.message)
         fetchStudent();
         setDeleteId(null)
-        handleModalPopUp('delete_modal')
+         setDelModal(false)
       }
 
     } catch (error) {
@@ -132,6 +131,7 @@ const StudentList = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -287,17 +287,7 @@ const StudentList = () => {
                     Edit
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    className="dropdown-item rounded-1"
-                    to="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#login_detail"
-                  >
-                    <i className="ti ti-lock me-2" />
-                    Login Details
-                  </Link>
-                </li>
+                
                 <li>
                   <button className="dropdown-item rounded-1"
                     onClick={() => { `${record.status}` === 'Active' ? disableStu(rollnum) : enableStu(rollnum) }}
@@ -318,9 +308,10 @@ const StudentList = () => {
                 <li>
                   <button
                     className="dropdown-item rounded-1"
-                    onClick={() => setDeleteId(rollnum)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete_modal"
+                    onClick={() =>{ setDeleteId(rollnum)
+                      setDelModal(true)
+                    }}
+                   
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -539,7 +530,8 @@ const StudentList = () => {
         </div>
       </div>
       {/* /Delete Modal */}
-      <div className="modal fade" id="delete_modal">
+       {
+        delModal&&(<div className="modal fade show d-block" id="delete_modal">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form >
@@ -557,7 +549,7 @@ const StudentList = () => {
                     <button
                       onClick={(e) => cancelDelete(e)}
                       className="btn btn-light me-3"
-                      data-bs-dismiss="modal"
+                       type="button"
                     >
                       Cancel
                     </button>
@@ -571,7 +563,8 @@ const StudentList = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div>)
+       }
       {/* /Delete Modal */}
       <StudentModals onAdd={() => { }} rollnum={0} />
     </>

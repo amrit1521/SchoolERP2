@@ -13,7 +13,7 @@ import TooltipOption from "../../../core/common/tooltipOption";
 import { toast } from "react-toastify";
 import { addHostelRoomType, allHostelRoomType, deleteRoomType, edithostelRoomType, speHostelRoomType } from "../../../service/hostel";
 import { Spinner } from "../../../spinner";
-import { handleModalPopUp } from "../../../handlePopUpmodal";
+
 
 interface HostelRoomType {
   id: number;
@@ -45,6 +45,8 @@ const HostelType = () => {
 
   const [roomTypes, setRoomTypes] = useState<HostelRoomType[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [addModal ,setAddModal] = useState<boolean>(false)
+  const [editModal ,setEditModal] = useState<boolean>(false)
 
   const fetchHostelRoomTypes = async () => {
     setLoading(true)
@@ -113,6 +115,7 @@ const HostelType = () => {
 
       const { data } = await speHostelRoomType(id)
       if (data.success) {
+        setEditModal(true)
         setFormData({
           roomType: data.data.roomType,
           description: data.data.description
@@ -139,7 +142,8 @@ const HostelType = () => {
 
       if (data.success) {
         toast.success(data.message);
-        handleModalPopUp(editId ? "edit_hostel_room_type" : "add_hostel_room_type");
+        setAddModal(false)
+        setEditModal(false)
         fetchHostelRoomTypes();
         setFormData({
           roomType: "",
@@ -161,10 +165,13 @@ const HostelType = () => {
       description: "",
     });
     setErrors({})
+    setAddModal(false)
+    setEditModal(false)
   }
 
   // delete----------------------------------------------------
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal  ,setDelModal] = useState<boolean>(false)
 
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -174,7 +181,7 @@ const HostelType = () => {
         toast.success(data.message)
         fetchHostelRoomTypes();
         setDeleteId(null)
-        handleModalPopUp('delete-modal')
+       setDelModal(false)
       }
 
     } catch (error) {
@@ -185,6 +192,7 @@ const HostelType = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
 
 
@@ -237,8 +245,7 @@ const HostelType = () => {
                   <button
                     className="dropdown-item rounded-1"
                     onClick={() => fetchById(record.id)}
-                    data-bs-toggle="modal"
-                    data-bs-target="#edit_hostel_room_type"
+                   
                   >
                     <i className="ti ti-edit-circle me-2" />
                     Edit
@@ -246,10 +253,11 @@ const HostelType = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => setDeleteId(record.id)}
+                    onClick={() =>{ setDeleteId(record.id)
+                      setDelModal(true)
+                    }}
                     className="dropdown-item rounded-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delete-modal"
+                  
                   >
                     <i className="ti ti-trash-x me-2" />
                     Delete
@@ -288,15 +296,14 @@ const HostelType = () => {
             <div className="d-flex my-xl-auto right-content align-items-center flex-wrap">
               <TooltipOption />
               <div className="mb-2">
-                <Link
-                  to="#"
+                <button
+                 type="button"
                   className="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#add_hostel_room_type"
+                  onClick={()=>setAddModal(true)}
                 >
                   <i className="ti ti-square-rounded-plus me-2" />
                   Add Room Type
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -404,7 +411,8 @@ const HostelType = () => {
       {/* /Page Wrapper */}
       <>
         {/* Add Room Type*/}
-        <div className="modal fade" id="add_hostel_room_type">
+         {
+          addModal&&(<div className="modal fade show d-block" id="add_hostel_room_type">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               {/* Header */}
@@ -414,8 +422,7 @@ const HostelType = () => {
                   onClick={(e) => handleCancel(e)}
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+                 
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -467,7 +474,7 @@ const HostelType = () => {
                     onClick={(e) => handleCancel(e)}
                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                   
                   >
                     Cancel
                   </button>
@@ -478,10 +485,12 @@ const HostelType = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+         }
         {/* Add Room Type */}
         {/* Edit Room Type */}
-        <div className="modal fade" id="edit_hostel_room_type">
+       {
+        editModal&&(  <div className="modal fade show d-block" id="edit_hostel_room_type">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               {/* Header */}
@@ -491,8 +500,7 @@ const HostelType = () => {
                   onClick={(e) => handleCancel(e)}
                   type="button"
                   className="btn-close custom-btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
+               
                 >
                   <i className="ti ti-x" />
                 </button>
@@ -544,7 +552,7 @@ const HostelType = () => {
                     onClick={(e) => handleCancel(e)}
                     type="button"
                     className="btn btn-light me-2"
-                    data-bs-dismiss="modal"
+                  
                   >
                     Cancel
                   </button>
@@ -555,10 +563,12 @@ const HostelType = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+       }
         {/* Edit Room Type */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+        {
+          delModal&&( <div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form >
@@ -568,7 +578,7 @@ const HostelType = () => {
                   </span>
                   <h4>Confirm Deletion</h4>
                   <p>
-                    You want to delete all the marked items, this cant be undone
+                    You want to delete item, this can not be undone
                     once you delete.
                   </p>
                   {
@@ -576,7 +586,7 @@ const HostelType = () => {
                       <button
                         onClick={(e) => cancelDelete(e)}
                         className="btn btn-light me-3"
-                        data-bs-dismiss="modal"
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -590,7 +600,8 @@ const HostelType = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Delete Modal */}
       </>
     </>

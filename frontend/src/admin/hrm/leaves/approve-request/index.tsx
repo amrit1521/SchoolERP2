@@ -11,7 +11,6 @@ import TooltipOption from "../../../../core/common/tooltipOption";
 import { deleteLeave, getAllLeaveData, getSpeLeaveData, Imageurl, updateLeaveStatus } from "../../../../service/api";
 import dayjs from 'dayjs'
 import { Spinner } from "../../../../spinner";
-import { handleModalPopUp } from "../../../../handlePopUpmodal";
 import { toast } from "react-toastify";
 
 const ApproveRequest = () => {
@@ -32,6 +31,7 @@ const ApproveRequest = () => {
   const [updateId, setUpdateId] = useState<number | null>(null)
   const [status, setStatus] = useState<number>(0)
   const [note, setNote] = useState<string>("")
+  const [leaveDataModal ,setLeaveDataModal] = useState<boolean>(false)
 
   const fetchLeaveData = async () => {
     setLoading(true)
@@ -59,6 +59,7 @@ const ApproveRequest = () => {
 
       const { data } = await getSpeLeaveData(id)
       if (data.success) {
+        setLeaveDataModal(true)
         setSpeLeaveData(data.data)
         setStatus(Number(data.data.status));
         setNote(data.data.note || "");
@@ -90,8 +91,9 @@ const ApproveRequest = () => {
         setNote("")
         setSpeLeaveData({})
         setUpdateId(null)
-        handleModalPopUp('leave_request')
-        fetchLeaveData();
+       
+        fetchLeaveData()
+        setLeaveDataModal(false)
       }
     } catch (err: any) {
       console.error(err);
@@ -105,6 +107,7 @@ const ApproveRequest = () => {
     setNote("")
     setSpeLeaveData({})
     setUpdateId(null)
+     setLeaveDataModal(false)
   }
 
 
@@ -230,8 +233,7 @@ const ApproveRequest = () => {
                 <button
                   className="dropdown-item rounded-1"
                   onClick={() => fetchSpeLeave(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#leave_request"
+                 
                 >
                   <i className="ti ti-menu me-2" />
                   Leave Request
@@ -240,9 +242,10 @@ const ApproveRequest = () => {
               <li>
                 <button
                   className="dropdown-item rounded-1"
-                  onClick={() => setDeleteId(record.id)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#delete-modal"
+                  onClick={() =>{ setDeleteId(record.id) 
+                    setDelModal(true)
+                  }}
+                
                 >
                   <i className="ti ti-trash-x me-2" />
                   Delete
@@ -258,6 +261,7 @@ const ApproveRequest = () => {
 
 
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [delModal  ,setDelModal] = useState<boolean>(false)
   const handleDelete = async (id: number, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
@@ -266,7 +270,7 @@ const ApproveRequest = () => {
         setDeleteId(null)
         toast.success(data.message)
         fetchLeaveData()
-        handleModalPopUp('delete-modal')
+        setDelModal(false)
 
       }
 
@@ -279,6 +283,7 @@ const ApproveRequest = () => {
   const cancelDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     setDeleteId(null)
+    setDelModal(false)
   }
   return (
     <div>
@@ -448,12 +453,13 @@ const ApproveRequest = () => {
         </div>
         {/* /Page Wrapper */}
         {/* Leave Request */}
-        <div className="modal fade" id="leave_request">
+        {
+          leaveDataModal&&( <div className="modal fade show d-block" id="leave_request">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h4 className="modal-title">Leave Request</h4>
-                <button type="button" className="btn-close custom-btn-close" data-bs-dismiss="modal" aria-label="Close">
+                <button type="button" className="btn-close custom-btn-close" onClick={(e) => handleCancelSatusUpdate(e)} >
                   <i className="ti ti-x" />
                 </button>
               </div>
@@ -534,17 +540,19 @@ const ApproveRequest = () => {
                 </div>
 
                 <div className="modal-footer">
-                  <button onClick={(e) => handleCancelSatusUpdate(e)} className="btn btn-light me-2" data-bs-dismiss="modal">Cancel</button>
+                  <button onClick={(e) => handleCancelSatusUpdate(e)} className="btn btn-light me-2" type="button">Cancel</button>
                   <button type="submit" className="btn btn-primary">Submit</button>
                 </div>
               </form>
 
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Leave Request */}
         {/* Delete Modal */}
-        <div className="modal fade" id="delete-modal">
+        {
+          delModal&&( <div className="modal fade show d-block" id="delete-modal">
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <form>
@@ -563,7 +571,7 @@ const ApproveRequest = () => {
                         <button
                           onClick={(e) => cancelDelete(e)}
                           className="btn btn-light me-3"
-                          data-bs-dismiss="modal"
+                          type="button"
                         >
                           Cancel
                         </button>
@@ -577,7 +585,8 @@ const ApproveRequest = () => {
               </form>
             </div>
           </div>
-        </div>
+        </div>)
+        }
         {/* /Delete Modal */}
       </>
     </div>
