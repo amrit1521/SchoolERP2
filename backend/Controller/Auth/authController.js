@@ -26,6 +26,7 @@ exports.login = async (req, res) => {
       u.id, 
       u.email, 
       u.password ,
+      u.status,
       u.roll_id,
       r.role_name AS rolename
        FROM users u
@@ -42,15 +43,22 @@ exports.login = async (req, res) => {
         .status(401)
         .json({ message: "Invalid email or password", success: false });
     }
-
+    
     const user = users[0];
-
+ 
     // === Compare password ===
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res
         .status(401)
         .json({ message: "Invalid email or password", success: false });
+    }
+
+      if (user.status === '0') {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is not active. Please contact your school administrator.",
+      });
     }
 
     // === Generate JWT ===
